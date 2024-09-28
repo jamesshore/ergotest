@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
+const ensure = require("../util/ensure");
 const Shell = require("./shell");
-const Output = require("infrastructure/console_output");
+const Output = require("./console_output");
 
 /**
  * Represents a git repository (and the things that can be done to it).

@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
+const ensure = require("../util/ensure");
 const minimist = require("minimist");
 const EventEmitter = require("node:events");
 

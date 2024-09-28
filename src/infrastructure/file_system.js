@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
+const ensure = require("../util/ensure");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const OutputTracker = require("./low_level/output_tracker");

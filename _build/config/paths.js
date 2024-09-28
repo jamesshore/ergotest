@@ -53,6 +53,7 @@ module.exports = class Paths {
 	static get universalGlobsToExclude() {
 		return [
 			`${rootDir}/node_modules/**`,
+			`${rootDir}/generated/**`,
 			`${rootDir}/_build/node_modules/tests/vendor/**`,
 		];
 	}
