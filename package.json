@@ -16,5 +16,8 @@
     "minimatch": "^10.0.1",
     "minimist": "^1.2.8",
     "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "globals": "^15.9.0"
   }
 }
