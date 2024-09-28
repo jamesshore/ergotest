@@ -18,5 +18,8 @@
     "minimist": "^1.2.8",
     "typescript": "5.5",
     "typescript-eslint": "^8.7.0"
+  },
+  "dependencies": {
+    "@types/array-to-sentence": "^2.0.0"
   }
 }
