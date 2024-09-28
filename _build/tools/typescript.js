@@ -8,17 +8,19 @@ const FileSystem = require("infrastructure/file_system");
 const ensure = require("util/ensure");
 const TaskError = require("tasks/task_error");
 const Reporter = require("tasks/reporter");
+const Shell = require("infrastructure/shell");
 
 module.exports = class TypeScript {
 
 	static create(fileSystem) {
 		ensure.signature(arguments, [ FileSystem ]);
 
-		return new TypeScript(fileSystem);
+		return new TypeScript(fileSystem, Shell.create());
 	}
 
-	constructor(fileSystem) {
+	constructor(fileSystem, shell) {
 		this._fileSystem = fileSystem;
+		this._shell = shell;
 	}
 
 	async compileAsync({
@@ -65,6 +67,25 @@ module.exports = class TypeScript {
 
 			const failed = successes.some(entry => entry === false);
 			if (failed) throw new TaskError("Compile failed");
+		});
+	}
+
+	async typecheckAsync({
+		description,
+		tscBinary,
+		typescriptConfigFile,
+		reporter,
+	}) {
+		ensure.signature(arguments, [{
+			description: String,
+			tscBinary: String,
+			typescriptConfigFile: String,
+			reporter: Reporter,
+		}]);
+
+		await reporter.startAsync(`Type-checking ${description}`, async (report) => {
+			const { code } = await this._shell.execAsync(tscBinary, "-p", typescriptConfigFile);
+			if (code !== 0) throw new TaskError("Type check failed");
 		});
 	}
 

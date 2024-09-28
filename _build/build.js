@@ -73,7 +73,7 @@ function defineTasks(self) {
 	const typescript = TypeScript.create(self._fileSystem);
 
 	tasks.defineTask("default", async() => {
-		await tasks.runTasksAsync([ "clean", "quick" ]);
+		await tasks.runTasksAsync([ "clean", "quick", "typecheck" ]);
 	});
 
 	tasks.defineTask("clean", async () => {
@@ -120,6 +120,15 @@ function defineTasks(self) {
 			rootDir: Paths.rootDir,
 			outputDir: Paths.typescriptBuildDir,
 			config: swcConfig,
+			reporter: self._reporter,
+		});
+	});
+
+	tasks.defineTask("typecheck", async () => {
+		await typescript.typecheckAsync({
+			description: "TypeScript",
+			tscBinary: Paths.tscBinary,
+			typescriptConfigFile: Paths.typescriptConfigFile,
 			reporter: self._reporter,
 		});
 	});

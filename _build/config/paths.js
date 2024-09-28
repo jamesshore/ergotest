@@ -29,6 +29,8 @@ module.exports = class Paths {
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
 	static get typescriptBuildDir() { return `${generatedDir}/typescript`; }
+	static get tscBinary() { return `${rootDir}/node_modules/typescript/bin/tsc`; }
+	static get typescriptConfigFile() { return `${rootDir}/tsconfig.json`; }
 
 	static get successSound() { return `${rootDir}/_build/sounds/success.mp3`; }
 	static get failSound() { return `${rootDir}/_build/sounds/fail.m4a`; }
@@ -36,8 +38,8 @@ module.exports = class Paths {
 
 	static get buildWatchGlobs() {
 		return [
-			`${rootDir}/_build/**`,
 			`${rootDir}/src/**`,
+			`${rootDir}/tsconfig.json`,
 		];
 	}
 
