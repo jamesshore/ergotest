@@ -8,6 +8,9 @@
   "devDependencies": {
     "@sinonjs/fake-timers": "^13.0.2",
     "@swc/core": "^1.7.26",
+    "@types/node": "^22.7.4",
+    "@typescript-eslint/eslint-plugin": "^8.7.0",
+    "@typescript-eslint/parser": "^8.7.0",
     "array-to-sentence": "^2.0.0",
     "eslint": "^9.11.1",
     "minimatch": "^10.0.1",
