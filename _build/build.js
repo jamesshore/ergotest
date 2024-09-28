@@ -50,6 +50,7 @@ module.exports = class Build {
 				lint: "Lint JavaScript code (incremental)",
 				unittest: "Run unit tests (incremental)",
 				compile: "Compile TypeScript (incremental)",
+				typecheck: "Type-check TypeScript",
 			});
 		}
 
