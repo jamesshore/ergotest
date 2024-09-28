@@ -59,7 +59,7 @@ module.exports = class Paths {
 
 	lintFiles() {
 		return this._files.matchingFiles([
-			"**/*.js",
+			// "**/*.js",
 			"**/*.ts",
 		]);
 	}

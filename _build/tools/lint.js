@@ -51,17 +51,20 @@ module.exports = class Lint {
 		const pass = (messages.length === 0);
 
 		if (!pass) {
-			let failures = Colors.red.bold(`\n${filename} failed\n`);
+			let failures = Colors.red.bold(`${filename} failed\n`);
 			messages.forEach(function(error) {
+				console.log(error);
 				if (error.line) {
 					const code = SourceCode.splitLines(sourceCode)[error.line - 1];
-					failures += Colors.brightWhite.bold(`${error.line}:`) + ` ${code.trim()}\n   ${error.message}\n`;
+					failures += Colors.brightWhite.bold(`${error.line}:`) + ` ${code.trim()}\n` +
+						`  ${error.message}\n` +
+						Colors.brightBlack(`  Rule: ${error.ruleId}\n\n`);
 				}
 				else {
-					failures += `${error.message}\n`;
+					failures += `${error.message}\n\n`;
 				}
 			});
-			report.footer(failures);
+			report.footer(`${failures}\n`);
 		}
 
 		return pass;
