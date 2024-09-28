@@ -55,6 +55,7 @@ module.exports = class Paths {
 			`${rootDir}/node_modules/**`,
 			`${rootDir}/generated/**`,
 			`${rootDir}/_build/node_modules/tests/vendor/**`,
+			`${rootDir}/src/node_modules/tests/vendor/**`,
 		];
 	}
 
