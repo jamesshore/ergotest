@@ -58,7 +58,10 @@ module.exports = class Paths {
 	}
 
 	lintFiles() {
-		return this._files.matchingFiles("**/*.js");
+		return this._files.matchingFiles([
+			"**/*.js",
+			"**/*.ts",
+		]);
 	}
 
 	unitTestFiles() {
