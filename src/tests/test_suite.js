@@ -60,7 +60,6 @@ module.exports = class TestSuite {
 				}
 			}
 			catch(err) {
-				console.log(err);
 				return createFailure(filename, `error when requiring ${path.basename(filename)}`, err);
 			}
 		}
