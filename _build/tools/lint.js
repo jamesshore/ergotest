@@ -55,9 +55,8 @@ module.exports = class Lint {
 			messages.forEach(function(error) {
 				if (error.line) {
 					const code = SourceCode.splitLines(sourceCode)[error.line - 1];
-					failures += Colors.brightWhite.bold(`${error.line}:`) + ` ${code.trim()}\n` +
-						`  ${error.message}\n` +
-						Colors.brightBlack(`  Rule: ${error.ruleId}\n\n`);
+					failures += Colors.brightWhite.bold(`${error.line}:`) + ` ${code.trim()}\n  ${error.message}\n`;
+					if (error.ruleId !== null) failures += Colors.brightBlack(`  Rule: ${error.ruleId}\n\n`);
 				}
 				else {
 					failures += `${error.message}\n\n`;

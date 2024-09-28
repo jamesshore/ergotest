@@ -49,7 +49,7 @@ export function defined(variable: unknown, variableName: string) {
  *   (e.g., [ undefined, String ].
  * @param {string[]} [names] the names of each parameter (used in error messages)
  */
-export function signature(args: unknown[], expectedSignature: TypeDescriptor[], names?: string[]) {
+export function signature(args: IArguments, expectedSignature: TypeDescriptor[], names?: string[]) {
 	checkSignature(false, args, expectedSignature, names, signature);
 }
 
@@ -66,7 +66,7 @@ export function signature(args: unknown[], expectedSignature: TypeDescriptor[], 
  *   (e.g., [ undefined, String ].
  * @param {string[]} [names] the names of each parameter (used in error messages)
  */
-export function signatureMinimum(args: unknown[], expectedSignature: TypeDescriptor[], names?: string[]) {
+export function signatureMinimum(args: IArguments, expectedSignature: TypeDescriptor[], names?: string[]) {
 	checkSignature(true, args, expectedSignature, names);
 }
 
@@ -103,7 +103,7 @@ export function typeMinimum(variable: unknown, expectedType: TypeDescriptor, nam
 
 export function checkSignature(
 	allowExtra: boolean,
-	args: unknown[],
+	args: IArguments,
 	signature: TypeDescriptor[] = [],
 	names: string[] = [],
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type

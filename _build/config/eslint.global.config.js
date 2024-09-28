@@ -1,11 +1,20 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
+const globals = require("globals");
 const ERROR = "error";
 const IGNORE = "off";
 
 module.exports = [{
 	name: "global config",
+
+	"languageOptions": {
+		globals: {
+			...globals.node,
+			globals: false,
+		},
+	},
+
 	"rules": {
 		// "Possible Errors" (according to ESLint docs)
 		"no-compare-neg-zero": ERROR,

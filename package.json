@@ -20,6 +20,7 @@
     "typescript-eslint": "^8.7.0"
   },
   "dependencies": {
-    "@types/array-to-sentence": "^2.0.0"
+    "@types/array-to-sentence": "^2.0.0",
+    "@types/sinonjs__fake-timers": "^8.1.5"
   }
 }

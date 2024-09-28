@@ -12,7 +12,7 @@ export interface DescribeOptions {
 	atLeast?: boolean;
 }
 
-type SingleDescriptor = undefined | null | typeof NaN | typeof Boolean | typeof Number |
+type SingleDescriptor = undefined | null | typeof NaN | typeof Boolean | typeof Number | typeof Date |
 	typeof String | typeof Array | typeof Object | typeof Function | typeof RegExp;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
