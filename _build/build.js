@@ -6,13 +6,14 @@ const Tasks = require("tasks/tasks");
 const TaskCli = require("tasks/task_cli");
 const Reporter = require("tasks/reporter");
 const FileSystem = require("infrastructure/file_system");
-const Shell = require("infrastructure/shell");
 const Version = require("./tools/version");
 const Lint = require("./tools/lint");
 const Tests = require("./tools/tests");
+const TypeScript = require("./tools/typescript");
 const Paths = require("./config/paths");
 const testConfig = require("./config/tests.conf");
 const lintConfig = require("./config/eslint.conf");
+const swcConfig = require("./config/swc.conf");
 
 module.exports = class Build {
 
@@ -46,6 +47,7 @@ module.exports = class Build {
 				version: "Check Node.js version",
 				lint: "Lint JavaScript code (incremental)",
 				unittest: "Run unit tests (incremental)",
+				compile: "Compile TypeScript (incremental)",
 			});
 		}
 
@@ -64,9 +66,10 @@ async function scanFileTreeAsync(fileSystem, reporter) {
 
 function defineTasks(self) {
 	const tasks = Tasks.create({ fileSystem: self._fileSystem, incrementalDir: self._paths.tasksDir });
+	const version = Version.create(self._fileSystem);
 	const lint = Lint.create(self._fileSystem);
 	const tests = Tests.create(self._fileSystem, Paths.universalGlobsToExclude);
-	const version = Version.create(self._fileSystem);
+	const typescript = TypeScript.create(self._fileSystem);
 
 	tasks.defineTask("default", async() => {
 		await tasks.runTasksAsync([ "clean", "quick" ]);
@@ -99,10 +102,23 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("unittest", async () => {
+		await tasks.runTasksAsync([ "compile" ]);
+
 		await tests.runAsync({
 			description: "unit tests",
 			files: self._paths.unitTestFiles(),
 			config: testConfig,
+			reporter: self._reporter,
+		});
+	});
+
+	tasks.defineTask("compile", async () => {
+		await typescript.compileAsync({
+			description: "TypeScript",
+			files: self._paths.typescriptFiles(),
+			rootDir: Paths.rootDir,
+			outputDir: Paths.typescriptBuildDir,
+			config: swcConfig,
 			reporter: self._reporter,
 		});
 	});

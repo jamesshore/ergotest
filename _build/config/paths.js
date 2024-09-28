@@ -28,6 +28,8 @@ module.exports = class Paths {
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
+	static get typescriptBuildDir() { return `${generatedDir}/typescript`; }
+
 	static get successSound() { return `${rootDir}/_build/sounds/success.mp3`; }
 	static get failSound() { return `${rootDir}/_build/sounds/fail.m4a`; }
 	static get lintErrorSound() { return `${rootDir}/_build/sounds/lint_error.mp3`; }
@@ -60,6 +62,12 @@ module.exports = class Paths {
 	unitTestFiles() {
 		return this._files.matchingFiles([
 			"**/_*_test.js",
+		]);
+	}
+
+	typescriptFiles() {
+		return this._files.matchingFiles([
+			"**/*.ts",
 		]);
 	}
 
