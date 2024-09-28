@@ -6,13 +6,12 @@ const globals = require("globals");
 const ERROR = "error";
 const IGNORE = "off";
 
-exports.options = {
+module.exports = [{
 	"languageOptions": {
-		ecmaVersion: 2022,
-		sourceType: "commonjs",
+		"ecmaVersion": "latest",
+		"sourceType": "commonjs",
 		globals: {
 			...globals.node,
-			globals: false,
 		},
 	},
 
@@ -100,4 +99,4 @@ exports.options = {
 		"no-var": ERROR,
 		"require-yield": ERROR
 	}
-};
+}];

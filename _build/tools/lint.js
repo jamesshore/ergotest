@@ -2,11 +2,9 @@
 "use strict";
 
 const ensure = require("util/ensure");
-const eslint = require("eslint");
-const linter = new (eslint).Linter();
+const { Linter, SourceCode } = require("eslint");
 const Reporter = require("tasks/reporter");
 const FileSystem = require("infrastructure/file_system");
-const lintConfig = require("../config/eslint.conf");
 const TaskError = require("tasks/task_error");
 
 module.exports = class Lint {
@@ -25,7 +23,7 @@ module.exports = class Lint {
 		ensure.signature(arguments, [{
 			description: String,
 			files: Array,
-			config: { options: Object },
+			config: Array,
 			reporter: Reporter,
 		}]);
 
@@ -34,7 +32,7 @@ module.exports = class Lint {
 			const successes = await Promise.all(filesToLint.map(async (file) => {
 				const sourceCode = await this._fileSystem.readTextFileAsync(file);
 
-				const success = await validateSource(report, sourceCode, lintConfig.options, file);
+				const success = await validateSource(report, sourceCode, config, file);
 				if (success) await this._fileSystem.writeTimestampFileAsync(file, "lint");
 				return success;
 			}));
@@ -46,6 +44,8 @@ module.exports = class Lint {
 };
 
 function validateSource(report, sourceCode, options, filename) {
+	const linter = new Linter();
+
 	const messages = linter.verify(sourceCode, options);
 	const pass = (messages.length === 0);
 
@@ -55,7 +55,7 @@ function validateSource(report, sourceCode, options, filename) {
 	else {
 		let failures = `${filename} failed\n`;
 		messages.forEach(function(error) {
-			const code = eslint.SourceCode.splitLines(sourceCode)[error.line - 1];
+			const code = SourceCode.splitLines(sourceCode)[error.line - 1];
 			failures += `${error.line}: ${code.trim()}\n   ${error.message}\n`;
 		});
 		report.footer(failures);

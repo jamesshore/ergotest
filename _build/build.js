@@ -12,7 +12,7 @@ const Tests = require("./tools/tests");
 const TypeScript = require("./tools/typescript");
 const Paths = require("./config/paths");
 const testConfig = require("./config/tests.conf");
-const lintConfig = require("./config/eslint.conf");
+const lintConfig = require("./config/eslint.config");
 const swcConfig = require("./config/swc.conf");
 
 module.exports = class Build {
