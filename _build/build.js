@@ -36,6 +36,7 @@ module.exports = class Build {
 		}]]);
 
 		if (this._paths === undefined || resetTreeCache) {
+			await this._fileSystem.deleteAsync(Paths.typescriptBuildDir);
 			this._paths = await scanFileTreeAsync(this._fileSystem, this._reporter);
 		}
 		if (this._tasks === undefined) {
