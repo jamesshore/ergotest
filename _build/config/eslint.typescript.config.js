@@ -18,6 +18,12 @@ module.exports = [
   {
     name: "TypeScript config",
 
+    languageOptions: {
+      parserOptions: {
+        // warnOnUnsupportedTypeScriptVersion: false,
+      }
+    },
+
     rules: {
 			"@typescript-eslint/no-unused-vars": IGNORE,
     }
