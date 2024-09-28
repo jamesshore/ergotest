@@ -1,0 +1,15 @@
+{
+  "name": "automatopia",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": "20.16.0"
+  },
+  "dependencies": {
+    "@sinonjs/fake-timers": "^13.0.2",
+    "array-to-sentence": "^2.0.0",
+    "eslint": "^9.11.1",
+    "minimatch": "^10.0.1",
+    "minimist": "^1.2.8"
+  }
+}
