@@ -17,11 +17,6 @@ module.exports = suite(({ describe }) => {
 			assert.equal(actual, expected);
 		});
 
-		it("provides current year", () => {
-			const clock = Clock.createNull({ now: new Date("1 Mar 2050")});
-			assert.equal(clock.currentYearForUtc(), 2050);
-		});
-
 		it("tells us how many milliseconds have elapsed since a time", async () => {
 			const nullClock = Clock.createNull({ now: 50 });
 			await nullClock.tickAsync(999);

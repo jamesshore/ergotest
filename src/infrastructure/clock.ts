@@ -69,14 +69,6 @@ export class Clock {
 	}
 
 	/**
-	 * @returns {number} the current year, assuming UTC time zone
-	 */
-	currentYearForUtc(): number {
-		ensure.signature(arguments, []);
-		return new Date(this._globals.Date.now()).getUTCFullYear();
-	}
-
-	/**
 	 * Wait for a certain amount of time has passed. Equivalent to `setTimeout()`, which is not guaranteed to be exact.
 	 * Special note for nulled clocks: time doesn't pass automatically for nulled clocks, so this method won't return
 	 * unless one of the tick methods is called.
