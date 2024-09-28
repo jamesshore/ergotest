@@ -57,9 +57,14 @@ module.exports = class Paths {
 		];
 	}
 
-	lintFiles() {
+	lintJavascriptFiles() {
 		return this._files.matchingFiles([
-			// "**/*.js",
+			"**/*.js",
+		]);
+	}
+
+	lintTypescriptFiles() {
+		return this._files.matchingFiles([
 			"**/*.ts",
 		]);
 	}

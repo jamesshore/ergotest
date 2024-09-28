@@ -6,7 +6,7 @@ const { Linter, SourceCode } = require("eslint");
 const Reporter = require("tasks/reporter");
 const FileSystem = require("infrastructure/file_system");
 const TaskError = require("tasks/task_error");
-const Colors = require("infrastructure/colors")
+const Colors = require("infrastructure/colors");
 
 module.exports = class Lint {
 
@@ -51,9 +51,8 @@ module.exports = class Lint {
 		const pass = (messages.length === 0);
 
 		if (!pass) {
-			let failures = Colors.red.bold(`${filename} failed\n`);
+			let failures = Colors.red.bold(`\n${filename} failed\n`);
 			messages.forEach(function(error) {
-				console.log(error);
 				if (error.line) {
 					const code = SourceCode.splitLines(sourceCode)[error.line - 1];
 					failures += Colors.brightWhite.bold(`${error.line}:`) + ` ${code.trim()}\n` +
@@ -64,7 +63,7 @@ module.exports = class Lint {
 					failures += `${error.message}\n\n`;
 				}
 			});
-			report.footer(`${failures}\n`);
+			report.footer(`${failures}`);
 		}
 
 		return pass;

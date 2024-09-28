@@ -12,7 +12,8 @@ const Tests = require("./tools/tests");
 const TypeScript = require("./tools/typescript");
 const Paths = require("./config/paths");
 const testConfig = require("./config/tests.conf");
-const lintConfig = require("./config/eslint.config");
+const lintJavascriptConfig = require("./config/eslint.javascript.config");
+const lintTypescriptConfig = require("./config/eslint.typescript.config");
 const swcConfig = require("./config/swc.conf");
 
 module.exports = class Build {
@@ -96,8 +97,15 @@ function defineTasks(self) {
 	tasks.defineTask("lint", async () => {
 		await lint.validateAsync({
 			description: "JavaScript",
-			files: self._paths.lintFiles(),
-			config: lintConfig,
+			files: self._paths.lintJavascriptFiles(),
+			config: lintJavascriptConfig,
+			reporter: self._reporter,
+		});
+
+		await lint.validateAsync({
+			description: "TypeScript",
+			files: self._paths.lintTypescriptFiles(),
+			config: lintTypescriptConfig,
 			reporter: self._reporter,
 		});
 	});
