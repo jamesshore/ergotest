@@ -1,12 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const colors = require("./colors");
+import { test, assert } from "tests";
+import { Colors } from "./colors.js";
 
-module.exports = suite(({ describe, it }) => {
+export default test(({ it }) => {
 
-	const { red } = colors;    // see production code for other supported colors
+	const { red } = Colors;    // see production code for other supported colors
 
 	it("color-codes text", () => {
 		assert.equal(red("text"), "\u001b[31mtext\u001b[0m");
