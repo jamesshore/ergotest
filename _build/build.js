@@ -111,11 +111,18 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("unittest", async () => {
+		await tests.runAsync({
+			description: "JavaScript tests",
+			files: self._paths.buildTestFiles(),
+			config: testConfig,
+			reporter: self._reporter,
+		});
+
 		await tasks.runTasksAsync([ "compile" ]);
 
 		await tests.runAsync({
-			description: "unit tests",
-			files: self._paths.unitTestFiles(),
+			description: "TypeScript tests",
+			files: self._paths.srcTestFiles(),
 			config: testConfig,
 			reporter: self._reporter,
 		});
@@ -124,7 +131,7 @@ function defineTasks(self) {
 	tasks.defineTask("compile", async () => {
 		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.srcDirDeleteme, Paths.typescriptBuildDir, Paths.srcDirGlobsDeleteme, Paths.srcDirGlobsDeleteme
+				Paths.srcDirDeleteme, Paths.typescriptTargetDir, Paths.srcDirGlobsDeleteme, Paths.srcDirGlobsDeleteme
 			);
 			const filesToCopy = [ ...added, ...changed ];
 			const filesToDelete = removed;
@@ -137,15 +144,13 @@ function defineTasks(self) {
 				await self._fileSystem.deleteAsync(target);
 				report.progress();
 			}));
-
-			// console.log({ added, removed, changed });
 		});
 
 		await typescript.compileAsync({
 			description: "TypeScript",
 			files: self._paths.typescriptFiles(),
 			rootDir: Paths.rootDir,
-			outputDir: Paths.typescriptBuildDir,
+			outputDir: Paths.typescriptTargetDir,
 			config: swcConfig,
 			reporter: self._reporter,
 		});
