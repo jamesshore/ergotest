@@ -12,8 +12,8 @@ export interface DescribeOptions {
 	atLeast?: boolean;
 }
 
-type SingleDescriptor = undefined | null | typeof NaN | typeof Boolean | typeof Number | typeof Date |
-	typeof String | typeof Array | typeof Error | typeof Object | typeof Function | typeof RegExp;
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+type SingleDescriptor = undefined | null | typeof NaN | Function;   // Descriptor can have any function as constructor
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface StructDescriptor extends Record<string, TypeDescriptor> {}  // required for circularity

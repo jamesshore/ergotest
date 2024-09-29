@@ -177,6 +177,11 @@ export abstract class TestResult {
 	}
 
 	/**
+	 * @returns {boolean} True if this test either passed or was skipped.
+	 */
+	abstract isSuccess(): boolean;
+
+	/**
 	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
 	 */
 	abstract allTests(): TestCaseResult[];
@@ -251,6 +256,15 @@ class TestSuiteResult extends TestResult {
 	 */
 	get filename(): string | undefined {
 		return this._filename;
+	}
+
+	/**
+	 * @returns {boolean} True if this test either passed or was skipped.
+	 */
+	isSuccess(): boolean {
+		ensure.signature(arguments, []);
+
+		ensure.unreachable("not yet implemented");
 	}
 
 	/**
