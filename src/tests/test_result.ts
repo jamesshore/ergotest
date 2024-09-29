@@ -1,11 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const ensure = require("../util/ensure");
-const util = require("node:util");
-const path = require("node:path");
-const { AssertionError } = require("node:assert");
-const Colors = require("../infrastructure/colors");
+import * as ensure from "../util/ensure.js";
+import util from "node:util";
+import path from "node:path";
+import { AssertionError } from "node:assert";
+import { Colors } from "../infrastructure/colors.js";
 
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
@@ -20,7 +19,7 @@ const STATUS = {
 	FAIL: "fail",
 	SKIP: "skip",
 	TIMEOUT: "timeout",
-};
+} as const;
 
 const SUCCESS_MAP = {
 	[STATUS.PASS]: true,
@@ -41,11 +40,48 @@ const DESCRIPTION_RENDERING = {
 	[STATUS.TIMEOUT]: Colors.brightPurple("timeout"),
 };
 
+type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
+
+type TestStatus = typeof STATUS[keyof typeof STATUS];
+
+interface TestCount {
+	pass: number;
+	fail: number;
+	skip: number;
+	timeout: number;
+	total: number;
+}
+
+interface SerializedTestSuiteResult {
+	type: "TestSuiteResult";
+	name: string[];
+	filename?: string;
+	suite: SerializedTestResult[];
+}
+
+interface SerializedTestCaseResult {
+	type: "TestCaseResult";
+	name: string[];
+	filename?: string;
+	status: TestStatus;
+	error?: string | SerializedError;
+	timeout?: number;
+}
+
+interface SerializedError {
+	type: "Error" | "AssertionError";
+	message: string;
+	stack?: string;
+	customFields: Record<string, unknown>;
+	actual?: unknown;
+	expected?: unknown;
+	operator?: string;
+}
 
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
-const TestResult = module.exports = class TestResult {
+export abstract class TestResult {
 
 	static get PASS() { return STATUS.PASS; }
 	static get FAIL() { return STATUS.FAIL; }
@@ -66,7 +102,7 @@ const TestResult = module.exports = class TestResult {
 	 * @param {string} [filename] The file that contained this suite (optional).
 	 * @returns {TestSuiteResult} The result.
 	 */
-	static suite(names, results, filename) {
+	static suite(names: string | string[], results: TestResult[], filename?: string): TestSuiteResult {
 		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ]]);
 
 		return new TestSuiteResult(names, results, filename);
@@ -78,7 +114,7 @@ const TestResult = module.exports = class TestResult {
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(names, filename) {
+	static pass(names: string | string[], filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
 
 		return new TestCaseResult(names, STATUS.PASS, { filename });
@@ -91,7 +127,7 @@ const TestResult = module.exports = class TestResult {
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
 	 */
-	static fail(names, error, filename) {
+	static fail(names: string | string[], error: string | Error, filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ]]);
 
 		return new TestCaseResult(names, STATUS.FAIL, { error, filename });
@@ -103,7 +139,7 @@ const TestResult = module.exports = class TestResult {
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
 	 */
-	static skip(names, filename) {
+	static skip(names: string | string[], filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
 
 		return new TestCaseResult(names, STATUS.SKIP, { filename });
@@ -112,11 +148,11 @@ const TestResult = module.exports = class TestResult {
 	/**
 	 * Factory method. Create a TestResult for a test that timed out.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
-	 * @param {Error|string} error The length of the timeout.
+	 * @param {number} timeout The length of the timeout.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
 	 */
-	static timeout(names, timeout, filename) {
+	static timeout(names: string | string[], timeout: number, filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ] ]);
 
 		return new TestCaseResult(names, STATUS.TIMEOUT, { timeout, filename });
@@ -129,7 +165,7 @@ const TestResult = module.exports = class TestResult {
 	 * @see TestSuiteResult#serialize
 	 * @see TestCaseResult#serialize
 	 */
-	static deserialize(serializedTestResult) {
+	static deserialize(serializedTestResult: SerializedTestResult): TestResult {
 		ensure.signatureMinimum(arguments, [{ type: String }]);
 
 		const type = serializedTestResult.type;
@@ -140,8 +176,27 @@ const TestResult = module.exports = class TestResult {
 		}
 	}
 
-};
+	/**
+	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
+	 */
+	abstract allTests(): TestCaseResult[];
 
+	/**
+	 * Convert this result into a bare object later deserialization.
+	 * @returns {SerializedTestSuiteResult} The serialized result.
+	 * @see TestResult.deserialize
+	 */
+	abstract serialize(): SerializedTestResult;
+
+	/**
+	 * Determine if this test result is identical to another test result. To be identical, they must have the same
+	 * results, in the same order, with the same names and filenames.
+	 * @param {any} that The thing to compare against
+	 * @returns {boolean}
+	 */
+	abstract equals(that: TestResult): boolean;
+
+}
 
 /**
  * The result of running a test suite.
@@ -150,11 +205,11 @@ class TestSuiteResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
-	 * @param {object} serializedTestResult The serialized test result.
-	 * @returns {TestSuiteResult | TestCaseResult} The result object.
+	 * @param {SerializedTestSuiteResult} serializedTestResult The serialized test result.
+	 * @returns {TestSuiteResult} The result object.
 	 * @see TestResult#deserialize
 	 */
-	static deserialize({ name, filename, suite }) {
+	static override deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
@@ -166,8 +221,12 @@ class TestSuiteResult extends TestResult {
 		return new TestSuiteResult(name, deserializedSuite, filename);
 	}
 
+	private _name: string[];
+	private _filename?: string;
+	private suite: TestResult[];
+
 	/** Internal use only. (Use {@link TestResult.suite} instead.) */
-	constructor(names, results, filename) {
+	constructor(names: string | string[], results: TestResult[], filename?: string) {
 		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
@@ -178,29 +237,29 @@ class TestSuiteResult extends TestResult {
 	 * Is this result for a test suite? Yes!
 	 * @returns {boolean}
 	 */
-	get isSuite() { return true; }
+	get isSuite(): boolean { return true; }
 
 	/**
 	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
 	 */
-	get name() {
+	get name(): string[] {
 		return this._name;
 	}
 
 	/**
 	 * @returns {string | undefined} The file that contained the suite, if any.
 	 */
-	get filename() {
+	get filename(): string | undefined {
 		return this._filename;
 	}
 
 	/**
-	 * @returns {TestResult[]} All the test results, excluding test suites, flattened into a single list.
+	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
 	 */
-	allTests() {
+	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
 
-		const tests = [];
+		const tests: TestCaseResult[] = [];
 		this.suite.forEach(result => {
 			result.allTests().forEach(subTest => tests.push(subTest));
 		});
@@ -212,38 +271,40 @@ class TestSuiteResult extends TestResult {
 	 * @param {STATUS[]} statuses The statuses to match.
 	 * @returns {TestResult[]} The test results.
 	 */
-	allMatchingTests(...statuses) {
+	allMatchingTests(...statuses: TestStatus[]): TestCaseResult[] {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
 	/**
 	 * @returns {string[]} All the test files with 100% passing tests--nothing that was skipped, failed, or timed out.
 	 */
-	allPassingFiles() {
+	allPassingFiles(): string[] {
 		ensure.signature(arguments, []);
 
-		const allFiles = new Set();
-		const notPassFiles = new Set();
+		const allFiles = new Set<string>();
+		const notPassFiles = new Set<string>();
 		this.allTests()
 			.filter(test => test.filename !== undefined)
 			.forEach(test => {
-				allFiles.add(test.filename);
-				if (!test.isPass()) notPassFiles.add(test.filename);
+				allFiles.add(test.filename!);
+				if (!test.isPass()) notPassFiles.add(test.filename!);
 			});
 
 		return [ ...differencePolyfill(allFiles, notPassFiles) ];
 
-		function differencePolyfill(leftSet, rightSet) {
+		function differencePolyfill<T>(leftSet: Set<T>, rightSet: Set<T>): Set<T> {
 			// Included in Node v22.0; remove this polyfill and replace with left.difference(right) when that enters LTS
 			return new Set([ ...leftSet ].filter(value => !rightSet.has(value)));
 		}
 	}
 
 	/**
-	 * A summary count of this suite's results. Includes a count of each type of test result and the total number of tests.
-	 * @returns {{[STATUS.FAIL]: number, total: number, [STATUS.PASS]: number, [STATUS.SKIP]: number, [STATUS.TIMEOUT]: number}}
+	 * A summary count of this suite's results. Includes a count of each type of test result and the total number of
+	 * tests.
+	 * @returns {{[STATUS.FAIL]: number, total: number, [STATUS.PASS]: number, [STATUS.SKIP]: number, [STATUS.TIMEOUT]:
+	 *   number}}
 	 */
-	count() {
+	count(): TestCount {
 		const count = {
 			[STATUS.PASS]: 0,
 			[STATUS.FAIL]: 0,
@@ -262,10 +323,10 @@ class TestSuiteResult extends TestResult {
 
 	/**
 	 * Convert this suite into a bare object later deserialization.
-	 * @returns {object} The serialized object.
+	 * @returns {SerializedTestSuiteResult} The serialized object.
 	 * @see TestResult.deserialize
 	 */
-	serialize() {
+	serialize(): SerializedTestSuiteResult {
 		return {
 			type: "TestSuiteResult",
 			name: this._name,
@@ -280,13 +341,13 @@ class TestSuiteResult extends TestResult {
 	 * @param {any} that The thing to compare against
 	 * @returns {boolean}
 	 */
-	equals(that) {
+	equals(that: TestResult): boolean {
 		if (!(that instanceof TestSuiteResult)) return false;
 		if (this.suite.length !== that.suite.length) return false;
 
 		for (let i = 0; i < this.suite.length; i++) {
-			const thisResult = this.suite[i];
-			const thatResult = that.suite[i];
+			const thisResult = this.suite[i]!;
+			const thatResult = that.suite[i]!;
 			if (!thisResult.equals(thatResult)) return false;
 		}
 
@@ -308,7 +369,7 @@ class TestCaseResult extends TestResult {
 	 * @returns {TestSuiteResult | TestCaseResult} The result object.
 	 * @see TestResult#deserialize
 	 */
-	static deserialize(serializedResult) {
+	static override deserialize(serializedResult: SerializedTestCaseResult) {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
@@ -321,7 +382,7 @@ class TestCaseResult extends TestResult {
 		const { name, filename, status, error, timeout } = serializedResult;
 		return new TestCaseResult(name, status, { error: deserializeError(error), timeout, filename });
 
-		function deserializeError(serializedError) {
+		function deserializeError(serializedError?: string | SerializedError) {
 			if (serializedError === undefined || typeof serializedError === "string") return serializedError;
 
 			const { type, message, actual, expected, operator, stack, customFields } = serializedError;
@@ -338,13 +399,26 @@ class TestCaseResult extends TestResult {
 					ensure.unreachable(`Unrecognized error type '${type} when deserializing TestCaseResult: ${serializedResult}`);
 			}
 			error.stack = stack;
-			Object.entries(customFields).forEach(([ key, value ]) => { error[key] = value; });
+			Object.entries(customFields).forEach(([ key, value ]) => {
+				// @ts-expect-error - don't know how to get TypeScript to stop complaining about this
+				error[key] = value;
+			});
 			return error;
 		}
 	}
 
+	private _name: string[];
+	private _filename?: string;
+	private _status: TestStatus;
+	private _error?: string | Error;
+	private _timeout?: number;
+
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
-	constructor(names, status, { error, timeout, filename } = {}) {
+	constructor(
+		names: string | string[],
+		status: TestStatus,
+		{ error, timeout, filename }: { error?: string | Error, timeout?: number, filename?: string } = {}
+	) {
 		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
@@ -357,26 +431,26 @@ class TestCaseResult extends TestResult {
 	 * Is this result for a test suite? No!
 	 * @returns {boolean}
 	 */
-	get isSuite() { return false; }
+	get isSuite(): boolean { return false; }
 
 	/**
 	 * @returns {string | undefined} The file that contained the test, if any.
 	 */
-	get filename() {
+	get filename(): string | undefined {
 		return this._filename;
 	}
 
 	/**
 	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
 	 */
-	get name() {
+	get name(): string[] {
 		return this._name;
 	}
 
 	/**
-	 * @returns {STATUS} The status of this test (see {@link TestResult.STATUS}).
+	 * @returns {TestStatus} The status of this test (see {@link TestResult.STATUS}).
 	 */
-	get status() {
+	get status(): TestStatus {
 		return this._status;
 	}
 
@@ -384,24 +458,25 @@ class TestCaseResult extends TestResult {
 	 * @returns {Error | string} The error that caused this test to fail.
 	 * @throws {Error} Throws an error if this test didn't fail.
 	 */
-	get error() {
+	get error(): string | Error {
 		ensure.that(this.isFail(), "Attempted to retrieve error from a test that didn't fail");
-		return this._error;
+		return this._error!;
 	}
 
 	/**
-	 * @returns {number} The timeout that this test didn't satisfy. Note that this is not the actual amount of run time of the test.
+	 * @returns {number} The timeout that this test didn't satisfy. Note that this is not the actual amount of run time
+	 *   of the test.
 	 * @throws {Error} Throws an error if this test didn't time out.
 	 */
-	get timeout() {
+	get timeout(): number {
 		ensure.that(this.isTimeout(), "Attempted to retrieve timeout from a test that didn't time out");
-		return this._timeout;
+		return this._timeout!;
 	}
 
 	/**
 	 * @returns {boolean} True if this test either passed or was skipped.
 	 */
-	isSuccess() {
+	isSuccess(): boolean {
 		ensure.signature(arguments, []);
 
 		return SUCCESS_MAP[this.status];
@@ -410,7 +485,7 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {boolean} True if this test passed.
 	 */
-	isPass() {
+	isPass(): boolean {
 		ensure.signature(arguments, []);
 		return this.status === STATUS.PASS;
 	}
@@ -418,7 +493,7 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {boolean} True if this test failed.
 	 */
-	isFail() {
+	isFail(): boolean {
 		ensure.signature(arguments, []);
 		return this.status === STATUS.FAIL;
 	}
@@ -426,7 +501,7 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {boolean} True if this test was skipped.
 	 */
-	isSkip() {
+	isSkip(): boolean {
 		ensure.signature(arguments, []);
 		return this.status === STATUS.SKIP;
 	}
@@ -434,15 +509,15 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {boolean} True if this test timed out.
 	 */
-	isTimeout() {
+	isTimeout(): boolean {
 		ensure.signature(arguments, []);
 		return this.status === STATUS.TIMEOUT;
 	}
 
 	/**
-	 * @returns {TestResult[]} This test converted into a list of one.
+	 * @returns {TestCaseResult[]} This test converted into a list of one.
 	 */
-	allTests() {
+	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
 		return [ this ];
 	}
@@ -452,7 +527,7 @@ class TestCaseResult extends TestResult {
 	 * @returns {object} The serialized object.
 	 * @see TestResult.deserialize
 	 */
-	serialize() {
+	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);
 
 		return {
@@ -464,10 +539,11 @@ class TestCaseResult extends TestResult {
 			timeout: this._timeout,
 		};
 
-		function serializeError(error) {
+		function serializeError(error?: string | Error) {
 			if (error === undefined || typeof error === "string") return error;
 
-			const serialized = {
+			const serialized: SerializedError = {
+				type: "Error",
 				message: error.message,
 				stack: error.stack,
 				customFields: { ...error },
@@ -478,9 +554,6 @@ class TestCaseResult extends TestResult {
 				serialized.expected = error.expected;
 				serialized.operator = error.operator;
 			}
-			else {
-				serialized.type = "Error";
-			}
 
 			return serialized;
 		}
@@ -489,7 +562,7 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {string} A single character representing this test result: a dot for passed, a red X for failed, etc.
 	 */
-	renderCharacter() {
+	renderCharacter(): string {
 		ensure.signature(arguments, []);
 
 		return PROGRESS_RENDERING[this._status];
@@ -498,7 +571,7 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {string} A single-line string representing this test result. No details are provided beyond the name.
 	 */
-	renderSingleLine() {
+	renderSingleLine(): string {
 		ensure.signature(arguments, []);
 
 		const description = DESCRIPTION_RENDERING[this._status];
@@ -511,10 +584,10 @@ class TestCaseResult extends TestResult {
 	/**
 	 * @returns {string} A multi-line rendering of this test result. Full details are provided.
 	 */
-	renderMultiLine() {
+	renderMultiLine():string {
 		ensure.signature(arguments, []);
 
-		return renderName(this) + renderBody(this);
+		return this.#renderName() + this.#renderBody();
 	}
 
 	/**
@@ -523,11 +596,12 @@ class TestCaseResult extends TestResult {
 	 * @param {any} that The thing to compare against
 	 * @returns {boolean}
 	 */
-	equals(that) {
+	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
 		if (this._status !== that._status) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
+		// @ts-expect-error - strings are objects, so this._error.message is legit on strings
 		const sameError = this._error === undefined || this._error.message === that._error.message;
 
 		return sameName &&
@@ -536,79 +610,78 @@ class TestCaseResult extends TestResult {
 			this.filename === that.filename;
 	}
 
-}
+	#renderName(): string {
+		const name = this.name;
 
-function renderName(testCase) {
-	const name = testCase.name;
+		const suites = name.slice(0, name.length - 1);
+		const test = name[name.length - 1];
+		if (this.filename !== undefined) suites.unshift(path.basename(this.filename));
 
-	const suites = name.slice(0, name.length - 1);
-	const test = name[name.length - 1];
-	if (testCase.filename !== undefined) suites.unshift(path.basename(testCase.filename));
-
-	const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
-	return headerColor(suitesName + test + "\n");
-}
-
-function renderBody(testCase) {
-	const name = testCase.name;
-
-	switch (testCase._status) {
-		case STATUS.PASS:
-		case STATUS.SKIP:
-			return `\n${DESCRIPTION_RENDERING[testCase._status]}\n`;
-		case STATUS.FAIL:
-			return renderFailure(testCase, name);
-		case STATUS.TIMEOUT:
-			return timeoutMessageColor(`\nTimed out after ${testCase._timeout}ms\n`);
-		default:
-			throw new Error(`Unrecognized test result status: ${testCase._status}`);
+		const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
+		return headerColor(suitesName + test + "\n");
 	}
-}
 
-function renderFailure(testCase, name) {
-	let error;
-	if (testCase._error.stack === undefined) {
-		error = errorMessageColor(`\n${testCase._error}\n`);
-	} else {
-		error = `\n${renderStack(testCase._error, testCase.filename)}\n` +
-			highlightColor(`\n${name[name.length - 1]} »\n`) +
-			errorMessageColor(`${testCase._error.message}\n`);
-	}
-	const diff = renderDiff(testCase._error);
-
-	return `${error}${diff}`;
-}
-
-function renderStack(error, filename) {
-	const stack = error.stack.split("\n");
-	const highlighted = stack.map(line => {
-		if (!line.includes(filename)) return line;
-
-		line = line.replace(/    at/, "--> at");	// this code is vulnerable to changes in Node.js rendering
-		return headerColor(line);
-	});
-	return highlighted.join("\n");
-}
-
-function renderDiff(error) {
-	if (error.expected === undefined && error.actual === undefined) return "";
-	if (error.expected === null && error.actual === null) return "";
-
-	const expected = util.inspect(error.expected, { depth: Infinity }).split("\n");
-	const actual = util.inspect(error.actual, { depth: Infinity }).split("\n");
-	if (expected.length > 1 || actual.length > 1) {
-		for (let i = 0; i < Math.max(expected.length, actual.length); i++) {
-			const expectedLine = expected[i];
-			const actualLine = actual[i];
-
-			if (expectedLine !== actualLine) {
-				if (expected[i] !== undefined) expected[i] = diffColor(expected[i]);
-				if (actual[i] !== undefined) actual[i] = diffColor(actual[i]);
-			}
+	#renderBody(): string {
+		switch (this._status) {
+			case STATUS.PASS:
+			case STATUS.SKIP:
+				return `\n${DESCRIPTION_RENDERING[this._status]}\n`;
+			case STATUS.FAIL:
+				return this.#renderFailure();
+			case STATUS.TIMEOUT:
+				return timeoutMessageColor(`\nTimed out after ${this._timeout}ms\n`);
+			default:
+				throw new Error(`Unrecognized test result status: ${this._status}`);
 		}
 	}
 
-	return "\n" +
-		expectedColor("expected: ") + expected.join("\n") + "\n" +
-		actualColor("actual:   ") + actual.join("\n") + "\n";
+	#renderFailure(): string {
+		const name = this.name;
+
+		let error;
+		if (typeof this._error === "string" || this._error?.stack === undefined) {
+			error = errorMessageColor(`\n${this._error}\n`);
+		} else {
+			error = `\n${this.#renderStack(this._error)}\n` +
+				highlightColor(`\n${name[name.length - 1]} »\n`) +
+				errorMessageColor(`${this._error!.message}\n`);
+		}
+		const diff = this.#renderDiff(this._error as AssertionError);
+
+		return `${error}${diff}`;
+	}
+
+	#renderStack(error: Error): string {
+		const stack = error.stack!.split("\n");
+		const highlighted = stack.map(line => {
+			if (!line.includes(this.filename!)) return line;
+
+			line = line.replace(/    at/, "--> at");	// this code is vulnerable to changes in Node.js rendering
+			return headerColor(line);
+		});
+		return highlighted.join("\n");
+	}
+
+	#renderDiff(error: AssertionError): string {
+		if (error.expected === undefined && error.actual === undefined) return "";
+		if (error.expected === null && error.actual === null) return "";
+
+		const expected = util.inspect(error.expected, { depth: Infinity }).split("\n");
+		const actual = util.inspect(error.actual, { depth: Infinity }).split("\n");
+		if (expected.length > 1 || actual.length > 1) {
+			for (let i = 0; i < Math.max(expected.length, actual.length); i++) {
+				const expectedLine = expected[i];
+				const actualLine = actual[i];
+
+				if (expectedLine !== actualLine) {
+					if (expected[i] !== undefined) expected[i] = diffColor(expected[i]!);
+					if (actual[i] !== undefined) actual[i] = diffColor(actual[i]!);
+				}
+			}
+		}
+
+		return "\n" +
+			expectedColor("expected: ") + expected.join("\n") + "\n" +
+			actualColor("actual:   ") + actual.join("\n") + "\n";
+	}
 }
