@@ -15,6 +15,7 @@ const testConfig = require("./config/tests.conf");
 const lintJavascriptConfig = require("./config/eslint.javascript.config");
 const lintTypescriptConfig = require("./config/eslint.typescript.config");
 const swcConfig = require("./config/swc.conf");
+const path = require("node:path");
 
 module.exports = class Build {
 
@@ -120,9 +121,20 @@ function defineTasks(self) {
 
 		await tasks.runTasksAsync([ "compile" ]);
 
+		const srcTestFiles = self._paths.srcTestFiles().map(file => {
+			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
+			const relocatedFile = path.resolve(Paths.typescriptTargetDir, relativeFile);
+			if (file.endsWith(".ts")) {
+				console.log(file);
+			}
+			else {
+				return relocatedFile;
+			}
+		});
+
 		await tests.runAsync({
 			description: "TypeScript tests",
-			files: self._paths.srcTestFiles(),
+			files: srcTestFiles,
 			config: testConfig,
 			reporter: self._reporter,
 		});
