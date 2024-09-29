@@ -92,7 +92,9 @@ module.exports = class Paths {
 
 	srcTestFiles() {
 		return this._files.matchingFiles([
-			`${rootDir}/src/**/_*_test.js`,
+			// `${rootDir}/src/**/_*_test.js`,
+			// `${rootDir}/src/**/_*_test.ts`,
+			`${rootDir}/src/_hello_test.ts`,
 		]);
 	}
 

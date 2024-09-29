@@ -125,7 +125,7 @@ function defineTasks(self) {
 			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
 			const relocatedFile = path.resolve(Paths.targetDirDeleteme, relativeFile);
 			if (file.endsWith(".ts")) {
-				console.log(file);
+				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
 			}
 			else {
 				return relocatedFile;
@@ -149,6 +149,8 @@ function defineTasks(self) {
 			const filesToDelete = removed;
 
 			await Promise.all(filesToCopy.map(async ({ source, target }) => {
+				if (source.endsWith(".ts")) return;
+
 				await self._fileSystem.copyAsync(source, target);
 				report.progress();
 			}));
