@@ -1,12 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const suite = require("tests/test_suite").createFn;
-const assert = require("tests/assert");
-// const { suite, assert } = require("tests");
-const type = require("./type.js");
+import { suite, assert } from "../node_modules/tests/index.js";
+import * as type from "./type.js";
 
-module.exports = suite(({ describe, it }) => {
+export default suite(({ describe, it }) => {
 
 	describe("checker", ({ describe, it }) => {
 

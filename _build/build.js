@@ -149,7 +149,7 @@ function defineTasks(self) {
 			const filesToDelete = removed;
 
 			await Promise.all(filesToCopy.map(async ({ source, target }) => {
-				if (source.endsWith(".ts")) return;
+				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
 
 				await self._fileSystem.copyAsync(source, target);
 				report.progress();
