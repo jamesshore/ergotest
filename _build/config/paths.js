@@ -25,6 +25,8 @@ module.exports = class Paths {
 	}
 
 	static get rootDir() { return rootDir; }
+	static get srcDirDeleteme() { return `${rootDir}/src`; }
+	static get srcDirGlobsDeleteme() { return `**/*.js`; }
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
@@ -79,7 +81,7 @@ module.exports = class Paths {
 
 	typescriptFiles() {
 		return this._files.matchingFiles([
-			"**/*.ts",
+			`${rootDir}/src/**/*.ts`,
 		]);
 	}
 

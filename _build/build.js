@@ -123,6 +123,15 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("compile", async () => {
+		self._reporter.quietStartAsync("Copying JavaScript", async (report) => {
+			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
+				Paths.srcDirDeleteme, Paths.typescriptBuildDir, Paths.srcDirGlobsDeleteme, Paths.srcDirGlobsDeleteme
+			);
+			// [ ...added, ...changed ].map(async (file) => await self._fileSystem.copy)
+
+			// console.log({ added, removed, changed });
+		});
+
 		await typescript.compileAsync({
 			description: "TypeScript",
 			files: self._paths.typescriptFiles(),
