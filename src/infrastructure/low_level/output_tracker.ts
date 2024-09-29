@@ -1,18 +1,22 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const ensure = require("../../util/ensure");
-const EventEmitter = require("node:events");
+import * as ensure from "../../util/ensure.js";
+import EventEmitter from "node:events";
 
 /** A utility class for infrastructure wrappers to use track output */
-module.exports = class OutputTracker {
+module.exports = class OutputTracker<T> {
 
-	static create(emitter, event) {
+	static create<T>(emitter: EventEmitter, event: string): OutputTracker<T> {
 		ensure.signature(arguments, [ EventEmitter, String ]);
 		return new OutputTracker(emitter, event);
 	}
 
-	constructor(emitter, event) {
+	private readonly _emitter: EventEmitter;
+	private readonly _event: string;
+	private readonly _data: T[];
+	private readonly _trackerFn: (data: T) => void;
+
+	constructor(emitter: EventEmitter, event: string) {
 		this._emitter = emitter;
 		this._event = event;
 		this._data = [];
