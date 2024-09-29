@@ -4,7 +4,7 @@ import * as ensure from "../../util/ensure.js";
 import EventEmitter from "node:events";
 
 /** A utility class for infrastructure wrappers to use track output */
-module.exports = class OutputTracker<T> {
+export class OutputTracker<T> {
 
 	static create<T>(emitter: EventEmitter, event: string): OutputTracker<T> {
 		ensure.signature(arguments, [ EventEmitter, String ]);
@@ -40,4 +40,4 @@ module.exports = class OutputTracker<T> {
 		this._emitter.off(this._event, this._trackerFn);
 	}
 
-};
+}

@@ -1,11 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const OutputTracker = require("./output_tracker");
-const EventEmitter = require("node:events");
+import { test, assert } from "tests";
+import { OutputTracker } from "./output_tracker.js";
+import EventEmitter from "node:events";
 
-module.exports = suite("OutputTracker", ({ it }) => {
+export default test(({ it }) => {
 
 	const EVENT = "my_event";
 
