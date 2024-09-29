@@ -1,5 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
+/* eslint @typescript-eslint/no-explicit-any: "off" */
+// There are a lot of weird JavaScript manipulations in these tests, so we work around the type-checker with "as any"
+
 import { suite, assert } from "../node_modules/tests/index.js";
 import * as type from "./type.js";
 
@@ -51,7 +54,7 @@ export default suite(({ describe, it }) => {
 		});
 
 		it("checks custom types", function() {
-			function MyClass() {}
+			class MyClass {}
 
 			const myInstance = new MyClass();
 
@@ -122,8 +125,8 @@ export default suite(({ describe, it }) => {
 		});
 
 		it("provides class names when using class instances", function() {
-			function One() {}
-			function Two() {}
+			const One = function One() {} as any;
+			const Two = function Two() {} as any;
 
 			assert.equal(check(new One(), Two), "argument must be a Two instance, but it was a One instance");
 		});
@@ -136,10 +139,10 @@ export default suite(({ describe, it }) => {
 
 	describe("describer", ({ describe, it }) => {
 
-		function MyClass() {}
+		const MyClass = function MyClass() {} as any;
 
-		const forceAnonymity = {};
-		const AnonClass = forceAnonymity.whatever = function() {};
+		const forceAnonymity = {} as any;
+		const AnonClass = forceAnonymity.whatever = function() {} as any;
 
 		const myDescribe = type.describe;
 
@@ -192,9 +195,9 @@ export default suite(({ describe, it }) => {
 		});
 
 		it("optionally uses articles", function() {
-			function MyClass() {}
-			const forceAnonymity = {};
-			const AnonClass = forceAnonymity.whatever = function() {};
+			const MyClass = function MyClass() {} as any;
+			const forceAnonymity = {} as any;
+			const AnonClass = forceAnonymity.whatever = function() {} as any;
 
 			const options = { articles: true };
 
