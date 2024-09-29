@@ -37,7 +37,6 @@ module.exports = class Build {
 		}]]);
 
 		if (this._paths === undefined || resetTreeCache) {
-			await this._fileSystem.deleteAsync(Paths.typescriptBuildDir);
 			this._paths = await scanFileTreeAsync(this._fileSystem, this._reporter);
 		}
 		if (this._tasks === undefined) {
@@ -123,11 +122,21 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("compile", async () => {
-		self._reporter.quietStartAsync("Copying JavaScript", async (report) => {
+		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
 				Paths.srcDirDeleteme, Paths.typescriptBuildDir, Paths.srcDirGlobsDeleteme, Paths.srcDirGlobsDeleteme
 			);
-			// [ ...added, ...changed ].map(async (file) => await self._fileSystem.copy)
+			const filesToCopy = [ ...added, ...changed ];
+			const filesToDelete = removed;
+
+			await Promise.all(filesToCopy.map(async ({ source, target }) => {
+				await self._fileSystem.copyAsync(source, target);
+				report.progress();
+			}));
+			await Promise.all(filesToDelete.map(async ({ target }) => {
+				await self._fileSystem.deleteAsync(target);
+				report.progress();
+			}));
 
 			// console.log({ added, removed, changed });
 		});
