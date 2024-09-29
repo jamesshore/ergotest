@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import FakeTimers, { NodeTimer } from "@sinonjs/fake-timers";
-import * as ensure from "util/ensure";
+import * as ensure from "../util/ensure.js";
 
 const FAKE_START_TIME = 0;
 
