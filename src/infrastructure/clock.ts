@@ -49,7 +49,7 @@ export class Clock {
 	 * @param {number} [options.now=0] simulated current time
 	 * @returns {Clock} the simulated clock
 	 */
-	static createNull(options: NulledClockConfiguration) {
+	static createNull(options?: NulledClockConfiguration) {
 		return new Clock(nullGlobals(options));
 	}
 
