@@ -3,10 +3,10 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 // There are a lot of weird JavaScript manipulations in these tests, so we work around the type-checker with "as any"
 
-import { suite, assert } from "../node_modules/tests/index.js";
+import { test, assert } from "../node_modules/tests/index.js";
 import * as type from "./type.js";
 
-export default suite(({ describe, it }) => {
+export default test(({ describe, it }) => {
 
 	describe("checker", ({ describe, it }) => {
 

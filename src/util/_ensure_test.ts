@@ -1,10 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const ensure = require("./ensure.js");
+import { test, assert } from "tests";
+import * as ensure from "./ensure.js";
 
-module.exports = suite(({ describe, it }) => {
+export default test(({ describe, it }) => {
 
 	describe("condition checking", ({ describe, it }) => {
 
@@ -38,7 +37,7 @@ module.exports = suite(({ describe, it }) => {
 		});
 
 		it("checks one argument", () => {
-			assert.noException(signature([ "foo" ], [ String ]), "valid");
+			assert.noException(signature([ "foo" ], [ String ]));
 			assertEnsureError(
 				signature([ "foo", "bar" ], [ String ]),
 				/Function called with too many arguments: expected 1 but got 2/,
@@ -48,7 +47,7 @@ module.exports = suite(({ describe, it }) => {
 		});
 
 		it("checks multiple arguments", () => {
-			assert.noException(signature([ "foo", "bar", "baz" ], [ String, String, String ]), "valid");
+			assert.noException(signature([ "foo", "bar", "baz" ], [ String, String, String ]));
 			assertEnsureError(
 				signature([ "foo", "bar", "baz" ], [ String, String]),
 				/Function called with too many arguments: expected 2 but got 3/,
@@ -119,12 +118,14 @@ module.exports = suite(({ describe, it }) => {
 		});
 
 		it("supports custom types", () => {
-			function MyClass() {}
-			const NoName = function() {};
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const MyClass = function MyClass() {} as any;
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const NoName = function() {} as any;
 			delete NoName.name;
 
-			assert.noException(signature([ new MyClass() ], [ MyClass ]), "valid MyClass");
-			assert.noException(signature([ new NoName() ], [ NoName ]), "valid anon class");
+			assert.noException(signature([ new MyClass() ], [ MyClass ]));
+			assert.noException(signature([ new NoName() ], [ NoName ]));
 			assertEnsureError(
 				signature([ {} ], [ MyClass ]),
 				/Argument #1 must be a MyClass instance, but it was an object/,
@@ -143,7 +144,7 @@ module.exports = suite(({ describe, it }) => {
 		});
 
 		it("supports multiple types", () => {
-			assert.noException(signature([ 1 ], [[ String, Number ]]), "valid");
+			assert.noException(signature([ 1 ], [[ String, Number ]]));
 			assertEnsureError(
 				signature([ 1 ], [ [ String, Boolean, function MyClass() {} ] ]),
 				/Argument #1 must be a string, a boolean, or a MyClass instance, but it was a number/,
@@ -152,14 +153,14 @@ module.exports = suite(({ describe, it }) => {
 		});
 
 		it("allows optional arguments", () => {
-			assert.noException(signature([ 1 ], [ Number, [ undefined, String ] ]), "optional parameter");
+			assert.noException(signature([ 1 ], [ Number, [ undefined, String ] ]));
 			assertEnsureError(
 				signature([], [ Number ]),
 				/Argument #1 must be a number, but it was undefined/,
 				"required parameter"
 			);
 
-			assert.noException(signature([ {} ], [ [undefined, Object] ]), "filled-in optional object");
+			assert.noException(signature([ {} ], [ [undefined, Object] ]));
 
 			assertEnsureError(
 				signature([ "foo" ], [ [undefined, Object] ]),
@@ -196,19 +197,22 @@ module.exports = suite(({ describe, it }) => {
 
 });
 
-
-function wrap(fn) {
-	return function() {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+function wrap<T extends Function>(fn: T): (...args: unknown[]) => T {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	return <any>function() {
 		const outerArgs = arguments;
 		return function() {
-			fn.apply(this, outerArgs);
+			fn.apply(null, outerArgs);
 		};
 	};
 }
 
-function assertEnsureError(fn, expectedRegexOrExactString, message) {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+function assertEnsureError(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
 	try {
 		fn();
+		assert.fail("Expected exception");
 	}
 	catch (err) {
 		if (expectedRegexOrExactString === undefined) return;
@@ -221,5 +225,4 @@ function assertEnsureError(fn, expectedRegexOrExactString, message) {
 		assert.notIncludes(err.stack, "ensure.js", "should filter stack trace");
 		return;
 	}
-	assert.fail(message, "Expected exception");
 }
