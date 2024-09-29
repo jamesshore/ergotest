@@ -27,6 +27,7 @@ module.exports = class Paths {
 
 	static get rootDir() { return rootDir; }
 	static get srcDirDeleteme() { return `${rootDir}/src`; }
+	static get targetDirDeleteme() { return `${typescriptTargetDir}/src`; }
 	static get srcDirGlobsDeleteme() { return `**/*.js`; }
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
@@ -59,6 +60,14 @@ module.exports = class Paths {
 			`${rootDir}/_build/node_modules/tests/vendor/**`,
 			`${rootDir}/src/node_modules/tests/vendor/**`,
 			`${rootDir}/generated/**`,
+		];
+	}
+
+	static get dependencyTreeGlobsToExclude() {
+		return [
+			`${rootDir}/node_modules/**`,
+			`${rootDir}/_build/node_modules/tests/vendor/**`,
+			`${rootDir}/src/node_modules/tests/vendor/**`,
 		];
 	}
 

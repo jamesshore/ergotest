@@ -71,7 +71,7 @@ function defineTasks(self) {
 	const tasks = Tasks.create({ fileSystem: self._fileSystem, incrementalDir: self._paths.tasksDir });
 	const version = Version.create(self._fileSystem);
 	const lint = Lint.create(self._fileSystem);
-	const tests = Tests.create(self._fileSystem, Paths.universalGlobsToExclude);
+	const tests = Tests.create(self._fileSystem, Paths.dependencyTreeGlobsToExclude);
 	const typescript = TypeScript.create(self._fileSystem);
 
 	tasks.defineTask("default", async() => {
@@ -123,7 +123,7 @@ function defineTasks(self) {
 
 		const srcTestFiles = self._paths.srcTestFiles().map(file => {
 			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
-			const relocatedFile = path.resolve(Paths.typescriptTargetDir, relativeFile);
+			const relocatedFile = path.resolve(Paths.targetDirDeleteme, relativeFile);
 			if (file.endsWith(".ts")) {
 				console.log(file);
 			}
@@ -143,7 +143,7 @@ function defineTasks(self) {
 	tasks.defineTask("compile", async () => {
 		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.srcDirDeleteme, Paths.typescriptTargetDir, Paths.srcDirGlobsDeleteme, Paths.srcDirGlobsDeleteme
+				Paths.srcDirDeleteme, Paths.targetDirDeleteme
 			);
 			const filesToCopy = [ ...added, ...changed ];
 			const filesToDelete = removed;
