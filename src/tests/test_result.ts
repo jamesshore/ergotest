@@ -40,7 +40,7 @@ const DESCRIPTION_RENDERING = {
 	[STATUS.TIMEOUT]: Colors.brightPurple("timeout"),
 };
 
-type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
+export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
 type TestStatus = typeof STATUS[keyof typeof STATUS];
 

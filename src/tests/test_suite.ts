@@ -53,13 +53,17 @@ export type ItFn = Test;
 export type BeforeAfterFn = Test;
 type Milliseconds = number;
 
+export interface TestConfig {
+	[name: string]: unknown,
+}
+
 interface RecursiveRunOptions {
 	name: string[];
 	filename?: string;
 	clock: Clock,
 	notifyFn: (result: TestResult) => void,
 	timeout: Milliseconds,
-	config: Record<string, unknown>,
+	config: TestConfig,
 }
 
 
@@ -245,7 +249,7 @@ export class TestSuite implements Runnable {
 		notifyFn = () => {},
 		clock = Clock.create(),
 	}: {
-		config?: Record<string, unknown>,
+		config?: TestConfig,
 		notifyFn?: (result: TestResult) => void,
 		clock?: Clock,
 	} = {}) {

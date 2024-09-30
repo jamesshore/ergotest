@@ -4,16 +4,7 @@ import { TestSuite } from "./test_suite.js";
 import { TestResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
-
-export interface WorkerInput {
-	modulePaths: string[],
-	config: Record<string, unknown>
-}
-
-export interface WorkerOutput {
-	type: "progress" | "complete",
-	result: TestResult,
-}
+import { WorkerInput } from "./test_runner.js";
 
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 

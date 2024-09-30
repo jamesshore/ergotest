@@ -1,21 +1,36 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const ensure = require("../util/ensure");
-const TestSuite = require("./test_suite");
-const TestResult = require("./test_result");
-const child_process = require("node:child_process");
-const path = require("node:path");
-const Clock = require("../infrastructure/clock");
+import * as ensure from "../util/ensure.js";
+import { TestSuite, TestConfig } from "./test_suite.js";
+import { SerializedTestResult, TestResult } from "./test_result.js";
+import child_process, { ChildProcess } from "node:child_process";
+import path from "node:path";
+import { Clock } from "../infrastructure/clock.js";
 // dependency: ./test_runner_child_process.js
 
 const WORKER_FILENAME = path.resolve(__dirname, "./test_runner_child_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
+/** For internal use only. */
+export interface WorkerInput {
+	modulePaths: string[],
+	config?: Record<string, unknown>
+}
+
+/** For internal use only. */
+export type WorkerOutput = {
+	type: "keepalive"
+} | {
+	type: "progress" | "complete",
+	result: SerializedTestResult,
+}
+
+export type NotifyFn = (testResult: TestResult) => void;
+
 /**
  * Loads and runs tests in an isolated process.
  */
-module.exports = class TestRunner {
+export class TestRunner {
 
 	/**
 	 * Factory method. Creates the test runner.
@@ -25,8 +40,10 @@ module.exports = class TestRunner {
 		return new TestRunner(Clock.create());
 	}
 
+	private readonly _clock: Clock;
+
 	/** Only for use by TestRunner's tests. (Use a factory method instead.) */
-	constructor(clock) {
+	constructor(clock: Clock) {
 		this._clock = clock;
 	}
 
@@ -34,12 +51,16 @@ module.exports = class TestRunner {
 	 * Load and run a set of test modules in an isolated process.
 	 * @param {string[]} modulePaths The test files to load and run.
 	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result` parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<void>}
 	 */
-	async runIsolatedAsync(modulePaths, {
+	async runIsolatedAsync(modulePaths: string[], {
 		config,
 		notifyFn = () => {},
+	}: {
+		config?: Record<string, unknown>,
+		notifyFn?: NotifyFn,
 	} = {}) {
 		ensure.signature(arguments, [ Array, [ undefined, {
 			config: [ undefined, Object ],
@@ -53,10 +74,16 @@ module.exports = class TestRunner {
 		return result;
 	}
 
-};
+}
 
-async function runTestsInChildProcess(child, clock, modulePaths, config, notifyFn) {
-	const result = await new Promise((resolve, reject) => {
+async function runTestsInChildProcess(
+	child: ChildProcess,
+	clock: Clock,
+	modulePaths: string[],
+	config: TestConfig | undefined,
+	notifyFn: NotifyFn,
+) {
+	const result = await new Promise<TestResult>((resolve, reject) => {
 		const workerData = { modulePaths, config };
 		child.send(workerData);
 
@@ -66,12 +93,12 @@ async function runTestsInChildProcess(child, clock, modulePaths, config, notifyF
 		});
 
 		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve);
-		child.on("message", message => handleMessage(message, aliveFn, cancelFn, notifyFn, resolve));
+		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, notifyFn, resolve));
 	});
 	return result;
 }
 
-function detectInfiniteLoops(clock, resolve) {
+function detectInfiniteLoops(clock: Clock, resolve: (result: TestResult) => void) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
 		const errorResult = TestResult.suite([], [
 			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
@@ -81,7 +108,13 @@ function detectInfiniteLoops(clock, resolve) {
 	return { aliveFn, cancelFn };
 }
 
-function handleMessage(message, aliveFn, cancelFn, notifyFn, resolve) {
+function handleMessage(
+	message: WorkerOutput,
+	aliveFn: () => void,
+	cancelFn: () => void,
+	notifyFn: NotifyFn,
+	resolve: (result: TestResult) => void,
+) {
 	switch (message.type) {
 		case "keepalive":
 			aliveFn();
@@ -94,11 +127,12 @@ function handleMessage(message, aliveFn, cancelFn, notifyFn, resolve) {
 			resolve(TestResult.deserialize(message.result));
 			break;
 		default:
+			// @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime
 			ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
 	}
 }
 
-async function killChildProcess(child) {
+async function killChildProcess(child: ChildProcess): Promise<void> {
 	await new Promise((resolve, reject) => {
 		child.kill("SIGKILL");    // specific signal not tested
 		child.on("close", resolve);
