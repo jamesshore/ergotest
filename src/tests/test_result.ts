@@ -206,7 +206,7 @@ export abstract class TestResult {
 /**
  * The result of running a test suite.
  */
-class TestSuiteResult extends TestResult {
+export class TestSuiteResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
@@ -226,16 +226,16 @@ class TestSuiteResult extends TestResult {
 		return new TestSuiteResult(name, deserializedSuite, filename);
 	}
 
-	private _name: string[];
-	private _filename?: string;
-	private suite: TestResult[];
+	private readonly _name: string[];
+	private readonly _filename?: string;
+	private readonly _children: TestResult[];
 
 	/** Internal use only. (Use {@link TestResult.suite} instead.) */
 	constructor(names: string | string[], results: TestResult[], filename?: string) {
 		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
-		this.suite = results;
+		this._children = results;
 	}
 
 	/**
@@ -259,6 +259,13 @@ class TestSuiteResult extends TestResult {
 	}
 
 	/**
+	 * @returns { TestResult[] } This suite's direct children, which can either be test case results or test suite results.
+	 */
+	get children(): TestResult[] {
+		return this._children;
+	}
+
+	/**
 	 * @returns {boolean} True if this test either passed or was skipped.
 	 */
 	isSuccess(): boolean {
@@ -274,7 +281,7 @@ class TestSuiteResult extends TestResult {
 		ensure.signature(arguments, []);
 
 		const tests: TestCaseResult[] = [];
-		this.suite.forEach(result => {
+		this._children.forEach(result => {
 			result.allTests().forEach(subTest => tests.push(subTest));
 		});
 		return tests;
@@ -345,7 +352,7 @@ class TestSuiteResult extends TestResult {
 			type: "TestSuiteResult",
 			name: this._name,
 			filename: this._filename,
-			suite: this.suite.map(test => test.serialize()),
+			suite: this._children.map(test => test.serialize()),
 		};
 	}
 
@@ -357,11 +364,11 @@ class TestSuiteResult extends TestResult {
 	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestSuiteResult)) return false;
-		if (this.suite.length !== that.suite.length) return false;
+		if (this._children.length !== that._children.length) return false;
 
-		for (let i = 0; i < this.suite.length; i++) {
-			const thisResult = this.suite[i]!;
-			const thatResult = that.suite[i]!;
+		for (let i = 0; i < this._children.length; i++) {
+			const thisResult = this._children[i]!;
+			const thatResult = that._children[i]!;
 			if (!thisResult.equals(thatResult)) return false;
 		}
 
@@ -375,7 +382,7 @@ class TestSuiteResult extends TestResult {
 /**
  * The result of running an individual test.
  */
-class TestCaseResult extends TestResult {
+export class TestCaseResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.

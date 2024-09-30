@@ -1,22 +1,21 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const { AssertionError } = require("node:assert");
-const TestResult = require("./test_result");
-const util = require("node:util");
-const colors = require("../infrastructure/colors");
+import { test, assert } from "tests";
+import { AssertionError } from "node:assert";
+import { TestCaseResult, TestResult } from "./test_result.js";
+import util from "node:util";
+import { Colors } from "../infrastructure/colors.js";
 
-module.exports = suite(({ describe, it }) => {
+export default test(({ describe }) => {
 
 	describe("test suite", ({ it }) => {
 
 		it("has a name and list of test results", () => {
-			const list = [ createPass("test 1"), createPass("test 2") ];
+			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
 			const result = TestResult.suite([ "my name" ], list);
 
 			assert.deepEqual(result.name, [ "my name" ]);
-			assert.deepEqual(result.suite, list);
+			assert.deepEqual(result.children, list);
 		});
 
 		it("name can include parent suites", () => {
@@ -74,7 +73,7 @@ module.exports = suite(({ describe, it }) => {
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestResult.FAIL, "status");
-			assert.equal(result.error.message, "my error", "error");
+			assert.equal((result.error as Error).message, "my error", "error");
 		});
 
 		it("failing tests can have a string for the error", () => {
@@ -319,10 +318,10 @@ module.exports = suite(({ describe, it }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized);
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
-			assert.equal(deserialized.error.stack, error.stack);
+			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 
 		it("handles other errors", () => {
@@ -330,23 +329,28 @@ module.exports = suite(({ describe, it }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized);
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
-			assert.equal(deserialized.error.stack, error.stack);
+			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 
 		it("propagates custom fields", () => {
-			const error = new Error("my message");
+			interface MyError extends Error {
+				custom1: string,
+				custom2: string,
+			}
+
+			const error = new Error("my message") as MyError;
 			error.custom1 = "custom1";
 			error.custom2 = "custom2";
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized);
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
-			assert.equal(deserialized.error.stack, error.stack);
+			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 
 	});
@@ -355,47 +359,47 @@ module.exports = suite(({ describe, it }) => {
 	describe("single-character rendering", ({ it }) => {
 
 		it("renders progress marker", () => {
-			assert.equal(createPass().renderCharacter(), colors.white("."), "pass");
-			assert.equal(createFail().renderCharacter(), colors.brightRed.inverse("X"), "fail");
-			assert.equal(createSkip().renderCharacter(), colors.cyan.dim("_"), "skip");
-			assert.equal(createTimeout().renderCharacter(), colors.purple.inverse("!"), "timeout");
+			assert.equal(createPass().renderCharacter(), Colors.white("."), "pass");
+			assert.equal(createFail().renderCharacter(), Colors.brightRed.inverse("X"), "fail");
+			assert.equal(createSkip().renderCharacter(), Colors.cyan.dim("_"), "skip");
+			assert.equal(createTimeout().renderCharacter(), Colors.purple.inverse("!"), "timeout");
 		});
 
 	});
 
 
-	describe("single-line rendering", () => {
+	describe("single-line rendering", ({ it }) => {
 
 		it("pass", () => {
 			const result = createPass({ name: "my name" });
-			assert.equal(result.renderSingleLine(), colors.green("passed") + " my name\n");
+			assert.equal(result.renderSingleLine(), Colors.green("passed") + " my name\n");
 		});
 
 		it("skip", () => {
 			const result = createSkip({ name: "my name" });
-			assert.equal(result.renderSingleLine(), colors.brightCyan("skipped") + " my name\n");
+			assert.equal(result.renderSingleLine(), Colors.brightCyan("skipped") + " my name\n");
 		});
 
 		it("timeout", () => {
 			const result = createTimeout({ name: "my name" });
-			assert.equal(result.renderSingleLine(), colors.brightPurple("timeout") + " my name\n");
+			assert.equal(result.renderSingleLine(), Colors.brightPurple("timeout") + " my name\n");
 		});
 
 		it("fail", () => {
 			const result = createFail({ name: "my name" });
-			assert.equal(result.renderSingleLine(), colors.brightRed("failed") + " my name\n");
+			assert.equal(result.renderSingleLine(), Colors.brightRed("failed") + " my name\n");
 		});
 
 		it("renders multi-level names", () => {
 			const test = createPass({ name: [ "parent", "child", "test" ]});
-			assert.equal(test.renderSingleLine(), colors.green("passed") + " parent » child » test\n");
+			assert.equal(test.renderSingleLine(), Colors.green("passed") + " parent » child » test\n");
 		});
 
 		it("includes filename when it exists", () => {
 			const test = createPass({ filename: "/my/filename.js", name: [ "parent", "child", "test" ]});
 			assert.equal(
 				test.renderSingleLine(),
-				colors.green("passed") + " " + colors.brightWhite("filename.js") + " » parent » child » test\n");
+				Colors.green("passed") + " " + Colors.brightWhite("filename.js") + " » parent » child » test\n");
 		});
 
 	});
@@ -405,19 +409,19 @@ module.exports = suite(({ describe, it }) => {
 
 		it("'pass' renders name and description", () => {
 			const result = createPass({ name: "my name" });
-			assert.equal(result.renderMultiLine(), colors.brightWhite.bold("my name\n") + "\n" + colors.green("passed") + "\n");
+			assert.equal(result.renderMultiLine(), Colors.brightWhite.bold("my name\n") + "\n" + Colors.green("passed") + "\n");
 		});
 
 		it("'skip' renders name and description", () => {
 			const result = createSkip({ name: "my name" });
-			assert.equal(result.renderMultiLine(), colors.brightWhite.bold("my name\n") + "\n" + colors.brightCyan("skipped") + "\n");
+			assert.equal(result.renderMultiLine(), Colors.brightWhite.bold("my name\n") + "\n" + Colors.brightCyan("skipped") + "\n");
 		});
 
 		it("'timeout' renders name and timeout", () => {
 			const result = createTimeout({ name: "my name", timeout: 42 });
 			assert.equal(
 				result.renderMultiLine(),
-				colors.brightWhite.bold("my name\n") + colors.purple("\nTimed out after 42ms\n"),
+				Colors.brightWhite.bold("my name\n") + Colors.purple("\nTimed out after 42ms\n"),
 			);
 		});
 
@@ -425,7 +429,7 @@ module.exports = suite(({ describe, it }) => {
 			const result = createPass({ name: [ "parent", "child", "test" ]});
 			assert.equal(
 				result.renderMultiLine(),
-				colors.brightWhite.bold("parent » child\n» test\n") + "\n" + colors.green("passed") + "\n",
+				Colors.brightWhite.bold("parent » child\n» test\n") + "\n" + Colors.green("passed") + "\n",
 			);
 		});
 
@@ -433,7 +437,7 @@ module.exports = suite(({ describe, it }) => {
 			const result = createPass({ filename: "/my/filename.js", name: [ "parent", "child", "test" ]});
 			assert.deepEqual(
 				result.renderMultiLine(),
-				colors.brightWhite.bold("filename.js » parent » child\n» test\n") + "\n" + colors.green("passed") + "\n",
+				Colors.brightWhite.bold("filename.js » parent » child\n» test\n") + "\n" + Colors.green("passed") + "\n",
 			);
 		});
 
@@ -446,18 +450,18 @@ module.exports = suite(({ describe, it }) => {
 
 				const result = createFail({ name: "my name", error });
 				assert.equal(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
+					Colors.brightWhite.bold("my name\n") +
 					"\nmy stack\n" +
-					colors.brightWhite("\nmy name »\n") +
-					colors.brightRed("my error\n")
+					Colors.brightWhite("\nmy name »\n") +
+					Colors.brightRed("my error\n")
 				);
 			});
 
 			it("doesn't render stack trace when it doesn't exist (presumably, because error is a string)", () => {
 				const result = createFail({ name: "my name", error: "my error" });
 				assert.equal(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
-					colors.brightRed("\nmy error\n")
+					Colors.brightWhite.bold("my name\n") +
+					Colors.brightRed("\nmy error\n")
 				);
 			});
 
@@ -476,7 +480,7 @@ module.exports = suite(({ describe, it }) => {
 					"    at async TestSuite._recursiveRunAsync (file:///Users/jshore/Documents/Projects/ai_chronicles/_build/util/tests/test_suite.js:110:17)\n";
 
 				const expectedStack = "Error: my error\n" +
-					colors.brightWhite.bold("--> at file:///Users/jshore/Documents/Projects/ai_chronicles/_build/util/tests/test_result.test.js:306:11") + "\n" +
+					Colors.brightWhite.bold("--> at file:///Users/jshore/Documents/Projects/ai_chronicles/_build/util/tests/test_result.test.js:306:11") + "\n" +
 					"    at file:///Users/jshore/Documents/Projects/ai_chronicles/_build/util/tests/test_suite.js:222:10\n" +
 					"    at file:///Users/jshore/Documents/Projects/ai_chronicles/_build/util/infrastructure/clock.js:68:26\n" +
 					"    at new Promise (<anonymous>)\n" +
@@ -496,19 +500,21 @@ module.exports = suite(({ describe, it }) => {
 			});
 
 			it("renders expected and actual values (when they exist)", () => {
-				const error = new Error("my error");
+				const error = new AssertionError({
+					message: "my error",
+					expected: "my expected",
+					actual: "my actual",
+				});
 				error.stack = "my stack";
-				error.expected = "my expected";
-				error.actual = "my actual";
 
 				const result = createFail({ name: "my name", error });
 				assert.equal(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
+					Colors.brightWhite.bold("my name\n") +
 					"\nmy stack\n" +
-					colors.brightWhite("\nmy name »\n") +
-					colors.brightRed("my error\n") +
-					"\n" + colors.green("expected: ") + util.inspect("my expected") + "\n" +
-					colors.brightRed("actual:   ") + util.inspect("my actual") + "\n"
+					Colors.brightWhite("\nmy name »\n") +
+					Colors.brightRed("my error\n") +
+					"\n" + Colors.green("expected: ") + util.inspect("my expected") + "\n" +
+					Colors.brightRed("actual:   ") + util.inspect("my actual") + "\n"
 				);
 			});
 
@@ -516,27 +522,29 @@ module.exports = suite(({ describe, it }) => {
 				// This test depends on util.inspect() behavior, which is not guaranteed to remain consistent across
 				// Node versions, so it could break after a Node version upgrade.
 
-				const error = new Error("my error");
+				const error = new AssertionError({
+					message: "my error",
+					expected: "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n",
+					actual:   "1234567890\n1234567890\nXXXXXXXXXX\n1234567890\n1234567890\n1234567890\n1234567890\n",
+				});
 				error.stack = "my stack";
-				error.expected = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
-				error.actual   = "1234567890\n1234567890\nXXXXXXXXXX\n1234567890\n1234567890\n1234567890\n1234567890\n";
 
 				const result = createFail({ name: "my name", error });
 				assert.deepEqual(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
+					Colors.brightWhite.bold("my name\n") +
 					"\nmy stack\n" +
-					colors.brightWhite("\nmy name »\n") +
-					colors.brightRed("my error\n") +
-					"\n" + colors.green("expected: ") + "'1234567890\\n' +\n" +
+					Colors.brightWhite("\nmy name »\n") +
+					Colors.brightRed("my error\n") +
+					"\n" + Colors.green("expected: ") + "'1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
 					"  '1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
 					"  '1234567890\\n'\n" +
-					colors.brightRed("actual:   ") + "'1234567890\\n' +\n" +
+					Colors.brightRed("actual:   ") + "'1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
-					colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" +
+					Colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" +
 					"  '1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
 					"  '1234567890\\n' +\n" +
@@ -550,20 +558,22 @@ module.exports = suite(({ describe, it }) => {
 				const oneLine = "1234567890123456789012345678901234567890\n";
 				const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
 
-				const error = new Error("my error");
+				const error = new AssertionError({
+					message: "my error",
+					expected: oneLine,
+					actual: twoLines,
+				});
 				error.stack = "my stack";
-				error.expected = oneLine;
-				error.actual = twoLines;
 
 				const result = createFail({ name: "my name", error });
 				assert.deepEqual(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
+					Colors.brightWhite.bold("my name\n") +
 					"\nmy stack\n" +
-					colors.brightWhite("\nmy name »\n") +
-					colors.brightRed("my error\n") +
-					"\n" + colors.green("expected: ") + colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" +
-					colors.brightRed("actual:   ") + colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'") + "\n"
+					Colors.brightWhite("\nmy name »\n") +
+					Colors.brightRed("my error\n") +
+					"\n" + Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" +
+					Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'") + "\n"
 				);
 			});
 
@@ -573,26 +583,28 @@ module.exports = suite(({ describe, it }) => {
 				const sevenLines = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
 				const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
 
-				const error = new Error("my error");
+				const error = new AssertionError({
+					message: "my error",
+					expected: sevenLines,
+					actual: twoLines,
+				});
 				error.stack = "my stack";
-				const result = createFail({ name: "my name", error });
 
-				error.expected = sevenLines;
-				error.actual = twoLines;
+				const result = createFail({ name: "my name", error });
 				assert.deepEqual(result.renderMultiLine(),
-					colors.brightWhite.bold("my name\n") +
+					Colors.brightWhite.bold("my name\n") +
 					"\nmy stack\n" +
-					colors.brightWhite("\nmy name »\n") +
-					colors.brightRed("my error\n") +
-					"\n" + colors.green("expected: ") + colors.brightYellow.bold("'1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890\\n'") + "\n" +
-					colors.brightRed("actual:   ") + colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" +
-					colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'") + "\n"
+					Colors.brightWhite("\nmy name »\n") +
+					Colors.brightRed("my error\n") +
+					"\n" + Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890\\n'") + "\n" +
+					Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" +
+					Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'") + "\n"
 				);
 			});
 
@@ -606,6 +618,10 @@ function createSuite({
 	name = "irrelevant name",
 	results = [],
 	filename = undefined,
+}: {
+	name?: string | string[],
+	results?: TestResult[],
+	filename?: string,
 } = {}) {
 	return TestResult.suite(name, results, filename);
 }
@@ -613,6 +629,9 @@ function createSuite({
 function createPass({
 	name = "irrelevant name",
 	filename = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
 } = {}) {
 	return TestResult.pass(name, filename);
 }
@@ -621,6 +640,10 @@ function createFail({
 	name = "irrelevant name",
 	error = new Error("irrelevant error"),
 	filename = undefined,
+}: {
+	name?: string | string[],
+	error?: string | Error,
+	filename?: string,
 } = {}) {
 	return TestResult.fail(name, error, filename);
 }
@@ -628,6 +651,9 @@ function createFail({
 function createSkip({
 	name = "irrelevant name",
 	filename = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
 } = {}) {
 	return TestResult.skip(name, filename);
 }
@@ -636,6 +662,10 @@ function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
 	filename = undefined,
+}: {
+	name?: string | string[],
+	timeout?: number,
+	filename?: string,
 } = {}) {
 	return TestResult.timeout(name, timeout, filename);
 }
