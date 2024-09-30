@@ -20,9 +20,9 @@ const RUN_STATE = {
 type RunState = typeof RUN_STATE[keyof typeof RUN_STATE];
 
 interface Describe {
-	(name: string, describeFn?: DescribeFunction): void,
-	skip: (name: string, descrbeFn?: DescribeFunction) => void,
-	only: (name: string, describeFn?: DescribeFunction) => void,
+	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
+	skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite,
+	only: (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction) => TestSuite,
 }
 
 interface It {
@@ -88,9 +88,9 @@ export class TestSuite implements Runnable {
 	 *   result.
 	 */
 	static get createFn(): Describe {
-		const result = (optionalName: string | DescribeFunction, suiteFn?: DescribeFunction) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
-		result.skip = (optionalName: string | DescribeFunction, suiteFn?: DescribeFunction) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
-		result.only = (optionalName: string | DescribeFunction, suiteFn?: DescribeFunction) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
+		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
+		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
+		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
 		return result;
 	}
 
@@ -110,7 +110,7 @@ export class TestSuite implements Runnable {
 			try {
 				const { default: suite } = await import(filename);
 				if (suite instanceof TestSuite) {
-					suite.#setFilename(filename);
+					suite._setFilename(filename);
 					return suite;
 				}
 				else {
@@ -128,7 +128,7 @@ export class TestSuite implements Runnable {
 	}
 
 	static #create(
-		nameOrSuiteFn: string | DescribeFunction,
+		nameOrSuiteFn: string | DescribeFunction | undefined,
 		possibleSuiteFn: DescribeFunction | undefined,
 		runState: RunState,
 	): TestSuite {
@@ -142,7 +142,7 @@ export class TestSuite implements Runnable {
 			suiteFn = nameOrSuiteFn;
 		}
 		else {
-			name = nameOrSuiteFn;
+			name = nameOrSuiteFn ?? "";
 			suiteFn = possibleSuiteFn;
 		}
 
@@ -154,7 +154,7 @@ export class TestSuite implements Runnable {
 		describeFn: DescribeFunction,
 		name: string,
 		runState: string,
-	) {
+	): TestSuite {
 		const tests: Runnable[] = [];
 		const beforeAllFns: Test[] = [];
 		const afterAllFns: Test[] = [];
@@ -162,14 +162,18 @@ export class TestSuite implements Runnable {
 		const afterEachFns: Test[] = [];
 		let timeout: number | undefined;
 
-		const pushTest = (test: Runnable) => {
+		const pushTest = <T extends Runnable>(test: T): T => {
 			tests.push(test);
 			return test;
 		};
 
-		const describe: Describe = (name, suiteFn) => pushTest(TestSuite.#create(name, suiteFn, RUN_STATE.DEFAULT));
-		describe.skip = (name, suiteFn) => pushTest(TestSuite.#create(name, suiteFn, RUN_STATE.SKIP));
-		describe.only = (name, suiteFn) => pushTest(TestSuite.#create(name, suiteFn, RUN_STATE.ONLY));
+		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
+		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
+		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
+
+		const describe: Describe = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, RUN_STATE.DEFAULT));
+		describe.skip = (optionalName, describeFn) => pushTest(TestSuite.#create(optionalName, describeFn, RUN_STATE.SKIP));
+		describe.only = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, RUN_STATE.ONLY));
 
 		const it: It = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, RUN_STATE.DEFAULT));
 		it.skip = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, RUN_STATE.SKIP));
@@ -261,7 +265,8 @@ export class TestSuite implements Runnable {
 		});
 	}
 
-	#setFilename(filename: string) { this._filename = filename; }
+	/** @private */
+	_setFilename(filename: string) { this._filename = filename; }
 
 	/** @private */
 	_isDotOnly(): boolean {

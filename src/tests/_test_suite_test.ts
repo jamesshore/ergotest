@@ -1,23 +1,22 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const TestSuite = require("./test_suite");
-const Clock = require("../infrastructure/clock");
-const TestResult = require("./test_result");
-const path = require("node:path");
+import { test, assert } from "tests";
+import { TestSuite } from "./test_suite.js";
+import { Clock } from "../infrastructure/clock.js";
+import { TestResult } from "./test_result.js";
+import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
 // dependency: ./_module_no_export.js
 
 // Tests for my test library. (How meta.)
 
-const SUCCESS_MODULE_PATH = path.resolve(__dirname, "./_module_passes.js");
+const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 const EXCEED_TIMEOUT = DEFAULT_TIMEOUT + 1;
 
-module.exports = suite(({ describe }) => {
+export default test(({ describe }) => {
 
 	describe("test modules", ({ it }) => {
 
@@ -35,7 +34,7 @@ module.exports = suite(({ describe }) => {
 
 		it("fails gracefully if module fails to require()", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
-			const renderedResult = (await suite.runAsync()).allTests()[0].renderMultiLine();
+			const renderedResult = (await suite.runAsync()).allTests()[0]?.renderMultiLine();
 
 			assert.match(renderedResult, /error when requiring _module_throws.js/);
 			assert.match(renderedResult, /my require error/);
@@ -43,7 +42,7 @@ module.exports = suite(({ describe }) => {
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_no_export.js" ]);
-			const renderedResult = (await suite.runAsync()).allTests()[0].renderMultiLine();
+			const renderedResult = (await suite.runAsync()).allTests()[0]?.renderMultiLine();
 
 			assert.match(renderedResult, /doesn't export a test suite: \.\/_module_no_export.js/);
 		});
@@ -154,7 +153,7 @@ module.exports = suite(({ describe }) => {
 			let testRan = false;
 			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ it }) => {
 				it(IRRELEVANT_NAME, async () => {
-					await new Promise((resolve) => {
+					await new Promise<void>((resolve) => {
 						setImmediate(() => {
 							testRan = true;
 							resolve();
@@ -226,7 +225,7 @@ module.exports = suite(({ describe }) => {
 			});
 
 			let testResult;
-			function notifyFn(result) {
+			function notifyFn(result: TestResult) {
 				testResult = result;
 			}
 
@@ -307,8 +306,8 @@ module.exports = suite(({ describe }) => {
 	describe("before/after", ({ it }) => {
 
 		it("runs function before and after all tests in a suite", async () => {
-			const ordering = [];
-			const pushFn = (message) => {
+			const ordering: string[] = [];
+			const pushFn: ((message: string) => () => void) = (message: string) => {
 				return () => ordering.push(message);
 			};
 
@@ -341,8 +340,8 @@ module.exports = suite(({ describe }) => {
 		});
 
 		it("runs function before and after each test in a suite", async () => {
-			const ordering = [];
-			const pushFn = (message) => {
+			const ordering: string[] = [];
+			const pushFn: ((message: string) => () => void) = (message) => {
 				return () => ordering.push(message);
 			};
 
@@ -814,7 +813,7 @@ module.exports = suite(({ describe }) => {
 			});
 
 			const result = await suite.runAsync();
-			assert.objEqual(result.suite[0], TestResult.skip("my test"));
+			assert.objEqual(result.children[0], TestResult.skip("my test"));
 		});
 
 		it("skips tests that have '.skip'", async () => {
@@ -827,7 +826,7 @@ module.exports = suite(({ describe }) => {
 
 			const result = await suite.runAsync();
 			assert.equal(testRan, false, "should not run test");
-			assert.objEqual(result.suite[0], TestResult.skip("my test"));
+			assert.objEqual(result.children[0], TestResult.skip("my test"));
 		});
 
 		it("skips suites that have no function", async () => {
@@ -1051,10 +1050,10 @@ module.exports = suite(({ describe }) => {
 });
 
 
-async function runTestAsync(testName, testFn) {
+async function runTestAsync(testName: string, testFn: () => void) {
 	const suite = TestSuite.createFn(({ it }) => {
 		it(testName, testFn);
 	});
 	const result = await suite.runAsync();
-	return result.suite[0];
+	return result.children[0];
 }
