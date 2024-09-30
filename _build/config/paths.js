@@ -8,7 +8,6 @@ const FileTree = require("infrastructure/file_tree");
 const rootDir = path.resolve(__dirname, "../..");
 const generatedDir = `${rootDir}/generated`;
 const incrementalBuildDir = `${generatedDir}/build`;
-const typescriptTargetDir = `${generatedDir}/typescript`;
 
 module.exports = class Paths {
 
@@ -26,15 +25,15 @@ module.exports = class Paths {
 	}
 
 	static get rootDir() { return rootDir; }
-	static get srcDirDeleteme() { return `${rootDir}/src`; }
-	static get targetDirDeleteme() { return `${typescriptTargetDir}/src`; }
-	static get srcDirGlobsDeleteme() { return `**/*.js`; }
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
-	static get typescriptTargetDir() { return typescriptTargetDir; }
+
 	static get tscBinary() { return `${rootDir}/node_modules/typescript/bin/tsc`; }
 	static get typescriptConfigFile() { return `${rootDir}/tsconfig.json`; }
+
+	static get typescriptSrcDir() { return `${rootDir}/src`; }
+	static get typescriptTargetDir() { return `${generatedDir}/src`; }
 
 	static get successSound() { return `${rootDir}/_build/sounds/success.mp3`; }
 	static get failSound() { return `${rootDir}/_build/sounds/fail.m4a`; }
@@ -92,7 +91,6 @@ module.exports = class Paths {
 
 	srcTestFiles() {
 		return this._files.matchingFiles([
-			// `${rootDir}/src/**/_*_test.js`,
 			`${rootDir}/src/**/_*_test.ts`,
 		]);
 	}

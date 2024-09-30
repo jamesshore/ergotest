@@ -26,7 +26,7 @@ module.exports = class TypeScript {
 	async compileAsync({
 		description,
 		files,
-		rootDir,
+		sourceDir,
 		outputDir,
 		config,
 		reporter,
@@ -34,7 +34,7 @@ module.exports = class TypeScript {
 		ensure.signature(arguments, [{
 			description: String,
 			files: Array,
-			rootDir: String,
+			sourceDir: String,
 			outputDir: String,
 			config: Object,
 			reporter: Reporter,
@@ -42,8 +42,8 @@ module.exports = class TypeScript {
 
 		await reporter.quietStartAsync(`Compiling ${description}`, async (report) => {
 			const successes = await Promise.all(files.map(async (sourceFile) => {
-				const compiledFile = outputFilename(sourceFile, ".js", rootDir, outputDir);
-				const sourceMapFile = outputFilename(sourceFile, ".js.map", rootDir, outputDir);
+				const compiledFile = outputFilename(sourceFile, ".js", sourceDir, outputDir);
+				const sourceMapFile = outputFilename(sourceFile, ".js.map", sourceDir, outputDir);
 
 				const isModified = await this._fileSystem.compareFileModificationTimesAsync(sourceFile, compiledFile) > 0;
 				if (!isModified) return true;
@@ -92,8 +92,8 @@ module.exports = class TypeScript {
 
 };
 
-function outputFilename(filename, extension, rootDir, outputDir) {
+function outputFilename(filename, extension, sourceDir, outputDir) {
 	const parsedFilename = pathLib.parse(filename);
 	const jsFilename = `${parsedFilename.dir}/${parsedFilename.name}${extension}`;
-	return `${outputDir}/${pathLib.relative(rootDir, jsFilename)}`;
+	return `${outputDir}/${pathLib.relative(sourceDir, jsFilename)}`;
 }

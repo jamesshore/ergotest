@@ -122,8 +122,8 @@ function defineTasks(self) {
 		await tasks.runTasksAsync([ "compile" ]);
 
 		const srcTestFiles = self._paths.srcTestFiles().map(file => {
-			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
-			const relocatedFile = path.resolve(Paths.targetDirDeleteme, relativeFile);
+			const relativeFile = path.relative(Paths.typescriptSrcDir, file);
+			const relocatedFile = path.resolve(Paths.typescriptTargetDir, relativeFile);
 			if (file.endsWith(".ts")) {
 				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
 			}
@@ -150,7 +150,7 @@ function defineTasks(self) {
 			}
 
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.srcDirDeleteme, Paths.targetDirDeleteme, javascriptToTypescript,
+				Paths.typescriptSrcDir, Paths.typescriptTargetDir, javascriptToTypescript,
 			);
 
 			const filesToCopy = [ ...added, ...changed ];
@@ -174,7 +174,7 @@ function defineTasks(self) {
 		await typescript.compileAsync({
 			description: "TypeScript",
 			files: self._paths.typescriptFiles(),
-			rootDir: Paths.rootDir,
+			sourceDir: Paths.typescriptSrcDir,
 			outputDir: Paths.typescriptTargetDir,
 			config: swcConfig,
 			reporter: self._reporter,
