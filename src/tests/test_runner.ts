@@ -8,7 +8,7 @@ import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
 // dependency: ./test_runner_child_process.js
 
-const WORKER_FILENAME = path.resolve(__dirname, "./test_runner_child_process.js");
+const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_child_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
 /** For internal use only. */

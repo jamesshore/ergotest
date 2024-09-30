@@ -1,19 +1,19 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const TestRunner = require("./test_runner");
-const path = require("node:path");
-const TestSuite = require("./test_suite");
-const TestResult = require("./test_result");
-const fs = require("node:fs/promises");
-const Clock = require("../infrastructure/clock");
+import { assert, test } from "tests";
+import { TestRunner } from "./test_runner.js";
+import path from "node:path";
+import { TestSuite } from "./test_suite.js";
+import { TestResult } from "./test_result.js";
+import fs from "node:fs/promises";
+import { Clock } from "../infrastructure/clock.js";
 
-module.exports = suite(({ beforeEach, it }) => {
+export default test(({ beforeEach, it }) => {
 
-	let TEST_MODULE_PATH;
+	let TEST_MODULE_PATH: string;
+
 	beforeEach(async ({ getConfig }) => {
-		const testDir = getConfig("scratchDir");
+		const testDir = getConfig<string>("scratchDir");
 
 		TEST_MODULE_PATH = `${testDir}/_test_runner_module.js`;
 		await deleteTempFilesAsync(testDir);
@@ -47,8 +47,8 @@ module.exports = suite(({ beforeEach, it }) => {
 	it("notifies caller of completed tests", async () => {
 		const { runner } = create();
 
-		const progress = [];
-		const notifyFn = result => progress.push(result);
+		const progress: TestResult[] = [];
+		const notifyFn = (result: TestResult) => progress.push(result);
 
 		await writeTestModuleAsync(`// passes`);
 		await runner.runIsolatedAsync([ TEST_MODULE_PATH ], { notifyFn });
@@ -116,24 +116,20 @@ module.exports = suite(({ beforeEach, it }) => {
 		assert.deepEqual(await resultsPromise, TestResult.suite([], [
 			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 		]));
-
-
-		// It also doesn't fail when tests run long (without an infinite loop), but I don't know how to test that.
-		// Probably need a nullable process?
 	});
 
 
-	function assertFailureMessage(results, expectedFailure) {
-		assert.equal(results.suite[0].suite[0].error.message, expectedFailure);
+	function assertFailureMessage(results: TestResult, expectedFailure: string) {
+		// @ts-expect-error This is pretty janky, but the tests will fail if it breaks
+		assert.equal(results.children[0].children[0].error.message, expectedFailure);
 	}
 
-	async function writeTestModuleAsync(bodySourceCode) {
+	async function writeTestModuleAsync(bodySourceCode: string) {
+		const testSuitePath = path.resolve(import.meta.dirname, "./test_suite.js");
 		await fs.writeFile(TEST_MODULE_PATH, `
-			"use strict";
+			import { TestSuite } from ` + `"${testSuitePath}";
 			
-			const suite = require` + `("${path.resolve(__dirname, "./test_suite.js")}").createFn;
-			
-			module.exports = suite(({ it }) => {
+			export default TestSuite.createFn(({ it }) => {
 				it("test", ({ getConfig }) => {
 					${bodySourceCode}
 				});
@@ -141,7 +137,7 @@ module.exports = suite(({ beforeEach, it }) => {
 		`);
 	}
 
-	async function deleteTempFilesAsync(testDir) {
+	async function deleteTempFilesAsync(testDir: string) {
 		assert.defined(testDir);
 		await fs.rm(testDir, { recursive: true, force: true });
 		await fs.mkdir(testDir, { recursive: true });
