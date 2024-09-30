@@ -1,22 +1,32 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const ensure = require("../util/ensure");
-const fs = require("node:fs/promises");
-const path = require("node:path");
-const OutputTracker = require("./low_level/output_tracker");
-const EventEmitter = require("node:events");
+import * as ensure from "../util/ensure.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { OutputTracker } from "./low_level/output_tracker.js";
+import EventEmitter from "node:events";
 
 const EVENT = "write";
 
+export interface NulledFileSystemConfiguration {
+	[filename: string]: { content: string },
+}
+
+export type FileSystemOutput = string;
+
+interface Fs {
+	readFile(filename: string, options?: unknown): Promise<string | Buffer>,
+}
+
+
 /** Wrapper for the file system. */
-module.exports = class FileSystem {
+export class FileSystem {
 
 	/**
 	 * Factory method. Create the wrapper.
 	 * @returns {FileSystem} The wrapper.
 	 */
-	static create() {
+	static create(): FileSystem {
 		ensure.signature(arguments, []);
 
 		return new FileSystem(fs);
@@ -30,7 +40,7 @@ module.exports = class FileSystem {
 	 *   numeric timestamp).
 	 * @returns {FileSystem} The stubbed file system.
 	 */
-	static createNull(files = {}) {
+	static createNull(files: NulledFileSystemConfiguration = {}): FileSystem {
 		ensure.signature(arguments, [[ undefined, Object ]]);
 		Object.entries(files).forEach(([ filename, configuration ]) => {
 			ensure.that(
@@ -45,8 +55,11 @@ module.exports = class FileSystem {
 		return new FileSystem(new FsStub(files));
 	}
 
+	private readonly _fs: Fs;
+	private readonly _emitter: EventEmitter;
+
 	/** For internal use only. (Use a factory method instead.) */
-	constructor(fs) {
+	constructor(fs: Fs) {
 		this._fs = fs;
 		this._emitter = new EventEmitter();
 	}
@@ -55,7 +68,7 @@ module.exports = class FileSystem {
 	 * Track file operations.
 	 * @returns {OutputTracker} The output tracker.
 	 */
-	track() {
+	track(): OutputTracker<FileSystemOutput> {
 		return new OutputTracker(this._emitter, EVENT);
 	}
 
@@ -64,24 +77,25 @@ module.exports = class FileSystem {
 	 * @param {string} filename The path to the file.
 	 * @returns {Promise<string>} The contents of the file.
 	 */
-	async readTextFileAsync(filename) {
+	async readTextFileAsync(filename: string): Promise<string> {
 		ensure.signature(arguments, [ String ]);
 
 		const content = await this._fs.readFile(filename, { encoding: "utf8" });
 		this._emitter.emit(EVENT, filename);
-		return content;
+		return content.toString();
 	}
 
-};
+}
 
+class FsStub implements Fs {
 
-class FsStub {
+	private readonly _files: NulledFileSystemConfiguration;
 
-	constructor(files) {
+	constructor(files: NulledFileSystemConfiguration) {
 		this._files = files;
 	}
 
-	async readFile(filename) {
+	async readFile(filename: string): Promise<string> {
 		await fakeAsync();
 
 		const file = getNulledFile(this._files, filename);
@@ -90,10 +104,14 @@ class FsStub {
 
 }
 
-function getNulledFile(files, filename) {
+interface NodeError extends Error {
+	code: string,
+}
+
+function getNulledFile(files: NulledFileSystemConfiguration, filename: string): { content: string } {
 	if (files[filename] !== undefined) return files[filename];
 
-	const err = new Error(`ENOENT: nulled FileSystem not configured with file '${filename}'`);
+	const err = new Error(`ENOENT: nulled FileSystem not configured with file '${filename}'`) as NodeError;
 	err.code = "ENOENT";
 	throw err;
 }
