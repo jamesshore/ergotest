@@ -1,3 +1,6 @@
-let foo: number;
+export class Hello {
 
-foo = 42;
+	static add(left: number, right: number) {
+		return left + right;
+	}
+}

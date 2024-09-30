@@ -13,12 +13,7 @@ module.exports = [
 		name: "JavaScript config",
 
 		"languageOptions": {
-			ecmaVersion: 2022,
 			sourceType: "commonjs",
-			globals: {
-				...globals.node,
-				globals: false,
-			},
 		},
 	},
 ];

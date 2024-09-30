@@ -1,16 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const TestSuite = require("./test_suite");
-const TestResult = require("./test_result");
-const Clock = require("infrastructure/clock");
-const process = require("node:process");
+import { TestSuite } from "./test_suite.js";
+import { TestResult } from "./test_result.js";
+import { Clock } from "../infrastructure/clock.js";
+import process from "node:process";
+import { WorkerInput } from "./test_runner.js";
 
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 
-
 main();
-
 
 function main() {
 	process.on("uncaughtException", (err) => {
@@ -21,15 +19,15 @@ function main() {
 	});
 
 	Clock.create().repeat(KEEPALIVE_INTERVAL_IN_MS, () => {
-		process.send({ type: "keepalive" });
+		process.send!({ type: "keepalive" });
 	});
 
 	process.on("message", (workerData) => {
-		runWorkerAsync(workerData);
+		runWorkerAsync(workerData as WorkerInput);
 	});
 }
 
-async function runWorkerAsync({ modulePaths, config }) {
+async function runWorkerAsync({ modulePaths, config }: WorkerInput) {
 	const suite = await TestSuite.fromModulesAsync(modulePaths);
 	const result = await suite.runAsync({ config, notifyFn: sendProgress });
 
@@ -39,15 +37,15 @@ async function runWorkerAsync({ modulePaths, config }) {
 	});
 }
 
-function sendProgress(result) {
-	process.send({
+function sendProgress(result: TestResult) {
+	process.send!({
 		type: "progress",
 		result: result.serialize(),
 	});
 }
 
-function sendFinalResult(result) {
-	process.send({
+function sendFinalResult(result: TestResult) {
+	process.send!({
 		type: "complete",
 		result: result.serialize(),
 	});

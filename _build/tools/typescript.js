@@ -49,6 +49,7 @@ module.exports = class TypeScript {
 				if (!isModified) return true;
 
 				try {
+					report.started();
 					const { code, map } = await swc.transformFile(sourceFile, config);
 					const sourceMapLink = `\n//# sourceMappingURL=${sourceMapFile}\n`;
 

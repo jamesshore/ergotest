@@ -15,6 +15,7 @@ const testConfig = require("./config/tests.conf");
 const lintJavascriptConfig = require("./config/eslint.javascript.config");
 const lintTypescriptConfig = require("./config/eslint.typescript.config");
 const swcConfig = require("./config/swc.conf");
+const path = require("node:path");
 
 module.exports = class Build {
 
@@ -37,7 +38,6 @@ module.exports = class Build {
 		}]]);
 
 		if (this._paths === undefined || resetTreeCache) {
-			await this._fileSystem.deleteAsync(Paths.typescriptBuildDir);
 			this._paths = await scanFileTreeAsync(this._fileSystem, this._reporter);
 		}
 		if (this._tasks === undefined) {
@@ -50,6 +50,7 @@ module.exports = class Build {
 				lint: "Lint JavaScript code (incremental)",
 				unittest: "Run unit tests (incremental)",
 				compile: "Compile TypeScript (incremental)",
+				typecheck: "Type-check TypeScript",
 			});
 		}
 
@@ -70,7 +71,7 @@ function defineTasks(self) {
 	const tasks = Tasks.create({ fileSystem: self._fileSystem, incrementalDir: self._paths.tasksDir });
 	const version = Version.create(self._fileSystem);
 	const lint = Lint.create(self._fileSystem);
-	const tests = Tests.create(self._fileSystem, Paths.universalGlobsToExclude);
+	const tests = Tests.create(self._fileSystem, Paths.dependencyTreeGlobsToExclude);
 	const typescript = TypeScript.create(self._fileSystem);
 
 	tasks.defineTask("default", async() => {
@@ -111,22 +112,59 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("unittest", async () => {
+		await tests.runAsync({
+			description: "JavaScript tests",
+			files: self._paths.buildTestFiles(),
+			config: testConfig,
+			reporter: self._reporter,
+		});
+
 		await tasks.runTasksAsync([ "compile" ]);
 
+		const srcTestFiles = self._paths.srcTestFiles().map(file => {
+			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
+			const relocatedFile = path.resolve(Paths.targetDirDeleteme, relativeFile);
+			if (file.endsWith(".ts")) {
+				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
+			}
+			else {
+				return relocatedFile;
+			}
+		});
+
 		await tests.runAsync({
-			description: "unit tests",
-			files: self._paths.unitTestFiles(),
+			description: "TypeScript tests",
+			files: srcTestFiles,
 			config: testConfig,
 			reporter: self._reporter,
 		});
 	});
 
 	tasks.defineTask("compile", async () => {
+		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
+			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
+				Paths.srcDirDeleteme, Paths.targetDirDeleteme
+			);
+			const filesToCopy = [ ...added, ...changed ];
+			const filesToDelete = removed;
+
+			await Promise.all(filesToCopy.map(async ({ source, target }) => {
+				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
+
+				await self._fileSystem.copyAsync(source, target);
+				report.progress();
+			}));
+			await Promise.all(filesToDelete.map(async ({ target }) => {
+				await self._fileSystem.deleteAsync(target);
+				report.progress();
+			}));
+		});
+
 		await typescript.compileAsync({
 			description: "TypeScript",
 			files: self._paths.typescriptFiles(),
 			rootDir: Paths.rootDir,
-			outputDir: Paths.typescriptBuildDir,
+			outputDir: Paths.typescriptTargetDir,
 			config: swcConfig,
 			reporter: self._reporter,
 		});

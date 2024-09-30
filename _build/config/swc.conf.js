@@ -23,5 +23,5 @@ module.exports = {
     "keepClassNames": false
   },
   "sourceMaps": true,
-  "isModule": true
+  "isModule": true,
 };

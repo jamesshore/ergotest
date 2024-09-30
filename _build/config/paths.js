@@ -8,6 +8,7 @@ const FileTree = require("infrastructure/file_tree");
 const rootDir = path.resolve(__dirname, "../..");
 const generatedDir = `${rootDir}/generated`;
 const incrementalBuildDir = `${generatedDir}/build`;
+const typescriptTargetDir = `${generatedDir}/typescript`;
 
 module.exports = class Paths {
 
@@ -25,10 +26,13 @@ module.exports = class Paths {
 	}
 
 	static get rootDir() { return rootDir; }
+	static get srcDirDeleteme() { return `${rootDir}/src`; }
+	static get targetDirDeleteme() { return `${typescriptTargetDir}/src`; }
+	static get srcDirGlobsDeleteme() { return `**/*.js`; }
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
-	static get typescriptBuildDir() { return `${generatedDir}/typescript`; }
+	static get typescriptTargetDir() { return typescriptTargetDir; }
 	static get tscBinary() { return `${rootDir}/node_modules/typescript/bin/tsc`; }
 	static get typescriptConfigFile() { return `${rootDir}/tsconfig.json`; }
 
@@ -54,12 +58,23 @@ module.exports = class Paths {
 		return [
 			`${rootDir}/node_modules/**`,
 			`${rootDir}/_build/node_modules/tests/vendor/**`,
+			`${rootDir}/src/node_modules/tests/vendor/**`,
+			`${rootDir}/generated/**`,
+		];
+	}
+
+	static get dependencyTreeGlobsToExclude() {
+		return [
+			`${rootDir}/node_modules/**`,
+			`${rootDir}/_build/node_modules/tests/vendor/**`,
+			`${rootDir}/src/node_modules/tests/vendor/**`,
 		];
 	}
 
 	lintJavascriptFiles() {
 		return this._files.matchingFiles([
 			"**/*.js",
+		], [
 		]);
 	}
 
@@ -69,15 +84,22 @@ module.exports = class Paths {
 		]);
 	}
 
-	unitTestFiles() {
+	buildTestFiles() {
 		return this._files.matchingFiles([
-			"**/_*_test.js",
+			`${rootDir}/_build/**/_*_test.js`,
+		]);
+	}
+
+	srcTestFiles() {
+		return this._files.matchingFiles([
+			// `${rootDir}/src/**/_*_test.js`,
+			`${rootDir}/src/**/_*_test.ts`,
 		]);
 	}
 
 	typescriptFiles() {
 		return this._files.matchingFiles([
-			"**/*.ts",
+			`${rootDir}/src/**/*.ts`,
 		]);
 	}
 
