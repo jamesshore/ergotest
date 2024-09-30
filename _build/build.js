@@ -141,38 +141,8 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("compile", async () => {
-		await self._reporter.quietStartAsync("Synchronizing source tree", async (report) => {
-			function javascriptToTypescript(sourceFile) {
-				if (!sourceFile.endsWith(".ts")) return sourceFile;
-
-				const noExtension = `${path.dirname(sourceFile)}/${path.basename(sourceFile, "ts")}`;
-				return [ `${noExtension}js`, `${noExtension}js.map` ];
-			}
-
-			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.typescriptSrcDir, Paths.typescriptTargetDir, javascriptToTypescript,
-			);
-
-			const filesToCopy = [ ...added, ...changed ];
-			const filesToDelete = removed;
-			if (filesToCopy.length + filesToDelete.length > 0) report.started();
-
-			const copyPromises = filesToCopy.map(async ({ source, target }) => {
-				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
-
-				await self._fileSystem.copyAsync(source, target);
-				report.progress();
-			});
-			const deletePromises = filesToDelete.map(async ({ source, target }) => {
-				await self._fileSystem.deleteAsync(target);
-				report.progress();
-			});
-
-			await Promise.all([ ...copyPromises, ...deletePromises ]);
-		});
-
 		await typescript.compileAsync({
-			description: "TypeScript",
+			description: "TypeScript tree",
 			files: self._paths.typescriptFiles(),
 			sourceDir: Paths.typescriptSrcDir,
 			outputDir: Paths.typescriptTargetDir,

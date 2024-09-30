@@ -9,6 +9,8 @@ const ensure = require("util/ensure");
 const TaskError = require("tasks/task_error");
 const Reporter = require("tasks/reporter");
 const Shell = require("infrastructure/shell");
+const path = require("node:path");
+const Paths = require("../config/paths");
 
 module.exports = class TypeScript {
 
@@ -40,13 +42,52 @@ module.exports = class TypeScript {
 			reporter: Reporter,
 		}]);
 
+		const typescriptToCompile = await this.#synchronizeSourceTreeToTarget(reporter, description, sourceDir, outputDir);
+		await this.#runCompiler(reporter, description, typescriptToCompile, sourceDir, outputDir, config);
+	}
+
+	async #synchronizeSourceTreeToTarget(reporter, description, sourceDir, outputDir) {
+		return await reporter.quietStartAsync(`Synchronizing ${description}`, async (report) => {
+			const tsToJsFn = (sourceFile) => {
+				if (!sourceFile.endsWith(".ts")) return sourceFile;
+
+				const noExtension = `${path.dirname(sourceFile)}/${path.basename(sourceFile, "ts")}`;
+				return [ `${noExtension}js`, `${noExtension}js.map` ];
+			};
+
+			const { added, removed, changed } = await this._fileSystem.compareDirectoriesAsync(
+				sourceDir, outputDir, tsToJsFn,
+			);
+
+			const filesToCopy = [ ...added, ...changed ];
+			const filesToDelete = removed;
+
+			const typescriptToCompile = new Set();
+			const copyPromises = filesToCopy.map(async ({ source, target }) => {
+				if (source.endsWith(".ts")) {
+					typescriptToCompile.add(source);
+				}
+				else {
+					await this._fileSystem.copyAsync(source, target);
+					report.progress({ debug: `\nCopy: ${source} --> ${target}`});
+				}
+			});
+			const deletePromises = filesToDelete.map(async ({ source, target }) => {
+				await this._fileSystem.deleteAsync(target);
+				report.progress({ debug: `\nDelete: ${target}`});
+			});
+
+			await Promise.all([ ...copyPromises, ...deletePromises ]);
+
+			return [ ...typescriptToCompile ];
+		});
+	}
+
+	async #runCompiler(reporter, description, files, sourceDir, outputDir, config) {
 		await reporter.quietStartAsync(`Compiling ${description}`, async (report) => {
 			const successes = await Promise.all(files.map(async (sourceFile) => {
 				const compiledFile = outputFilename(sourceFile, ".js", sourceDir, outputDir);
 				const sourceMapFile = outputFilename(sourceFile, ".js.map", sourceDir, outputDir);
-
-				const isModified = await this._fileSystem.compareFileModificationTimesAsync(sourceFile, compiledFile) > 0;
-				if (!isModified) return true;
 
 				try {
 					report.started();
@@ -56,12 +97,16 @@ module.exports = class TypeScript {
 					await this._fileSystem.writeTextFileAsync(compiledFile, code + sourceMapLink);
 					await this._fileSystem.writeTextFileAsync(sourceMapFile, map);
 
-					report.progress();
+					report.progress({ debug: `\nCompile: ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`});
 					return true;
 				}
 				catch(err) {
-					const failMessage = Colors.brightWhite.underline(`${pathLib.basename(sourceFile)} failed:`);
-					process.stdout.write(`\n\n${failMessage}${err.message}\n`);
+					report.progress({
+						text: Colors.brightRed.inverse("X"),
+						debug: `\nCompile (FAILED): ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`
+					});
+					const failMessage = Colors.brightWhite.underline(`${sourceFile}:\n`);
+					report.footer(`\n${failMessage}${err.message}\n`);
 					return false;
 				}
 			}));
