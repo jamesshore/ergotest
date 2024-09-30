@@ -142,11 +142,20 @@ function defineTasks(self) {
 
 	tasks.defineTask("compile", async () => {
 		await self._reporter.quietStartAsync("Synchronizing source tree", async (report) => {
+			function javascriptToTypescript(sourceFile) {
+				if (!sourceFile.endsWith(".ts")) return sourceFile;
+
+				const noExtension = `${path.dirname(sourceFile)}/${path.basename(sourceFile, "ts")}`;
+				return [ `${noExtension}js`, `${noExtension}js.map` ];
+			}
+
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.srcDirDeleteme, Paths.targetDirDeleteme
+				Paths.srcDirDeleteme, Paths.targetDirDeleteme, javascriptToTypescript,
 			);
+
 			const filesToCopy = [ ...added, ...changed ];
 			const filesToDelete = removed;
+			if (filesToCopy.length + filesToDelete.length > 0) report.started();
 
 			const copyPromises = filesToCopy.map(async ({ source, target }) => {
 				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
@@ -155,8 +164,6 @@ function defineTasks(self) {
 				report.progress();
 			});
 			const deletePromises = filesToDelete.map(async ({ source, target }) => {
-				if (target.endsWith(".js") || target.endsWith(".js.map")) return; // Don't erase generated files
-
 				await self._fileSystem.deleteAsync(target);
 				report.progress();
 			});
