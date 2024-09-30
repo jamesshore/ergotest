@@ -44,13 +44,13 @@ module.exports = class Build {
 			this._tasks = defineTasks(this);
 			this._tasks.setDescriptions({
 				default: "Clean and rebuild",
-				clean: "Erase all generated and incremental files",
+				clean: "Erase all generated files (resets incremental build)",
 				quick: "Perform an incremental build",
 				version: "Check Node.js version",
 				lint: "Lint JavaScript code (incremental)",
 				unittest: "Run unit tests (incremental)",
 				compile: "Compile TypeScript (incremental)",
-				typecheck: "Type-check TypeScript",
+				typecheck: "Type-check TypeScript and create declaration files",
 			});
 		}
 
@@ -121,49 +121,23 @@ function defineTasks(self) {
 
 		await tasks.runTasksAsync([ "compile" ]);
 
-		const srcTestFiles = self._paths.srcTestFiles().map(file => {
-			const relativeFile = path.relative(Paths.srcDirDeleteme, file);
-			const relocatedFile = path.resolve(Paths.targetDirDeleteme, relativeFile);
-			if (file.endsWith(".ts")) {
-				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
-			}
-			else {
-				return relocatedFile;
-			}
-		});
-
 		await tests.runAsync({
 			description: "TypeScript tests",
-			files: srcTestFiles,
+			files: typescript.mapTsToJs({
+				files: self._paths.srcTestFiles(),
+				sourceDir: Paths.typescriptSrcDir,
+				outputDir: Paths.typescriptTargetDir,
+			}),
 			config: testConfig,
 			reporter: self._reporter,
 		});
 	});
 
 	tasks.defineTask("compile", async () => {
-		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
-			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
-				Paths.srcDirDeleteme, Paths.targetDirDeleteme
-			);
-			const filesToCopy = [ ...added, ...changed ];
-			const filesToDelete = removed;
-
-			await Promise.all(filesToCopy.map(async ({ source, target }) => {
-				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
-
-				await self._fileSystem.copyAsync(source, target);
-				report.progress();
-			}));
-			await Promise.all(filesToDelete.map(async ({ target }) => {
-				await self._fileSystem.deleteAsync(target);
-				report.progress();
-			}));
-		});
-
 		await typescript.compileAsync({
-			description: "TypeScript",
+			description: "TypeScript tree",
 			files: self._paths.typescriptFiles(),
-			rootDir: Paths.rootDir,
+			sourceDir: Paths.typescriptSrcDir,
 			outputDir: Paths.typescriptTargetDir,
 			config: swcConfig,
 			reporter: self._reporter,
@@ -171,10 +145,11 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("typecheck", async () => {
-		await typescript.typecheckAsync({
+		await typescript.typecheckAndEmitDeclarationFilesAsync({
 			description: "TypeScript",
 			tscBinary: Paths.tscBinary,
 			typescriptConfigFile: Paths.typescriptConfigFile,
+			outputDir: Paths.typescriptTargetDir,
 			reporter: self._reporter,
 		});
 	});
