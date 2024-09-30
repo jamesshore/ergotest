@@ -141,23 +141,27 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("compile", async () => {
-		await self._reporter.quietStartAsync("Synchronizing JavaScript (DELETE ME)", async (report) => {
+		await self._reporter.quietStartAsync("Synchronizing source tree", async (report) => {
 			const { added, removed, changed } = await self._fileSystem.compareDirectoriesAsync(
 				Paths.srcDirDeleteme, Paths.targetDirDeleteme
 			);
 			const filesToCopy = [ ...added, ...changed ];
 			const filesToDelete = removed;
 
-			await Promise.all(filesToCopy.map(async ({ source, target }) => {
+			const copyPromises = filesToCopy.map(async ({ source, target }) => {
 				if (source.endsWith(".ts")) return; // TypeScript files will be copied by the compiler
 
 				await self._fileSystem.copyAsync(source, target);
 				report.progress();
-			}));
-			await Promise.all(filesToDelete.map(async ({ target }) => {
+			});
+			const deletePromises = filesToDelete.map(async ({ source, target }) => {
+				if (target.endsWith(".js") || target.endsWith(".js.map")) return; // Don't erase generated files
+
 				await self._fileSystem.deleteAsync(target);
 				report.progress();
-			}));
+			});
+
+			await Promise.all([ ...copyPromises, ...deletePromises ]);
 		});
 
 		await typescript.compileAsync({
