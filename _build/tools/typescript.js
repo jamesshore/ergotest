@@ -46,6 +46,21 @@ module.exports = class TypeScript {
 		await this.#runCompiler(reporter, description, typescriptToCompile, sourceDir, outputDir, config);
 	}
 
+	mapTsToJs({ files, sourceDir, outputDir }) {
+		ensure.signature(arguments, [{ files: Array, sourceDir: String, outputDir: String }]);
+
+		return files.map(file => {
+			const relativeFile = path.relative(sourceDir, file);
+			const relocatedFile = path.resolve(outputDir, relativeFile);
+			if (file.endsWith(".ts")) {
+				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
+			}
+			else {
+				return relocatedFile;
+			}
+		});
+	}
+
 	async #synchronizeSourceTreeToTarget(reporter, description, sourceDir, outputDir) {
 		return await reporter.quietStartAsync(`Synchronizing ${description}`, async (report) => {
 			const tsToJsFn = (sourceFile) => {

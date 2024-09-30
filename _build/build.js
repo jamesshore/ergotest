@@ -121,20 +121,13 @@ function defineTasks(self) {
 
 		await tasks.runTasksAsync([ "compile" ]);
 
-		const srcTestFiles = self._paths.srcTestFiles().map(file => {
-			const relativeFile = path.relative(Paths.typescriptSrcDir, file);
-			const relocatedFile = path.resolve(Paths.typescriptTargetDir, relativeFile);
-			if (file.endsWith(".ts")) {
-				return `${path.dirname(relocatedFile)}/${path.basename(relocatedFile, "ts")}js`;
-			}
-			else {
-				return relocatedFile;
-			}
-		});
-
 		await tests.runAsync({
 			description: "TypeScript tests",
-			files: srcTestFiles,
+			files: typescript.mapTsToJs({
+				files: self._paths.srcTestFiles(),
+				sourceDir: Paths.typescriptSrcDir,
+				outputDir: Paths.typescriptTargetDir,
+			}),
 			config: testConfig,
 			reporter: self._reporter,
 		});
