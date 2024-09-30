@@ -44,13 +44,13 @@ module.exports = class Build {
 			this._tasks = defineTasks(this);
 			this._tasks.setDescriptions({
 				default: "Clean and rebuild",
-				clean: "Erase all generated and incremental files",
+				clean: "Erase all generated files (resets incremental build)",
 				quick: "Perform an incremental build",
 				version: "Check Node.js version",
 				lint: "Lint JavaScript code (incremental)",
 				unittest: "Run unit tests (incremental)",
 				compile: "Compile TypeScript (incremental)",
-				typecheck: "Type-check TypeScript",
+				typecheck: "Type-check TypeScript and create declaration files",
 			});
 		}
 
@@ -145,10 +145,11 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("typecheck", async () => {
-		await typescript.typecheckAsync({
+		await typescript.typecheckAndEmitDeclarationFilesAsync({
 			description: "TypeScript",
 			tscBinary: Paths.tscBinary,
 			typescriptConfigFile: Paths.typescriptConfigFile,
+			outputDir: Paths.typescriptTargetDir,
 			reporter: self._reporter,
 		});
 	});

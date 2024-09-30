@@ -131,21 +131,28 @@ module.exports = class TypeScript {
 		});
 	}
 
-	async typecheckAsync({
+	async typecheckAndEmitDeclarationFilesAsync({
 		description,
 		tscBinary,
 		typescriptConfigFile,
+		outputDir,
 		reporter,
 	}) {
 		ensure.signature(arguments, [{
 			description: String,
 			tscBinary: String,
 			typescriptConfigFile: String,
+			outputDir: String,
 			reporter: Reporter,
 		}]);
 
 		await reporter.startAsync(`Type-checking ${description}`, async (report) => {
-			const { code } = await this._shell.execAsync(tscBinary, "-p", typescriptConfigFile);
+			const { code } = await this._shell.execAsync(tscBinary,
+				"-p", typescriptConfigFile,
+				"--outDir", outputDir,
+				"--noEmit", "false",
+				"--declaration", "--emitDeclarationOnly",
+			);
 			if (code !== 0) throw new TaskError("Type check failed");
 		});
 	}
