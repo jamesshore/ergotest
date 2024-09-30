@@ -44,7 +44,7 @@ export interface SuiteParameters {
 }
 
 export interface TestParameters {
-	getConfig: (name: string) => unknown,
+	getConfig: <T>(name: string) => T,
 }
 
 export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
@@ -427,9 +427,9 @@ async function runTestFnAsync(
 	fn: Test,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
 ): Promise<TestResult> {
-	const getConfig = (name: string) => {
+	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
-		return config[name];
+		return config[name] as T;
 	};
 
 	return await clock.timeoutAsync(timeout, async () => {
