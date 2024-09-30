@@ -9,7 +9,7 @@ import EventEmitter from "node:events";
 const EVENT = "write";
 
 export interface NulledFileSystemConfiguration {
-	[filename: string]: { content: string },
+	[filename: string]: { content?: string },
 }
 
 export type FileSystemOutput = string;
@@ -108,7 +108,7 @@ interface NodeError extends Error {
 	code: string,
 }
 
-function getNulledFile(files: NulledFileSystemConfiguration, filename: string): { content: string } {
+function getNulledFile(files: NulledFileSystemConfiguration, filename: string): { content?: string } {
 	if (files[filename] !== undefined) return files[filename];
 
 	const err = new Error(`ENOENT: nulled FileSystem not configured with file '${filename}'`) as NodeError;

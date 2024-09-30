@@ -1,15 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const { suite, assert } = require("tests");
-const ensure = require("../util/ensure");
-const FileSystem = require("./file_system");
-const fs = require("node:fs/promises");
+import { test, assert } from "tests";
+import * as ensure from "../util/ensure.js";
+import { FileSystem } from "./file_system.js";
+import fs from "node:fs/promises";
 
-module.exports = suite(({ beforeAll, afterEach, describe }) => {
+export default test(({ beforeAll, afterEach, describe }) => {
 
-	let TEST_DIR;
-	let FILENAME;
+	let TEST_DIR: string;
+	let FILENAME: string;
 
 	beforeAll(async ({ getConfig }) => {
 		TEST_DIR = getConfig("scratchDir");
@@ -102,7 +101,7 @@ module.exports = suite(({ beforeAll, afterEach, describe }) => {
 	});
 
 
-	function create() {
+	function create(): { fileSystem: FileSystem } {
 		ensure.signature(arguments, []);
 
 		return {
@@ -110,7 +109,7 @@ module.exports = suite(({ beforeAll, afterEach, describe }) => {
 		};
 	}
 
-	async function deleteTempFilesAsync(testDir) {
+	async function deleteTempFilesAsync(testDir: string): Promise<void> {
 		await fs.rm(testDir, { recursive: true, force: true });
 	}
 
