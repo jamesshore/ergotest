@@ -152,6 +152,7 @@ module.exports = class TypeScript {
 				"--outDir", outputDir,
 				"--noEmit", "false",
 				"--declaration", "--emitDeclarationOnly",
+				"--pretty",
 			);
 			if (code !== 0) throw new TaskError("Type check failed");
 		});
