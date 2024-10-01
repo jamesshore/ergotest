@@ -3,6 +3,10 @@
 import { test, assert } from "tests";
 import * as ensure from "./ensure.js";
 
+interface NodeError extends Error {
+	stack: string;
+}
+
 export default test(({ describe, it }) => {
 
 	describe("condition checking", ({ describe, it }) => {
@@ -215,14 +219,16 @@ function assertEnsureError(fn: Function, expectedRegexOrExactString?: RegExp | s
 		assert.fail("Expected exception");
 	}
 	catch (err) {
+		const typedErr = err as NodeError;
+
 		if (expectedRegexOrExactString === undefined) return;
 		if (typeof expectedRegexOrExactString === "string") {
-			assert.equal(err.message, expectedRegexOrExactString, message);
+			assert.equal(typedErr.message, expectedRegexOrExactString, message);
 		}
 		else {
-			assert.match(err.message, expectedRegexOrExactString, message);
+			assert.match(typedErr.message, expectedRegexOrExactString, message);
 		}
-		assert.notIncludes(err.stack, "ensure.js", "should filter stack trace");
+		assert.notIncludes(typedErr.stack, "ensure.js", "should filter stack trace");
 		return;
 	}
 }
