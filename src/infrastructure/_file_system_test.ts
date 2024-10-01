@@ -5,6 +5,10 @@ import * as ensure from "../util/ensure.js";
 import { FileSystem } from "./file_system.js";
 import fs from "node:fs/promises";
 
+interface NodeError extends Error {
+	code: string;
+}
+
 export default test(({ beforeAll, afterEach, describe }) => {
 
 	let TEST_DIR: string;
@@ -41,8 +45,9 @@ export default test(({ beforeAll, afterEach, describe }) => {
 				assert.fail("should have thrown ENOENT error");
 			}
 			catch(err) {
-				assert.equal(err.message, `ENOENT: no such file or directory, open '${TEST_DIR}/no_such_file'`);
-				assert.equal(err.code, "ENOENT");
+				const typedErr = err as NodeError;
+				assert.equal(typedErr.message, `ENOENT: no such file or directory, open '${TEST_DIR}/no_such_file'`);
+				assert.equal(typedErr.code, "ENOENT");
 			}
 		});
 
@@ -91,8 +96,9 @@ export default test(({ beforeAll, afterEach, describe }) => {
 					assert.fail("should have thrown ENOENT error");
 				}
 				catch(err) {
-					assert.equal(err.message, "ENOENT: nulled FileSystem not configured with file '/no_such_file'");
-					assert.equal(err.code, "ENOENT");
+					const typedErr = err as NodeError;
+					assert.equal(typedErr.message, "ENOENT: nulled FileSystem not configured with file '/no_such_file'");
+					assert.equal(typedErr.code, "ENOENT");
 				}
 			});
 
