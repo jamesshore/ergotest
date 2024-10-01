@@ -145,7 +145,7 @@ module.exports = class TypeScript {
 		}]);
 
 		await reporter.startAsync(`Type-checking ${description}`, async (report) => {
-			const { code } = await this._shell.execAsync(tscBinary,
+			const { code } = await this._shell.execWithPreambleAsync("\n\n", tscBinary,
 				"-p", typescriptConfigFile,
 				"--outDir", outputDir,
 				"--noEmit", "false",
