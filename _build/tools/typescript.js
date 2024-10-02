@@ -116,7 +116,7 @@ module.exports = class TypeScript {
 					return true;
 				}
 				catch(err) {
-					const filename = Colors.brightRed(`${this._fileSystem.renderFileName(sourceFile)} failed:\n`);
+					const filename = Colors.brightRed(`${this._fileSystem.renderFilename(sourceFile)} failed:\n`);
 					report.failure(`\n${filename}${err.message}\n\n`, {
 						debug: `\nCompile (FAILED): ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`
 					});

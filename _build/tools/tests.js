@@ -70,14 +70,14 @@ async function findTestFilesAsync(fileSystem, reporter, description, dependencyT
 		});
 
 		Object.keys(errorsByFile).forEach(file => {
-			report.footer(Colors.brightRed(`\n${fileSystem.renderFileName(file)} failed`));
+			report.footer(Colors.brightRed(`\n${fileSystem.renderFilename(file)} failed`));
 
 			errorsByFile[file].forEach(({ error, file, dependency, line, source }) => {
 				if (error === DependencyTree.ERRORS.DEPENDENCY_NOT_FOUND) {
 					let failure = Colors.brightWhite.bold(`\n${line}: `) + `${source}\n  ${error}\n`;
 					if (dependency.startsWith(".")) {
 						const resolvesTo = path.resolve(file, dependency);
-						failure += Colors.brightBlack(`  Resolves to: ${fileSystem.renderFileName(resolvesTo)}\n`);
+						failure += Colors.brightBlack(`  Resolves to: ${fileSystem.renderFilename(resolvesTo)}\n`);
 					}
 					report.footer(failure);
 				}
