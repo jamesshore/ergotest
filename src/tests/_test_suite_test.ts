@@ -34,17 +34,22 @@ export default test(({ describe }) => {
 
 		it("fails gracefully if module fails to require()", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
-			const renderedResult = (await suite.runAsync()).allTests()[0]?.renderMultiLine();
+			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.match(renderedResult, /error when requiring _module_throws.js/);
-			assert.match(renderedResult, /my require error/);
+			assert.deepEqual(result.name, [ "error when requiring _module_throws.js" ]);
+			assert.equal(result.filename, "./_module_throws.js");
+			assert.equal(result.status, TestResult.STATUS.FAIL);
+			assert.match((result.error as { message: string }).message, /my require error/);
 		});
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_no_export.js" ]);
-			const renderedResult = (await suite.runAsync()).allTests()[0]?.renderMultiLine();
+			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.match(renderedResult, /doesn't export a test suite: \.\/_module_no_export.js/);
+			assert.deepEqual(result.name, [ "error when requiring _module_no_export.js" ]);
+			assert.equal(result.filename, "./_module_no_export.js");
+			assert.equal(result.status, TestResult.STATUS.FAIL);
+			assert.equal(result.error, "doesn't export a test suite: ./_module_no_export.js");
 		});
 
 	});

@@ -2,17 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
-import path from "node:path";
 import { AssertionError } from "node:assert";
-import { Colors } from "../infrastructure/colors.js";
-
-const headerColor = Colors.brightWhite.bold;
-const highlightColor = Colors.brightWhite;
-const errorMessageColor = Colors.brightRed;
-const timeoutMessageColor = Colors.purple;
-const expectedColor = Colors.green;
-const actualColor = Colors.brightRed;
-const diffColor = Colors.brightYellow.bold;
 
 const STATUS = {
 	PASS: "pass",
@@ -27,26 +17,10 @@ const SUCCESS_MAP = {
 	[STATUS.SKIP]: true,
 	[STATUS.TIMEOUT]: false,
 };
-const PROGRESS_RENDERING = {
-	[STATUS.PASS]: Colors.white("."),
-	[STATUS.FAIL]: Colors.brightRed.inverse("X"),
-	[STATUS.SKIP]: Colors.cyan.dim("_"),
-	[STATUS.TIMEOUT]: Colors.purple.inverse("!"),
-};
-const DESCRIPTION_RENDERING = {
-	[STATUS.PASS]: Colors.green("passed"),
-	[STATUS.FAIL]: Colors.brightRed("failed"),
-	[STATUS.SKIP]: Colors.brightCyan("skipped"),
-	[STATUS.TIMEOUT]: Colors.brightPurple("timeout"),
-};
 
 export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
 type TestStatus = typeof STATUS[keyof typeof STATUS];
-
-interface NodeError extends Error {
-	stack: string;
-}
 
 interface TestCount {
 	pass: number;
@@ -181,6 +155,11 @@ export abstract class TestResult {
 	}
 
 	/**
+	 * @returns {boolean} True if this result represents a suite of tests.
+	 */
+	abstract isSuite(): boolean;
+
+	/**
 	 * @returns {boolean} True if this test either passed or was skipped.
 	 */
 	abstract isSuccess(): boolean;
@@ -242,11 +221,7 @@ export class TestSuiteResult extends TestResult {
 		this._children = results;
 	}
 
-	/**
-	 * Is this result for a test suite? Yes!
-	 * @returns {boolean}
-	 */
-	get isSuite(): boolean { return true; }
+	isSuite(): boolean { return true; }
 
 	/**
 	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
@@ -453,11 +428,7 @@ export class TestCaseResult extends TestResult {
 		this._timeout = timeout;
 	}
 
-	/**
-	 * Is this result for a test suite? No!
-	 * @returns {boolean}
-	 */
-	get isSuite(): boolean { return false; }
+	isSuite(): boolean { return false; }
 
 	/**
 	 * @returns {string | undefined} The file that contained the test, if any.
@@ -474,7 +445,7 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestStatus} The status of this test (see {@link TestResult.STATUS}).
+	 * @returns {TestStatus | TestCount} Whether this test passed, failed, etc. If this result is for a test suite, returns an object representing the results of all the tests.
 	 */
 	get status(): TestStatus {
 		return this._status;
@@ -586,37 +557,6 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {string} A single character representing this test result: a dot for passed, a red X for failed, etc.
-	 */
-	renderCharacter(): string {
-		ensure.signature(arguments, []);
-
-		return PROGRESS_RENDERING[this._status];
-	}
-
-	/**
-	 * @returns {string} A single-line string representing this test result. No details are provided beyond the name.
-	 */
-	renderSingleLine(): string {
-		ensure.signature(arguments, []);
-
-		const description = DESCRIPTION_RENDERING[this._status];
-		const filename = this._filename === undefined ? "" : highlightColor(path.basename(this._filename)) + " » ";
-		const name = this._name.length === 0 ? "(no name)" : this._name.join(" » ");
-
-		return `${description} ${filename}${name}\n`;
-	}
-
-	/**
-	 * @returns {string} A multi-line rendering of this test result. Full details are provided.
-	 */
-	renderMultiLine():string {
-		ensure.signature(arguments, []);
-
-		return this.#renderName() + this.#renderBody();
-	}
-
-	/**
 	 * Determine if this test result is identical to another test result. To be identical, they must have the same
 	 * results, in the same order, with the same names and filenames.
 	 * @param {any} that The thing to compare against
@@ -636,80 +576,4 @@ export class TestCaseResult extends TestResult {
 			this.filename === that.filename;
 	}
 
-	#renderName(): string {
-		const name = this.name;
-
-		const suites = name.slice(0, name.length - 1);
-		const test = name[name.length - 1];
-		if (this.filename !== undefined) suites.unshift(path.basename(this.filename));
-
-		const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
-		return headerColor(suitesName + test + "\n");
-	}
-
-	#renderBody(): string {
-		switch (this._status) {
-			case STATUS.PASS:
-			case STATUS.SKIP:
-				return `\n${DESCRIPTION_RENDERING[this._status]}\n`;
-			case STATUS.FAIL:
-				return this.#renderFailure();
-			case STATUS.TIMEOUT:
-				return timeoutMessageColor(`\nTimed out after ${this._timeout}ms\n`);
-			default:
-				throw new Error(`Unrecognized test result status: ${this._status}`);
-		}
-	}
-
-	#renderFailure(): string {
-		const name = this.name;
-
-		let renderedError;
-		if (this._error instanceof Error && (this._error as NodeError).stack !== undefined) {
-			const nodeError = this._error as NodeError;
-			renderedError = `\n${this.#renderStack(nodeError)}\n` +
-				highlightColor(`\n${name[name.length - 1]} »\n`) +
-				errorMessageColor(`${nodeError.message}\n`);
-		}
-		else {
-			renderedError = errorMessageColor(`\n${this._error}\n`);
-		}
-		const diff = this.#renderDiff(this._error as AssertionError);
-
-		return `${renderedError}${diff}`;
-	}
-
-	#renderStack(error: Error): string {
-		const stack = error.stack!.split("\n");
-		const highlighted = stack.map(line => {
-			if (!line.includes(this.filename!)) return line;
-
-			line = line.replace(/    at/, "--> at");	// this code is vulnerable to changes in Node.js rendering
-			return headerColor(line);
-		});
-		return highlighted.join("\n");
-	}
-
-	#renderDiff(error: AssertionError): string {
-		if (error.expected === undefined && error.actual === undefined) return "";
-		if (error.expected === null && error.actual === null) return "";
-
-		const expected = util.inspect(error.expected, { depth: Infinity }).split("\n");
-		const actual = util.inspect(error.actual, { depth: Infinity }).split("\n");
-		if (expected.length > 1 || actual.length > 1) {
-			for (let i = 0; i < Math.max(expected.length, actual.length); i++) {
-				const expectedLine = expected[i];
-				const actualLine = actual[i];
-
-				if (expectedLine !== actualLine) {
-					if (expected[i] !== undefined) expected[i] = diffColor(expected[i]!);
-					if (actual[i] !== undefined) actual[i] = diffColor(actual[i]!);
-				}
-			}
-		}
-
-		return "\n" +
-			expectedColor("expected: ") + expected.join("\n") + "\n" +
-			actualColor("actual:   ") + actual.join("\n") + "\n";
-	}
 }

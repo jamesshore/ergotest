@@ -111,6 +111,7 @@ export class TestSuite implements Runnable {
 		return new TestSuite("", RUN_STATE.DEFAULT, { tests: suites });
 
 		async function loadModuleAsync(filename: string): Promise<TestSuite> {
+			const errorName = `error when requiring ${path.basename(filename)}`;
 			try {
 				const { default: suite } = await import(filename);
 				if (suite instanceof TestSuite) {
@@ -118,11 +119,11 @@ export class TestSuite implements Runnable {
 					return suite;
 				}
 				else {
-					return createFailure(filename, path.basename(filename), `doesn't export a test suite: ${filename}`);
+					return createFailure(filename, errorName, `doesn't export a test suite: ${filename}`);
 				}
 			}
 			catch(err) {
-				return createFailure(filename, `error when requiring ${path.basename(filename)}`, err);
+				return createFailure(filename, errorName, err);
 			}
 		}
 
