@@ -91,7 +91,7 @@ export class TestSuite implements Runnable {
 	 * @returns {function} A function for creating a test suite. In your test module, call this function and export the
 	 *   result.
 	 */
-	static get createFn(): Describe {
+	static get create(): Describe {
 		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
 		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
 		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
@@ -100,7 +100,7 @@ export class TestSuite implements Runnable {
 
 	/**
 	 * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
-	 * {@link TestSuite.createFn}.
+	 * {@link TestSuite.create}.
 	 * @param {string[]} moduleFilenames The filenames of the test modules.
 	 * @returns {TestSuite} The test suite.
 	 */
@@ -209,7 +209,7 @@ export class TestSuite implements Runnable {
 	private _timeout?: Milliseconds;
 	private _filename?: string;
 
-	/** Internal use only. (Use {@link TestSuite.createFn} or {@link TestSuite.fromModulesAsync} instead.) */
+	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
 	constructor(name: string, runState: RunState, {
 		tests = [],
 		beforeAllFns = [],

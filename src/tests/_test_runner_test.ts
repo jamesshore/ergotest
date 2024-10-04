@@ -129,7 +129,7 @@ export default test(({ beforeEach, it }) => {
 		await fs.writeFile(TEST_MODULE_PATH, `
 			import { TestSuite } from ` + `"${testSuitePath}";
 			
-			export default TestSuite.createFn(({ it }) => {
+			export default TestSuite.create(({ it }) => {
 				it("test", ({ getConfig }) => {
 					${bodySourceCode}
 				});

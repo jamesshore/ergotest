@@ -60,7 +60,7 @@ export default test(({ describe }) => {
 		it("executes immediately (but tests don't)", () => {
 			let suiteRan = false;
 			let testRan = false;
-			TestSuite.createFn(IRRELEVANT_NAME, ({ it }) => {
+			TestSuite.create(IRRELEVANT_NAME, ({ it }) => {
 				suiteRan = true;
 				it(IRRELEVANT_NAME, () => {
 					testRan = true;
@@ -72,7 +72,7 @@ export default test(({ describe }) => {
 		});
 
 		it("returns test results when run", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it("test 1", () => {});
 				it("test 2", () => {});
 				it("test 3", () => {});
@@ -89,7 +89,7 @@ export default test(({ describe }) => {
 		});
 
 		it("can be nested", async () => {
-			const top = TestSuite.createFn("top", ({ describe }) => {
+			const top = TestSuite.create("top", ({ describe }) => {
 				describe("middle", ({ describe }) => {
 					describe("bottom", ({ it }) => {
 						it("my test", () => {});
@@ -113,7 +113,7 @@ export default test(({ describe }) => {
 			const clock = Clock.createNull();
 			const filename = "my_filename";
 
-			const suite = TestSuite.createFn(({ describe, it }) => {
+			const suite = TestSuite.create(({ describe, it }) => {
 				it("pass", () => {});
 				it.skip("skip", () => {});
 				it("fail", () => { throw Error("fail"); });
@@ -143,7 +143,7 @@ export default test(({ describe }) => {
 
 		it("runs when its parent suite is run", async () => {
 			let testRan = false;
-			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ it }) => {
+			const suite = TestSuite.create(IRRELEVANT_NAME, ({ it }) => {
 				it(IRRELEVANT_NAME, () => {
 					testRan = true;
 				});
@@ -156,7 +156,7 @@ export default test(({ describe }) => {
 
 		it("works with asynchronous code", async () => {
 			let testRan = false;
-			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ it }) => {
+			const suite = TestSuite.create(IRRELEVANT_NAME, ({ it }) => {
 				it(IRRELEVANT_NAME, async () => {
 					await new Promise<void>((resolve) => {
 						setImmediate(() => {
@@ -188,7 +188,7 @@ export default test(({ describe }) => {
 			const myConfig = { myConfig: "my_config" };
 			let receivedConfig;
 
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it(IRRELEVANT_NAME, ({ getConfig }) => {
 					receivedConfig = getConfig("myConfig");
 				});
@@ -199,7 +199,7 @@ export default test(({ describe }) => {
 		});
 
 		it("fails fast when no config defined", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it(IRRELEVANT_NAME, ({ getConfig }) => {
 					getConfig("no_such_config");
 				});
@@ -212,7 +212,7 @@ export default test(({ describe }) => {
 		});
 
 		it("fails fast when config defined, but config variable not found", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it(IRRELEVANT_NAME, ({ getConfig }) => {
 					getConfig("no_such_config");
 				});
@@ -225,7 +225,7 @@ export default test(({ describe }) => {
 		});
 
 		it("runs notify function", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it("my test", () => {});
 			});
 
@@ -244,10 +244,10 @@ export default test(({ describe }) => {
 	describe("naming", ({ it }) => {
 
 		it("test suites can be created with and without a name", async () => {
-			const name = TestSuite.createFn("named", ({ it }) => {
+			const name = TestSuite.create("named", ({ it }) => {
 				it("has a name", () => {});
 			});
-			const noName = TestSuite.createFn(({ it }) => {
+			const noName = TestSuite.create(({ it }) => {
 				it("has no name", () => {});
 			});
 
@@ -256,7 +256,7 @@ export default test(({ describe }) => {
 		});
 
 		it("test cases without names are given a default", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it("", () => {});
 			});
 
@@ -264,7 +264,7 @@ export default test(({ describe }) => {
 		});
 
 		it("sets name of test result to include nested suites", async () => {
-			const top = TestSuite.createFn("top", ({ describe }) => {
+			const top = TestSuite.create("top", ({ describe }) => {
 				describe("middle", ({ describe }) => {
 					describe("bottom", ({ it }) => {
 						it("my test", () => {});
@@ -285,7 +285,7 @@ export default test(({ describe }) => {
 		});
 
 		it("collapses unnamed suites when setting test result name", async () => {
-			const top = TestSuite.createFn("top", ({ describe }) => {
+			const top = TestSuite.create("top", ({ describe }) => {
 				describe("", ({ describe }) => {
 					describe("", ({ it }) => {
 						it("my test", () => {});
@@ -316,7 +316,7 @@ export default test(({ describe }) => {
 				return () => ordering.push(message);
 			};
 
-			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ beforeAll, afterAll, describe, it }) => {
+			const suite = TestSuite.create(IRRELEVANT_NAME, ({ beforeAll, afterAll, describe, it }) => {
 				beforeAll(pushFn("parent before 1"));
 				beforeAll(pushFn("parent before 2"));
 				afterAll(pushFn("parent after 1"));
@@ -350,7 +350,7 @@ export default test(({ describe }) => {
 				return () => ordering.push(message);
 			};
 
-			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ beforeEach, afterEach, describe, it }) => {
+			const suite = TestSuite.create(IRRELEVANT_NAME, ({ beforeEach, afterEach, describe, it }) => {
 				beforeEach(pushFn("parent before 1"));
 				beforeEach(pushFn("parent before 2"));
 				afterEach(pushFn("parent after 1"));
@@ -390,7 +390,7 @@ export default test(({ describe }) => {
 			const myConfig = { myConfig: "my_config" };
 			let beforeAllReceived, beforeEachReceived, afterEachReceived, afterAllReceived;
 
-			const suite = TestSuite.createFn(IRRELEVANT_NAME, ({ beforeAll, beforeEach, afterEach, afterAll, it }) => {
+			const suite = TestSuite.create(IRRELEVANT_NAME, ({ beforeAll, beforeEach, afterEach, afterAll, it }) => {
 				beforeAll(({ getConfig }) => { beforeAllReceived = getConfig("myConfig"); });
 				beforeEach(({ getConfig }) => { beforeEachReceived = getConfig("myConfig"); });
 				it(IRRELEVANT_NAME, () => {});
@@ -409,7 +409,7 @@ export default test(({ describe }) => {
 		it("doesn't run beforeAll and afterAll when all children are skipped", async () => {
 			let beforeRan = false;
 			let afterRan = false;
-			const suite = TestSuite.createFn("my suite", ({ it, beforeAll, afterAll }) => {
+			const suite = TestSuite.create("my suite", ({ it, beforeAll, afterAll }) => {
 				beforeAll(() => {
 					beforeRan = true;
 				});
@@ -428,7 +428,7 @@ export default test(({ describe }) => {
 		it("doesn't run beforeEach and afterEach when the test is skipped", async () => {
 			let beforeRan = false;
 			let afterRan = false;
-			const suite = TestSuite.createFn("my suite", ({ it, beforeEach, afterEach }) => {
+			const suite = TestSuite.create("my suite", ({ it, beforeEach, afterEach }) => {
 				beforeEach(() => {
 					beforeRan = true;
 				});
@@ -445,7 +445,7 @@ export default test(({ describe }) => {
 
 		it("handles exception in beforeAll", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.createFn(({ it, beforeAll }) => {
+			const suite = TestSuite.create(({ it, beforeAll }) => {
 				beforeAll(() => {
 					throw error;
 				});
@@ -462,7 +462,7 @@ export default test(({ describe }) => {
 
 		it("handles exception in afterAll", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.createFn(({ it, afterAll }) => {
+			const suite = TestSuite.create(({ it, afterAll }) => {
 				afterAll(() => {
 					throw error;
 				});
@@ -481,7 +481,7 @@ export default test(({ describe }) => {
 
 		it("handles exception in beforeEach", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.createFn(({ it, beforeEach }) => {
+			const suite = TestSuite.create(({ it, beforeEach }) => {
 				beforeEach(() => {
 					throw error;
 				});
@@ -499,7 +499,7 @@ export default test(({ describe }) => {
 
 		it("doesn't run test when beforeEach throws exception", async () => {
 			let testRan = false;
-			const suite = TestSuite.createFn("my suite", ({ it, beforeEach }) => {
+			const suite = TestSuite.create("my suite", ({ it, beforeEach }) => {
 				beforeEach(() => {
 					throw new Error();
 				});
@@ -514,7 +514,7 @@ export default test(({ describe }) => {
 
 		it("handles exception in afterEach", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.createFn(({ it, afterEach }) => {
+			const suite = TestSuite.create(({ it, afterEach }) => {
 				afterEach(() => {
 					throw error;
 				});
@@ -532,7 +532,7 @@ export default test(({ describe }) => {
 
 		it("runs afterEach() even when test throws exception", async() => {
 			let afterEachRan = false;
-			const suite = TestSuite.createFn("my suite", ({ it, afterEach }) => {
+			const suite = TestSuite.create("my suite", ({ it, afterEach }) => {
 				afterEach(() => {
 					afterEachRan = true;
 				});
@@ -549,7 +549,7 @@ export default test(({ describe }) => {
 			const afterEachError = new Error("afterEach error");
 			const testError = new Error("test error");
 
-			const suite = TestSuite.createFn(({ it, afterEach }) => {
+			const suite = TestSuite.create(({ it, afterEach }) => {
 				afterEach(() => {
 					throw afterEachError;
 				});
@@ -575,7 +575,7 @@ export default test(({ describe }) => {
 
 			let beforeTime = null;
 			let afterTime = null;
-			const suite = TestSuite.createFn(({ it, beforeEach, afterEach }) => {
+			const suite = TestSuite.create(({ it, beforeEach, afterEach }) => {
 				beforeEach(() => {
 					beforeTime = clock.now();
 				});
@@ -605,7 +605,7 @@ export default test(({ describe }) => {
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = TestSuite.createFn("my suite", ({ it, beforeAll, afterAll }) => {
+			const suite = TestSuite.create("my suite", ({ it, beforeAll, afterAll }) => {
 				beforeAll(async () => {
 					await clock.waitAsync(EXCEED_TIMEOUT);
 				});
@@ -635,7 +635,7 @@ export default test(({ describe }) => {
 
 			let beforeTime = null;
 			let itTime = null;
-			const suite = TestSuite.createFn(({ it, beforeAll, afterAll }) => {
+			const suite = TestSuite.create(({ it, beforeAll, afterAll }) => {
 				beforeAll(() => {
 					beforeTime = clock.now();
 				});
@@ -668,7 +668,7 @@ export default test(({ describe }) => {
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = TestSuite.createFn(({ it, beforeEach, afterEach }) => {
+			const suite = TestSuite.create(({ it, beforeEach, afterEach }) => {
 				beforeEach(async () => {
 					await clock.waitAsync(EXCEED_TIMEOUT);
 				});
@@ -698,7 +698,7 @@ export default test(({ describe }) => {
 
 			let beforeTime = null;
 			let itTime = null;
-			const suite = TestSuite.createFn(({ it, beforeEach, afterEach }) => {
+			const suite = TestSuite.create(({ it, beforeEach, afterEach }) => {
 				beforeEach(() => {
 					beforeTime = clock.now();
 				});
@@ -729,7 +729,7 @@ export default test(({ describe }) => {
 				await clock.waitAsync(DEFAULT_TIMEOUT - 1);
 			};
 
-			const suite = TestSuite.createFn(({ it, beforeAll, afterAll, beforeEach, afterEach }) => {
+			const suite = TestSuite.create(({ it, beforeAll, afterAll, beforeEach, afterEach }) => {
 				beforeAll(notQuiteTimeoutFn);
 				beforeAll(notQuiteTimeoutFn);
 				afterAll(notQuiteTimeoutFn);
@@ -761,7 +761,7 @@ export default test(({ describe }) => {
 				await clock.waitAsync(NEW_TIMEOUT - 1);
 			};
 
-			const suite = TestSuite.createFn(({
+			const suite = TestSuite.create(({
 				it, setTimeout, beforeAll, afterAll, beforeEach, afterEach
 			}) => {
 				setTimeout(NEW_TIMEOUT);
@@ -786,7 +786,7 @@ export default test(({ describe }) => {
 			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
 			const clock = Clock.createNull();
-			const suite = TestSuite.createFn(({ describe, setTimeout }) => {
+			const suite = TestSuite.create(({ describe, setTimeout }) => {
 				setTimeout(NEW_TIMEOUT);
 				describe(({ it }) => {
 					it("my test", async () => {
@@ -813,7 +813,7 @@ export default test(({ describe }) => {
 	describe(".skip", ({ it }) => {
 
 		it("skips tests that have no function", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it("my test");
 			});
 
@@ -823,7 +823,7 @@ export default test(({ describe }) => {
 
 		it("skips tests that have '.skip'", async () => {
 			let testRan = false;
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it.skip("my test", () => {
 					testRan = true;
 				});
@@ -835,15 +835,15 @@ export default test(({ describe }) => {
 		});
 
 		it("skips suites that have no function", async () => {
-			const suite = TestSuite.createFn("my suite");
-			const noName = TestSuite.createFn();
+			const suite = TestSuite.create("my suite");
+			const noName = TestSuite.create();
 
 			assert.objEqual(await suite.runAsync(), TestResultFactory.suite("my suite", []));
 			assert.objEqual(await noName.runAsync(), TestResultFactory.suite([], []));
 		});
 
 		it("recursively skips everything within a suite that has '.skip'", async () => {
-			const suite = TestSuite.createFn.skip(({ describe, it }) => {
+			const suite = TestSuite.create.skip(({ describe, it }) => {
 				it("test 1", () => {});
 				it("test 2", () => {});
 				describe(({ it }) => {
@@ -869,7 +869,7 @@ export default test(({ describe }) => {
 	describe(".only", ({ it }) => {
 
 		it("if any tests are marked .only, it only runs those tests", async () => {
-			const suite = TestSuite.createFn(({ it }) => {
+			const suite = TestSuite.create(({ it }) => {
 				it.only(".only", () => {});
 				it("not .only", () => {});
 			});
@@ -883,7 +883,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and none of its tests are, runs all of those tests", async () => {
-			const suite = TestSuite.createFn(({ describe }) => {
+			const suite = TestSuite.create(({ describe }) => {
 				describe("not .only", ({ it }) => {
 					it("test1", () => {});
 					it("test2", () => {});
@@ -909,7 +909,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and none of its children are, run those tests recursively", async () => {
-			const suite = TestSuite.createFn.only(({ describe }) => {
+			const suite = TestSuite.create.only(({ describe }) => {
 				describe(({ it }) => {
 					it("test", () => {});
 				});
@@ -925,7 +925,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and one of its children is also, only run that test", async () => {
-			const suite = TestSuite.createFn.only(({ it }) => {
+			const suite = TestSuite.create.only(({ it }) => {
 				it("not only", () => {});
 				it.only("only", () => {});
 			});
@@ -939,7 +939,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and one of its grandchildren is also, only run that test", async () => {
-			const suite = TestSuite.createFn.only(({ describe }) => {
+			const suite = TestSuite.create.only(({ describe }) => {
 				describe(({ it }) => {
 					it("not only", () => {});
 					it.only("only", () => {});
@@ -957,7 +957,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and one of its child suites is also, only run that suite", async () => {
-			const suite = TestSuite.createFn.only(({ describe }) => {
+			const suite = TestSuite.create.only(({ describe }) => {
 				describe("not only", ({ it }) => {
 					it("test1", () => {});
 				});
@@ -979,7 +979,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and a child is marked .skip, skip the child", async () => {
-			const suite = TestSuite.createFn.only(({ describe }) => {
+			const suite = TestSuite.create.only(({ describe }) => {
 				describe(({ it }) => {
 					it.skip("test1", () => {});
 					it("test2", () => {});
@@ -997,7 +997,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .skip and a child is marked .only, run the child", async () => {
-			const suite = TestSuite.createFn.skip(({ describe }) => {
+			const suite = TestSuite.create.skip(({ describe }) => {
 				describe(({ it }) => {
 					it.only("test1", () => {});
 					it("test2", () => {});
@@ -1015,7 +1015,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .only and a child suite is marked .skip, skip its children", async () => {
-			const suite = TestSuite.createFn.only(({ describe }) => {
+			const suite = TestSuite.create.only(({ describe }) => {
 				describe.skip(({ it }) => {
 					it("test1", () => {});
 					it("test2", () => {});
@@ -1033,7 +1033,7 @@ export default test(({ describe }) => {
 		});
 
 		it("if a suite is marked .skip and a child suite is marked .only, run its children", async () => {
-			const suite = TestSuite.createFn.skip(({ describe }) => {
+			const suite = TestSuite.create.skip(({ describe }) => {
 				describe.only(({ it }) => {
 					it("test1", () => {});
 					it("test2", () => {});
@@ -1056,7 +1056,7 @@ export default test(({ describe }) => {
 
 
 async function runTestAsync(testName: string, testFn: () => void) {
-	const suite = TestSuite.createFn(({ it }) => {
+	const suite = TestSuite.create(({ it }) => {
 		it(testName, testFn);
 	});
 	const result = await suite.runAsync();

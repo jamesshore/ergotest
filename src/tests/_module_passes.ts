@@ -2,7 +2,7 @@
 
 import { TestSuite } from "./test_suite.js";
 
-export default TestSuite.createFn(({ it }) => {
+export default TestSuite.create(({ it }) => {
 
 	it("passes", () => {
 		// passes
