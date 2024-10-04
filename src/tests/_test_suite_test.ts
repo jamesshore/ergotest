@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import { test, assert } from "tests";
-import { TestSuite } from "./test_suite.js";
+import { TestMark, TestMarkValue, TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestStatus, TestResult, TestResultFactory } from "./test_result.js";
 import path from "node:path";
@@ -128,10 +128,10 @@ export default test(({ describe }) => {
 
 			assert.deepEqual(await actualPromise, TestResultFactory.suite([], [
 				TestResultFactory.pass("pass", filename),
-				TestResultFactory.skip("skip", filename),
+				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				TestResultFactory.fail("fail", new Error("fail"), filename),
 				TestResultFactory.timeout("timeout", DEFAULT_TIMEOUT, filename),
-				TestResultFactory.skip("test without body", filename),
+				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
 				TestResultFactory.suite("suite without body", [], filename),
 			], filename));
 		});
@@ -820,10 +820,10 @@ export default test(({ describe }) => {
 			const result = (await suite.runAsync()).allTests()[0];
 
 			assert.objEqual(result, TestResultFactory.skip("my test"), "should be skipped");
-			// assert.equal(result.mark, TestMark.skip, "should be marked");
+			assert.equal(result.mark, TestMark.skip, "should be marked");
 		});
 
-		it("skips tests that have '.skip'", async () => {
+		it("skips and marks tests that have '.skip'", async () => {
 			let testRan = false;
 			const suite = TestSuite.create(({ it }) => {
 				it.skip("my test", () => {
@@ -831,9 +831,10 @@ export default test(({ describe }) => {
 				});
 			});
 
-			const result = await suite.runAsync();
+			const result = (await suite.runAsync()).allTests()[0];
 			assert.equal(testRan, false, "should not run test");
-			assert.objEqual(result.children[0], TestResultFactory.skip("my test"));
+			assert.objEqual(result, createSkip({ name: "my test", mark: TestMark.skip }));
+			assert.equal(result.mark, TestMark.skip, "should be marked");
 		});
 
 		it("skips suites that have no function", async () => {
@@ -865,7 +866,11 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("doesn't mark tests within suites that have '.skip'");
+		it("doesn't mark skipped tests and suites that aren't explicitly marked '.skip'");
+
+		it("handles combinations of marks with before/after");
+
+		it("does something about the conflict between .only mark and having no body `it.only('no body');` case");
 
 	});
 
@@ -993,7 +998,7 @@ export default test(({ describe }) => {
 			assert.deepEqual(await suite.runAsync(),
 				TestResultFactory.suite([], [
 					TestResultFactory.suite([], [
-						TestResultFactory.skip("test1"),
+						createSkip({ name: "test1", mark: TestMark.skip }),
 						TestResultFactory.pass("test2"),
 					]),
 				]),
@@ -1065,4 +1070,70 @@ async function runTestAsync(testName: string, testFn: () => void) {
 	});
 	const result = await suite.runAsync();
 	return result.children[0];
+}
+
+function createSuite({
+	name = "irrelevant name",
+	results = [],
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	results?: TestResult[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResultFactory.suite(name, results, filename, mark);
+}
+
+function createPass({
+	name = "irrelevant name",
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResultFactory.pass(name, filename, mark);
+}
+
+function createFail({
+	name = "irrelevant name",
+	error = new Error("irrelevant error"),
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	error?: string | Error,
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResultFactory.fail(name, error, filename, mark);
+}
+
+function createSkip({
+	name = "irrelevant name",
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResultFactory.skip(name, filename, mark);
+}
+
+function createTimeout({
+	name = "irrelevant name",
+	timeout = 42,
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	timeout?: number,
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResultFactory.timeout(name, timeout, filename, mark);
 }
