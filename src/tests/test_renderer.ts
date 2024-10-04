@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestResult, TestSuiteResult, TestCaseResult } from "./test_result.js";
+import { TestStatus, TestResult, TestSuiteResult, TestCaseResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -16,17 +16,17 @@ const actualColor = Colors.brightRed;
 const diffColor = Colors.brightYellow.bold;
 
 const PROGRESS_RENDERING = {
-	[TestResult.STATUS.PASS]: Colors.white("."),
-	[TestResult.STATUS.FAIL]: Colors.brightRed.inverse("X"),
-	[TestResult.STATUS.SKIP]: Colors.cyan.dim("_"),
-	[TestResult.STATUS.TIMEOUT]: Colors.purple.inverse("!"),
+	[TestStatus.pass]: Colors.white("."),
+	[TestStatus.fail]: Colors.brightRed.inverse("X"),
+	[TestStatus.skip]: Colors.cyan.dim("_"),
+	[TestStatus.timeout]: Colors.purple.inverse("!"),
 };
 
 const DESCRIPTION_RENDERING = {
-	[TestResult.STATUS.PASS]: Colors.green("passed"),
-	[TestResult.STATUS.FAIL]: Colors.brightRed("failed"),
-	[TestResult.STATUS.SKIP]: Colors.brightCyan("skipped"),
-	[TestResult.STATUS.TIMEOUT]: Colors.brightPurple("timeout"),
+	[TestStatus.pass]: Colors.green("passed"),
+	[TestStatus.fail]: Colors.brightRed("failed"),
+	[TestStatus.skip]: Colors.brightCyan("skipped"),
+	[TestStatus.timeout]: Colors.brightPurple("timeout"),
 };
 
 interface NodeError extends Error {
@@ -101,12 +101,12 @@ export class TestRenderer {
 
 	#renderMultiLineBody(testCaseResult: TestCaseResult): string {
 		switch (testCaseResult.status) {
-			case TestResult.STATUS.PASS:
-			case TestResult.STATUS.SKIP:
+			case TestStatus.pass:
+			case TestStatus.skip:
 				return `\n${DESCRIPTION_RENDERING[testCaseResult.status]}\n`;
-			case TestResult.STATUS.FAIL:
+			case TestStatus.fail:
 				return this.#renderFailure(testCaseResult);
-			case TestResult.STATUS.TIMEOUT:
+			case TestStatus.timeout:
 				return timeoutMessageColor(`\nTimed out after ${testCaseResult.timeout}ms\n`);
 			default:
 				throw new Error(`Unrecognized test result status: ${testCaseResult.status}`);

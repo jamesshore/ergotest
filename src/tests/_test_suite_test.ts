@@ -3,7 +3,7 @@
 import { test, assert } from "tests";
 import { TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestResult } from "./test_result.js";
+import { TestStatus, TestResult } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -38,7 +38,7 @@ export default test(({ describe }) => {
 
 			assert.deepEqual(result.name, [ "error when requiring _module_throws.js" ]);
 			assert.equal(result.filename, "./_module_throws.js");
-			assert.equal(result.status, TestResult.STATUS.FAIL);
+			assert.equal(result.status, TestStatus.fail);
 			assert.match((result.error as { message: string }).message, /my require error/);
 		});
 
@@ -48,7 +48,7 @@ export default test(({ describe }) => {
 
 			assert.deepEqual(result.name, [ "error when requiring _module_no_export.js" ]);
 			assert.equal(result.filename, "./_module_no_export.js");
-			assert.equal(result.status, TestResult.STATUS.FAIL);
+			assert.equal(result.status, TestStatus.fail);
 			assert.equal(result.error, "doesn't export a test suite: ./_module_no_export.js");
 		});
 

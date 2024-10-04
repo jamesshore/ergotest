@@ -4,23 +4,23 @@ import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
 
-const STATUS = {
-	PASS: "pass",
-	FAIL: "fail",
-	SKIP: "skip",
-	TIMEOUT: "timeout",
+export const TestStatus = {
+	pass: "pass",
+	fail: "fail",
+	skip: "skip",
+	timeout: "timeout",
 } as const;
 
 const SUCCESS_MAP = {
-	[STATUS.PASS]: true,
-	[STATUS.FAIL]: false,
-	[STATUS.SKIP]: true,
-	[STATUS.TIMEOUT]: false,
+	[TestStatus.pass]: true,
+	[TestStatus.fail]: false,
+	[TestStatus.skip]: true,
+	[TestStatus.timeout]: false,
 };
 
 export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
-type TestStatus = typeof STATUS[keyof typeof STATUS];
+type Status = typeof TestStatus[keyof typeof TestStatus];
 
 interface TestCount {
 	pass: number;
@@ -41,7 +41,7 @@ interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	name: string[];
 	filename?: string;
-	status: TestStatus;
+	status: Status;
 	error?: unknown;
 	timeout?: number;
 }
@@ -60,18 +60,6 @@ interface SerializedError {
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
 export abstract class TestResult {
-
-	static get PASS() { return STATUS.PASS; }
-	static get FAIL() { return STATUS.FAIL; }
-	static get SKIP() { return STATUS.SKIP; }
-	static get TIMEOUT() { return STATUS.TIMEOUT; }
-
-	/**
-	 * Types of test results.
-	 */
-	static get STATUS() {
-		return STATUS;
-	}
 
 	/**
 	 * Factory method. Create a TestResult for a suite of tests.
@@ -95,7 +83,7 @@ export abstract class TestResult {
 	static pass(names: string | string[], filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, STATUS.PASS, { filename });
+		return new TestCaseResult(names, TestStatus.pass, { filename });
 	}
 
 	/**
@@ -108,7 +96,7 @@ export abstract class TestResult {
 	static fail(names: string | string[], error: unknown, filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, STATUS.FAIL, { error, filename });
+		return new TestCaseResult(names, TestStatus.fail, { error, filename });
 	}
 
 	/**
@@ -120,7 +108,7 @@ export abstract class TestResult {
 	static skip(names: string | string[], filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, STATUS.SKIP, { filename });
+		return new TestCaseResult(names, TestStatus.skip, { filename });
 	}
 
 	/**
@@ -133,7 +121,7 @@ export abstract class TestResult {
 	static timeout(names: string | string[], timeout: number, filename?: string): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ] ]);
 
-		return new TestCaseResult(names, STATUS.TIMEOUT, { timeout, filename });
+		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename });
 	}
 
 	/**
@@ -153,36 +141,6 @@ export abstract class TestResult {
 			default: ensure.unreachable(`Unrecognized type '${type}' in serialized test result: ${serializedTestResult}`);
 		}
 	}
-
-	/**
-	 * @returns {boolean} True if this result represents a suite of tests.
-	 */
-	abstract isSuite(): boolean;
-
-	/**
-	 * @returns {boolean} True if this test either passed or was skipped.
-	 */
-	abstract isSuccess(): boolean;
-
-	/**
-	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
-	 */
-	abstract allTests(): TestCaseResult[];
-
-	/**
-	 * Convert this result into a bare object later deserialization.
-	 * @returns {SerializedTestSuiteResult} The serialized result.
-	 * @see TestResult.deserialize
-	 */
-	abstract serialize(): SerializedTestResult;
-
-	/**
-	 * Determine if this test result is identical to another test result. To be identical, they must have the same
-	 * results, in the same order, with the same names and filenames.
-	 * @param {any} that The thing to compare against
-	 * @returns {boolean}
-	 */
-	abstract equals(that: TestResult): boolean;
 
 }
 
@@ -269,10 +227,10 @@ export class TestSuiteResult extends TestResult {
 
 	/**
 	 * Finds all the test results that match the provided statuses.
-	 * @param {STATUS[]} statuses The statuses to match.
+	 * @param {TestStatus[]} statuses The statuses to match.
 	 * @returns {TestResult[]} The test results.
 	 */
-	allMatchingTests(...statuses: TestStatus[]): TestCaseResult[] {
+	allMatchingTests(...statuses: Status[]): TestCaseResult[] {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
@@ -302,15 +260,15 @@ export class TestSuiteResult extends TestResult {
 	/**
 	 * A summary count of this suite's results. Includes a count of each type of test result and the total number of
 	 * tests.
-	 * @returns {{[STATUS.FAIL]: number, total: number, [STATUS.PASS]: number, [STATUS.SKIP]: number, [STATUS.TIMEOUT]:
+	 * @returns {{[TestStatus.FAIL]: number, total: number, [TestStatus.PASS]: number, [TestStatus.SKIP]: number, [TestStatus.TIMEOUT]:
 	 *   number}}
 	 */
 	count(): TestCount {
 		const count = {
-			[STATUS.PASS]: 0,
-			[STATUS.FAIL]: 0,
-			[STATUS.SKIP]: 0,
-			[STATUS.TIMEOUT]: 0,
+			[TestStatus.pass]: 0,
+			[TestStatus.fail]: 0,
+			[TestStatus.skip]: 0,
+			[TestStatus.timeout]: 0,
 			total: 0,
 		};
 
@@ -410,14 +368,14 @@ export class TestCaseResult extends TestResult {
 
 	private _name: string[];
 	private _filename?: string;
-	private _status: TestStatus;
+	private _status: Status;
 	private _error?: unknown;
 	private _timeout?: number;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
 		names: string | string[],
-		status: TestStatus,
+		status: Status,
 		{ error, timeout, filename }: { error?: unknown, timeout?: number, filename?: string } = {}
 	) {
 		super();
@@ -445,9 +403,9 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestStatus | TestCount} Whether this test passed, failed, etc. If this result is for a test suite, returns an object representing the results of all the tests.
+	 * @returns {Status | TestCount} Whether this test passed, failed, etc. If this result is for a test suite, returns an object representing the results of all the tests.
 	 */
-	get status(): TestStatus {
+	get status(): Status {
 		return this._status;
 	}
 
@@ -484,7 +442,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isPass(): boolean {
 		ensure.signature(arguments, []);
-		return this.status === STATUS.PASS;
+		return this.status === TestStatus.pass;
 	}
 
 	/**
@@ -492,7 +450,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isFail(): boolean {
 		ensure.signature(arguments, []);
-		return this.status === STATUS.FAIL;
+		return this.status === TestStatus.fail;
 	}
 
 	/**
@@ -500,7 +458,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isSkip(): boolean {
 		ensure.signature(arguments, []);
-		return this.status === STATUS.SKIP;
+		return this.status === TestStatus.skip;
 	}
 
 	/**
@@ -508,7 +466,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isTimeout(): boolean {
 		ensure.signature(arguments, []);
-		return this.status === STATUS.TIMEOUT;
+		return this.status === TestStatus.timeout;
 	}
 
 	/**

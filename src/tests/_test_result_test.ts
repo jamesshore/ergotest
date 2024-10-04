@@ -2,7 +2,7 @@
 
 import { test, assert } from "tests";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
 import util from "node:util";
 import { Colors } from "../infrastructure/colors.js";
 
@@ -55,7 +55,7 @@ export default test(({ describe }) => {
 			const result = createPass({ name: "my name" });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
-			assert.equal(result.status, TestResult.PASS, "status");
+			assert.equal(result.status, TestStatus.pass, "status");
 		});
 
 		it("name can include parent suites", () => {
@@ -72,7 +72,7 @@ export default test(({ describe }) => {
 			const result = createFail({ name: "my name", error: new Error("my error") });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
-			assert.equal(result.status, TestResult.FAIL, "status");
+			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal((result.error as Error).message, "my error", "error");
 		});
 
@@ -85,14 +85,14 @@ export default test(({ describe }) => {
 			const result = createSkip({ name: "my name" });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
-			assert.equal(result.status, TestResult.SKIP, "status");
+			assert.equal(result.status, TestStatus.skip, "status");
 		});
 
 		it("timeout tests have name, status, and timeout", () => {
 			const result = createTimeout({ name: "my name", timeout: 999 });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
-			assert.equal(result.status, TestResult.TIMEOUT, "status");
+			assert.equal(result.status, TestStatus.timeout, "status");
 			assert.equal(result.timeout, 999);
 		});
 
@@ -160,12 +160,12 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allMatchingTests(TestResult.STATUS.FAIL), [
+			assert.deepEqual(suite.allMatchingTests(TestStatus.fail), [
 				createFail({ name: "fail 1" }),
 				createFail({ name: "fail 2" }),
 			], "one status");
 
-			assert.deepEqual(suite.allMatchingTests(TestResult.STATUS.FAIL, TestResult.STATUS.TIMEOUT), [
+			assert.deepEqual(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
 				createFail({ name: "fail 1" }),
 				createTimeout({ name: "timeout" }),
 				createFail({ name: "fail 2" }),
@@ -250,10 +250,10 @@ export default test(({ describe }) => {
 			]});
 
 			assert.deepEqual(suite.count(), {
-				[TestResult.PASS]: 1,
-				[TestResult.FAIL]: 2,
-				[TestResult.SKIP]: 3,
-				[TestResult.TIMEOUT]: 4,
+				[TestStatus.pass]: 1,
+				[TestStatus.fail]: 2,
+				[TestStatus.skip]: 3,
+				[TestStatus.timeout]: 4,
 				total: 10,
 			});
 		});
@@ -270,10 +270,10 @@ export default test(({ describe }) => {
 			]});
 
 			assert.deepEqual(suite.count(), {
-				[TestResult.PASS]: 1,
-				[TestResult.FAIL]: 3,
-				[TestResult.SKIP]: 1,
-				[TestResult.TIMEOUT]: 0,
+				[TestStatus.pass]: 1,
+				[TestStatus.fail]: 3,
+				[TestStatus.skip]: 1,
+				[TestStatus.timeout]: 0,
 				total: 5,
 			});
 		});
