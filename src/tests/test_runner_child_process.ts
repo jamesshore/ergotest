@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import { TestSuite } from "./test_suite.js";
-import { TestResult } from "./test_result.js";
+import { TestResultFactory } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
@@ -12,8 +12,8 @@ main();
 
 function main() {
 	process.on("uncaughtException", (err) => {
-		const errorResult = TestResult.suite([], [
-			TestResult.fail("Unhandled error in tests", err),
+		const errorResult = TestResultFactory.suite([], [
+			TestResultFactory.fail("Unhandled error in tests", err),
 		]);
 		sendFinalResult(errorResult);
 	});
@@ -37,14 +37,14 @@ async function runWorkerAsync({ modulePaths, config }: WorkerInput) {
 	});
 }
 
-function sendProgress(result: TestResult) {
+function sendProgress(result: TestResultFactory) {
 	process.send!({
 		type: "progress",
 		result: result.serialize(),
 	});
 }
 
-function sendFinalResult(result: TestResult) {
+function sendFinalResult(result: TestResultFactory) {
 	process.send!({
 		type: "complete",
 		result: result.serialize(),

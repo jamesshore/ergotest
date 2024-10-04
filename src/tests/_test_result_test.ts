@@ -2,7 +2,7 @@
 
 import { test, assert } from "tests";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
+import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
 import util from "node:util";
 import { Colors } from "../infrastructure/colors.js";
 
@@ -12,7 +12,7 @@ export default test(({ describe }) => {
 
 		it("has a name and list of test results", () => {
 			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const result = TestResult.suite([ "my name" ], list);
+			const result = TestResultFactory.suite([ "my name" ], list);
 
 			assert.deepEqual(result.name, [ "my name" ]);
 			assert.deepEqual(result.children, list);
@@ -114,13 +114,6 @@ export default test(({ describe }) => {
 				createTimeout({ name: "my name", timeout: 1 }),
 				createTimeout({ name: "my name", timeout: 2 }),
 			);
-		});
-
-		it("considers 'pass' and 'skipped' to be successes, and 'fail' and 'timeout' to be failures", () => {
-			assert.equal(createPass().isSuccess(), true, "pass");
-			assert.equal(createFail().isSuccess(), false, "fail");
-			assert.equal(createSkip().isSuccess(), true, "skip");
-			assert.equal(createTimeout().isSuccess(), false, "timeout");
 		});
 
 	});
@@ -296,7 +289,7 @@ export default test(({ describe }) => {
 
 			const serialized = suite.serialize();
 			// console.log(serialized);
-			const deserialized = TestResult.deserialize(serialized);
+			const deserialized = TestResultFactory.deserialize(serialized);
 
 			assert.objEqual(deserialized, suite);
 		});
@@ -305,7 +298,7 @@ export default test(({ describe }) => {
 			const test = createFail({ error: "my error" });
 
 			const serialized = test.serialize();
-			assert.objEqual(TestResult.deserialize(serialized), test);
+			assert.objEqual(TestResultFactory.deserialize(serialized), test);
 		});
 
 		it("handles assertion errors", () => {
@@ -318,7 +311,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -329,7 +322,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -347,7 +340,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -366,7 +359,7 @@ function createSuite({
 	results?: TestResult[],
 	filename?: string,
 } = {}) {
-	return TestResult.suite(name, results, filename);
+	return TestResultFactory.suite(name, results, filename);
 }
 
 function createPass({
@@ -376,7 +369,7 @@ function createPass({
 	name?: string | string[],
 	filename?: string,
 } = {}) {
-	return TestResult.pass(name, filename);
+	return TestResultFactory.pass(name, filename);
 }
 
 function createFail({
@@ -388,7 +381,7 @@ function createFail({
 	error?: string | Error,
 	filename?: string,
 } = {}) {
-	return TestResult.fail(name, error, filename);
+	return TestResultFactory.fail(name, error, filename);
 }
 
 function createSkip({
@@ -398,7 +391,7 @@ function createSkip({
 	name?: string | string[],
 	filename?: string,
 } = {}) {
-	return TestResult.skip(name, filename);
+	return TestResultFactory.skip(name, filename);
 }
 
 function createTimeout({
@@ -410,5 +403,5 @@ function createTimeout({
 	timeout?: number,
 	filename?: string,
 } = {}) {
-	return TestResult.timeout(name, timeout, filename);
+	return TestResultFactory.timeout(name, timeout, filename);
 }

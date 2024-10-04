@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -305,7 +305,7 @@ export class TestSuite implements Runnable {
 
 		if (!this._allChildrenSkipped) {
 			const beforeResult = await runBeforeOrAfterFnsAsync([ "beforeAll()" ], this._beforeAllFns, options);
-			if (!beforeResult.isSuccess()) return TestResult.suite(options.name, [ beforeResult ], options.filename);
+			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename);
 		}
 
 		const results = [];
@@ -315,20 +315,16 @@ export class TestSuite implements Runnable {
 
 		if (!this._allChildrenSkipped) {
 			const afterResult = await runBeforeOrAfterFnsAsync([ "afterAll()" ], this._afterAllFns, options);
-			if (!afterResult.isSuccess()) results.push(afterResult);
+			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResult.suite(options.name, results, options.filename);
+		return TestResultFactory.suite(options.name, results, options.filename);
 	}
 
 }
 
 
 class TestCase implements Runnable {
-
-	static get RUN_STATE() {
-		return RUN_STATE;
-	}
 
 	protected _name: string;
 	private _testFn?: ItFn;
@@ -367,7 +363,7 @@ class TestCase implements Runnable {
 		options = { ...options, name };
 
 		const result = this._isSkipped(parentRunState)
-			? TestResult.skip(options.name, options.filename)
+			? TestResultFactory.skip(options.name, options.filename)
 			: await runTestAsync(this);
 
 		options.notifyFn(result);
@@ -375,12 +371,12 @@ class TestCase implements Runnable {
 
 		async function runTestAsync(self: TestCase): Promise<TestResult> {
 			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, options);
-			if (!beforeResult.isSuccess()) return beforeResult;
+			if (!isSuccess(beforeResult)) return beforeResult;
 
 			const itResult = await runTestFnAsync(options.name, self._testFn!, options);
 			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, options);
 
-			if (!itResult.isSuccess()) return itResult;
+			if (!isSuccess(itResult)) return itResult;
 			else return afterResult;
 		}
 	}
@@ -405,7 +401,7 @@ class FailureTestCase extends TestCase {
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
 	): Promise<TestResult> {
-		return await TestResult.fail([ this._name ], this._error, this._filename);
+		return await TestResultFactory.fail([ this._name ], this._error, this._filename);
 	}
 
 }
@@ -415,19 +411,19 @@ async function runBeforeOrAfterFnsAsync(
 	name: string[],
 	fns: Test[],
 	options: RecursiveRunOptions,
-): Promise<TestResult> {
+): Promise<TestCaseResult> {
 	for await (const fn of fns) {
 		const result = await runTestFnAsync(name, fn, options);
-		if (!result.isSuccess()) return result;
+		if (!isSuccess(result)) return result;
 	}
-	return TestResult.pass(name, options.filename);
+	return TestResultFactory.pass(name, options.filename);
 }
 
 async function runTestFnAsync(
 	name: string[],
 	fn: Test,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
-): Promise<TestResult> {
+): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
 		return config[name] as T;
@@ -436,12 +432,16 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, filename);
+			return TestResultFactory.pass(name, filename);
 		}
 		catch (err) {
-			return TestResult.fail(name, err, filename);
+			return TestResultFactory.fail(name, err, filename);
 		}
 	}, async () => {
-		return await TestResult.timeout(name, timeout, filename);
+		return await TestResultFactory.timeout(name, timeout, filename);
 	});
+}
+
+function isSuccess(result: TestCaseResult) {
+	return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }

@@ -11,13 +11,6 @@ export const TestStatus = {
 	timeout: "timeout",
 } as const;
 
-const SUCCESS_MAP = {
-	[TestStatus.pass]: true,
-	[TestStatus.fail]: false,
-	[TestStatus.skip]: true,
-	[TestStatus.timeout]: false,
-};
-
 export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
 type Status = typeof TestStatus[keyof typeof TestStatus];
@@ -56,26 +49,28 @@ interface SerializedError {
 	operator?: string;
 }
 
+export type TestResult = TestSuiteResult | TestCaseResult;
+
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
-export abstract class TestResult {
+export abstract class TestResultFactory {
 
 	/**
-	 * Factory method. Create a TestResult for a suite of tests.
+	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
-	 * @param {TestResult[]} results The nested results of this suite.
+	 * @param {TestResultFactory[]} children The nested results of this suite.
 	 * @param {string} [filename] The file that contained this suite (optional).
 	 * @returns {TestSuiteResult} The result.
 	 */
-	static suite(names: string | string[], results: TestResult[], filename?: string): TestSuiteResult {
+	static suite(names: string | string[], children: TestResult[], filename?: string): TestSuiteResult {
 		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ]]);
 
-		return new TestSuiteResult(names, results, filename);
+		return new TestSuiteResult(names, children, filename);
 	}
 
 	/**
-	 * Factory method. Create a TestResult for a test that passed.
+	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
@@ -87,7 +82,7 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Factory method. Create a TestResult for a test that failed.
+	 * Create a TestResult for a test that failed.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
 	 * @param {string} [filename] The file that contained this test (optional).
@@ -100,7 +95,7 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Factory method. Create a TestResult for a test that was skipped.
+	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @returns {TestCaseResult} The result.
@@ -112,7 +107,7 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Factory method. Create a TestResult for a test that timed out.
+	 * Create a TestResult for a test that timed out.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
 	 * @param {string} [filename] The file that contained this test (optional).
@@ -147,15 +142,15 @@ export abstract class TestResult {
 /**
  * The result of running a test suite.
  */
-export class TestSuiteResult extends TestResult {
+export class TestSuiteResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {SerializedTestSuiteResult} serializedTestResult The serialized test result.
 	 * @returns {TestSuiteResult} The result object.
-	 * @see TestResult#deserialize
+	 * @see TestResultFactory#deserialize
 	 */
-	static override deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
+	static deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
@@ -163,7 +158,7 @@ export class TestSuiteResult extends TestResult {
 			suite: Array,
 		}], [ "serialized TestSuiteResult" ]);
 
-		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
+		const deserializedSuite = suite.map(test => TestResultFactory.deserialize(test));
 		return new TestSuiteResult(name, deserializedSuite, filename);
 	}
 
@@ -171,15 +166,12 @@ export class TestSuiteResult extends TestResult {
 	private readonly _filename?: string;
 	private readonly _children: TestResult[];
 
-	/** Internal use only. (Use {@link TestResult.suite} instead.) */
+	/** Internal use only. (Use {@link TestResultFactory.suite} instead.) */
 	constructor(names: string | string[], results: TestResult[], filename?: string) {
-		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._children = results;
 	}
-
-	isSuite(): boolean { return true; }
 
 	/**
 	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
@@ -204,22 +196,13 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns {boolean} True if this test either passed or was skipped.
-	 */
-	isSuccess(): boolean {
-		ensure.signature(arguments, []);
-
-		ensure.unreachable("not yet implemented");
-	}
-
-	/**
 	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
 	 */
 	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
 
 		const tests: TestCaseResult[] = [];
-		this._children.forEach(result => {
+		this._children.forEach((result: TestResult) => {
 			result.allTests().forEach(subTest => tests.push(subTest));
 		});
 		return tests;
@@ -228,7 +211,7 @@ export class TestSuiteResult extends TestResult {
 	/**
 	 * Finds all the test results that match the provided statuses.
 	 * @param {TestStatus[]} statuses The statuses to match.
-	 * @returns {TestResult[]} The test results.
+	 * @returns {TestCaseResult[]} The test results.
 	 */
 	allMatchingTests(...statuses: Status[]): TestCaseResult[] {
 		return this.allTests().filter(test => statuses.includes(test.status));
@@ -283,7 +266,7 @@ export class TestSuiteResult extends TestResult {
 	/**
 	 * Convert this suite into a bare object later deserialization.
 	 * @returns {SerializedTestSuiteResult} The serialized object.
-	 * @see TestResult.deserialize
+	 * @see TestResultFactory.deserialize
 	 */
 	serialize(): SerializedTestSuiteResult {
 		return {
@@ -320,15 +303,15 @@ export class TestSuiteResult extends TestResult {
 /**
  * The result of running an individual test.
  */
-export class TestCaseResult extends TestResult {
+export class TestCaseResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {object} serializedTestResult The serialized test result.
-	 * @returns {TestSuiteResult | TestCaseResult} The result object.
-	 * @see TestResult#deserialize
+	 * @returns {TestCaseResult} The result object.
+	 * @see TestResultFactory#deserialize
 	 */
-	static override deserialize(serializedResult: SerializedTestCaseResult) {
+	static deserialize(serializedResult: SerializedTestCaseResult): TestCaseResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
@@ -372,21 +355,18 @@ export class TestCaseResult extends TestResult {
 	private _error?: unknown;
 	private _timeout?: number;
 
-	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
+	/** Internal use only. (Use {@link TestResultFactory} factory methods instead.) */
 	constructor(
 		names: string | string[],
 		status: Status,
 		{ error, timeout, filename }: { error?: unknown, timeout?: number, filename?: string } = {}
 	) {
-		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._status = status;
 		this._error = error;
 		this._timeout = timeout;
 	}
-
-	isSuite(): boolean { return false; }
 
 	/**
 	 * @returns {string | undefined} The file that contained the test, if any.
@@ -396,14 +376,14 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
+	 * @returns {string []} The names of the test, which typically includes the name of all enclosing suites.
 	 */
 	get name(): string[] {
 		return this._name;
 	}
 
 	/**
-	 * @returns {Status | TestCount} Whether this test passed, failed, etc. If this result is for a test suite, returns an object representing the results of all the tests.
+	 * @returns {Status} Whether this test passed, failed, etc.
 	 */
 	get status(): Status {
 		return this._status;
@@ -426,15 +406,6 @@ export class TestCaseResult extends TestResult {
 	get timeout(): number {
 		ensure.that(this.isTimeout(), "Attempted to retrieve timeout from a test that didn't time out");
 		return this._timeout!;
-	}
-
-	/**
-	 * @returns {boolean} True if this test either passed or was skipped.
-	 */
-	isSuccess(): boolean {
-		ensure.signature(arguments, []);
-
-		return SUCCESS_MAP[this.status];
 	}
 
 	/**
@@ -480,7 +451,7 @@ export class TestCaseResult extends TestResult {
 	/**
 	 * Convert this result into a bare object later deserialization.
 	 * @returns {object} The serialized object.
-	 * @see TestResult.deserialize
+	 * @see TestResultFactory.deserialize
 	 */
 	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);

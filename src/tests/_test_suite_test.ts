@@ -3,7 +3,7 @@
 import { test, assert } from "tests";
 import { TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestStatus, TestResult } from "./test_result.js";
+import { TestStatus, TestResult, TestResultFactory } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -23,11 +23,11 @@ export default test(({ describe }) => {
 		it("creates test suite from a module (and sets filename on result)", async () => {
 			const suite = await TestSuite.fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
 
-			const testCaseResult = TestResult.pass("passes", SUCCESS_MODULE_PATH);
+			const testCaseResult = TestResultFactory.pass("passes", SUCCESS_MODULE_PATH);
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
-					TestResult.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
+					TestResultFactory.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
 				]),
 			);
 		});
@@ -80,10 +80,10 @@ export default test(({ describe }) => {
 
 			const result = await suite.runAsync();
 			assert.objEqual(result,
-				TestResult.suite([], [
-					TestResult.pass("test 1"),
-					TestResult.pass("test 2"),
-					TestResult.pass("test 3"),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass("test 1"),
+					TestResultFactory.pass("test 2"),
+					TestResultFactory.pass("test 3"),
 				]),
 			);
 		});
@@ -99,10 +99,10 @@ export default test(({ describe }) => {
 
 			const result = await top.runAsync();
 			assert.objEqual(result,
-				TestResult.suite("top", [
-					TestResult.suite([ "top", "middle" ], [
-						TestResult.suite([ "top", "middle", "bottom" ], [
-							TestResult.pass([ "top", "middle", "bottom", "my test" ]),
+				TestResultFactory.suite("top", [
+					TestResultFactory.suite([ "top", "middle" ], [
+						TestResultFactory.suite([ "top", "middle", "bottom" ], [
+							TestResultFactory.pass([ "top", "middle", "bottom", "my test" ]),
 						]),
 					]),
 				]),
@@ -126,13 +126,13 @@ export default test(({ describe }) => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.deepEqual(await actualPromise, TestResult.suite([], [
-				TestResult.pass("pass", filename),
-				TestResult.skip("skip", filename),
-				TestResult.fail("fail", new Error("fail"), filename),
-				TestResult.timeout("timeout", DEFAULT_TIMEOUT, filename),
-				TestResult.skip("test without body", filename),
-				TestResult.suite("suite without body", [], filename),
+			assert.deepEqual(await actualPromise, TestResultFactory.suite([], [
+				TestResultFactory.pass("pass", filename),
+				TestResultFactory.skip("skip", filename),
+				TestResultFactory.fail("fail", new Error("fail"), filename),
+				TestResultFactory.timeout("timeout", DEFAULT_TIMEOUT, filename),
+				TestResultFactory.skip("test without body", filename),
+				TestResultFactory.suite("suite without body", [], filename),
 			], filename));
 		});
 
@@ -173,7 +173,7 @@ export default test(({ describe }) => {
 
 		it("passes when test doesn't throw exception", async () => {
 			const result = await runTestAsync("my test", () => {});
-			assert.objEqual(result, TestResult.pass("my test"));
+			assert.objEqual(result, TestResultFactory.pass("my test"));
 		});
 
 		it("fails when test throws exception", async () => {
@@ -181,7 +181,7 @@ export default test(({ describe }) => {
 			const result = await runTestAsync("my test", () => {
 				throw error;
 			});
-			assert.objEqual(result, TestResult.fail("my test", error));
+			assert.objEqual(result, TestResultFactory.fail("my test", error));
 		});
 
 		it("can retrieve config variables", async () => {
@@ -206,8 +206,8 @@ export default test(({ describe }) => {
 			});
 
 			const results = await suite.runAsync({});
-			assert.deepEqual(results, TestResult.suite([], [
-				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
+			assert.deepEqual(results, TestResultFactory.suite([], [
+				TestResultFactory.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
 
@@ -219,8 +219,8 @@ export default test(({ describe }) => {
 			});
 
 			const results = await suite.runAsync({ config: {} });
-			assert.deepEqual(results, TestResult.suite([], [
-				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
+			assert.deepEqual(results, TestResultFactory.suite([], [
+				TestResultFactory.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
 
@@ -230,12 +230,12 @@ export default test(({ describe }) => {
 			});
 
 			let testResult;
-			function notifyFn(result: TestResult) {
+			function notifyFn(result: TestResultFactory) {
 				testResult = result;
 			}
 
 			await suite.runAsync({ notifyFn });
-			assert.objEqual(testResult, TestResult.pass("my test"));
+			assert.objEqual(testResult, TestResultFactory.pass("my test"));
 		});
 
 	});
@@ -251,8 +251,8 @@ export default test(({ describe }) => {
 				it("has no name", () => {});
 			});
 
-			assert.objEqual(await name.runAsync(), TestResult.suite("named", [ TestResult.pass([ "named", "has a name" ]) ]));
-			assert.objEqual(await noName.runAsync(), TestResult.suite([], [ TestResult.pass("has no name") ]));
+			assert.objEqual(await name.runAsync(), TestResultFactory.suite("named", [ TestResultFactory.pass([ "named", "has a name" ]) ]));
+			assert.objEqual(await noName.runAsync(), TestResultFactory.suite([], [ TestResultFactory.pass("has no name") ]));
 		});
 
 		it("test cases without names are given a default", async () => {
@@ -260,7 +260,7 @@ export default test(({ describe }) => {
 				it("", () => {});
 			});
 
-			assert.objEqual(await suite.runAsync(), TestResult.suite([], [ TestResult.pass("(unnamed)") ]));
+			assert.objEqual(await suite.runAsync(), TestResultFactory.suite([], [ TestResultFactory.pass("(unnamed)") ]));
 		});
 
 		it("sets name of test result to include nested suites", async () => {
@@ -274,10 +274,10 @@ export default test(({ describe }) => {
 
 			const result = await top.runAsync();
 			assert.objEqual(result,
-				TestResult.suite([ "top" ], [
-					TestResult.suite([ "top", "middle" ], [
-						TestResult.suite([ "top", "middle", "bottom" ], [
-							TestResult.pass([ "top", "middle", "bottom", "my test" ]),
+				TestResultFactory.suite([ "top" ], [
+					TestResultFactory.suite([ "top", "middle" ], [
+						TestResultFactory.suite([ "top", "middle", "bottom" ], [
+							TestResultFactory.pass([ "top", "middle", "bottom", "my test" ]),
 						]),
 					]),
 				]),
@@ -295,10 +295,10 @@ export default test(({ describe }) => {
 
 			const result = await top.runAsync();
 			assert.objEqual(result,
-				TestResult.suite("top", [
-					TestResult.suite("top", [
-						TestResult.suite("top", [
-							TestResult.pass([ "top", "my test" ]),
+				TestResultFactory.suite("top", [
+					TestResultFactory.suite("top", [
+						TestResultFactory.suite("top", [
+							TestResultFactory.pass([ "top", "my test" ]),
 						]),
 					]),
 				]),
@@ -454,8 +454,8 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("beforeAll()", error),
+				TestResultFactory.suite([], [
+					TestResultFactory.fail("beforeAll()", error),
 				]),
 			);
 		});
@@ -471,10 +471,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.pass("test 1"),
-					TestResult.pass("test 2"),
-					TestResult.fail("afterAll()", error),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass("test 1"),
+					TestResultFactory.pass("test 2"),
+					TestResultFactory.fail("afterAll()", error),
 				]),
 			);
 		});
@@ -490,9 +490,9 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("test 1", error),
-					TestResult.fail("test 2", error),
+				TestResultFactory.suite([], [
+					TestResultFactory.fail("test 1", error),
+					TestResultFactory.fail("test 2", error),
 				]),
 			);
 		});
@@ -523,9 +523,9 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("test 1", error),
-					TestResult.fail("test 2", error),
+				TestResultFactory.suite([], [
+					TestResultFactory.fail("test 1", error),
+					TestResultFactory.fail("test 2", error),
 				]),
 			);
 		});
@@ -559,8 +559,8 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("my test", testError),
+				TestResultFactory.suite([], [
+					TestResultFactory.fail("my test", testError),
 				]),
 			);
 		});
@@ -591,8 +591,8 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
+				TestResultFactory.suite([], [
+					TestResultFactory.timeout("my test", DEFAULT_TIMEOUT)
 				]),
 				"result",
 			);
@@ -621,8 +621,8 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite("my suite", [
-					TestResult.timeout("beforeAll()", DEFAULT_TIMEOUT)
+				TestResultFactory.suite("my suite", [
+					TestResultFactory.timeout("beforeAll()", DEFAULT_TIMEOUT)
 				]),
 				"result",
 			);
@@ -652,10 +652,10 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("test 1"),
-					TestResult.pass("test 2"),
-					TestResult.timeout("afterAll()", DEFAULT_TIMEOUT),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass("test 1"),
+					TestResultFactory.pass("test 2"),
+					TestResultFactory.timeout("afterAll()", DEFAULT_TIMEOUT),
 				]),
 				"result",
 			);
@@ -684,8 +684,8 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
+				TestResultFactory.suite([], [
+					TestResultFactory.timeout("my test", DEFAULT_TIMEOUT)
 				]),
 				"result",
 			);
@@ -714,8 +714,8 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
+				TestResultFactory.suite([], [
+					TestResultFactory.timeout("my test", DEFAULT_TIMEOUT)
 				]),
 				"result",
 			);
@@ -746,9 +746,9 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("test 1"),  // all tests pass because nothing timed out
-					TestResult.pass("test 2"),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass("test 1"),  // all tests pass because nothing timed out
+					TestResultFactory.pass("test 2"),
 				]),
 			);
 		});
@@ -776,8 +776,8 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("my test"),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass("my test"),
 				]),
 			);
 		});
@@ -799,9 +799,9 @@ export default test(({ describe }) => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.objEqual(await actualPromise,
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.pass("my test"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.pass("my test"),
 					]),
 				]),
 			);
@@ -818,7 +818,7 @@ export default test(({ describe }) => {
 			});
 
 			const result = await suite.runAsync();
-			assert.objEqual(result.children[0], TestResult.skip("my test"));
+			assert.objEqual(result.children[0], TestResultFactory.skip("my test"));
 		});
 
 		it("skips tests that have '.skip'", async () => {
@@ -831,15 +831,15 @@ export default test(({ describe }) => {
 
 			const result = await suite.runAsync();
 			assert.equal(testRan, false, "should not run test");
-			assert.objEqual(result.children[0], TestResult.skip("my test"));
+			assert.objEqual(result.children[0], TestResultFactory.skip("my test"));
 		});
 
 		it("skips suites that have no function", async () => {
 			const suite = TestSuite.createFn("my suite");
 			const noName = TestSuite.createFn();
 
-			assert.objEqual(await suite.runAsync(), TestResult.suite("my suite", []));
-			assert.objEqual(await noName.runAsync(), TestResult.suite([], []));
+			assert.objEqual(await suite.runAsync(), TestResultFactory.suite("my suite", []));
+			assert.objEqual(await noName.runAsync(), TestResultFactory.suite([], []));
 		});
 
 		it("recursively skips everything within a suite that has '.skip'", async () => {
@@ -853,11 +853,11 @@ export default test(({ describe }) => {
 
 			const result = await suite.runAsync();
 			assert.objEqual(result,
-				TestResult.suite([], [
-					TestResult.skip("test 1"),
-					TestResult.skip("test 2"),
-					TestResult.suite([], [
-						TestResult.skip("test 3"),
+				TestResultFactory.suite([], [
+					TestResultFactory.skip("test 1"),
+					TestResultFactory.skip("test 2"),
+					TestResultFactory.suite([], [
+						TestResultFactory.skip("test 3"),
 					]),
 				]),
 			);
@@ -875,9 +875,9 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.pass(".only"),
-					TestResult.skip("not .only"),
+				TestResultFactory.suite([], [
+					TestResultFactory.pass(".only"),
+					TestResultFactory.skip("not .only"),
 				]),
 			);
 		});
@@ -895,14 +895,14 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite("not .only", [
-						TestResult.skip([ "not .only", "test1" ]),
-						TestResult.skip([ "not .only", "test2" ]),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite("not .only", [
+						TestResultFactory.skip([ "not .only", "test1" ]),
+						TestResultFactory.skip([ "not .only", "test2" ]),
 					]),
-					TestResult.suite(".only", [
-						TestResult.pass([ ".only", "test3" ]),
-						TestResult.pass([ ".only", "test4" ]),
+					TestResultFactory.suite(".only", [
+						TestResultFactory.pass([ ".only", "test3" ]),
+						TestResultFactory.pass([ ".only", "test4" ]),
 					]),
 				]),
 			);
@@ -916,9 +916,9 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.pass("test"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.pass("test"),
 					]),
 				]),
 			);
@@ -931,9 +931,9 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.skip("not only"),
-					TestResult.pass("only"),
+				TestResultFactory.suite([], [
+					TestResultFactory.skip("not only"),
+					TestResultFactory.pass("only"),
 				]),
 			);
 		});
@@ -947,10 +947,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.skip("not only"),
-						TestResult.pass("only"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.skip("not only"),
+						TestResultFactory.pass("only"),
 					]),
 				]),
 			);
@@ -967,12 +967,12 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite("not only", [
-						TestResult.skip([ "not only", "test1" ]),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite("not only", [
+						TestResultFactory.skip([ "not only", "test1" ]),
 					]),
-					TestResult.suite("only", [
-						TestResult.pass([ "only", "test2" ]),
+					TestResultFactory.suite("only", [
+						TestResultFactory.pass([ "only", "test2" ]),
 					]),
 				]),
 			);
@@ -987,10 +987,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.skip("test1"),
-						TestResult.pass("test2"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.skip("test1"),
+						TestResultFactory.pass("test2"),
 					]),
 				]),
 			);
@@ -1005,10 +1005,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.pass("test1"),
-						TestResult.skip("test2"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.pass("test1"),
+						TestResultFactory.skip("test2"),
 					]),
 				]),
 			);
@@ -1023,10 +1023,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.skip("test1"),
-						TestResult.skip("test2"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.skip("test1"),
+						TestResultFactory.skip("test2"),
 					]),
 				]),
 			);
@@ -1041,10 +1041,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.pass("test1"),
-						TestResult.pass("test2"),
+				TestResultFactory.suite([], [
+					TestResultFactory.suite([], [
+						TestResultFactory.pass("test1"),
+						TestResultFactory.pass("test2"),
 					]),
 				]),
 			);
