@@ -241,10 +241,8 @@ export class TestSuiteResult {
 	}
 
 	/**
-	 * A summary count of this suite's results. Includes a count of each type of test result and the total number of
-	 * tests.
-	 * @returns {{[TestStatus.FAIL]: number, total: number, [TestStatus.PASS]: number, [TestStatus.SKIP]: number, [TestStatus.TIMEOUT]:
-	 *   number}}
+	 * @returns {TestCount} A summary count of this suite's results. Includes a count of each type of test result and the
+	 *   total number of tests.
 	 */
 	count(): TestCount {
 		const count = {

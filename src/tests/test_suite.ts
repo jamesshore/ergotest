@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
+import { TestCaseResult, TestResult, TestResultFactory, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -253,7 +253,7 @@ export class TestSuite implements Runnable {
 		config?: TestConfig,
 		notifyFn?: (result: TestResult) => void,
 		clock?: Clock,
-	} = {}) {
+	} = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
@@ -357,7 +357,7 @@ class TestCase implements Runnable {
 		beforeEachFns: Test[],
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
-	): Promise<TestResult> {
+	): Promise<TestCaseResult> {
 		const name = [ ...options.name ];
 		name.push(this._name !== "" ? this._name : "(unnamed)");
 		options = { ...options, name };
@@ -369,7 +369,7 @@ class TestCase implements Runnable {
 		options.notifyFn(result);
 		return result;
 
-		async function runTestAsync(self: TestCase): Promise<TestResult> {
+		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
 			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, options);
 			if (!isSuccess(beforeResult)) return beforeResult;
 
@@ -400,7 +400,7 @@ class FailureTestCase extends TestCase {
 		beforeEachFns: Test[],
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
-	): Promise<TestResult> {
+	): Promise<TestCaseResult> {
 		return await TestResultFactory.fail([ this._name ], this._error, this._filename);
 	}
 
