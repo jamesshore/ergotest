@@ -19,6 +19,14 @@ const RUN_STATE = {
 
 type RunState = typeof RUN_STATE[keyof typeof RUN_STATE];
 
+export const TestMark = {
+	none: "none",
+	skip: "skip",
+	only: "only",
+};
+
+export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
+
 interface Describe {
 	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
 	skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite,

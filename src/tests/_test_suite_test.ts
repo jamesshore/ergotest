@@ -139,7 +139,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("test case", ({ it }) => {
+	describe("test cases", ({ it }) => {
 
 		it("runs when its parent suite is run", async () => {
 			let testRan = false;
@@ -812,13 +812,15 @@ export default test(({ describe }) => {
 
 	describe(".skip", ({ it }) => {
 
-		it("skips tests that have no function", async () => {
+		it("skips and marks tests that have no function", async () => {
 			const suite = TestSuite.create(({ it }) => {
 				it("my test");
 			});
 
-			const result = await suite.runAsync();
-			assert.objEqual(result.children[0], TestResultFactory.skip("my test"));
+			const result = (await suite.runAsync()).allTests()[0];
+
+			assert.objEqual(result, TestResultFactory.skip("my test"), "should be skipped");
+			// assert.equal(result.mark, TestMark.skip, "should be marked");
 		});
 
 		it("skips tests that have '.skip'", async () => {
@@ -862,6 +864,8 @@ export default test(({ describe }) => {
 				]),
 			);
 		});
+
+		it("doesn't mark tests within suites that have '.skip'");
 
 	});
 

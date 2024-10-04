@@ -2,6 +2,7 @@
 
 import { test, assert } from "tests";
 import { AssertionError } from "node:assert";
+import { TestMark, TestMarkValue } from "./test_suite.js";
 import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
 import util from "node:util";
 import { Colors } from "../infrastructure/colors.js";
@@ -29,6 +30,18 @@ export default test(({ describe }) => {
 			assert.equal(suite.filename, "/my/filename");
 		});
 
+		it("has a mark", () => {
+			const notSpecified = createSuite();
+			const none = createSuite({ mark: TestMark.none });
+			const skip = createSuite({ mark: TestMark.skip });
+			const only = createSuite({ mark: TestMark.only });
+
+			assert.equal(notSpecified.mark, TestMark.none);
+			assert.equal(none.mark, TestMark.none);
+			assert.equal(skip.mark, TestMark.skip);
+			assert.equal(only.mark, TestMark.only);
+		});
+
 		it("can be compared using equals()", () => {
 			assert.objEqual(createSuite({ name: "my name" }), createSuite({ name: "my name" }));
 			assert.objNotEqual(createSuite({ name: "my name" }), createSuite({ name: "different" }));
@@ -51,11 +64,19 @@ export default test(({ describe }) => {
 
 	describe("test case", ({ it }) => {
 
-		it("passing tests have a name and status", () => {
+		it("passing tests have a name, status, and mark", () => {
 			const result = createPass({ name: "my name" });
+			const noneMark = createPass({ mark: TestMark.none });
+			const skipMark = createPass({ mark: TestMark.skip });
+			const onlyMark = createPass({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.pass, "status");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("name can include parent suites", () => {
@@ -68,12 +89,20 @@ export default test(({ describe }) => {
 			assert.equal(test.filename, "my_filename");
 		});
 
-		it("failing tests have a name, status, and error", () => {
+		it("failing tests have a name, status, mark, and error", () => {
 			const result = createFail({ name: "my name", error: new Error("my error") });
+			const noneMark = createFail({ mark: TestMark.none });
+			const skipMark = createFail({ mark: TestMark.skip });
+			const onlyMark = createFail({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal((result.error as Error).message, "my error", "error");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("failing tests can have a string for the error", () => {
@@ -81,19 +110,35 @@ export default test(({ describe }) => {
 			assert.equal(result.error, "my error");
 		});
 
-		it("skipped tests have a name and status", () => {
+		it("skipped tests have a name, status, and mark", () => {
 			const result = createSkip({ name: "my name" });
+			const noneMark = createSkip({ mark: TestMark.none });
+			const skipMark = createSkip({ mark: TestMark.skip });
+			const onlyMark = createSkip({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.skip, "status");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
-		it("timeout tests have name, status, and timeout", () => {
+		it("timeout tests have name, status, mark, and timeout", () => {
 			const result = createTimeout({ name: "my name", timeout: 999 });
+			const noneMark = createTimeout({ mark: TestMark.none });
+			const skipMark = createTimeout({ mark: TestMark.skip });
+			const onlyMark = createTimeout({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.timeout, "status");
 			assert.equal(result.timeout, 999);
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("can be compared using equals()", () => {
@@ -354,54 +399,64 @@ function createSuite({
 	name = "irrelevant name",
 	results = [],
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	results?: TestResult[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.suite(name, results, filename);
+	return TestResultFactory.suite(name, results, filename, mark);
 }
 
 function createPass({
 	name = "irrelevant name",
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.pass(name, filename);
+	return TestResultFactory.pass(name, filename, mark);
 }
 
 function createFail({
 	name = "irrelevant name",
 	error = new Error("irrelevant error"),
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.fail(name, error, filename);
+	return TestResultFactory.fail(name, error, filename, mark);
 }
 
 function createSkip({
 	name = "irrelevant name",
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.skip(name, filename);
+	return TestResultFactory.skip(name, filename, mark);
 }
 
 function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	timeout?: number,
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.timeout(name, timeout, filename);
+	return TestResultFactory.timeout(name, timeout, filename, mark);
 }

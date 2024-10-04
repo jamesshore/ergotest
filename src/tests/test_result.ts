@@ -3,6 +3,7 @@
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
+import { TestMark, TestMarkValue } from "./test_suite.js";
 
 export const TestStatus = {
 	pass: "pass",
@@ -13,7 +14,7 @@ export const TestStatus = {
 
 export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
-type Status = typeof TestStatus[keyof typeof TestStatus];
+export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
 
 interface TestCount {
 	pass: number;
@@ -34,7 +35,7 @@ interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	name: string[];
 	filename?: string;
-	status: Status;
+	status: TestStatusValue;
 	error?: unknown;
 	timeout?: number;
 }
@@ -61,24 +62,31 @@ export abstract class TestResultFactory {
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {TestResultFactory[]} children The nested results of this suite.
 	 * @param {string} [filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
 	 */
-	static suite(names: string | string[], children: TestResult[], filename?: string): TestSuiteResult {
-		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ]]);
+	static suite(
+		names: string | string[],
+		children: TestResult[],
+		filename?: string,
+		mark?: TestMarkValue,
+	): TestSuiteResult {
+		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ], [ undefined, String ]]);
 
-		return new TestSuiteResult(names, children, filename);
+		return new TestSuiteResult(names, children, filename, mark);
 	}
 
 	/**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(names: string | string[], filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
+	static pass(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, TestStatus.pass, { filename });
+		return new TestCaseResult(names, TestStatus.pass, { filename, mark });
 	}
 
 	/**
@@ -86,24 +94,26 @@ export abstract class TestResultFactory {
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static fail(names: string | string[], error: unknown, filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ]]);
+	static fail(names: string | string[], error: unknown, filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, TestStatus.fail, { error, filename });
+		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark });
 	}
 
 	/**
 	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static skip(names: string | string[], filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
+	static skip(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.skip, { filename });
+		return new TestCaseResult(names, TestStatus.skip, { filename, mark });
 	}
 
 	/**
@@ -111,12 +121,13 @@ export abstract class TestResultFactory {
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static timeout(names: string | string[], timeout: number, filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ] ]);
+	static timeout(names: string | string[], timeout: number, filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename });
+		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename, mark });
 	}
 
 	/**
@@ -163,14 +174,16 @@ export class TestSuiteResult {
 	}
 
 	private readonly _name: string[];
-	private readonly _filename?: string;
 	private readonly _children: TestResult[];
+	private readonly _filename?: string;
+	private readonly _mark: TestMarkValue;
 
 	/** Internal use only. (Use {@link TestResultFactory.suite} instead.) */
-	constructor(names: string | string[], results: TestResult[], filename?: string) {
+	constructor(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue) {
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
-		this._children = results;
+		this._children = children;
+		this._mark = mark ?? TestMark.none;
 	}
 
 	/**
@@ -185,6 +198,13 @@ export class TestSuiteResult {
 	 */
 	get filename(): string | undefined {
 		return this._filename;
+	}
+
+	/**
+	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	get mark(): TestMarkValue {
+		return this._mark;
 	}
 
 	/**
@@ -213,7 +233,7 @@ export class TestSuiteResult {
 	 * @param {TestStatus[]} statuses The statuses to match.
 	 * @returns {TestCaseResult[]} The test results.
 	 */
-	allMatchingTests(...statuses: Status[]): TestCaseResult[] {
+	allMatchingTests(...statuses: TestStatusValue[]): TestCaseResult[] {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
@@ -349,19 +369,21 @@ export class TestCaseResult {
 
 	private _name: string[];
 	private _filename?: string;
-	private _status: Status;
+	private _status: TestStatusValue;
+	private _mark: TestMarkValue;
 	private _error?: unknown;
 	private _timeout?: number;
 
 	/** Internal use only. (Use {@link TestResultFactory} factory methods instead.) */
 	constructor(
 		names: string | string[],
-		status: Status,
-		{ error, timeout, filename }: { error?: unknown, timeout?: number, filename?: string } = {}
+		status: TestStatusValue,
+		{ error, timeout, filename, mark }: { error?: unknown, timeout?: number, filename?: string, mark?: TestMarkValue } = {}
 	) {
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._status = status;
+		this._mark = mark ?? TestMark.none;
 		this._error = error;
 		this._timeout = timeout;
 	}
@@ -381,10 +403,17 @@ export class TestCaseResult {
 	}
 
 	/**
-	 * @returns {Status} Whether this test passed, failed, etc.
+	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
-	get status(): Status {
+	get status(): TestStatusValue {
 		return this._status;
+	}
+
+	/**
+	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	get mark(): TestMarkValue {
+		return this._mark;
 	}
 
 	/**
