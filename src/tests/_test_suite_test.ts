@@ -127,12 +127,12 @@ export default test(({ describe }) => {
 			clock.tickUntilTimersExpireAsync();
 
 			assert.deepEqual(await actualPromise, TestResultFactory.suite([], [
-				TestResultFactory.pass("pass", filename),
+				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
-				TestResultFactory.fail("fail", new Error("fail"), filename),
-				TestResultFactory.timeout("timeout", DEFAULT_TIMEOUT, filename),
+				createFail({ name: "fail", error: new Error("fail"), filename }),
+				createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, filename }),
 				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
-				TestResultFactory.suite("suite without body", [], filename),
+				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
 			], filename));
 		});
 
@@ -445,7 +445,7 @@ export default test(({ describe }) => {
 
 		it("handles exception in beforeAll", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.create(({ it, beforeAll }) => {
+			const suite = TestSuite.create("my suite", ({ it, beforeAll }) => {
 				beforeAll(() => {
 					throw error;
 				});
@@ -454,15 +454,15 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.fail("beforeAll()", error),
-				]),
+				createSuite({ name: "my suite", children: [
+					createFail({ name: [ "my suite", "beforeAll()" ], error }),
+				]}),
 			);
 		});
 
 		it("handles exception in afterAll", async () => {
 			const error = new Error("my error");
-			const suite = TestSuite.create(({ it, afterAll }) => {
+			const suite = TestSuite.create("my suite", ({ it, afterAll }) => {
 				afterAll(() => {
 					throw error;
 				});
@@ -471,11 +471,11 @@ export default test(({ describe }) => {
 			});
 
 			assert.objEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.pass("test 1"),
-					TestResultFactory.pass("test 2"),
-					TestResultFactory.fail("afterAll()", error),
-				]),
+				createSuite({ name: "my suite", children: [
+					createPass({ name: [ "my suite", "test 1" ]}),
+					createPass({ name: [ "my suite", "test 2" ]}),
+					createFail({ name: [ "my suite", "afterAll()" ], error }),
+				]}),
 			);
 		});
 
@@ -622,7 +622,7 @@ export default test(({ describe }) => {
 
 			assert.objEqual(await actualPromise,
 				TestResultFactory.suite("my suite", [
-					TestResultFactory.timeout("beforeAll()", DEFAULT_TIMEOUT)
+					TestResultFactory.timeout([ "my suite", "beforeAll()" ], DEFAULT_TIMEOUT)
 				]),
 				"result",
 			);
@@ -837,11 +837,11 @@ export default test(({ describe }) => {
 		});
 
 		it("skips suites that have no function", async () => {
-			const suite = TestSuite.create("my suite");
-			const noName = TestSuite.create();
+			const suite = await TestSuite.create("my suite").runAsync();
+			const noName = await TestSuite.create().runAsync();
 
-			assert.objEqual(await suite.runAsync(), TestResultFactory.suite("my suite", []));
-			assert.objEqual(await noName.runAsync(), TestResultFactory.suite([], []));
+			assert.objEqual(suite, createSuite({ name: "my suite", mark: TestMark.skip }));
+			assert.objEqual(noName, createSuite({ name: [], mark: TestMark.skip }));
 		});
 
 		it("recursively skips everything within a suite that has '.skip'", async () => {
@@ -855,21 +855,58 @@ export default test(({ describe }) => {
 
 			const result = await suite.runAsync();
 			assert.objEqual(result,
-				TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.skip, children: [
 					TestResultFactory.skip("test 1"),
 					TestResultFactory.skip("test 2"),
 					TestResultFactory.suite([], [
 						TestResultFactory.skip("test 3"),
 					]),
-				]),
+				]}),
 			);
 		});
 
-		it("doesn't mark skipped tests and suites that aren't explicitly marked '.skip'");
+		it("doesn't mark skipped tests and suites that aren't explicitly marked '.skip'", async () => {
+			const suite = TestSuite.create.skip(({ describe, it }) => {
+				it("test", () => {});
+				describe("suite", () => {});
+			});
 
-		it("handles combinations of marks with before/after");
+			const result = await suite.runAsync();
+			assert.objEqual(result,
+				createSuite({ mark: TestMark.skip, children: [
+					createSkip({ name: "test", mark: TestMark.none }),
+					createSuite({ name: "suite", mark: TestMark.none }),
+				]}),
+			);
+		});
 
-		it("does something about the conflict between .only mark and having no body `it.only('no body');` case");
+		it("generates failure when a suite is marked 'only' but has no body", async () => {
+			const suite = TestSuite.create.only("my suite");
+
+			const result = await suite.runAsync();
+			assert.objEqual(result,
+				createSuite({ name: "my suite", mark: TestMark.only, children: [
+					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
+				]}),
+			);
+		});
+
+		it("generates failure when a test is marked 'only' but has no body", async () => {
+			const suite = TestSuite.create("my suite", ({ it }) => {
+				it.only("my test");
+			});
+
+			const result = await suite.runAsync();
+			assert.objEqual(result,
+				createSuite({ name: "my suite", children: [
+					createFail({
+						name: [ "my suite", "my test" ],
+						error: "Test is marked '.only', but it has no body",
+						mark: TestMark.only,
+					}),
+				]}),
+			);
+		});
 
 	});
 
@@ -908,10 +945,10 @@ export default test(({ describe }) => {
 						TestResultFactory.skip([ "not .only", "test1" ]),
 						TestResultFactory.skip([ "not .only", "test2" ]),
 					]),
-					TestResultFactory.suite(".only", [
+					createSuite({ name: ".only", mark: TestMark.only, children: [
 						TestResultFactory.pass([ ".only", "test3" ]),
 						TestResultFactory.pass([ ".only", "test4" ]),
-					]),
+					]}),
 				]),
 			);
 		});
@@ -924,11 +961,11 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
 					TestResultFactory.suite([], [
 						TestResultFactory.pass("test"),
 					]),
-				]),
+				]}),
 			);
 		});
 
@@ -939,10 +976,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
 					TestResultFactory.skip("not only"),
 					TestResultFactory.pass("only"),
-				]),
+				]}),
 			);
 		});
 
@@ -955,12 +992,12 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
 					TestResultFactory.suite([], [
 						TestResultFactory.skip("not only"),
 						TestResultFactory.pass("only"),
 					]),
-				]),
+				]}),
 			);
 		});
 
@@ -975,14 +1012,14 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
 					TestResultFactory.suite("not only", [
 						TestResultFactory.skip([ "not only", "test1" ]),
 					]),
-					TestResultFactory.suite("only", [
+					createSuite({ name: "only", mark: TestMark.only, children: [
 						TestResultFactory.pass([ "only", "test2" ]),
-					]),
-				]),
+					]}),
+				]}),
 			);
 		});
 
@@ -995,12 +1032,12 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
+					createSuite({ children: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
 						TestResultFactory.pass("test2"),
-					]),
-				]),
+					]}),
+				]}),
 			);
 		});
 
@@ -1013,12 +1050,12 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.skip, children: [
+					createSuite({ children: [
 						TestResultFactory.pass("test1"),
 						TestResultFactory.skip("test2"),
-					]),
-				]),
+					]}),
+				]}),
 			);
 		});
 
@@ -1031,12 +1068,12 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.only, children: [
+					createSuite({ mark: TestMark.skip, children: [
 						TestResultFactory.skip("test1"),
 						TestResultFactory.skip("test2"),
-					]),
-				]),
+					]}),
+				]}),
 			);
 		});
 
@@ -1049,12 +1086,29 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.suite([], [
+				createSuite({ mark: TestMark.skip, children: [
+					createSuite({ mark: TestMark.only, children: [
 						TestResultFactory.pass("test1"),
 						TestResultFactory.pass("test2"),
-					]),
-				]),
+					]}),
+				]}),
+			);
+		});
+
+		it("marks suites even if they fail 'beforeAll'", async () => {
+			const suite = TestSuite.create.only("my suite", ({ beforeAll, it }) => {
+				beforeAll(() => { throw new Error("my error"); });
+				it("my test");
+			});
+
+			const result = await suite.runAsync();
+			assert.objEqual(result,
+				createSuite({ name: "my suite", mark: TestMark.only, children: [
+					createFail({
+						name: [ "my suite", "beforeAll()" ],
+						error: new Error("my error"),
+					}),
+				]}),
 			);
 		});
 
@@ -1072,17 +1126,17 @@ async function runTestAsync(testName: string, testFn: () => void) {
 }
 
 function createSuite({
-	name = "irrelevant name",
-	results = [],
+	name = [],
+	children = [],
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
-	results?: TestResult[],
+	children?: TestResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.suite(name, results, filename, mark);
+	return TestResultFactory.suite(name, children, filename, mark);
 }
 
 function createPass({

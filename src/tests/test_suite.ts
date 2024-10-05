@@ -119,16 +119,16 @@ export class TestSuite implements Runnable {
 					return suite;
 				}
 				else {
-					return createFailure(filename, errorName, `doesn't export a test suite: ${filename}`);
+					return createFailure(errorName, `doesn't export a test suite: ${filename}`, filename);
 				}
 			}
 			catch(err) {
-				return createFailure(filename, errorName, err);
+				return createFailure(errorName, err, filename);
 			}
 		}
 
-		function createFailure(filename: string, name: string, error: unknown) {
-			return new TestSuite("", TestMark.none, { tests: [ new FailureTestCase(filename, name, error) ] });
+		function createFailure(name: string, error: unknown, filename?: string) {
+			return new TestSuite("", TestMark.none, { tests: [ new FailureTestCase(name, error, filename) ] });
 		}
 	}
 
@@ -151,8 +151,17 @@ export class TestSuite implements Runnable {
 			suiteFn = possibleSuiteFn;
 		}
 
-		if (suiteFn === undefined) return new TestSuite(name, mark, {});
-		else return this.#runDescribeFunction(suiteFn, name, mark);
+		if (suiteFn !== undefined) {
+			return this.#runDescribeFunction(suiteFn, name, mark);
+		}
+		else if (mark === TestMark.only) {
+			return new TestSuite(name, mark, {
+				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but has no body") ],
+			});
+		}
+		else {
+			return new TestSuite(name, TestMark.skip, {});
+		}
 	}
 
 	static #runDescribeFunction(
@@ -304,8 +313,8 @@ export class TestSuite implements Runnable {
 		const afterEachFns = [ ...this._afterEachFns, ...parentAfterEachFns ];
 
 		if (!this._allChildrenSkipped) {
-			const beforeResult = await runBeforeOrAfterFnsAsync([ "beforeAll()" ], this._beforeAllFns, options);
-			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename);
+			const beforeResult = await runBeforeOrAfterFnsAsync([ ...options.name, "beforeAll()" ], this._beforeAllFns, options);
+			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename, this._mark);
 		}
 
 		const results = [];
@@ -314,11 +323,11 @@ export class TestSuite implements Runnable {
 		}
 
 		if (!this._allChildrenSkipped) {
-			const afterResult = await runBeforeOrAfterFnsAsync([ "afterAll()" ], this._afterAllFns, options);
+			const afterResult = await runBeforeOrAfterFnsAsync([ ...options.name, "afterAll()" ], this._afterAllFns, options);
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResultFactory.suite(options.name, results, options.filename);
+		return TestResultFactory.suite(options.name, results, options.filename, this._mark);
 	}
 
 }
@@ -336,8 +345,6 @@ class TestCase implements Runnable {
 		this._name = name;
 		this._testFn = testFn;
 		this._mark = mark;
-
-		if (testFn === undefined) this._mark = TestMark.skip;
 	}
 
 	/** @private */
@@ -363,9 +370,23 @@ class TestCase implements Runnable {
 		name.push(this._name !== "" ? this._name : "(unnamed)");
 		options = { ...options, name };
 
-		const result = this._isSkipped(parentMark)
-			? TestResultFactory.skip(options.name, options.filename, this._mark)
-			: await runTestAsync(this);
+		let result;
+		if (this._testFn !== undefined) {
+			if (!this._isSkipped(parentMark)) {
+				result = await runTestAsync(this);
+			}
+			else {
+				result = TestResultFactory.skip(name, options.filename, this._mark);
+			}
+		}
+		else {
+			if (this._mark !== TestMark.only) {
+				result = TestResultFactory.skip(name, options.filename, TestMark.skip);
+			}
+			else {
+				result = TestResultFactory.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+			}
+		}
 
 		options.notifyFn(result);
 		return result;
@@ -386,10 +407,10 @@ class TestCase implements Runnable {
 
 class FailureTestCase extends TestCase {
 
-	private _filename: string;
+	private _filename?: string;
 	private _error: unknown;
 
-	constructor(filename: string, name: string, error: unknown) {
+	constructor(name: string, error: unknown, filename?: string) {
 		super(name, undefined, TestMark.none);
 
 		this._filename = filename;
