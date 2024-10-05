@@ -920,10 +920,31 @@ export default test(({ describe }) => {
 			});
 
 			assert.deepEqual(await suite.runAsync(),
-				TestResultFactory.suite([], [
-					TestResultFactory.pass(".only"),
-					TestResultFactory.skip("not .only"),
-				]),
+				createSuite({ children: [
+					createPass({ name: ".only", mark: TestMark.only }),
+					createSkip({ name: "not .only" }),
+				]}),
+			);
+		});
+
+		it("marks test results as '.only'", async () => {
+			const clock = Clock.createNull();
+
+			const suite = TestSuite.create(({ it }) => {
+				it.only("pass", () => {});
+				it.only("fail", () => { throw new Error("my error"); });
+				it.only("timeout", async () => { await clock.waitAsync(EXCEED_TIMEOUT); });
+			});
+
+			const resultPromise = suite.runAsync({ clock });
+			clock.tickUntilTimersExpireAsync();
+
+			assert.deepEqual(await resultPromise,
+				createSuite({ children: [
+					createPass({ name: "pass", mark: TestMark.only }),
+					createFail({ name: "fail", error: new Error("my error"), mark: TestMark.only }),
+					createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, mark: TestMark.only }),
+				]}),
 			);
 		});
 
@@ -977,8 +998,8 @@ export default test(({ describe }) => {
 
 			assert.deepEqual(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
-					TestResultFactory.skip("not only"),
-					TestResultFactory.pass("only"),
+					createSkip({ name: "not only" }),
+					createPass({ name: "only", mark: TestMark.only }),
 				]}),
 			);
 		});
@@ -993,10 +1014,10 @@ export default test(({ describe }) => {
 
 			assert.deepEqual(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
-					TestResultFactory.suite([], [
-						TestResultFactory.skip("not only"),
-						TestResultFactory.pass("only"),
-					]),
+					createSuite({ children: [
+						createSkip({ name: "not only" }),
+						createPass({ name: "only", mark: TestMark.only }),
+					]}),
 				]}),
 			);
 		});
@@ -1052,8 +1073,8 @@ export default test(({ describe }) => {
 			assert.deepEqual(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ children: [
-						TestResultFactory.pass("test1"),
-						TestResultFactory.skip("test2"),
+						createPass({ name: "test1", mark: TestMark.only }),
+						createSkip({ name: "test2" }),
 					]}),
 				]}),
 			);

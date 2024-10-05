@@ -313,7 +313,9 @@ export class TestSuite implements Runnable {
 		const afterEachFns = [ ...this._afterEachFns, ...parentAfterEachFns ];
 
 		if (!this._allChildrenSkipped) {
-			const beforeResult = await runBeforeOrAfterFnsAsync([ ...options.name, "beforeAll()" ], this._beforeAllFns, options);
+			const beforeResult = await runBeforeOrAfterFnsAsync(
+				[ ...options.name, "beforeAll()" ], this._beforeAllFns, TestMark.none, options,
+			);
 			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename, this._mark);
 		}
 
@@ -323,7 +325,9 @@ export class TestSuite implements Runnable {
 		}
 
 		if (!this._allChildrenSkipped) {
-			const afterResult = await runBeforeOrAfterFnsAsync([ ...options.name, "afterAll()" ], this._afterAllFns, options);
+			const afterResult = await runBeforeOrAfterFnsAsync(
+				[ ...options.name, "afterAll()" ], this._afterAllFns, TestMark.none, options
+			);
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
@@ -392,11 +396,11 @@ class TestCase implements Runnable {
 		return result;
 
 		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
-			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, options);
+			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
 			if (!isSuccess(beforeResult)) return beforeResult;
 
-			const itResult = await runTestFnAsync(options.name, self._testFn!, options);
-			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, options);
+			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, options);
+			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
 
 			if (!isSuccess(itResult)) return itResult;
 			else return afterResult;
@@ -432,18 +436,20 @@ class FailureTestCase extends TestCase {
 async function runBeforeOrAfterFnsAsync(
 	name: string[],
 	fns: Test[],
+	mark: TestMarkValue,
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	for await (const fn of fns) {
-		const result = await runTestFnAsync(name, fn, options);
+		const result = await runTestFnAsync(name, fn, mark, options);
 		if (!isSuccess(result)) return result;
 	}
-	return TestResultFactory.pass(name, options.filename);
+	return TestResultFactory.pass(name, options.filename, mark);
 }
 
 async function runTestFnAsync(
 	name: string[],
 	fn: Test,
+	mark: TestMarkValue,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
@@ -454,13 +460,13 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResultFactory.pass(name, filename);
+			return TestResultFactory.pass(name, filename, mark);
 		}
 		catch (err) {
-			return TestResultFactory.fail(name, err, filename);
+			return TestResultFactory.fail(name, err, filename, mark);
 		}
 	}, async () => {
-		return await TestResultFactory.timeout(name, timeout, filename);
+		return await TestResultFactory.timeout(name, timeout, filename, mark);
 	});
 }
 
