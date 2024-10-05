@@ -3,7 +3,7 @@
 import { test, assert } from "tests";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
-import { TestResultFactory, TestResult } from "./test_result.js";
+import { TestResult } from "./test_result.js";
 import util from "node:util";
 import { Colors } from "../infrastructure/colors.js";
 
@@ -338,7 +338,7 @@ function createSuite({
 	results?: TestResult[],
 	filename?: string,
 } = {}): TestResult {
-	return TestResultFactory.suite(name, results, filename);
+	return TestResult.suite(name, results, filename);
 }
 
 function createPass({
@@ -348,7 +348,7 @@ function createPass({
 	name?: string | string[],
 	filename?: string,
 } = {}): TestResult {
-	return TestResultFactory.pass(name, filename);
+	return TestResult.pass(name, filename);
 }
 
 function createFail({
@@ -360,7 +360,7 @@ function createFail({
 	error?: string | Error,
 	filename?: string,
 } = {}): TestResult {
-	return TestResultFactory.fail(name, error, filename);
+	return TestResult.fail(name, error, filename);
 }
 
 function createSkip({
@@ -370,7 +370,7 @@ function createSkip({
 	name?: string | string[],
 	filename?: string,
 } = {}): TestResult {
-	return TestResultFactory.skip(name, filename);
+	return TestResult.skip(name, filename);
 }
 
 function createTimeout({
@@ -382,5 +382,5 @@ function createTimeout({
 	timeout?: number,
 	filename?: string,
 } = {}): TestResult {
-	return TestResultFactory.timeout(name, timeout, filename);
+	return TestResult.timeout(name, timeout, filename);
 }

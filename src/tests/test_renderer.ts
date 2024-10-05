@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestStatus, TestResultFactory, TestSuiteResult, TestCaseResult } from "./test_result.js";
+import { TestStatus, TestResult, TestSuiteResult, TestCaseResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -42,13 +42,13 @@ export class TestRenderer {
 	/**
 	 * @returns {string} A single character representing this test result: a dot for passed, a red X for failed, etc.
 	 */
-	renderCharacter(testResult: TestResultFactory): string {
+	renderCharacter(testResult: TestResult): string {
 		return this.#render(testResult, (testCaseResult) => {
 			return PROGRESS_RENDERING[testCaseResult.status];
 		});
 	}
 
-	renderSingleLine(testResult: TestResultFactory): string {
+	renderSingleLine(testResult: TestResult): string {
 		return this.#render(
 			testResult,
 			(testCaseResult) => {
@@ -63,13 +63,13 @@ export class TestRenderer {
 		);
 	}
 
-	renderMultiLine(testResult: TestResultFactory): string {
+	renderMultiLine(testResult: TestResult): string {
 		return this.#render(testResult, (testCaseResult) => {
 			return this.#renderMultiLineName(testCaseResult) + this.#renderMultiLineBody(testCaseResult);
 		});
 	}
 
-	#render(testResult: TestResultFactory, renderFn: (testCaseResult: TestCaseResult) => string): string {
+	#render(testResult: TestResult, renderFn: (testCaseResult: TestCaseResult) => string): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult ], Function ]);
 
 		if (testResult instanceof TestCaseResult) {

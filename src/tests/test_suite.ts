@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestResultFactory, TestStatus, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -316,7 +316,7 @@ export class TestSuite implements Runnable {
 			const beforeResult = await runBeforeOrAfterFnsAsync(
 				[ ...options.name, "beforeAll()" ], this._beforeAllFns, TestMark.none, options,
 			);
-			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename, this._mark);
+			if (!isSuccess(beforeResult)) return TestResult.suite(options.name, [ beforeResult ], options.filename, this._mark);
 		}
 
 		const results = [];
@@ -331,7 +331,7 @@ export class TestSuite implements Runnable {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResultFactory.suite(options.name, results, options.filename, this._mark);
+		return TestResult.suite(options.name, results, options.filename, this._mark);
 	}
 
 }
@@ -380,15 +380,15 @@ class TestCase implements Runnable {
 				result = await runTestAsync(this);
 			}
 			else {
-				result = TestResultFactory.skip(name, options.filename, this._mark);
+				result = TestResult.skip(name, options.filename, this._mark);
 			}
 		}
 		else {
 			if (this._mark !== TestMark.only) {
-				result = TestResultFactory.skip(name, options.filename, TestMark.skip);
+				result = TestResult.skip(name, options.filename, TestMark.skip);
 			}
 			else {
-				result = TestResultFactory.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+				result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
 			}
 		}
 
@@ -427,7 +427,7 @@ class FailureTestCase extends TestCase {
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		return await TestResultFactory.fail([ this._name ], this._error, this._filename);
+		return await TestResult.fail([ this._name ], this._error, this._filename);
 	}
 
 }
@@ -443,7 +443,7 @@ async function runBeforeOrAfterFnsAsync(
 		const result = await runTestFnAsync(name, fn, mark, options);
 		if (!isSuccess(result)) return result;
 	}
-	return TestResultFactory.pass(name, options.filename, mark);
+	return TestResult.pass(name, options.filename, mark);
 }
 
 async function runTestFnAsync(
@@ -460,13 +460,13 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResultFactory.pass(name, filename, mark);
+			return TestResult.pass(name, filename, mark);
 		}
 		catch (err) {
-			return TestResultFactory.fail(name, err, filename, mark);
+			return TestResult.fail(name, err, filename, mark);
 		}
 	}, async () => {
-		return await TestResultFactory.timeout(name, timeout, filename, mark);
+		return await TestResult.timeout(name, timeout, filename, mark);
 	});
 }
 

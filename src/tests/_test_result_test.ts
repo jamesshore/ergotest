@@ -3,7 +3,7 @@
 import { test, assert } from "tests";
 import { AssertionError } from "node:assert";
 import { TestMark, TestMarkValue } from "./test_suite.js";
-import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
+import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
 import util from "node:util";
 import { Colors } from "../infrastructure/colors.js";
 
@@ -13,7 +13,7 @@ export default test(({ describe }) => {
 
 		it("has a name and list of test results", () => {
 			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const result = TestResultFactory.suite([ "my name" ], list);
+			const result = TestResult.suite([ "my name" ], list);
 
 			assert.deepEqual(result.name, [ "my name" ]);
 			assert.deepEqual(result.children, list);
@@ -341,7 +341,7 @@ export default test(({ describe }) => {
 
 			const serialized = suite.serialize();
 			// console.log(serialized);
-			const deserialized = TestResultFactory.deserialize(serialized);
+			const deserialized = TestResult.deserialize(serialized);
 
 			assert.objEqual(deserialized, suite);
 		});
@@ -350,7 +350,7 @@ export default test(({ describe }) => {
 			const test = createFail({ error: "my error" });
 
 			const serialized = test.serialize();
-			assert.objEqual(TestResultFactory.deserialize(serialized), test);
+			assert.objEqual(TestResult.deserialize(serialized), test);
 		});
 
 		it("handles assertion errors", () => {
@@ -363,7 +363,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -374,7 +374,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -392,7 +392,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -413,7 +413,7 @@ function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.suite(name, results, filename, mark);
+	return TestResult.suite(name, results, filename, mark);
 }
 
 function createPass({
@@ -425,7 +425,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.pass(name, filename, mark);
+	return TestResult.pass(name, filename, mark);
 }
 
 function createFail({
@@ -439,7 +439,7 @@ function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, filename, mark);
 }
 
 function createSkip({
@@ -451,7 +451,7 @@ function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.skip(name, filename, mark);
+	return TestResult.skip(name, filename, mark);
 }
 
 function createTimeout({
@@ -465,5 +465,5 @@ function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.timeout(name, timeout, filename, mark);
+	return TestResult.timeout(name, timeout, filename, mark);
 }

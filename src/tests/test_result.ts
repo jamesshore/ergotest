@@ -16,7 +16,7 @@ export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCas
 
 export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
 
-interface TestCount {
+export interface TestCount {
 	pass: number;
 	fail: number;
 	skip: number;
@@ -24,14 +24,14 @@ interface TestCount {
 	total: number;
 }
 
-interface SerializedTestSuiteResult {
+export interface SerializedTestSuiteResult {
 	type: "TestSuiteResult";
 	name: string[];
 	filename?: string;
 	suite: SerializedTestResult[];
 }
 
-interface SerializedTestCaseResult {
+export interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	name: string[];
 	filename?: string;
@@ -40,7 +40,7 @@ interface SerializedTestCaseResult {
 	timeout?: number;
 }
 
-interface SerializedError {
+export interface SerializedError {
 	type: "Error" | "AssertionError";
 	message: string;
 	stack?: string;
@@ -50,17 +50,15 @@ interface SerializedError {
 	operator?: string;
 }
 
-export type TestResult = TestSuiteResult | TestCaseResult;
-
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
-export abstract class TestResultFactory {
+export abstract class TestResult {
 
 	/**
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
-	 * @param {TestResultFactory[]} children The nested results of this suite.
+	 * @param {TestResult[]} children The nested results of this suite.
 	 * @param {string} [filename] The file that contained this suite (optional).
 	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
@@ -148,18 +146,37 @@ export abstract class TestResultFactory {
 		}
 	}
 
+	/**
+	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
+	 */
+	abstract allTests(): TestCaseResult[];
+
+	/**
+	 * Convert this result into a bare object later deserialization.
+	 * @returns {SerializedTestSuiteResult} The serialized object.
+	 * @see TestResult.deserialize
+	 */
+	abstract serialize(): SerializedTestResult;
+
+	/**
+	 * Determine if this test result is identical to another test result. To be identical, they must have the same
+	 * results, in the same order, with the same names, filenames, and marks (.only etc.).
+	 * @param {any} that The thing to compare against
+	 * @returns {boolean}
+	 */
+	abstract equals(that: TestResult): boolean;
 }
 
 /**
  * The result of running a test suite.
  */
-export class TestSuiteResult {
+export class TestSuiteResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {SerializedTestSuiteResult} serializedTestResult The serialized test result.
 	 * @returns {TestSuiteResult} The result object.
-	 * @see TestResultFactory#deserialize
+	 * @see TestResult#deserialize
 	 */
 	static deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
@@ -169,7 +186,7 @@ export class TestSuiteResult {
 			suite: Array,
 		}], [ "serialized TestSuiteResult" ]);
 
-		const deserializedSuite = suite.map(test => TestResultFactory.deserialize(test));
+		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
 		return new TestSuiteResult(name, deserializedSuite, filename);
 	}
 
@@ -178,8 +195,9 @@ export class TestSuiteResult {
 	private readonly _filename?: string;
 	private readonly _mark: TestMarkValue;
 
-	/** Internal use only. (Use {@link TestResultFactory.suite} instead.) */
+	/** Internal use only. (Use {@link TestResult.suite} instead.) */
 	constructor(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue) {
+		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._children = children;
@@ -284,7 +302,7 @@ export class TestSuiteResult {
 	/**
 	 * Convert this suite into a bare object later deserialization.
 	 * @returns {SerializedTestSuiteResult} The serialized object.
-	 * @see TestResultFactory.deserialize
+	 * @see TestResult.deserialize
 	 */
 	serialize(): SerializedTestSuiteResult {
 		return {
@@ -295,12 +313,6 @@ export class TestSuiteResult {
 		};
 	}
 
-	/**
-	 * Determine if this test result is identical to another test result. To be identical, they must have the same
-	 * results, in the same order, with the same names and filenames.
-	 * @param {any} that The thing to compare against
-	 * @returns {boolean}
-	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestSuiteResult)) return false;
 		if (this._mark !== that._mark) return false;
@@ -322,13 +334,13 @@ export class TestSuiteResult {
 /**
  * The result of running an individual test.
  */
-export class TestCaseResult {
+export class TestCaseResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {object} serializedTestResult The serialized test result.
 	 * @returns {TestCaseResult} The result object.
-	 * @see TestResultFactory#deserialize
+	 * @see TestResult#deserialize
 	 */
 	static deserialize(serializedResult: SerializedTestCaseResult): TestCaseResult {
 		ensure.signature(arguments, [{
@@ -375,12 +387,13 @@ export class TestCaseResult {
 	private _error?: unknown;
 	private _timeout?: number;
 
-	/** Internal use only. (Use {@link TestResultFactory} factory methods instead.) */
+	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
 		names: string | string[],
 		status: TestStatusValue,
 		{ error, timeout, filename, mark }: { error?: unknown, timeout?: number, filename?: string, mark?: TestMarkValue } = {}
 	) {
+		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._status = status;
@@ -479,7 +492,7 @@ export class TestCaseResult {
 	/**
 	 * Convert this result into a bare object later deserialization.
 	 * @returns {object} The serialized object.
-	 * @see TestResultFactory.deserialize
+	 * @see TestResult.deserialize
 	 */
 	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);
@@ -513,12 +526,6 @@ export class TestCaseResult {
 		}
 	}
 
-	/**
-	 * Determine if this test result is identical to another test result. To be identical, they must have the same
-	 * results, in the same order, with the same names and filenames.
-	 * @param {any} that The thing to compare against
-	 * @returns {boolean}
-	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
 		if (this._status !== that._status) return false;

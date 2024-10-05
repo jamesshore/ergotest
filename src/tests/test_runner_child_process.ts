@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import { TestSuite } from "./test_suite.js";
-import { TestResult, TestResultFactory } from "./test_result.js";
+import { TestResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
@@ -12,8 +12,8 @@ main();
 
 function main() {
 	process.on("uncaughtException", (err) => {
-		const errorResult = TestResultFactory.suite([], [
-			TestResultFactory.fail("Unhandled error in tests", err),
+		const errorResult = TestResult.suite([], [
+			TestResult.fail("Unhandled error in tests", err),
 		]);
 		sendFinalResult(errorResult);
 	});

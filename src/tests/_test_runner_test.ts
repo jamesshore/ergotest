@@ -4,7 +4,7 @@ import { assert, test } from "tests";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
-import { TestResultFactory } from "./test_result.js";
+import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 
@@ -25,9 +25,9 @@ export default test(({ beforeEach, it }) => {
 
 		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
 
-		const expectedResult = TestResultFactory.suite([], [
-			TestResultFactory.suite([], [
-				TestResultFactory.pass("test", TEST_MODULE_PATH)
+		const expectedResult = TestResult.suite([], [
+			TestResult.suite([], [
+				TestResult.pass("test", TEST_MODULE_PATH)
 			], TEST_MODULE_PATH),
 		]);
 
@@ -47,14 +47,14 @@ export default test(({ beforeEach, it }) => {
 	it("notifies caller of completed tests", async () => {
 		const { runner } = create();
 
-		const progress: TestResultFactory[] = [];
-		const notifyFn = (result: TestResultFactory) => progress.push(result);
+		const progress: TestResult[] = [];
+		const notifyFn = (result: TestResult) => progress.push(result);
 
 		await writeTestModuleAsync(`// passes`);
 		await runner.runIsolatedAsync([ TEST_MODULE_PATH ], { notifyFn });
 
 		assert.deepEqual(progress, [
-			TestResultFactory.pass("test", TEST_MODULE_PATH),
+			TestResult.pass("test", TEST_MODULE_PATH),
 		]);
 	});
 
@@ -100,8 +100,8 @@ export default test(({ beforeEach, it }) => {
 		await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
 		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
 
-		assert.deepEqual(results, TestResultFactory.suite([], [
-			TestResultFactory.fail("Unhandled error in tests", new Error("my error")),
+		assert.deepEqual(results, TestResult.suite([], [
+			TestResult.fail("Unhandled error in tests", new Error("my error")),
 		]));
 	});
 
@@ -113,13 +113,13 @@ export default test(({ beforeEach, it }) => {
 
 		await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
 
-		assert.deepEqual(await resultsPromise, TestResultFactory.suite([], [
-			TestResultFactory.fail("Test runner watchdog", "Detected infinite loop in tests"),
+		assert.deepEqual(await resultsPromise, TestResult.suite([], [
+			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 		]));
 	});
 
 
-	function assertFailureMessage(results: TestResultFactory, expectedFailure: string) {
+	function assertFailureMessage(results: TestResult, expectedFailure: string) {
 		// @ts-expect-error This is pretty janky, but the tests will fail if it breaks
 		assert.equal(results.children[0].children[0].error.message, expectedFailure);
 	}
