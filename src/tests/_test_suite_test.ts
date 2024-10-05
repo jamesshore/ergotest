@@ -819,8 +819,7 @@ export default test(({ describe }) => {
 
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.objEqual(result, TestResultFactory.skip("my test"), "should be skipped");
-			assert.equal(result.mark, TestMark.skip, "should be marked");
+			assert.objEqual(result, createSkip({ name: "my test", mark: TestMark.skip }), "should be skipped");
 		});
 
 		it("skips and marks tests that have '.skip'", async () => {

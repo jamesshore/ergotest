@@ -46,6 +46,9 @@ export default test(({ describe }) => {
 			assert.objEqual(createSuite({ name: "my name" }), createSuite({ name: "my name" }));
 			assert.objNotEqual(createSuite({ name: "my name" }), createSuite({ name: "different" }));
 
+			assert.objEqual(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.skip }));
+			assert.objNotEqual(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.only }));
+
 			assert.objEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "child" ]}));
 			assert.objNotEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
 
@@ -159,6 +162,10 @@ export default test(({ describe }) => {
 				createTimeout({ name: "my name", timeout: 1 }),
 				createTimeout({ name: "my name", timeout: 2 }),
 			);
+
+			// marks
+			assert.objEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
+			assert.objNotEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
 		});
 
 	});

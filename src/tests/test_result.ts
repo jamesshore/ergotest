@@ -303,8 +303,9 @@ export class TestSuiteResult {
 	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestSuiteResult)) return false;
-		if (this._children.length !== that._children.length) return false;
+		if (this._mark !== that._mark) return false;
 
+		if (this._children.length !== that._children.length) return false;
 		for (let i = 0; i < this._children.length; i++) {
 			const thisResult = this._children[i]!;
 			const thatResult = that._children[i]!;
@@ -521,6 +522,7 @@ export class TestCaseResult {
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
 		if (this._status !== that._status) return false;
+		if (this._mark !== that._mark) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
 		// @ts-expect-error - strings are objects, so this._error.message is legit on strings
