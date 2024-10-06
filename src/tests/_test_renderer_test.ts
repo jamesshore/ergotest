@@ -70,8 +70,6 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("renders multi-line marks with a gap before and after");
-
 	});
 
 

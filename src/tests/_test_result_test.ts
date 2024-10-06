@@ -249,6 +249,34 @@ export default test(({ describe }) => {
 			]);
 		});
 
+		it("flattens results with requested marks into a single list", () => {
+			const suite = createSuite({ children: [
+				createPass({ name: "test 0.1", mark: TestMark.none }),
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+			]});
+
+			assert.deepEqual(suite.allMatchingMarks(TestMark.skip), [
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 1.2", mark: TestMark.skip }),
+			], ".skip");
+
+			assert.deepEqual(suite.allMatchingMarks(TestMark.only), [
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+				createPass({ name: "test 1.1", mark: TestMark.only }),
+			], ".only");
+		});
+
 	});
 
 

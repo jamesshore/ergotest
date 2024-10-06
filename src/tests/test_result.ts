@@ -168,10 +168,11 @@ export abstract class TestResult {
 	abstract allTests(): TestCaseResult[];
 
 	/**
-	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
-	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
+	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list. This includes suites; although the test results are all in a single list, and are
+	 *   filtered, any suites in the list still have all their children.
 	 */
-	abstract allMarkedResults(): TestResult[];
+	abstract allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
 
 	/**
 	 * Convert this result into a bare object later deserialization.
@@ -274,15 +275,26 @@ export class TestSuiteResult extends TestResult {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
+	/**
+	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
+	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
+	 *   Tests without a mark are not included.
+	 */
 	allMarkedResults(): TestResult[] {
 		ensure.signature(arguments, []);
 
+		const allMarks = new Set(Object.values(TestMark));
+		allMarks.delete(TestMark.none);
+		return this.allMatchingMarks.apply(this, [ ...allMarks ]);
+	}
+
+	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
+		ensureValidMarks(marks);
+
 		const results = new Set<TestResult>();
 		this._children.forEach((result: TestResult) => {
-			if (result.mark !== TestMark.none) results.add(result);
-			result.allMarkedResults().forEach(subResult => {
-				if (subResult.mark !== TestMark.none) results.add(subResult);
-			});
+			if (marks.includes(result.mark)) results.add(result);
+			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));
 		});
 		return [ ...results ];
 	}
@@ -515,12 +527,11 @@ export class TestCaseResult extends TestResult {
 		return [ this ];
 	}
 
-	/**
-	 * @returns {TestCaseResult[]} This test converted into a list of one, or zero if it wasn't marked with .skip etc.
-	 */
-	allMarkedResults(): TestCaseResult[] {
-		ensure.signature(arguments, []);
-		return this._mark === TestMark.none ? [] : [ this ];
+	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
+		ensureValidMarks(marks);
+
+		if (marks.includes(this._mark)) return [ this ];
+		else return [];
 	}
 
 	/**
@@ -575,4 +586,11 @@ export class TestCaseResult extends TestResult {
 			this.filename === that.filename;
 	}
 
+}
+
+function ensureValidMarks(marks: TestMarkValue[]) {
+	const validMarks = Object.values(TestMark);
+	marks.forEach((mark, i) => {
+		ensure.that(validMarks.includes(mark), `Argument #${i} was '${mark}', which isn't a valid mark`);
+	});
 }
