@@ -3,17 +3,14 @@
 
 // Automatically runs build when files change.
 
-"use strict";
-
-const Build = require("./build.js");
-const Colors = require("infrastructure/colors.js");
-const Shell = require("infrastructure/shell.js");
-const Paths = require("./config/paths.js");
-const FileSystem = require("infrastructure/file_system.js");
-const Clock = require("infrastructure/clock.js");
-const TaskCli = require("tasks/task_cli.js");
-const path = require("node:path");
-
+import Build from "./build.mjs";
+import Colors from "infrastructure/colors.js";
+import Shell from "infrastructure/shell.js";
+import Paths from "./config/paths.js";
+import FileSystem from "infrastructure/file_system.js";
+import Clock from "infrastructure/clock.js";
+import TaskCli from "tasks/task_cli.js";
+import path from "node:path";
 
 const watchColor = Colors.cyan;
 
@@ -91,7 +88,7 @@ async function playBuildResultSoundAsync(buildResult) {
 
 async function playSoundAsync(filename) {
 	try {
-		const file = path.resolve(__dirname, filename);
+		const file = path.resolve(import.meta.dirname, filename);
 		if (process.platform === "darwin") {
 			// MacOS has a built-in 'afplay' command
 			await noOutputShell.execAsync("afplay", file, "--volume", "0.3");
