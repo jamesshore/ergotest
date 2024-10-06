@@ -1,10 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
-const Reporter = require("tasks/reporter");
-const TaskError = require("tasks/task_error");
-const FileSystem = require("infrastructure/file_system");
+const ensure = require("util/ensure.js");
+const Reporter = require("tasks/reporter.js");
+const TaskError = require("tasks/task_error.js");
+const FileSystem = require("infrastructure/file_system.js");
 
 module.exports = class Version {
 

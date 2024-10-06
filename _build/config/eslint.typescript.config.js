@@ -3,7 +3,7 @@
 
 const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
-const globalConfig = require("./eslint.global.config");
+const globalConfig = require("./eslint.global.config.js");
 
 const ERROR = "error";
 const IGNORE = "off";

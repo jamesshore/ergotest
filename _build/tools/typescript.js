@@ -1,16 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
+const Colors = require("infrastructure/colors.js");
+const FileSystem = require("infrastructure/file_system.js");
+const ensure = require("util/ensure.js");
+const TaskError = require("tasks/task_error.js");
+const Reporter = require("tasks/reporter.js");
+const Shell = require("infrastructure/shell.js");
 const swc = require("@swc/core");
-const Colors = require("infrastructure/colors");
-const pathLib = require("node:path");
-const FileSystem = require("infrastructure/file_system");
-const ensure = require("util/ensure");
-const TaskError = require("tasks/task_error");
-const Reporter = require("tasks/reporter");
-const Shell = require("infrastructure/shell");
 const path = require("node:path");
-const Paths = require("../config/paths");
 
 module.exports = class TypeScript {
 
@@ -159,7 +157,7 @@ module.exports = class TypeScript {
 };
 
 function outputFilename(filename, extension, sourceDir, outputDir) {
-	const parsedFilename = pathLib.parse(filename);
+	const parsedFilename = path.parse(filename);
 	const jsFilename = `${parsedFilename.dir}/${parsedFilename.name}${extension}`;
-	return `${outputDir}/${pathLib.relative(sourceDir, jsFilename)}`;
+	return `${outputDir}/${path.relative(sourceDir, jsFilename)}`;
 }

@@ -5,14 +5,14 @@
 
 "use strict";
 
-const Build = require("./build");
+const Build = require("./build.js");
+const Colors = require("infrastructure/colors.js");
+const Shell = require("infrastructure/shell.js");
+const Paths = require("./config/paths.js");
+const FileSystem = require("infrastructure/file_system.js");
+const Clock = require("infrastructure/clock.js");
+const TaskCli = require("tasks/task_cli.js");
 const path = require("node:path");
-const Colors = require("infrastructure/colors");
-const Shell = require("infrastructure/shell");
-const Paths = require("./config/paths");
-const FileSystem = require("infrastructure/file_system");
-const Clock = require("infrastructure/clock");
-const TaskCli = require("tasks/task_cli");
 
 
 const watchColor = Colors.cyan;

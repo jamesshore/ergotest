@@ -1,20 +1,20 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
-const Tasks = require("tasks/tasks");
-const TaskCli = require("tasks/task_cli");
-const Reporter = require("tasks/reporter");
-const FileSystem = require("infrastructure/file_system");
-const Version = require("./tools/version");
-const Lint = require("./tools/lint");
-const Tests = require("./tools/tests");
-const TypeScript = require("./tools/typescript");
-const Paths = require("./config/paths");
-const testConfig = require("./config/tests.conf");
-const lintJavascriptConfig = require("./config/eslint.javascript.config");
-const lintTypescriptConfig = require("./config/eslint.typescript.config");
-const swcConfig = require("./config/swc.conf");
+const ensure = require("util/ensure.js");
+const Tasks = require("tasks/tasks.js");
+const TaskCli = require("tasks/task_cli.js");
+const Reporter = require("tasks/reporter.js");
+const FileSystem = require("infrastructure/file_system.js");
+const Version = require("./tools/version.js");
+const Lint = require("./tools/lint.js");
+const Tests = require("./tools/tests.js");
+const TypeScript = require("./tools/typescript.js");
+const Paths = require("./config/paths.js");
+const testConfig = require("./config/tests.conf.js");
+const lintJavascriptConfig = require("./config/eslint.javascript.config.js");
+const lintTypescriptConfig = require("./config/eslint.typescript.config.js");
+const swcConfig = require("./config/swc.conf.js");
 
 module.exports = class Build {
 

@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const Paths = require("./paths");
+const Paths = require("./paths.js");
 
 module.exports = {
   "jsc": {

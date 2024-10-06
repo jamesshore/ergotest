@@ -1,14 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
-const Reporter = require("tasks/reporter");
-const TaskError = require("tasks/task_error");
-const Colors = require("infrastructure/colors");
-const FileSystem = require("infrastructure/file_system");
-const DependencyTree = require("tasks/dependency_tree");
-const TestRunner = require("tests/test_runner");
-const TestResult = require("tests/test_result");
+const ensure = require("util/ensure.js");
+const Reporter = require("tasks/reporter.js");
+const TaskError = require("tasks/task_error.js");
+const Colors = require("infrastructure/colors.js");
+const FileSystem = require("infrastructure/file_system.js");
+const DependencyTree = require("tasks/dependency_tree.js");
+const TestRunner = require("tests/test_runner.js");
+const TestResult = require("tests/test_result.js");
 const path = require("node:path");
 
 const failColor = Colors.brightRed;

@@ -1,12 +1,12 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
+const ensure = require("util/ensure.js");
+const Reporter = require("tasks/reporter.js");
+const FileSystem = require("infrastructure/file_system.js");
+const TaskError = require("tasks/task_error.js");
+const Colors = require("infrastructure/colors.js");
 const { Linter, SourceCode } = require("eslint");
-const Reporter = require("tasks/reporter");
-const FileSystem = require("infrastructure/file_system");
-const TaskError = require("tasks/task_error");
-const Colors = require("infrastructure/colors");
 
 module.exports = class Lint {
 

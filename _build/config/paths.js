@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure");
+const ensure = require("util/ensure.js");
+const FileTree = require("infrastructure/file_tree.js");
 const path = require("node:path");
-const FileTree = require("infrastructure/file_tree");
 
 const rootDir = path.resolve(__dirname, "../..");
 const generatedDir = `${rootDir}/generated`;
