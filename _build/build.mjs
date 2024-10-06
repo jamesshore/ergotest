@@ -10,11 +10,11 @@ import Version from "./tools/version.mjs";
 import Lint from "./tools/lint.mjs";
 import Tests from "./tools/tests.mjs";
 import TypeScript from "./tools/typescript.mjs";
-import Paths from "./config/paths.js";
-import testConfig from "./config/tests.conf.js";
-import lintJavascriptConfig from "./config/eslint.javascript.config.js";
-import lintTypescriptConfig from "./config/eslint.typescript.config.js";
-import swcConfig from "./config/swc.conf.js";
+import Paths from "./config/paths.mjs";
+import testConfig from "./config/tests.conf.mjs";
+import lintJavascriptConfig from "./config/eslint.javascript.config.mjs";
+import lintTypescriptConfig from "./config/eslint.typescript.config.mjs";
+import swcConfig from "./config/swc.conf.mjs";
 
 export default class Build {
 

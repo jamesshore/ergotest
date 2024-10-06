@@ -1,12 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const globalConfig = require("./eslint.global.config.js");
+import globalConfig from "./eslint.global.config.mjs";
 
 const ERROR = "error";
 const IGNORE = "off";
 
-module.exports = [
+export default [
 	...globalConfig,
 	{
 		name: "JavaScript config",

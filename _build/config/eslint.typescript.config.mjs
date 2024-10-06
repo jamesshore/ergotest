@@ -1,16 +1,15 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
 
-const eslint = require('@eslint/js');
-const tseslint = require('typescript-eslint');
-const globalConfig = require("./eslint.global.config.js");
+import globalConfig from "./eslint.global.config.mjs";
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
 const ERROR = "error";
 const IGNORE = "off";
 const UNSUPPORTED = "off";     // turned off because this option doesn't work with TypeScript
 const DEPRECATED = "off";     // turned off because this option has been deprecated
 
-module.exports = [
+export default [
   ...globalConfig,
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
