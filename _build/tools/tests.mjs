@@ -7,8 +7,8 @@ import TaskError from "tasks/task_error.mjs";
 import Colors from "infrastructure/colors.js";
 import FileSystem from "infrastructure/file_system.js";
 import DependencyTree from "tasks/dependency_tree.mjs";
-import TestRunner from "tests/test_runner.cjs";
-import TestResult from "tests/test_result.cjs";
+import TestRunner from "tests/test_runner.mjs";
+import TestResult from "tests/test_result.mjs";
 import path from "node:path";
 
 const failColor = Colors.brightRed;
