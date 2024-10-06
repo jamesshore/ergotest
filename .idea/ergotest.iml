@@ -8,6 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/generated" />
       <excludeFolder url="file://$MODULE_DIR$/src/node_modules" />
       <excludeFolder url="file://$MODULE_DIR$/_build/node_modules/tests" />
+      <excludeFolder url="file://$MODULE_DIR$/_build/node_modules/util" />
     </content>
     <content url="file://$MODULE_DIR$/_build/node_modules" />
     <content url="file://$MODULE_DIR$/src/node_modules" />

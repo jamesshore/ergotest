@@ -96,7 +96,7 @@ export abstract class TestResult {
 	 * @returns {TestCaseResult} The result.
 	 */
 	static fail(names: string | string[], error: unknown, filename?: string, mark?: TestMarkValue): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ], [ undefined, String ]]);
+		ensure.signature(arguments, [[ String, Array ], ensure.ANY_TYPE, [ undefined, String ], [ undefined, String ]]);
 
 		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark });
 	}
@@ -145,6 +145,17 @@ export abstract class TestResult {
 			default: ensure.unreachable(`Unrecognized type '${type}' in serialized test result: ${serializedTestResult}`);
 		}
 	}
+
+	/**
+	 * @returns {string | undefined} The file that contained the test (or suite), if any.
+	 */
+	abstract get filename(): string | undefined;
+
+	/**
+	 * @returns {string []} The name of the test (or suite), and all enclosing suites, with the outermost suite first.
+	 *   Does not include the file name.
+	 */
+	abstract get name(): string[];
 
 	/**
 	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
@@ -204,9 +215,6 @@ export class TestSuiteResult extends TestResult {
 		this._mark = mark ?? TestMark.none;
 	}
 
-	/**
-	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
-	 */
 	get name(): string[] {
 		return this._name;
 	}
@@ -402,16 +410,10 @@ export class TestCaseResult extends TestResult {
 		this._timeout = timeout;
 	}
 
-	/**
-	 * @returns {string | undefined} The file that contained the test, if any.
-	 */
 	get filename(): string | undefined {
 		return this._filename;
 	}
 
-	/**
-	 * @returns {string []} The names of the test, which typically includes the name of all enclosing suites.
-	 */
 	get name(): string[] {
 		return this._name;
 	}

@@ -3,6 +3,8 @@
 import * as typeChecker from "./type.js";
 import { TypeDescriptor } from "./type.js";
 
+export const ANY_TYPE = typeChecker.ANY_TYPE;
+
 /**
  * General-purpose runtime assertion. Throws an exception if the expression isn't true.
  * @param {boolean} expression the expression to check
