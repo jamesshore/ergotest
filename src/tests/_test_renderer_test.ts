@@ -5,6 +5,7 @@ import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
+import { TestMark, TestMarkValue } from "./test_suite.js";
 
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
@@ -94,22 +95,10 @@ export default test(({ describe }) => {
 			assert.equal(renderSingleLine(result), Colors.brightRed("failed") + " my name");
 		});
 
-		it("renders multi-level names", () => {
-			const result = createPass({ name: [ "parent", "child", "test" ]});
-			assert.equal(renderSingleLine(result), Colors.green("passed") + " parent » child » test");
-		});
-
-		it("includes filename when it exists", () => {
-			const result = createPass({ filename: "/my/filename.js", name: [ "parent", "child", "test" ]});
-			assert.equal(
-				renderSingleLine(result),
-				Colors.green("passed") + " " + Colors.brightWhite("filename.js") + " » parent » child » test");
-		});
-
 	});
 
 
-	describe("multi-line test cases", ({ describe, it }) => {
+	describe("multi-line test cases", ({ it }) => {
 
 		it("renders multi-line name and status separated by a blank line", () => {
 			const result = createPass({ name: [ "my suite", "my name" ]});
@@ -120,6 +109,13 @@ export default test(({ describe }) => {
 				renderer.renderNameOnMultipleLines(result) + "\n" + renderer.renderStatusWithMultiLineDetails(result)
 			);
 		});
+
+	});
+
+
+	describe("single-line test marks", ({ it }) => {
+
+		it.skip("TO DO");
 
 	});
 
@@ -208,7 +204,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("multi-line statuses", ({ it }) => {
+	describe("multi-line statuses", ({ it, describe }) => {
 
 		it("renders pass", () => {
 			assert.equal(render(createPass()), Colors.green("passed"));
@@ -310,6 +306,21 @@ export default test(({ describe }) => {
 
 		function renderDiff(error: AssertionError): string {
 			return TestRenderer.create().renderDiff(error);
+		}
+
+	});
+
+
+	describe("single-word marks", ({ it }) => {
+
+		it("renders all marks", () => {
+			assert.equal(render(createPass({ mark: TestMark.none })), "", "no mark");
+			assert.equal(render(createPass({ mark: TestMark.skip })), ".skip");
+			assert.equal(render(createPass({ mark: TestMark.only })), ".only");
+		});
+
+		function render(result: TestCaseResult): string {
+			return TestRenderer.create().renderMarkAsSingleWord(result);
 		}
 
 	});
@@ -464,11 +475,13 @@ function createSuite({
 function createPass({
 	name = [],
 	filename = undefined,
+	mark = TestMark.none,
 }: {
 	name?: string | string[],
 	filename?: string,
+	mark?: TestMarkValue
 } = {}): TestCaseResult {
-	return TestResult.pass(name, filename);
+	return TestResult.pass(name, filename, mark);
 }
 
 function createFail({

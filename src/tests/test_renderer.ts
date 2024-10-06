@@ -2,6 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import { TestMark, TestMarkValue } from "./test_suite.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -109,6 +110,15 @@ export class TestRenderer {
 				return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
 			default:
 				throw new Error(`Unrecognized test result status: ${testCaseResult.status}`);
+		}
+	}
+
+	renderMarkAsSingleWord(testCaseResult: TestCaseResult) {
+		switch (testCaseResult.mark) {
+			case TestMark.none: return "";
+			case TestMark.skip: return ".skip";
+			case TestMark.only: return ".only";
+			default: ensure.unreachable(`Unrecognized test mark: ${testCaseResult.mark}`);
 		}
 	}
 
