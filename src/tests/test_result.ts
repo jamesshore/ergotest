@@ -158,9 +158,20 @@ export abstract class TestResult {
 	abstract get name(): string[];
 
 	/**
+	 * @return { TestMark } Whether the test (or suite) was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	abstract get mark(): TestMarkValue;
+
+	/**
 	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
 	 */
 	abstract allTests(): TestCaseResult[];
+
+	/**
+	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
+	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
+	 */
+	abstract allMarkedResults(): TestResult[];
 
 	/**
 	 * Convert this result into a bare object later deserialization.
@@ -263,8 +274,17 @@ export class TestSuiteResult extends TestResult {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
-	allMarkedResults() {
+	allMarkedResults(): TestResult[] {
+		ensure.signature(arguments, []);
 
+		const results = new Set<TestResult>();
+		this._children.forEach((result: TestResult) => {
+			if (result.mark !== TestMark.none) results.add(result);
+			result.allMarkedResults().forEach(subResult => {
+				if (subResult.mark !== TestMark.none) results.add(subResult);
+			});
+		});
+		return [ ...results ];
 	}
 
 	/**
@@ -493,6 +513,14 @@ export class TestCaseResult extends TestResult {
 	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
 		return [ this ];
+	}
+
+	/**
+	 * @returns {TestCaseResult[]} This test converted into a list of one, or zero if it wasn't marked with .skip etc.
+	 */
+	allMarkedResults(): TestCaseResult[] {
+		ensure.signature(arguments, []);
+		return this._mark === TestMark.none ? [] : [ this ];
 	}
 
 	/**
