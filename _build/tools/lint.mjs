@@ -1,14 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure.js");
-const Reporter = require("tasks/reporter.js");
-const FileSystem = require("infrastructure/file_system.js");
-const TaskError = require("tasks/task_error.js");
-const Colors = require("infrastructure/colors.js");
-const { Linter, SourceCode } = require("eslint");
+import * as ensure from "util/ensure.js";
+import Reporter from "tasks/reporter.js";
+import FileSystem from "infrastructure/file_system.js";
+import TaskError from "tasks/task_error.js";
+import Colors from "infrastructure/colors.js";
+import { Linter, SourceCode } from "eslint";
 
-module.exports = class Lint {
+export default class Lint {
 
 	static create(fileSystem) {
 		ensure.signature(arguments, [ FileSystem ]);

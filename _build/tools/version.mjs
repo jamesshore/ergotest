@@ -1,12 +1,12 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const ensure = require("util/ensure.js");
-const Reporter = require("tasks/reporter.js");
-const TaskError = require("tasks/task_error.js");
-const FileSystem = require("infrastructure/file_system.js");
+import ensure from "util/ensure.js";
+import Reporter from "tasks/reporter.js";
+import TaskError from "tasks/task_error.js";
+import FileSystem from "infrastructure/file_system.js";
 
-module.exports = class Version {
+export default class Version {
 
 	static create(fileSystem) {
 		ensure.signature(arguments, [ FileSystem ]);

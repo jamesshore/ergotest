@@ -1,16 +1,16 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-const Colors = require("infrastructure/colors.js");
-const FileSystem = require("infrastructure/file_system.js");
-const ensure = require("util/ensure.js");
-const TaskError = require("tasks/task_error.js");
-const Reporter = require("tasks/reporter.js");
-const Shell = require("infrastructure/shell.js");
-const swc = require("@swc/core");
-const path = require("node:path");
+import * as ensure from "util/ensure.js";
+import Colors from "infrastructure/colors.js";
+import FileSystem from "infrastructure/file_system.js";
+import TaskError from "tasks/task_error.js";
+import Reporter from "tasks/reporter.js";
+import Shell from "infrastructure/shell.js";
+import swc from "@swc/core";
+import path from "node:path";
 
-module.exports = class TypeScript {
+export default class TypeScript {
 
 	static create(fileSystem) {
 		ensure.signature(arguments, [ FileSystem ]);
