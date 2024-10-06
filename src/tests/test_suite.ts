@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestResultFactory, TestStatus, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -11,13 +11,13 @@ import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
-const RUN_STATE = {
-	DEFAULT: "default",
-	SKIP: "skip",
-	ONLY: "only",
+export const TestMark = {
+	none: "none",
+	skip: "skip",
+	only: "only",
 };
 
-type RunState = typeof RUN_STATE[keyof typeof RUN_STATE];
+export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 
 interface Describe {
 	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
@@ -69,13 +69,13 @@ interface RecursiveRunOptions {
 
 interface Runnable {
 	_recursiveRunAsync: (
-		parentRunState: RunState,
+		parentMark: TestMarkValue,
 		parentBeforeEachFns: Test[],
 		parentAfterEachFns: Test[],
 		options: RecursiveRunOptions,
 	) => Promise<TestResult> | TestResult;
 	_isDotOnly: () => boolean,
-	_isSkipped: (runState: RunState) => boolean,
+	_isSkipped: (mark: TestMarkValue) => boolean,
 }
 
 /**
@@ -92,9 +92,9 @@ export class TestSuite implements Runnable {
 	 *   result.
 	 */
 	static get create(): Describe {
-		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
-		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
-		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
+		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.none);
+		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.skip);
+		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.only);
 		return result;
 	}
 
@@ -108,7 +108,7 @@ export class TestSuite implements Runnable {
 		ensure.signature(arguments, [ Array ]);
 
 		const suites = await Promise.all(moduleFilenames.map(filename => loadModuleAsync(filename)));
-		return new TestSuite("", RUN_STATE.DEFAULT, { tests: suites });
+		return new TestSuite("", TestMark.none, { tests: suites });
 
 		async function loadModuleAsync(filename: string): Promise<TestSuite> {
 			const errorName = `error when requiring ${path.basename(filename)}`;
@@ -119,23 +119,23 @@ export class TestSuite implements Runnable {
 					return suite;
 				}
 				else {
-					return createFailure(filename, errorName, `doesn't export a test suite: ${filename}`);
+					return createFailure(errorName, `doesn't export a test suite: ${filename}`, filename);
 				}
 			}
 			catch(err) {
-				return createFailure(filename, errorName, err);
+				return createFailure(errorName, err, filename);
 			}
 		}
 
-		function createFailure(filename: string, name: string, error: unknown) {
-			return new TestSuite("", RUN_STATE.DEFAULT, { tests: [ new FailureTestCase(filename, name, error) ] });
+		function createFailure(name: string, error: unknown, filename?: string) {
+			return new TestSuite("", TestMark.none, { tests: [ new FailureTestCase(name, error, filename) ] });
 		}
 	}
 
 	static #create(
 		nameOrSuiteFn: string | DescribeFunction | undefined,
 		possibleSuiteFn: DescribeFunction | undefined,
-		runState: RunState,
+		mark: TestMarkValue,
 	): TestSuite {
 		ensure.signature(arguments, [ [ undefined, String, Function ], [ undefined, Function ], String ]);
 
@@ -151,14 +151,23 @@ export class TestSuite implements Runnable {
 			suiteFn = possibleSuiteFn;
 		}
 
-		if (suiteFn === undefined) return new TestSuite(name, runState, {});
-		else return this.#runDescribeFunction(suiteFn, name, runState);
+		if (suiteFn !== undefined) {
+			return this.#runDescribeFunction(suiteFn, name, mark);
+		}
+		else if (mark === TestMark.only) {
+			return new TestSuite(name, mark, {
+				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but has no body") ],
+			});
+		}
+		else {
+			return new TestSuite(name, TestMark.skip, {});
+		}
 	}
 
 	static #runDescribeFunction(
 		describeFn: DescribeFunction,
 		name: string,
-		runState: string,
+		mark: string,
 	): TestSuite {
 		const tests: Runnable[] = [];
 		const beforeAllFns: Test[] = [];
@@ -172,17 +181,17 @@ export class TestSuite implements Runnable {
 			return test;
 		};
 
-		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.DEFAULT);
-		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.SKIP);
-		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, RUN_STATE.ONLY);
+		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.none);
+		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.skip);
+		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.only);
 
-		const describe: Describe = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, RUN_STATE.DEFAULT));
-		describe.skip = (optionalName, describeFn) => pushTest(TestSuite.#create(optionalName, describeFn, RUN_STATE.SKIP));
-		describe.only = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, RUN_STATE.ONLY));
+		const describe: Describe = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.none));
+		describe.skip = (optionalName, describeFn) => pushTest(TestSuite.#create(optionalName, describeFn, TestMark.skip));
+		describe.only = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.only));
 
-		const it: It = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, RUN_STATE.DEFAULT));
-		it.skip = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, RUN_STATE.SKIP));
-		it.only = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, RUN_STATE.ONLY));
+		const it: It = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.none));
+		it.skip = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.skip));
+		it.only = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.only));
 
 		describeFn({
 			describe,
@@ -194,11 +203,11 @@ export class TestSuite implements Runnable {
 			setTimeout: (newTimeout) => { timeout = newTimeout; },
 		});
 
-		return new TestSuite(name, runState, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
+		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
 	}
 
 	private _name: string;
-	private _runState: RunState;
+	private _mark: TestMarkValue;
 	private _tests: Runnable[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
@@ -210,7 +219,7 @@ export class TestSuite implements Runnable {
 	private _filename?: string;
 
 	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
-	constructor(name: string, runState: RunState, {
+	constructor(name: string, mark: TestMarkValue, {
 		tests = [],
 		beforeAllFns = [],
 		afterAllFns = [],
@@ -226,10 +235,10 @@ export class TestSuite implements Runnable {
 		timeout?: Milliseconds,
 	}) {
 		this._name = name;
-		this._runState = runState;
+		this._mark = mark;
 		this._tests = tests;
 		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
-		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._runState));
+		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._mark));
 		this._beforeAllFns = beforeAllFns;
 		this._afterAllFns = afterAllFns;
 		this._beforeEachFns = beforeEachFns;
@@ -260,7 +269,7 @@ export class TestSuite implements Runnable {
 			clock: [ undefined, Clock ],
 		}]]);
 
-		return await this._recursiveRunAsync(RUN_STATE.ONLY, [], [], {
+		return await this._recursiveRunAsync(TestMark.only, [], [], {
 			clock,
 			config,
 			notifyFn,
@@ -275,7 +284,7 @@ export class TestSuite implements Runnable {
 
 	/** @private */
 	_isDotOnly(): boolean {
-		return this._runState === RUN_STATE.ONLY || this._hasDotOnlyChildren;
+		return this._mark === TestMark.only || this._hasDotOnlyChildren;
 	}
 
 	/** @private */
@@ -285,7 +294,7 @@ export class TestSuite implements Runnable {
 
 	/** @private */
 	async _recursiveRunAsync(
-		parentRunState: RunState,
+		parentMark: TestMarkValue,
 		parentBeforeEachFns: Test[],
 		parentAfterEachFns: Test[],
 		options: RecursiveRunOptions,
@@ -296,29 +305,33 @@ export class TestSuite implements Runnable {
 		const timeout = this._timeout ?? options.timeout;
 		options = { ...options, name, filename, timeout };
 
-		let myRunState = this._runState;
-		if (myRunState === RUN_STATE.DEFAULT) myRunState = parentRunState;
-		if (myRunState === RUN_STATE.ONLY && this._hasDotOnlyChildren) myRunState = RUN_STATE.SKIP;
+		let myMark = this._mark;
+		if (myMark === TestMark.none) myMark = parentMark;
+		if (myMark === TestMark.only && this._hasDotOnlyChildren) myMark = TestMark.skip;
 
 		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEachFns ];
 		const afterEachFns = [ ...this._afterEachFns, ...parentAfterEachFns ];
 
 		if (!this._allChildrenSkipped) {
-			const beforeResult = await runBeforeOrAfterFnsAsync([ "beforeAll()" ], this._beforeAllFns, options);
-			if (!isSuccess(beforeResult)) return TestResultFactory.suite(options.name, [ beforeResult ], options.filename);
+			const beforeResult = await runBeforeOrAfterFnsAsync(
+				[ ...options.name, "beforeAll()" ], this._beforeAllFns, TestMark.none, options,
+			);
+			if (!isSuccess(beforeResult)) return TestResult.suite(options.name, [ beforeResult ], options.filename, this._mark);
 		}
 
 		const results = [];
 		for await (const test of this._tests) {
-			results.push(await test._recursiveRunAsync(myRunState, beforeEachFns, afterEachFns, options));
+			results.push(await test._recursiveRunAsync(myMark, beforeEachFns, afterEachFns, options));
 		}
 
 		if (!this._allChildrenSkipped) {
-			const afterResult = await runBeforeOrAfterFnsAsync([ "afterAll()" ], this._afterAllFns, options);
+			const afterResult = await runBeforeOrAfterFnsAsync(
+				[ ...options.name, "afterAll()" ], this._afterAllFns, TestMark.none, options
+			);
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResultFactory.suite(options.name, results, options.filename);
+		return TestResult.suite(options.name, results, options.filename, this._mark);
 	}
 
 }
@@ -328,32 +341,31 @@ class TestCase implements Runnable {
 
 	protected _name: string;
 	private _testFn?: ItFn;
-	private _runState: RunState;
+	private _mark: TestMarkValue;
 
-	constructor(name: string, testFn: ItFn | undefined, runState: RunState) {
+	constructor(name: string, testFn: ItFn | undefined, mark: TestMarkValue) {
 		ensure.signature(arguments, [ String, [ undefined, Function ], String ]);
 
 		this._name = name;
 		this._testFn = testFn;
-		this._runState = runState;
+		this._mark = mark;
 	}
 
 	/** @private */
 	_isDotOnly(): boolean {
 		ensure.signature(arguments, []);
-		return this._runState === RUN_STATE.ONLY;
+		return this._mark === TestMark.only;
 	}
 
 	/** @private */
-	_isSkipped(parentRunState: RunState): boolean {
-		const myRunState = this._runState === RUN_STATE.DEFAULT ? parentRunState : this._runState;
-
-		return myRunState === RUN_STATE.SKIP || this._testFn === undefined;
+	_isSkipped(parentMark: TestMarkValue): boolean {
+		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
+		return inheritedMark === TestMark.skip;
 	}
 
 	/** @private */
 	async _recursiveRunAsync(
-		parentRunState: RunState,
+		parentMark: TestMarkValue,
 		beforeEachFns: Test[],
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
@@ -362,19 +374,33 @@ class TestCase implements Runnable {
 		name.push(this._name !== "" ? this._name : "(unnamed)");
 		options = { ...options, name };
 
-		const result = this._isSkipped(parentRunState)
-			? TestResultFactory.skip(options.name, options.filename)
-			: await runTestAsync(this);
+		let result;
+		if (this._testFn !== undefined) {
+			if (!this._isSkipped(parentMark)) {
+				result = await runTestAsync(this);
+			}
+			else {
+				result = TestResult.skip(name, options.filename, this._mark);
+			}
+		}
+		else {
+			if (this._mark !== TestMark.only) {
+				result = TestResult.skip(name, options.filename, TestMark.skip);
+			}
+			else {
+				result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+			}
+		}
 
 		options.notifyFn(result);
 		return result;
 
 		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
-			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, options);
+			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
 			if (!isSuccess(beforeResult)) return beforeResult;
 
-			const itResult = await runTestFnAsync(options.name, self._testFn!, options);
-			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, options);
+			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, options);
+			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
 
 			if (!isSuccess(itResult)) return itResult;
 			else return afterResult;
@@ -385,23 +411,23 @@ class TestCase implements Runnable {
 
 class FailureTestCase extends TestCase {
 
-	private _filename: string;
+	private _filename?: string;
 	private _error: unknown;
 
-	constructor(filename: string, name: string, error: unknown) {
-		super(name, undefined, RUN_STATE.DEFAULT);
+	constructor(name: string, error: unknown, filename?: string) {
+		super(name, undefined, TestMark.none);
 
 		this._filename = filename;
 		this._error = error;
 	}
 
 	override async _recursiveRunAsync(
-		parentRunState: RunState,
+		parentMark: TestMarkValue,
 		beforeEachFns: Test[],
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		return await TestResultFactory.fail([ this._name ], this._error, this._filename);
+		return await TestResult.fail([ this._name ], this._error, this._filename);
 	}
 
 }
@@ -410,18 +436,20 @@ class FailureTestCase extends TestCase {
 async function runBeforeOrAfterFnsAsync(
 	name: string[],
 	fns: Test[],
+	mark: TestMarkValue,
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	for await (const fn of fns) {
-		const result = await runTestFnAsync(name, fn, options);
+		const result = await runTestFnAsync(name, fn, mark, options);
 		if (!isSuccess(result)) return result;
 	}
-	return TestResultFactory.pass(name, options.filename);
+	return TestResult.pass(name, options.filename, mark);
 }
 
 async function runTestFnAsync(
 	name: string[],
 	fn: Test,
+	mark: TestMarkValue,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
@@ -432,13 +460,13 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResultFactory.pass(name, filename);
+			return TestResult.pass(name, filename, mark);
 		}
 		catch (err) {
-			return TestResultFactory.fail(name, err, filename);
+			return TestResult.fail(name, err, filename, mark);
 		}
 	}, async () => {
-		return await TestResultFactory.timeout(name, timeout, filename);
+		return await TestResult.timeout(name, timeout, filename, mark);
 	});
 }
 

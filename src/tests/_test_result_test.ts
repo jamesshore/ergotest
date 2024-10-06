@@ -1,10 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import { test, assert } from "tests";
+import { assert, test } from "tests";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestResult, TestResultFactory, TestStatus } from "./test_result.js";
-import util from "node:util";
-import { Colors } from "../infrastructure/colors.js";
+import { TestMark, TestMarkValue } from "./test_suite.js";
+import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
 
 export default test(({ describe }) => {
 
@@ -12,7 +11,7 @@ export default test(({ describe }) => {
 
 		it("has a name and list of test results", () => {
 			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const result = TestResultFactory.suite([ "my name" ], list);
+			const result = TestResult.suite([ "my name" ], list);
 
 			assert.deepEqual(result.name, [ "my name" ]);
 			assert.deepEqual(result.children, list);
@@ -29,20 +28,35 @@ export default test(({ describe }) => {
 			assert.equal(suite.filename, "/my/filename");
 		});
 
+		it("has a mark", () => {
+			const notSpecified = createSuite();
+			const none = createSuite({ mark: TestMark.none });
+			const skip = createSuite({ mark: TestMark.skip });
+			const only = createSuite({ mark: TestMark.only });
+
+			assert.equal(notSpecified.mark, TestMark.none);
+			assert.equal(none.mark, TestMark.none);
+			assert.equal(skip.mark, TestMark.skip);
+			assert.equal(only.mark, TestMark.only);
+		});
+
 		it("can be compared using equals()", () => {
 			assert.objEqual(createSuite({ name: "my name" }), createSuite({ name: "my name" }));
 			assert.objNotEqual(createSuite({ name: "my name" }), createSuite({ name: "different" }));
+
+			assert.objEqual(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.skip }));
+			assert.objNotEqual(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.only }));
 
 			assert.objEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "child" ]}));
 			assert.objNotEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
 
 			assert.objEqual(
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
 			);
 			assert.objNotEqual(
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", results: [ createPass({ name: "different" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "different" }) ]}),
 			);
 		});
 
@@ -51,11 +65,19 @@ export default test(({ describe }) => {
 
 	describe("test case", ({ it }) => {
 
-		it("passing tests have a name and status", () => {
+		it("passing tests have a name, status, and mark", () => {
 			const result = createPass({ name: "my name" });
+			const noneMark = createPass({ mark: TestMark.none });
+			const skipMark = createPass({ mark: TestMark.skip });
+			const onlyMark = createPass({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.pass, "status");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("name can include parent suites", () => {
@@ -68,12 +90,20 @@ export default test(({ describe }) => {
 			assert.equal(test.filename, "my_filename");
 		});
 
-		it("failing tests have a name, status, and error", () => {
+		it("failing tests have a name, status, mark, and error", () => {
 			const result = createFail({ name: "my name", error: new Error("my error") });
+			const noneMark = createFail({ mark: TestMark.none });
+			const skipMark = createFail({ mark: TestMark.skip });
+			const onlyMark = createFail({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal((result.error as Error).message, "my error", "error");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("failing tests can have a string for the error", () => {
@@ -81,19 +111,35 @@ export default test(({ describe }) => {
 			assert.equal(result.error, "my error");
 		});
 
-		it("skipped tests have a name and status", () => {
+		it("skipped tests have a name, status, and mark", () => {
 			const result = createSkip({ name: "my name" });
+			const noneMark = createSkip({ mark: TestMark.none });
+			const skipMark = createSkip({ mark: TestMark.skip });
+			const onlyMark = createSkip({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.skip, "status");
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
-		it("timeout tests have name, status, and timeout", () => {
+		it("timeout tests have name, status, mark, and timeout", () => {
 			const result = createTimeout({ name: "my name", timeout: 999 });
+			const noneMark = createTimeout({ mark: TestMark.none });
+			const skipMark = createTimeout({ mark: TestMark.skip });
+			const onlyMark = createTimeout({ mark: TestMark.only });
 
 			assert.deepEqual(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.timeout, "status");
 			assert.equal(result.timeout, 999);
+
+			assert.equal(result.mark, TestMark.none, "mark");
+			assert.equal(noneMark.mark, TestMark.none, "mark");
+			assert.equal(skipMark.mark, TestMark.skip, "mark");
+			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
 		it("can be compared using equals()", () => {
@@ -114,6 +160,10 @@ export default test(({ describe }) => {
 				createTimeout({ name: "my name", timeout: 1 }),
 				createTimeout({ name: "my name", timeout: 2 }),
 			);
+
+			// marks
+			assert.objEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
+			assert.objNotEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
 		});
 
 	});
@@ -122,18 +172,17 @@ export default test(({ describe }) => {
 	describe("flattening", ({ it }) => {
 
 		it("flattens all test results into a single list", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
-				createSuite({ results: [
+				createSuite({ children: [
 					createTimeout({ name: "timeout" }),
 					createFail({ name: "fail 2" }),
 				]}),
 			]});
 
-			const tests = suite.allTests();
-			assert.deepEqual(tests, [
+			assert.deepEqual(suite.allTests(), [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
@@ -143,11 +192,11 @@ export default test(({ describe }) => {
 		});
 
 		it("flattens tests with requested statuses into a single list", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
-				createSuite({ results: [
+				createSuite({ children: [
 					createTimeout({ name: "timeout" }),
 					createFail({ name: "fail 2" }),
 				]}),
@@ -165,20 +214,83 @@ export default test(({ describe }) => {
 			], "multiple statuses");
 		});
 
+		it("flattens all marked results into a single list", () => {
+			const suite = createSuite({ children: [
+				createPass({ name: "test 0.1", mark: TestMark.none }),
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+					createSuite({ name: "suite 1.1", mark: TestMark.none, children: [
+						createPass({ name: "test 1.1.1", mark: TestMark.skip }),
+					]}),
+					createSuite({ name: "suite 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+			]});
+
+			assert.deepEqual(suite.allMarkedResults(), [
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+						createSuite({ name: "suite 1.1", mark: TestMark.none, children: [
+							createPass({ name: "test 1.1.1", mark: TestMark.skip }),
+						]}),
+						createSuite({ name: "suite 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+				createPass({ name: "test 1.1", mark: TestMark.only }),
+				createPass({ name: "test 1.2", mark: TestMark.skip }),
+				createPass({ name: "test 1.1.1", mark: TestMark.skip }),
+				createSuite({ name: "suite 1.2", mark: TestMark.skip }),
+			]);
+		});
+
+		it("flattens results with requested marks into a single list", () => {
+			const suite = createSuite({ children: [
+				createPass({ name: "test 0.1", mark: TestMark.none }),
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+			]});
+
+			assert.deepEqual(suite.allMatchingMarks(TestMark.skip), [
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 1.2", mark: TestMark.skip }),
+			], ".skip");
+
+			assert.deepEqual(suite.allMatchingMarks(TestMark.only), [
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+				createPass({ name: "test 1.1", mark: TestMark.only }),
+			], ".only");
+		});
+
 	});
 
 
 	describe("passing test files", ({ it }) => {
 
 		it("provides names of files that have all passing tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "file2" }),
 			]});
 			assert.deepEqual(suite.allPassingFiles(), [ "file2" ]);
 		});
 
 		it("does not include filenames more than once", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file" }),
 				createPass({ filename: "my_file" }),
 			]});
@@ -186,7 +298,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of failing tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createFail({ filename: "my_file2" }),
 			]});
@@ -194,7 +306,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of skipped tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createSkip({ filename: "my_file2" }),
 			]});
@@ -202,7 +314,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of timed out tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createTimeout({ filename: "my_file2" }),
 			]});
@@ -213,8 +325,8 @@ export default test(({ describe }) => {
 		it("[bugfix] does not include filenames of failing tests even when sibling tests pass", () => {
 			// Including filename in every test suite has resulted in tests being marked as 'pass' when they were 'fail'
 
-			const suite = createSuite({ results: [
-				createSuite({ filename: "my_file", results: [
+			const suite = createSuite({ children: [
+				createSuite({ filename: "my_file", children: [
 					createPass({ filename: "my_file" }),
 					createFail({ filename: "my_file" }),
 				]}),
@@ -229,7 +341,7 @@ export default test(({ describe }) => {
 	describe("summarization", ({ it }) => {
 
 		it("provides test count", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createFail(),
 				createFail(),
@@ -252,10 +364,10 @@ export default test(({ describe }) => {
 		});
 
 		it("counts tests in sub-suites", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createFail(),
-				createSuite({ results: [
+				createSuite({ children: [
 					createFail(),
 					createFail(),
 					createSkip(),
@@ -277,19 +389,19 @@ export default test(({ describe }) => {
 	describe("serialization and deserialization", ({ it }) => {
 
 		it("can be serialized and deserialized", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ name: "pass" }),
 				createSkip({ name: "skip" }),
 				createFail({ name: "fail" }),
 				createTimeout({ name: "timeout" }),
-				createSuite({ name: "child", results: [
+				createSuite({ name: "child", children: [
 					createPass({ name: [ "child", "child pass" ]}),
 				]}),
 			]});
 
 			const serialized = suite.serialize();
 			// console.log(serialized);
-			const deserialized = TestResultFactory.deserialize(serialized);
+			const deserialized = TestResult.deserialize(serialized);
 
 			assert.objEqual(deserialized, suite);
 		});
@@ -298,7 +410,7 @@ export default test(({ describe }) => {
 			const test = createFail({ error: "my error" });
 
 			const serialized = test.serialize();
-			assert.objEqual(TestResultFactory.deserialize(serialized), test);
+			assert.objEqual(TestResult.deserialize(serialized), test);
 		});
 
 		it("handles assertion errors", () => {
@@ -311,7 +423,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -322,7 +434,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -340,7 +452,7 @@ export default test(({ describe }) => {
 
 			const test = createFail({ error });
 			const serialized = test.serialize();
-			const deserialized = TestResultFactory.deserialize(serialized) as TestCaseResult;
+			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.deepEqual(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
@@ -352,56 +464,66 @@ export default test(({ describe }) => {
 
 function createSuite({
 	name = "irrelevant name",
-	results = [],
+	children = [],
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
-	results?: TestResult[],
+	children?: TestResult[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.suite(name, results, filename);
+	return TestResult.suite(name, children, filename, mark);
 }
 
 function createPass({
 	name = "irrelevant name",
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.pass(name, filename);
+	return TestResult.pass(name, filename, mark);
 }
 
 function createFail({
 	name = "irrelevant name",
 	error = new Error("irrelevant error"),
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.fail(name, error, filename);
+	return TestResult.fail(name, error, filename, mark);
 }
 
 function createSkip({
 	name = "irrelevant name",
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.skip(name, filename);
+	return TestResult.skip(name, filename, mark);
 }
 
 function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
 	filename = undefined,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	timeout?: number,
 	filename?: string,
+	mark?: TestMarkValue,
 } = {}) {
-	return TestResultFactory.timeout(name, timeout, filename);
+	return TestResult.timeout(name, timeout, filename, mark);
 }

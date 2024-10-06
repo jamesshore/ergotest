@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { TestSuite, TestConfig } from "./test_suite.js";
-import { SerializedTestResult, TestResultFactory } from "./test_result.js";
+import { SerializedTestResult, TestResult } from "./test_result.js";
 import child_process, { ChildProcess } from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
@@ -25,7 +25,7 @@ export type WorkerOutput = {
 	result: SerializedTestResult,
 }
 
-export type NotifyFn = (testResult: TestResultFactory) => void;
+export type NotifyFn = (testResult: TestResult) => void;
 
 /**
  * Loads and runs tests in an isolated process.
@@ -83,7 +83,7 @@ async function runTestsInChildProcess(
 	config: TestConfig | undefined,
 	notifyFn: NotifyFn,
 ) {
-	const result = await new Promise<TestResultFactory>((resolve, reject) => {
+	const result = await new Promise<TestResult>((resolve, reject) => {
 		const workerData = { modulePaths, config };
 		child.send(workerData);
 
@@ -98,10 +98,10 @@ async function runTestsInChildProcess(
 	return result;
 }
 
-function detectInfiniteLoops(clock: Clock, resolve: (result: TestResultFactory) => void) {
+function detectInfiniteLoops(clock: Clock, resolve: (result: TestResult) => void) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
-		const errorResult = TestResultFactory.suite([], [
-			TestResultFactory.fail("Test runner watchdog", "Detected infinite loop in tests"),
+		const errorResult = TestResult.suite([], [
+			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 		]);
 		resolve(errorResult);
 	});
@@ -113,18 +113,18 @@ function handleMessage(
 	aliveFn: () => void,
 	cancelFn: () => void,
 	notifyFn: NotifyFn,
-	resolve: (result: TestResultFactory) => void,
+	resolve: (result: TestResult) => void,
 ) {
 	switch (message.type) {
 		case "keepalive":
 			aliveFn();
 			break;
 		case "progress":
-			notifyFn(TestResultFactory.deserialize(message.result));
+			notifyFn(TestResult.deserialize(message.result));
 			break;
 		case "complete":
 			cancelFn();
-			resolve(TestResultFactory.deserialize(message.result));
+			resolve(TestResult.deserialize(message.result));
 			break;
 		default:
 			// @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime

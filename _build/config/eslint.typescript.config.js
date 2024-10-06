@@ -26,6 +26,7 @@ module.exports = [
     rules: {
 			"@typescript-eslint/no-unused-vars": IGNORE,
       "no-regex-spaces": IGNORE,
+      "no-unused-private-class-members": IGNORE,
 
       "no-use-before-define": UNSUPPORTED,
       "@typescript-eslint/no-use-before-define": [

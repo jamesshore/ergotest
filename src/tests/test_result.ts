@@ -3,6 +3,7 @@
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
+import { TestMark, TestMarkValue } from "./test_suite.js";
 
 export const TestStatus = {
 	pass: "pass",
@@ -13,9 +14,9 @@ export const TestStatus = {
 
 export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
-type Status = typeof TestStatus[keyof typeof TestStatus];
+export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
 
-interface TestCount {
+export interface TestCount {
 	pass: number;
 	fail: number;
 	skip: number;
@@ -23,23 +24,23 @@ interface TestCount {
 	total: number;
 }
 
-interface SerializedTestSuiteResult {
+export interface SerializedTestSuiteResult {
 	type: "TestSuiteResult";
 	name: string[];
 	filename?: string;
 	suite: SerializedTestResult[];
 }
 
-interface SerializedTestCaseResult {
+export interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	name: string[];
 	filename?: string;
-	status: Status;
+	status: TestStatusValue;
 	error?: unknown;
 	timeout?: number;
 }
 
-interface SerializedError {
+export interface SerializedError {
 	type: "Error" | "AssertionError";
 	message: string;
 	stack?: string;
@@ -49,36 +50,41 @@ interface SerializedError {
 	operator?: string;
 }
 
-export type TestResult = TestSuiteResult | TestCaseResult;
-
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
-export abstract class TestResultFactory {
+export abstract class TestResult {
 
 	/**
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
-	 * @param {TestResultFactory[]} children The nested results of this suite.
+	 * @param {TestResult[]} children The nested results of this suite.
 	 * @param {string} [filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
 	 */
-	static suite(names: string | string[], children: TestResult[], filename?: string): TestSuiteResult {
-		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ]]);
+	static suite(
+		names: string | string[],
+		children: TestResult[],
+		filename?: string,
+		mark?: TestMarkValue,
+	): TestSuiteResult {
+		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ], [ undefined, String ]]);
 
-		return new TestSuiteResult(names, children, filename);
+		return new TestSuiteResult(names, children, filename, mark);
 	}
 
 	/**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(names: string | string[], filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
+	static pass(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, TestStatus.pass, { filename });
+		return new TestCaseResult(names, TestStatus.pass, { filename, mark });
 	}
 
 	/**
@@ -86,24 +92,26 @@ export abstract class TestResultFactory {
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static fail(names: string | string[], error: unknown, filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ String, Error ], [ undefined, String ]]);
+	static fail(names: string | string[], error: unknown, filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], ensure.ANY_TYPE, [ undefined, String ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, TestStatus.fail, { error, filename });
+		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark });
 	}
 
 	/**
 	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static skip(names: string | string[], filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ] ]);
+	static skip(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.skip, { filename });
+		return new TestCaseResult(names, TestStatus.skip, { filename, mark });
 	}
 
 	/**
@@ -111,12 +119,13 @@ export abstract class TestResultFactory {
 	 * @param {string|string[]} names The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
 	 * @param {string} [filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static timeout(names: string | string[], timeout: number, filename?: string): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ] ]);
+	static timeout(names: string | string[], timeout: number, filename?: string, mark?: TestMarkValue): TestCaseResult {
+		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename });
+		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename, mark });
 	}
 
 	/**
@@ -137,18 +146,60 @@ export abstract class TestResultFactory {
 		}
 	}
 
+	/**
+	 * @returns {string | undefined} The file that contained the test (or suite), if any.
+	 */
+	abstract get filename(): string | undefined;
+
+	/**
+	 * @returns {string []} The name of the test (or suite), and all enclosing suites, with the outermost suite first.
+	 *   Does not include the file name.
+	 */
+	abstract get name(): string[];
+
+	/**
+	 * @return { TestMark } Whether the test (or suite) was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	abstract get mark(): TestMarkValue;
+
+	/**
+	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
+	 */
+	abstract allTests(): TestCaseResult[];
+
+	/**
+	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list. This includes suites; although the test results are all in a single list, and are
+	 *   filtered, any suites in the list still have all their children.
+	 */
+	abstract allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
+
+	/**
+	 * Convert this result into a bare object later deserialization.
+	 * @returns {SerializedTestSuiteResult} The serialized object.
+	 * @see TestResult.deserialize
+	 */
+	abstract serialize(): SerializedTestResult;
+
+	/**
+	 * Determine if this test result is identical to another test result. To be identical, they must have the same
+	 * results, in the same order, with the same names, filenames, and marks (.only etc.).
+	 * @param {any} that The thing to compare against
+	 * @returns {boolean}
+	 */
+	abstract equals(that: TestResult): boolean;
 }
 
 /**
  * The result of running a test suite.
  */
-export class TestSuiteResult {
+export class TestSuiteResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {SerializedTestSuiteResult} serializedTestResult The serialized test result.
 	 * @returns {TestSuiteResult} The result object.
-	 * @see TestResultFactory#deserialize
+	 * @see TestResult#deserialize
 	 */
 	static deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
@@ -158,24 +209,24 @@ export class TestSuiteResult {
 			suite: Array,
 		}], [ "serialized TestSuiteResult" ]);
 
-		const deserializedSuite = suite.map(test => TestResultFactory.deserialize(test));
+		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
 		return new TestSuiteResult(name, deserializedSuite, filename);
 	}
 
 	private readonly _name: string[];
-	private readonly _filename?: string;
 	private readonly _children: TestResult[];
+	private readonly _filename?: string;
+	private readonly _mark: TestMarkValue;
 
-	/** Internal use only. (Use {@link TestResultFactory.suite} instead.) */
-	constructor(names: string | string[], results: TestResult[], filename?: string) {
+	/** Internal use only. (Use {@link TestResult.suite} instead.) */
+	constructor(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue) {
+		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
-		this._children = results;
+		this._children = children;
+		this._mark = mark ?? TestMark.none;
 	}
 
-	/**
-	 * @returns {string []} The names of the suite, which typically includes all enclosing suites.
-	 */
 	get name(): string[] {
 		return this._name;
 	}
@@ -185,6 +236,13 @@ export class TestSuiteResult {
 	 */
 	get filename(): string | undefined {
 		return this._filename;
+	}
+
+	/**
+	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	get mark(): TestMarkValue {
+		return this._mark;
 	}
 
 	/**
@@ -213,8 +271,32 @@ export class TestSuiteResult {
 	 * @param {TestStatus[]} statuses The statuses to match.
 	 * @returns {TestCaseResult[]} The test results.
 	 */
-	allMatchingTests(...statuses: Status[]): TestCaseResult[] {
+	allMatchingTests(...statuses: TestStatusValue[]): TestCaseResult[] {
 		return this.allTests().filter(test => statuses.includes(test.status));
+	}
+
+	/**
+	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
+	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
+	 *   Tests without a mark are not included.
+	 */
+	allMarkedResults(): TestResult[] {
+		ensure.signature(arguments, []);
+
+		const allMarks = new Set(Object.values(TestMark));
+		allMarks.delete(TestMark.none);
+		return this.allMatchingMarks.apply(this, [ ...allMarks ]);
+	}
+
+	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
+		ensureValidMarks(marks);
+
+		const results = new Set<TestResult>();
+		this._children.forEach((result: TestResult) => {
+			if (marks.includes(result.mark)) results.add(result);
+			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));
+		});
+		return [ ...results ];
 	}
 
 	/**
@@ -264,7 +346,7 @@ export class TestSuiteResult {
 	/**
 	 * Convert this suite into a bare object later deserialization.
 	 * @returns {SerializedTestSuiteResult} The serialized object.
-	 * @see TestResultFactory.deserialize
+	 * @see TestResult.deserialize
 	 */
 	serialize(): SerializedTestSuiteResult {
 		return {
@@ -275,16 +357,11 @@ export class TestSuiteResult {
 		};
 	}
 
-	/**
-	 * Determine if this test result is identical to another test result. To be identical, they must have the same
-	 * results, in the same order, with the same names and filenames.
-	 * @param {any} that The thing to compare against
-	 * @returns {boolean}
-	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestSuiteResult)) return false;
-		if (this._children.length !== that._children.length) return false;
+		if (this._mark !== that._mark) return false;
 
+		if (this._children.length !== that._children.length) return false;
 		for (let i = 0; i < this._children.length; i++) {
 			const thisResult = this._children[i]!;
 			const thatResult = that._children[i]!;
@@ -301,13 +378,13 @@ export class TestSuiteResult {
 /**
  * The result of running an individual test.
  */
-export class TestCaseResult {
+export class TestCaseResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {object} serializedTestResult The serialized test result.
 	 * @returns {TestCaseResult} The result object.
-	 * @see TestResultFactory#deserialize
+	 * @see TestResult#deserialize
 	 */
 	static deserialize(serializedResult: SerializedTestCaseResult): TestCaseResult {
 		ensure.signature(arguments, [{
@@ -349,42 +426,46 @@ export class TestCaseResult {
 
 	private _name: string[];
 	private _filename?: string;
-	private _status: Status;
+	private _status: TestStatusValue;
+	private _mark: TestMarkValue;
 	private _error?: unknown;
 	private _timeout?: number;
 
-	/** Internal use only. (Use {@link TestResultFactory} factory methods instead.) */
+	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
 		names: string | string[],
-		status: Status,
-		{ error, timeout, filename }: { error?: unknown, timeout?: number, filename?: string } = {}
+		status: TestStatusValue,
+		{ error, timeout, filename, mark }: { error?: unknown, timeout?: number, filename?: string, mark?: TestMarkValue } = {}
 	) {
+		super();
 		this._name = Array.isArray(names) ? names : [ names ];
 		this._filename = filename;
 		this._status = status;
+		this._mark = mark ?? TestMark.none;
 		this._error = error;
 		this._timeout = timeout;
 	}
 
-	/**
-	 * @returns {string | undefined} The file that contained the test, if any.
-	 */
 	get filename(): string | undefined {
 		return this._filename;
 	}
 
-	/**
-	 * @returns {string []} The names of the test, which typically includes the name of all enclosing suites.
-	 */
 	get name(): string[] {
 		return this._name;
 	}
 
 	/**
-	 * @returns {Status} Whether this test passed, failed, etc.
+	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
-	get status(): Status {
+	get status(): TestStatusValue {
 		return this._status;
+	}
+
+	/**
+	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 */
+	get mark(): TestMarkValue {
+		return this._mark;
 	}
 
 	/**
@@ -446,10 +527,17 @@ export class TestCaseResult {
 		return [ this ];
 	}
 
+	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
+		ensureValidMarks(marks);
+
+		if (marks.includes(this._mark)) return [ this ];
+		else return [];
+	}
+
 	/**
 	 * Convert this result into a bare object later deserialization.
 	 * @returns {object} The serialized object.
-	 * @see TestResultFactory.deserialize
+	 * @see TestResult.deserialize
 	 */
 	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);
@@ -483,15 +571,10 @@ export class TestCaseResult {
 		}
 	}
 
-	/**
-	 * Determine if this test result is identical to another test result. To be identical, they must have the same
-	 * results, in the same order, with the same names and filenames.
-	 * @param {any} that The thing to compare against
-	 * @returns {boolean}
-	 */
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
 		if (this._status !== that._status) return false;
+		if (this._mark !== that._mark) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
 		// @ts-expect-error - strings are objects, so this._error.message is legit on strings
@@ -503,4 +586,11 @@ export class TestCaseResult {
 			this.filename === that.filename;
 	}
 
+}
+
+function ensureValidMarks(marks: TestMarkValue[]) {
+	const validMarks = Object.values(TestMark);
+	marks.forEach((mark, i) => {
+		ensure.that(validMarks.includes(mark), `Argument #${i} was '${mark}', which isn't a valid mark`);
+	});
 }
