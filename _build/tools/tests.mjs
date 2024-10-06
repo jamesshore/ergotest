@@ -2,11 +2,11 @@
 "use strict";
 
 import * as ensure from "util/ensure.js";
-import Reporter from "tasks/reporter.js";
-import TaskError from "tasks/task_error.js";
+import Reporter from "tasks/reporter.mjs";
+import TaskError from "tasks/task_error.mjs";
 import Colors from "infrastructure/colors.js";
 import FileSystem from "infrastructure/file_system.js";
-import DependencyTree from "tasks/dependency_tree.js";
+import DependencyTree from "tasks/dependency_tree.mjs";
 import TestRunner from "tests/test_runner.js";
 import TestResult from "tests/test_result.js";
 import path from "node:path";

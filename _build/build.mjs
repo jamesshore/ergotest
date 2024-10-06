@@ -2,9 +2,9 @@
 "use strict";
 
 import * as ensure from "util/ensure.js";
-import Tasks from "tasks/tasks.js";
-import TaskCli from "tasks/task_cli.js";
-import Reporter from "tasks/reporter.js";
+import Tasks from "tasks/tasks.mjs";
+import TaskCli from "tasks/task_cli.mjs";
+import Reporter from "tasks/reporter.mjs";
 import FileSystem from "infrastructure/file_system.js";
 import Version from "./tools/version.mjs";
 import Lint from "./tools/lint.mjs";
