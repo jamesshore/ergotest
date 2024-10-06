@@ -86,6 +86,7 @@ module.exports = class Paths {
 	buildTestFiles() {
 		return this._files.matchingFiles([
 			`${rootDir}/_build/**/_*_test.js`,
+			`${rootDir}/_build/**/_*_test.mjs`,
 		]);
 	}
 
