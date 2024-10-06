@@ -1,11 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import { test, assert } from "tests";
+import { assert, test } from "tests";
 import { AssertionError } from "node:assert";
 import { TestMark, TestMarkValue } from "./test_suite.js";
 import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
-import util from "node:util";
-import { Colors } from "../infrastructure/colors.js";
 
 export default test(({ describe }) => {
 
@@ -53,12 +51,12 @@ export default test(({ describe }) => {
 			assert.objNotEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
 
 			assert.objEqual(
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
 			);
 			assert.objNotEqual(
-				createSuite({ name: "my name", results: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", results: [ createPass({ name: "different" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
+				createSuite({ name: "my name", children: [ createPass({ name: "different" }) ]}),
 			);
 		});
 
@@ -174,18 +172,17 @@ export default test(({ describe }) => {
 	describe("flattening", ({ it }) => {
 
 		it("flattens all test results into a single list", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
-				createSuite({ results: [
+				createSuite({ children: [
 					createTimeout({ name: "timeout" }),
 					createFail({ name: "fail 2" }),
 				]}),
 			]});
 
-			const tests = suite.allTests();
-			assert.deepEqual(tests, [
+			assert.deepEqual(suite.allTests(), [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
@@ -195,11 +192,11 @@ export default test(({ describe }) => {
 		});
 
 		it("flattens tests with requested statuses into a single list", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
-				createSuite({ results: [
+				createSuite({ children: [
 					createTimeout({ name: "timeout" }),
 					createFail({ name: "fail 2" }),
 				]}),
@@ -217,20 +214,39 @@ export default test(({ describe }) => {
 			], "multiple statuses");
 		});
 
+		it.skip("flattens all marked results into a single list", () => {
+			const suite = createSuite({ children: [
+				createPass({ name: "test 0.1", mark: TestMark.none }),
+				createPass({ name: "test 0.2", mark: TestMark.skip }),
+				createPass({ name: "test 0.3", mark: TestMark.only }),
+				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+					createPass({ name: "test 1.1", mark: TestMark.only }),
+					createPass({ name: "test 1.2", mark: TestMark.skip }),
+						createSuite({ name: "suite 1.1", mark: TestMark.none }),
+						createSuite({ name: "suite 1.2", mark: TestMark.skip }),
+					createPass({ name: "test 1.3", mark: TestMark.none }),
+				]}),
+			]});
+
+			assert.deepEqual(suite.allMarkedResults(), [
+
+			]);
+		});
+
 	});
 
 
 	describe("passing test files", ({ it }) => {
 
 		it("provides names of files that have all passing tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "file2" }),
 			]});
 			assert.deepEqual(suite.allPassingFiles(), [ "file2" ]);
 		});
 
 		it("does not include filenames more than once", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file" }),
 				createPass({ filename: "my_file" }),
 			]});
@@ -238,7 +254,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of failing tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createFail({ filename: "my_file2" }),
 			]});
@@ -246,7 +262,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of skipped tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createSkip({ filename: "my_file2" }),
 			]});
@@ -254,7 +270,7 @@ export default test(({ describe }) => {
 		});
 
 		it("does not include filenames of timed out tests", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ filename: "my_file1" }),
 				createTimeout({ filename: "my_file2" }),
 			]});
@@ -265,8 +281,8 @@ export default test(({ describe }) => {
 		it("[bugfix] does not include filenames of failing tests even when sibling tests pass", () => {
 			// Including filename in every test suite has resulted in tests being marked as 'pass' when they were 'fail'
 
-			const suite = createSuite({ results: [
-				createSuite({ filename: "my_file", results: [
+			const suite = createSuite({ children: [
+				createSuite({ filename: "my_file", children: [
 					createPass({ filename: "my_file" }),
 					createFail({ filename: "my_file" }),
 				]}),
@@ -281,7 +297,7 @@ export default test(({ describe }) => {
 	describe("summarization", ({ it }) => {
 
 		it("provides test count", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createFail(),
 				createFail(),
@@ -304,10 +320,10 @@ export default test(({ describe }) => {
 		});
 
 		it("counts tests in sub-suites", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass(),
 				createFail(),
-				createSuite({ results: [
+				createSuite({ children: [
 					createFail(),
 					createFail(),
 					createSkip(),
@@ -329,12 +345,12 @@ export default test(({ describe }) => {
 	describe("serialization and deserialization", ({ it }) => {
 
 		it("can be serialized and deserialized", () => {
-			const suite = createSuite({ results: [
+			const suite = createSuite({ children: [
 				createPass({ name: "pass" }),
 				createSkip({ name: "skip" }),
 				createFail({ name: "fail" }),
 				createTimeout({ name: "timeout" }),
-				createSuite({ name: "child", results: [
+				createSuite({ name: "child", children: [
 					createPass({ name: [ "child", "child pass" ]}),
 				]}),
 			]});
@@ -404,16 +420,16 @@ export default test(({ describe }) => {
 
 function createSuite({
 	name = "irrelevant name",
-	results = [],
+	children = [],
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
-	results?: TestResult[],
+	children?: TestResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.suite(name, results, filename, mark);
+	return TestResult.suite(name, children, filename, mark);
 }
 
 function createPass({

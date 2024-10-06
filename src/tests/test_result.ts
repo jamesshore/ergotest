@@ -263,6 +263,10 @@ export class TestSuiteResult extends TestResult {
 		return this.allTests().filter(test => statuses.includes(test.status));
 	}
 
+	allMarkedResults() {
+
+	}
+
 	/**
 	 * @returns {string[]} All the test files with 100% passing tests--nothing that was skipped, failed, or timed out.
 	 */

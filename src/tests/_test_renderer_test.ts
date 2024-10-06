@@ -15,48 +15,62 @@ export default test(({ describe }) => {
 	describe("test suites", ({ it }) => {
 
 		it("renders single characters all in a row", () => {
-			const result = createSuite({ results: [
+			const result = createSuite({ children: [
 				createPass(),
 				createFail(),
-				createSuite({ results: [ createSkip() ]}),
+				createSuite({ children: [ createSkip() ]}),
 			]});
 
-			assert.equal(renderCharacter(result),
-				renderCharacter(createPass()) +
-				renderCharacter(createFail()) +
-				renderCharacter(createSkip())
+			assert.equal(renderCharacterTest(result),
+				renderCharacterTest(createPass()) +
+				renderCharacterTest(createFail()) +
+				renderCharacterTest(createSkip())
 			);
 		});
 
-		it("renders single lines with on consecutive lines", () => {
-			const result = createSuite({ results: [
+		it("renders single lines on consecutive lines", () => {
+			const result = createSuite({ children: [
 				createPass(),
 				createFail(),
-				createSuite({ results: [ createSkip() ]}),
+				createSuite({ children: [ createSkip() ]}),
 			]});
 
-			assert.equal(renderSingleLine(result),
-				renderSingleLine(createPass()) + "\n" +
-				renderSingleLine(createFail()) + "\n" +
-				renderSingleLine(createSkip()) + "\n"
+			assert.equal(renderSingleLineTest(result),
+				renderSingleLineTest(createPass()) + "\n" +
+				renderSingleLineTest(createFail()) + "\n" +
+				renderSingleLineTest(createSkip()) + "\n"
 			);
 		});
 
 		it("renders multiple lines with a gap before and after", () => {
 			const fail = createFail();    // have to use the same fail each time, or the stack trace will be different
 
-			const result = createSuite({ results: [
+			const result = createSuite({ children: [
 				createPass(),
 				fail,
-				createSuite({ results: [ createSkip() ]}),
+				createSuite({ children: [ createSkip() ]}),
 			]});
 
-			assert.equal(renderMultiLine(result),
-				"\n" + renderMultiLine(createPass()) + "\n\n" +
-				"\n" + renderMultiLine(fail) + "\n\n" +
-				"\n" + renderMultiLine(createSkip()) + "\n\n"
+			assert.equal(renderMultiLineTest(result),
+				"\n" + renderMultiLineTest(createPass()) + "\n\n" +
+				"\n" + renderMultiLineTest(fail) + "\n\n" +
+				"\n" + renderMultiLineTest(createSkip()) + "\n\n"
 			);
 		});
+
+		it("renders single-line marks on consecutive lines, skipping tests without no marks", () => {
+			const skip = createPass({ mark: TestMark.skip });
+			const none = createPass({ mark: TestMark.none });
+			const only = createPass({ mark: TestMark.only });
+
+			const result = createSuite({ children: [ skip, none, only ]});
+			assert.equal(renderSingleLineMark(result),
+				renderSingleLineMark(skip) + "\n" +
+				renderSingleLineMark(only) + "\n"
+			);
+		});
+
+		it("renders multi-line marks with a gap before and after");
 
 	});
 
@@ -64,10 +78,10 @@ export default test(({ describe }) => {
 	describe("single-character cases", ({ it }) => {
 
 		it("renders progress marker", () => {
-			assert.equal(renderCharacter(createPass()), Colors.white("."), "pass");
-			assert.equal(renderCharacter(createFail()), Colors.brightRed.inverse("X"), "fail");
-			assert.equal(renderCharacter(createSkip()), Colors.cyan.dim("_"), "skip");
-			assert.equal(renderCharacter(createTimeout()), Colors.purple.inverse("!"), "timeout");
+			assert.equal(renderCharacterTest(createPass()), Colors.white("."), "pass");
+			assert.equal(renderCharacterTest(createFail()), Colors.brightRed.inverse("X"), "fail");
+			assert.equal(renderCharacterTest(createSkip()), Colors.cyan.dim("_"), "skip");
+			assert.equal(renderCharacterTest(createTimeout()), Colors.purple.inverse("!"), "timeout");
 		});
 
 	});
@@ -77,22 +91,22 @@ export default test(({ describe }) => {
 
 		it("pass", () => {
 			const result = createPass({ name: "my name" });
-			assert.equal(renderSingleLine(result), Colors.green("passed") + " my name");
+			assert.equal(renderSingleLineTest(result), Colors.green("passed") + " my name");
 		});
 
 		it("skip", () => {
 			const result = createSkip({ name: "my name" });
-			assert.equal(renderSingleLine(result), Colors.brightCyan("skipped") + " my name");
+			assert.equal(renderSingleLineTest(result), Colors.brightCyan("skipped") + " my name");
 		});
 
 		it("timeout", () => {
 			const result = createTimeout({ name: "my name" });
-			assert.equal(renderSingleLine(result), Colors.brightPurple("timeout") + " my name");
+			assert.equal(renderSingleLineTest(result), Colors.brightPurple("timeout") + " my name");
 		});
 
 		it("fail", () => {
 			const result = createFail({ name: "my name" });
-			assert.equal(renderSingleLine(result), Colors.brightRed("failed") + " my name");
+			assert.equal(renderSingleLineTest(result), Colors.brightRed("failed") + " my name");
 		});
 
 	});
@@ -105,7 +119,7 @@ export default test(({ describe }) => {
 			const renderer = TestRenderer.create();
 
 			assert.equal(
-				renderMultiLine(result),
+				renderMultiLineTest(result),
 				renderer.renderNameOnMultipleLines(result) + "\n" + renderer.renderStatusWithMultiLineDetails(result)
 			);
 		});
@@ -115,7 +129,21 @@ export default test(({ describe }) => {
 
 	describe("single-line test marks", ({ it }) => {
 
-		it.skip("TO DO");
+		it("renders all marks", () => {
+			assert.equal(
+				renderSingleLineMark(createPass({ mark: TestMark.none })),
+				"",
+				"no mark"
+			);
+			assert.equal(
+				renderSingleLineMark(createPass({ mark: TestMark.skip, name: "my name" })),
+				Colors.brightCyan(".skip") + " my name"
+			);
+			assert.equal(
+				renderSingleLineMark(createPass({ mark: TestMark.only, name: "my name" })),
+				Colors.brightCyan(".only") + " my name"
+			);
+		});
 
 	});
 
@@ -315,8 +343,8 @@ export default test(({ describe }) => {
 
 		it("renders all marks", () => {
 			assert.equal(render(createPass({ mark: TestMark.none })), "", "no mark");
-			assert.equal(render(createPass({ mark: TestMark.skip })), ".skip");
-			assert.equal(render(createPass({ mark: TestMark.only })), ".only");
+			assert.equal(render(createPass({ mark: TestMark.skip })), Colors.brightCyan(".skip"));
+			assert.equal(render(createPass({ mark: TestMark.only })), Colors.brightCyan(".only"));
 		});
 
 		function render(result: TestCaseResult): string {
@@ -448,28 +476,32 @@ export default test(({ describe }) => {
 
 });
 
-function renderCharacter(testResult: TestResult): string {
+function renderCharacterTest(testResult: TestResult): string {
 	return TestRenderer.create().renderTestsAsSingleCharacters(testResult);
 }
 
-function renderSingleLine(testResult: TestResult): string {
+function renderSingleLineTest(testResult: TestResult): string {
 	return TestRenderer.create().renderTestsAsSummaryLines(testResult);
 }
 
-function renderMultiLine(testResult: TestResult): string {
+function renderMultiLineTest(testResult: TestResult): string {
 	return TestRenderer.create().renderTestsWithFullDetails(testResult);
+}
+
+function renderSingleLineMark(result: TestResult): string {
+	return TestRenderer.create().renderMarksAsSummaryLines(result);
 }
 
 function createSuite({
 	name = [],
-	results = [],
+	children = [],
 	filename = undefined,
 }: {
 	name?: string | string[],
-	results?: TestResult[],
+	children?: TestResult[],
 	filename?: string,
 } = {}): TestSuiteResult {
-	return TestResult.suite(name, results, filename);
+	return TestResult.suite(name, children, filename);
 }
 
 function createPass({

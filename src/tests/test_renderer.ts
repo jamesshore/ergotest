@@ -41,7 +41,7 @@ export class TestRenderer {
 	}
 
 	/**
-	 * @returns {string} A single character representing this test result: a dot for passed, a red X for failed, etc.
+	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */
 	renderTestsAsSingleCharacters(testResult: TestResult): string {
 		return this.#renderAnyResult(testResult, "", "", (testCaseResult) => {
@@ -49,6 +49,9 @@ export class TestRenderer {
 		});
 	}
 
+	/**
+	 * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
+	 */
 	renderTestsAsSummaryLines(testResult: TestResult): string {
 		return this.#renderAnyResult(testResult, "", "\n", (testCaseResult) => {
 			const status = this.renderStatusAsSingleWord(testCaseResult);
@@ -58,6 +61,9 @@ export class TestRenderer {
 		});
 	}
 
+	/**
+	 * @returns {string} A full explanation of this test result.
+	 */
 	renderTestsWithFullDetails(testResult: TestResult): string {
 		return this.#renderAnyResult(testResult, "\n", "\n\n", (testCaseResult) => {
 			const name = this.renderNameOnMultipleLines(testCaseResult);
@@ -67,10 +73,22 @@ export class TestRenderer {
 		});
 	}
 
-	#normalizedName(testResult: TestResult) {
-		return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
+	/**
+	 * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
+	 */
+	renderMarksAsSummaryLines(testResult: TestResult): string {
+		return this.#renderAnyResult(testResult, "", "\n", (testCaseResult) => {
+			const mark = this.renderMarkAsSingleWord(testCaseResult);
+			const name = this.renderNameOnOneLine(testCaseResult);
+
+			if (mark === "") return "";
+			else return `${mark} ${name}`;
+		});
 	}
 
+	/**
+	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
+	 */
 	renderNameOnOneLine(testCaseResult: TestCaseResult) {
 		ensure.signature(arguments, [ TestCaseResult ]);
 
@@ -82,6 +100,10 @@ export class TestRenderer {
 		return `${filename}${name}`;
 	}
 
+	/**
+	 * @returns {string} The name of the test, including parent suites and filename, with the suites and filename
+	 *   rendered on a separate line.
+	 */
 	renderNameOnMultipleLines(testResult: TestResult): string {
 		ensure.signature(arguments, [ TestResult ]);
 
@@ -95,6 +117,13 @@ export class TestRenderer {
 		return headerColor(suitesName + test);
 	}
 
+	#normalizedName(testResult: TestResult) {
+		return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
+	}
+
+	/**
+	 * @returns {string} The color-coded status of the test.
+	 */
 	renderStatusAsSingleWord(testCaseResult: TestCaseResult) {
 		return DESCRIPTION_RENDERING[testCaseResult.status];
 	}
@@ -113,11 +142,14 @@ export class TestRenderer {
 		}
 	}
 
+	/**
+	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
+	 */
 	renderMarkAsSingleWord(testCaseResult: TestCaseResult) {
 		switch (testCaseResult.mark) {
 			case TestMark.none: return "";
-			case TestMark.skip: return ".skip";
-			case TestMark.only: return ".only";
+			case TestMark.skip: return Colors.brightCyan(".skip");
+			case TestMark.only: return Colors.brightCyan(".only");
 			default: ensure.unreachable(`Unrecognized test mark: ${testCaseResult.mark}`);
 		}
 	}
@@ -147,6 +179,9 @@ export class TestRenderer {
 		return `${error}${diff}`;
 	}
 
+	/**
+	 * @returns {string} The stack trace for the test, or "" if there wasn't one.
+	 */
 	renderStack(testCaseResult: TestCaseResult): string {
 		const testCaseError = testCaseResult.error as undefined | { stack: unknown };
 		if (testCaseError?.stack === undefined) return "";
@@ -167,6 +202,9 @@ export class TestRenderer {
 		return highlightedLines.join("\n");
 	}
 
+	/**
+	 * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
+	 */
 	renderDiff(error: AssertionError): string {
 		if (error.expected === undefined && error.actual === undefined) return "";
 		if (error.expected === null && error.actual === null) return "";
@@ -202,7 +240,7 @@ export class TestRenderer {
 			return renderFn(testResult);
 		}
 		else if (testResult instanceof TestSuiteResult) {
-			const allRenders = testResult.allTests().map(testCase => renderFn(testCase));
+			const allRenders = testResult.allTests().map(testCase => renderFn(testCase)).filter(render => render !== "");
 			return preamble + allRenders.join(postamble + preamble) + postamble;
 		}
 		else {
