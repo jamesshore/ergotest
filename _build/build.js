@@ -109,14 +109,14 @@ function defineTasks(self) {
 	});
 
 	tasks.defineTask("unittest", async () => {
+		await tasks.runTasksAsync([ "compile" ]);
+
 		await tests.runAsync({
 			description: "JavaScript tests",
 			files: self._paths.buildTestFiles(),
 			config: testConfig,
 			reporter: self._reporter,
 		});
-
-		await tasks.runTasksAsync([ "compile" ]);
 
 		await tests.runAsync({
 			description: "TypeScript tests",
