@@ -1,6 +1,4 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-"use strict";
-
 import * as ensure from "util/ensure.mjs";
 import Tasks from "tasks/tasks.mjs";
 import TaskCli from "tasks/task_cli.mjs";
