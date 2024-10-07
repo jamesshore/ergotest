@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import * as ensure from "util/ensure.mjs";
-import FileTree from "infrastructure/file_tree.mjs";
+import * as ensure from "util/ensure.js";
+import FileTree from "infrastructure/file_tree.js";
 import path from "node:path";
 
 const rootDir = path.resolve(import.meta.dirname, "../..");
@@ -85,7 +85,6 @@ export default class Paths {
 	buildTestFiles() {
 		return this._files.matchingFiles([
 			`${rootDir}/_build/**/_*_test.js`,
-			`${rootDir}/_build/**/_*_test.mjs`,
 		]);
 	}
 
