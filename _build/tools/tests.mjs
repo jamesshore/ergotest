@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 "use strict";
 
-import * as ensure from "util/ensure.js";
+import * as ensure from "util/ensure.mjs";
 import Reporter from "tasks/reporter.mjs";
 import TaskError from "tasks/task_error.mjs";
 import Colors from "infrastructure/colors.mjs";

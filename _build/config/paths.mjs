@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import * as ensure from "util/ensure.js";
+import * as ensure from "util/ensure.mjs";
 import FileTree from "infrastructure/file_tree.mjs";
 import path from "node:path";
 
