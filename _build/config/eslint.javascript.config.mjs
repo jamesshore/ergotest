@@ -9,9 +9,5 @@ export default [
 	...globalConfig,
 	{
 		name: "JavaScript config",
-
-		"languageOptions": {
-			sourceType: "commonjs",
-		},
 	},
 ];

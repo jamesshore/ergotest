@@ -8,7 +8,7 @@ import Version from "./tools/version.mjs";
 import Lint from "./tools/lint.mjs";
 import Tests from "./tools/tests.mjs";
 import TypeScript from "./tools/typescript.mjs";
-import Paths from "./config/paths.mjs";
+import Paths from "./config/paths.js";
 import testConfig from "./config/tests.conf.mjs";
 import lintJavascriptConfig from "./config/eslint.javascript.config.mjs";
 import lintTypescriptConfig from "./config/eslint.typescript.config.mjs";
