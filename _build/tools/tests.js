@@ -6,7 +6,8 @@ import Colors from "infrastructure/colors.js";
 import FileSystem from "infrastructure/file_system.js";
 import DependencyTree from "tasks/dependency_tree.js";
 import { TestRunner } from "tests/test_runner.js";
-import { TestResult } from "tests/test_result.js";
+import { TestStatus } from "tests/test_result.js";
+import { TestRenderer } from "tests/test_renderer.js";
 import path from "node:path";
 
 const failColor = Colors.brightRed;
@@ -27,6 +28,7 @@ export default class Tests {
 		this._fileSystem = fileSystem;
 		this._dependencyTree = DependencyTree.create(fileSystem, globsToIgnore);
 		this._testRunner = TestRunner.create();
+		this._testRenderer = TestRenderer.create();
 	}
 
 	async runAsync({ description, files, config, reporter }) {
@@ -91,15 +93,14 @@ export default class Tests {
 			const testResult = await this._testRunner.runIsolatedAsync(filesToRun, {
 				config,
 				notifyFn: testResult => {
-					report.progress({ text: testResult.renderCharacter() });
-					// if (testResult.isSkip()) report.footer(testResult.renderSingleLine());
+					report.progress({ text: this._testRenderer.renderTestsAsSingleCharacters(testResult) });
 				},
 			});
-			const testCount = testResult.count();
-
-			this.#reportFailures(report, testResult);
-			this.#reportSummary(report, testCount);
 			await this.#writeTimestampFilesAsync(testResult);
+
+			const testCount = testResult.count();
+			this.#reportDetails(report, testResult);
+			this.#reportSummary(report, testCount);
 
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");
 			if (testCount.total - testCount.skip === 0) throw new TaskError("No tests found");
@@ -112,11 +113,11 @@ export default class Tests {
 		}));
 	}
 
-	#reportFailures(report, testResult) {
-		const failures = testResult.allMatchingTests(TestResult.STATUS.FAIL, TestResult.STATUS.TIMEOUT);
-		failures.forEach(failure => {
-			report.footer("\n" + failure.renderMultiLine() + "\n");
-		});
+	#reportDetails(report, testResult) {
+		const allFailures = testResult.allMatchingTests(TestStatus.fail, TestStatus.timeout);
+
+		report.footer(this._testRenderer.renderMarksAsSummaryLines(testResult));
+		report.footer(this._testRenderer.renderTestsWithFullDetails(allFailures));
 	}
 
 	#reportSummary(report, testCount) {
