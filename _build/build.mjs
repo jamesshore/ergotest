@@ -5,7 +5,7 @@ import * as ensure from "util/ensure.js";
 import Tasks from "tasks/tasks.mjs";
 import TaskCli from "tasks/task_cli.mjs";
 import Reporter from "tasks/reporter.mjs";
-import FileSystem from "infrastructure/file_system.js";
+import FileSystem from "infrastructure/file_system.mjs";
 import Version from "./tools/version.mjs";
 import Lint from "./tools/lint.mjs";
 import Tests from "./tools/tests.mjs";

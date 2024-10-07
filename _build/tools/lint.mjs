@@ -3,9 +3,9 @@
 
 import * as ensure from "util/ensure.js";
 import Reporter from "tasks/reporter.mjs";
-import FileSystem from "infrastructure/file_system.js";
+import FileSystem from "infrastructure/file_system.mjs";
 import TaskError from "tasks/task_error.mjs";
-import Colors from "infrastructure/colors.js";
+import Colors from "infrastructure/colors.mjs";
 import { Linter, SourceCode } from "eslint";
 
 export default class Lint {

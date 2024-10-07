@@ -2,11 +2,11 @@
 "use strict";
 
 import * as ensure from "util/ensure.js";
-import Colors from "infrastructure/colors.js";
-import FileSystem from "infrastructure/file_system.js";
+import Colors from "infrastructure/colors.mjs";
+import FileSystem from "infrastructure/file_system.mjs";
 import TaskError from "tasks/task_error.mjs";
 import Reporter from "tasks/reporter.mjs";
-import Shell from "infrastructure/shell.js";
+import Shell from "infrastructure/shell.mjs";
 import swc from "@swc/core";
 import path from "node:path";
 

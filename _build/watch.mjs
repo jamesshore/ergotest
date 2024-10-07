@@ -4,11 +4,11 @@
 // Automatically runs build when files change.
 
 import Build from "./build.mjs";
-import Colors from "infrastructure/colors.js";
-import Shell from "infrastructure/shell.js";
+import Colors from "infrastructure/colors.mjs";
+import Shell from "infrastructure/shell.mjs";
 import Paths from "./config/paths.mjs";
-import FileSystem from "infrastructure/file_system.js";
-import Clock from "infrastructure/clock.js";
+import FileSystem from "infrastructure/file_system.mjs";
+import Clock from "infrastructure/clock.mjs";
 import TaskCli from "tasks/task_cli.mjs";
 import path from "node:path";
 

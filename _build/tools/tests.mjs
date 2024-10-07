@@ -4,8 +4,8 @@
 import * as ensure from "util/ensure.js";
 import Reporter from "tasks/reporter.mjs";
 import TaskError from "tasks/task_error.mjs";
-import Colors from "infrastructure/colors.js";
-import FileSystem from "infrastructure/file_system.js";
+import Colors from "infrastructure/colors.mjs";
+import FileSystem from "infrastructure/file_system.mjs";
 import DependencyTree from "tasks/dependency_tree.mjs";
 import TestRunner from "tests/test_runner.mjs";
 import TestResult from "tests/test_result.mjs";

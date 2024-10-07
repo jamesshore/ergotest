@@ -4,7 +4,7 @@
 import ensure from "util/ensure.js";
 import Reporter from "tasks/reporter.mjs";
 import TaskError from "tasks/task_error.mjs";
-import FileSystem from "infrastructure/file_system.js";
+import FileSystem from "infrastructure/file_system.mjs";
 
 export default class Version {
 
