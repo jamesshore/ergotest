@@ -9,6 +9,7 @@ import { TestRunner } from "tests/test_runner.js";
 import { TestResult, TestStatus } from "tests/test_result.js";
 import { TestRenderer } from "tests/test_renderer.js";
 import path from "node:path";
+import * as util from "node:util";
 
 const failColor = Colors.brightRed;
 const timeoutColor = Colors.purple;
@@ -115,8 +116,11 @@ export default class Tests {
 
 	#reportDetails(report, testResult) {
 		const allFailures = testResult.allMatchingTests(TestStatus.fail, TestStatus.timeout);
+		const allMarks = testResult.allMarkedResults();
 
-		report.footer(this._testRenderer.renderMarksAsLines(testResult));
+		// console.log(util.inspect(testResult, { depth: Infinity }), allMarks);
+
+		report.footer(this._testRenderer.renderMarksAsLines(allMarks));
 		report.footer(this._testRenderer.renderAsMultipleLines(TestResult.suite([], allFailures)));
 	}
 
