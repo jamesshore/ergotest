@@ -9,7 +9,6 @@ import { TestRunner } from "tests/test_runner.js";
 import { TestResult, TestStatus } from "tests/test_result.js";
 import { TestRenderer } from "tests/test_renderer.js";
 import path from "node:path";
-import * as util from "node:util";
 
 const failColor = Colors.brightRed;
 const timeoutColor = Colors.purple;
@@ -100,7 +99,8 @@ export default class Tests {
 			await this.#writeTimestampFilesAsync(testResult);
 
 			const testCount = testResult.count();
-			this.#reportDetails(report, testResult);
+			this.#reportMarks(report, testResult);
+			this.#reportErrors(report, testResult);
 			this.#reportSummary(report, testCount);
 
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");
@@ -114,14 +114,18 @@ export default class Tests {
 		}));
 	}
 
-	#reportDetails(report, testResult) {
+	#reportErrors(report, testResult) {
 		const allFailures = testResult.allMatchingTests(TestStatus.fail, TestStatus.timeout);
-		const allMarks = testResult.allMarkedResults();
+		if (allFailures.length > 0) {
+			report.footer("\n" + this._testRenderer.renderAsMultipleLines(allFailures) + "\n\n");
+		}
+	}
 
-		// console.log(util.inspect(testResult, { depth: Infinity }), allMarks);
-
-		report.footer(this._testRenderer.renderMarksAsLines(allMarks));
-		report.footer(this._testRenderer.renderAsMultipleLines(TestResult.suite([], allFailures)));
+	#reportMarks(report, testResult) {
+		const markedResults = testResult.allMarkedResults();
+		if (markedResults.length > 0) {
+			report.footer("\n" + this._testRenderer.renderMarksAsLines(markedResults) + "\n\n");
+		}
 	}
 
 	#reportSummary(report, testCount) {

@@ -21,25 +21,11 @@ export default test(({ describe }) => {
 			assert.equal(renderCharacterTest(createTimeout()), Colors.purple.inverse("!"), "timeout");
 		});
 
-		it("renders suite as series of progress markers", () => {
-			const result = createSuite({ children: [
-				createPass(),
-				createFail(),
-				createSuite({ children: [ createSkip() ]}),
-			]});
-
-			assert.equal(renderCharacterTest(result),
-				renderCharacterTest(createPass()) +
-				renderCharacterTest(createFail()) +
-				renderCharacterTest(createSkip())
-			);
-		});
-
 		it("renders multiple results", () => {
 			const results = [
 				createPass(),
 				createFail(),
-				createSuite({ children: [ createSkip() ]}),
+				createSkip(),
 			];
 
 			assert.equal(renderCharacterTest(results),
@@ -78,25 +64,11 @@ export default test(({ describe }) => {
 			assert.equal(renderSingleLineTest(result), Colors.brightRed("failed") + " my name");
 		});
 
-		it("renders suite as consecutive lines", () => {
-			const result = createSuite({ children: [
-				createPass(),
-				createFail(),
-				createSuite({ children: [ createSkip() ]}),
-			]});
-
-			assert.equal(renderSingleLineTest(result),
-				renderSingleLineTest(createPass()) + "\n" +
-				renderSingleLineTest(createFail()) + "\n" +
-				renderSingleLineTest(createSkip())
-			);
-		});
-
-		it("renders multiple results", () => {
+		it("renders multiple results with a line feed between each one", () => {
 			const results = [
 				createPass(),
 				createFail(),
-				createSuite({ children: [ createSkip() ] }),
+				createSkip(),
 			];
 
 			assert.equal(renderSingleLineTest(results),
@@ -125,29 +97,13 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("renders suites with two-line gap between each result", () => {
-			const fail = createFail();    // have to use the same fail each time, or the stack trace will be different
-
-			const result = createSuite({ children: [
-				createPass(),
-				fail,
-				createSuite({ children: [ createSkip() ]}),
-			]});
-
-			assert.equal(renderMultiLineTest(result),
-				renderMultiLineTest(createPass()) + "\n\n\n" +
-				renderMultiLineTest(fail) + "\n\n\n" +
-				renderMultiLineTest(createSkip())
-			);
-		});
-
-		it("renders multiple results", () => {
+		it("renders multiple results with a two-line gap between each result", () => {
 			const fail = createFail();    // have to use the same fail each time, or the stack trace will be different
 
 			const results = [
 				createPass(),
 				fail,
-				createSuite({ children: [ createSkip() ]}),
+				createSkip(),
 			];
 
 			assert.equal(renderMultiLineTest(results),
@@ -181,48 +137,13 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("renders test suite marks", () => {
-			assert.equal(
-				renderSingleLineMark(createSuite({ mark: TestMark.none })),
-				"",
-				"no mark"
-			);
-			assert.equal(
-				renderSingleLineMark(createSuite({ mark: TestMark.skip, name: "my name" })),
-				Colors.brightCyan(".skip") + " my name"
-			);
-			assert.equal(
-				renderSingleLineMark(createSuite({ mark: TestMark.only, name: "my name" })),
-				Colors.brightCyan(".only") + " my name"
-			);
-		});
-
-		it("renders multiple marks on consecutive lines, skipping results without marks", () => {
-			const result = createSuite({ children: [
-				createPass({ name: "skip 1", mark: TestMark.skip }),
-				createPass({ name: "none 2", mark: TestMark.none }),
-				createPass({ name: "only 3", mark: TestMark.only }),
-				createSuite({ name: "suite none 1", mark: TestMark.none, children: [
-					createSkip({ name: "skip 4", mark: TestMark.skip }),
-				]}),
-				createSuite({ name: "suite skip 2", mark: TestMark.skip }),
-			]});
-
-			assert.equal(renderSingleLineMark(result),
-				renderSingleLineMark(createPass({ name: "skip 1", mark: TestMark.skip })) + "\n" +
-				renderSingleLineMark(createPass({ name: "only 3", mark: TestMark.only })) + "\n" +
-				renderSingleLineMark(createSkip({ name: "skip 4", mark: TestMark.skip })) + "\n" +
-				renderSingleLineMark(createSuite({ name: "suite skip 2", mark: TestMark.skip }))
-			);
-		});
-
-		it("renders multiple results", () => {
+		it("renders multiple results on consecutive lines", () => {
 			const results = [
 				createPass({ name: "skip 1", mark: TestMark.skip }),
 				createPass({ name: "none 2", mark: TestMark.none }),
 				createPass({ name: "only 3", mark: TestMark.only }),
-				createSuite({ name: "suite none 1", mark: TestMark.none, children: [
-					createSkip({ name: "skip 4", mark: TestMark.skip }),
+				createSuite({ name: "suite only 1", mark: TestMark.only, children: [
+					createSkip({ name: "does not look inside suites", mark: TestMark.skip }),
 				]}),
 				createSuite({ name: "suite skip 2", mark: TestMark.skip }),
 			];
@@ -231,7 +152,7 @@ export default test(({ describe }) => {
 				renderSingleLineMark(createPass({ name: "skip 1", mark: TestMark.skip })) + "\n" +
 				renderSingleLineMark(createPass({ name: "none 2", mark: TestMark.none })) + "\n" +
 				renderSingleLineMark(createPass({ name: "only 3", mark: TestMark.only })) + "\n" +
-				renderSingleLineMark(createSkip({ name: "skip 4", mark: TestMark.skip })) + "\n" +
+				renderSingleLineMark(createSkip({ name: "suite only 1", mark: TestMark.only })) + "\n" +
 				renderSingleLineMark(createSuite({ name: "suite skip 2", mark: TestMark.skip }))
 			);
 		});
@@ -567,15 +488,15 @@ export default test(({ describe }) => {
 
 });
 
-function renderCharacterTest(result: TestResult | TestResult[]): string {
+function renderCharacterTest(result: TestCaseResult | TestCaseResult[]): string {
 	return TestRenderer.create().renderAsCharacters(result);
 }
 
-function renderSingleLineTest(result: TestResult | TestResult[]): string {
+function renderSingleLineTest(result: TestCaseResult | TestCaseResult[]): string {
 	return TestRenderer.create().renderAsSingleLines(result);
 }
 
-function renderMultiLineTest(result: TestResult | TestResult[]): string {
+function renderMultiLineTest(result: TestCaseResult | TestCaseResult[]): string {
 	return TestRenderer.create().renderAsMultipleLines(result);
 }
 

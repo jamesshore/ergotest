@@ -43,61 +43,40 @@ export class TestRenderer {
 	/**
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */
-	renderAsCharacters(testResults: TestResult | TestResult[]): string {
-		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
+	renderAsCharacters(testCaseResults: TestCaseResult | TestCaseResult[]): string {
+		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
-		const renderFn = (testResult: TestResult) => {
-			if (!(testResult instanceof TestCaseResult)) ensure.unreachable("testResult must be instance of TestCaseResult");
-
+		return this.#renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult: TestCaseResult) => {
 			return PROGRESS_RENDERING[testResult.status];
-		};
-		const suiteToResultsFn = (result: TestResult): TestResult[] => {
-			return result.allTests();
-		};
-
-		return this.#renderMultipleResults(testResults, "", suiteToResultsFn, renderFn);
+		});
 	}
 
 	/**
 	 * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
 	 */
-	renderAsSingleLines(testResults: TestResult | TestResult[]): string {
-		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
+	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
+		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
-		const renderFn = (testResult: TestResult) => {
-			if (!(testResult instanceof TestCaseResult)) ensure.unreachable("testResult must be instance of TestCaseResult");
-
+		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
 			const status = this.renderStatusAsSingleWord(testResult);
 			const name = this.renderNameOnOneLine(testResult);
 
 			return `${status} ${name}`;
-		};
-		const suiteToResultsFn = (result: TestResult): TestResult[] => {
-			return result.allTests();
-		};
-
-		return this.#renderMultipleResults(testResults, "\n", suiteToResultsFn, renderFn);
+		});
 	}
 
 	/**
 	 * @returns {string} A full explanation of this test result.
 	 */
-	renderAsMultipleLines(testResults: TestResult | TestResult[]): string {
+	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		const renderFn = (testResult: TestResult) => {
-			if (!(testResult instanceof TestCaseResult)) ensure.unreachable("testResult must be instance of TestCaseResult");
-
+		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
 			const name = this.renderNameOnMultipleLines(testResult);
 			const status = this.renderStatusWithMultiLineDetails(testResult);
 
 			return `${name}\n${status}`;
-		};
-		const suiteToResultsFn = (result: TestResult): TestResult[] => {
-			return result.allTests();
-		};
-
-		return this.#renderMultipleResults(testResults, "\n\n\n", suiteToResultsFn, renderFn);
+		});
 	}
 
 	/**
@@ -106,18 +85,13 @@ export class TestRenderer {
 	renderMarksAsLines(testResults: TestResult | TestResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		const renderFn = (testResult: TestResult) => {
+		return this.#renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
 			const mark = this.renderMarkAsSingleWord(testResult);
 			const name = this.renderNameOnOneLine(testResult);
 
 			if (mark === "") return "";
 			else return `${mark} ${name}`;
-		};
-		const suiteToResultsFn = (result: TestSuiteResult): TestResult[] => {
-			return result.allMarkedResults();
-		};
-
-		return this.#renderMultipleResults(testResults, "\n", suiteToResultsFn, renderFn);
+		});
 
 	}
 
@@ -263,20 +237,16 @@ export class TestRenderer {
 			actualColor("actual:   ") + actual.join("\n");
 	}
 
-	#renderMultipleResults(
-		testResults: TestResult | TestResult[],
+	#renderMultipleResults<T>(
+		testResults: T | T[],
 		separator: string,
-		suiteToResultsFn: (result: TestSuiteResult) => TestResult[],
-		renderFn: (testResult: TestResult) => string,
+		expectedType: Function,   // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+		renderFn: (testResult: T) => string,
 	): string {
 		if (!Array.isArray(testResults)) testResults = [ testResults ];
+		testResults.forEach((result, i) => ensure.type(result, expectedType, `testResult[${i}]`));
 
-		const flattenedResults = testResults.flatMap(result => {
-			if (result instanceof TestSuiteResult) return suiteToResultsFn(result);
-			else return result;
-		});
-
-		return flattenedResults.map(result => renderFn(result)).join(separator);
+		return testResults.map(result => renderFn(result)).join(separator);
 	}
 
 }
