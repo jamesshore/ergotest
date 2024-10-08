@@ -6,7 +6,7 @@ import Colors from "infrastructure/colors.js";
 import FileSystem from "infrastructure/file_system.js";
 import DependencyTree from "tasks/dependency_tree.js";
 import { TestRunner } from "tests/test_runner.js";
-import { TestStatus } from "tests/test_result.js";
+import { TestResult, TestStatus } from "tests/test_result.js";
 import { TestRenderer } from "tests/test_renderer.js";
 import path from "node:path";
 
@@ -93,7 +93,7 @@ export default class Tests {
 			const testResult = await this._testRunner.runIsolatedAsync(filesToRun, {
 				config,
 				notifyFn: testResult => {
-					report.progress({ text: this._testRenderer.renderTestsAsSingleCharacters(testResult) });
+					report.progress({ text: this._testRenderer.renderAsCharacters(testResult) });
 				},
 			});
 			await this.#writeTimestampFilesAsync(testResult);
@@ -116,8 +116,8 @@ export default class Tests {
 	#reportDetails(report, testResult) {
 		const allFailures = testResult.allMatchingTests(TestStatus.fail, TestStatus.timeout);
 
-		report.footer(this._testRenderer.renderMarksAsSummaryLines(testResult));
-		report.footer(this._testRenderer.renderTestsWithFullDetails(allFailures));
+		report.footer(this._testRenderer.renderMarksAsLines(testResult));
+		report.footer(this._testRenderer.renderAsMultipleLines(TestResult.suite([], allFailures)));
 	}
 
 	#reportSummary(report, testCount) {

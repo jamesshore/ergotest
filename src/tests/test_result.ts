@@ -276,9 +276,9 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
-	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
-	 *   Tests without a mark are not included.
+	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), not including results without marks, but
+	 *   including suites, flattened into a single list. Although the test results are all in a single list, any suites
+	 *   in the list still have all their children.
 	 */
 	allMarkedResults(): TestResult[] {
 		ensure.signature(arguments, []);
@@ -292,6 +292,7 @@ export class TestSuiteResult extends TestResult {
 		ensureValidMarks(marks);
 
 		const results = new Set<TestResult>();
+		if (marks.includes(this.mark)) results.add(this);
 		this._children.forEach((result: TestResult) => {
 			if (marks.includes(result.mark)) results.add(result);
 			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));

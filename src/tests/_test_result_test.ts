@@ -249,6 +249,12 @@ export default test(({ describe }) => {
 			]);
 		});
 
+		it("includes parent suite", () => {
+			const suite = createSuite({ mark: TestMark.skip });
+
+			assert.deepEqual(suite.allMarkedResults(), [ createSuite({ mark: TestMark.skip }) ]);
+		});
+
 		it("flattens results with requested marks into a single list", () => {
 			const suite = createSuite({ children: [
 				createPass({ name: "test 0.1", mark: TestMark.none }),
