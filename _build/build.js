@@ -48,6 +48,7 @@ export default class Build {
 				unittest: "Run unit tests (incremental)",
 				compile: "Compile TypeScript (incremental)",
 				typecheck: "Type-check TypeScript and create declaration files",
+				dist: "Copy compiled files to distribution directory",
 			});
 		}
 
@@ -148,6 +149,14 @@ function defineTasks(self) {
 			typescriptConfigFile: Paths.typescriptConfigFile,
 			outputDir: Paths.typescriptTargetDir,
 			reporter: self._reporter,
+		});
+	});
+
+	tasks.defineTask("dist", async () => {
+		await tasks.runTasksAsync([ "compile", "typecheck" ]);
+		await self._reporter.startAsync("Building distribution", async () => {
+			await self._fileSystem.deleteAsync(Paths.typescriptDistDir);
+			await self._fileSystem.copyAsync(Paths.typescriptTargetDir, Paths.typescriptDistDir);
 		});
 	});
 

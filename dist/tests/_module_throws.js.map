@@ -1,0 +1,1 @@
+{"version":3,"sources":["/Users/jshore/Documents/Projects/ergotest/src/tests/_module_throws.ts"],"sourcesContent":["// Copyright Titanium I.T. LLC. License granted under terms of \"The MIT License.\"\n\nthrow new Error(\"my require error\");"],"names":["Error"],"mappings":"AAAA,iFAAiF;AAEjF,MAAM,IAAIA,MAAM"}

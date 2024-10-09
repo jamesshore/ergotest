@@ -33,6 +33,7 @@ export default class Paths {
 
 	static get typescriptSrcDir() { return `${rootDir}/src`; }
 	static get typescriptTargetDir() { return `${generatedDir}/src`; }
+	static get typescriptDistDir() { return `${rootDir}/dist`; }
 
 	static get successSound() { return `${rootDir}/_build/sounds/success.mp3`; }
 	static get failSound() { return `${rootDir}/_build/sounds/fail.m4a`; }
@@ -58,6 +59,7 @@ export default class Paths {
 			`${rootDir}/_build/node_modules/tests/vendor/**`,
 			`${rootDir}/src/node_modules/tests/vendor/**`,
 			`${rootDir}/generated/**`,
+			`${rootDir}/dist/**`,
 		];
 	}
 
