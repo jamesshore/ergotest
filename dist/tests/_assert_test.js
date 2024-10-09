@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC.
-import { assert, test } from "tests";
+import { assert, test } from "../tests.js";
 export default test(({ describe })=>{
     describe("equal()", ({ it })=>{
         it("passes if actual strictly equals expected", ()=>{

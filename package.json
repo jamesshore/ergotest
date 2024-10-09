@@ -8,23 +8,25 @@
   "type": "module",
   "exports": {
     ".": "./dist/tests/index.js",
-    "./*.js": "./dist/tests/*.js"
+    "./*.js": "./dist/tests/*.js",
+    "./*.d.ts": "./dist/tests/*.d.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
     "@sinonjs/fake-timers": "^13.0.2",
     "@swc/core": "^1.7.26",
+    "@types/array-to-sentence": "^2.0.0",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.7.4",
+    "@types/sinonjs__fake-timers": "^8.1.5",
     "array-to-sentence": "^2.0.0",
     "chai": "^5.1.1",
+    "ergotest": "file:",
     "eslint": "^9.11.1",
     "globals": "^15.9.0",
     "minimatch": "^10.0.1",
     "minimist": "^1.2.8",
     "typescript": "5.5",
-    "typescript-eslint": "^8.7.0",
-    "@types/array-to-sentence": "^2.0.0",
-    "@types/sinonjs__fake-timers": "^8.1.5"
+    "typescript-eslint": "^8.7.0"
   }
 }

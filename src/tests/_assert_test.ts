@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC.
 
-import { assert, test } from "tests";
+import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
 
 /* eslint @typescript-eslint/no-unsafe-function-type: "off" */

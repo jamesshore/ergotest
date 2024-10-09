@@ -6,7 +6,7 @@ export declare const TestMark: {
     only: string;
 };
 export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
-interface Describe {
+export interface Describe {
     (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite;
     skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite;
     only: (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction) => TestSuite;
