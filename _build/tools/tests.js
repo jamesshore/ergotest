@@ -74,7 +74,7 @@ export default class Tests {
 					if (error === DependencyTree.ERRORS.DEPENDENCY_NOT_FOUND) {
 						let failure = Colors.brightWhite.bold(`\n${line}: `) + `${source}\n  ${error}\n`;
 						if (dependency.startsWith(".")) {
-							const resolvesTo = path.resolve(file, dependency);
+							const resolvesTo = path.resolve(path.dirname(file), dependency);
 							failure += Colors.brightBlack(`  Resolves to: ${fileSystem.renderFilename(resolvesTo)}\n`);
 						}
 						report.footer(failure);
