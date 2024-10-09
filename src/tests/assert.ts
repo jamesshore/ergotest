@@ -118,7 +118,7 @@ export function match(actual: unknown, expectedRegex: RegExp, message?: string) 
 	if (!expectedRegex.test(actual)) throwAssertionError(message, "should match regex", actual, expectedRegex);
 }
 
-export function matchesGroup(actual: string, regex: RegExp, expectedMatch: string, message?: string) {
+export function matchesGroup(actual: string, regex: RegExp, expectedMatch: string | null, message?: string | null) {
 	message = message ?? "regex group";
 	const regexResult = regex.exec(actual);
 	const actualMatch = regexResult === null ? null : regexResult[1];
@@ -156,7 +156,7 @@ export function noException(fn: Function) {
 	fn();
 }
 
-export function exception(fn: Function, expectedRegexOrExactString: RegExp | string, message?: string) {
+export function exception(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
 	try {
 		fn();
 	}
@@ -174,7 +174,7 @@ export function exception(fn: Function, expectedRegexOrExactString: RegExp | str
 	throwAssertionError(message, "Expected exception");
 }
 
-export async function exceptionAsync(fnAsync: Function, expectedRegexOrExactString: RegExp | string, message?: string) {
+export async function exceptionAsync(fnAsync: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
 	try {
 		await fnAsync();
 	}
