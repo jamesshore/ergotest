@@ -17,16 +17,15 @@ export default class Paths {
 	}
 
 	constructor(fileTree) {
-		this.tasksDir = `${incrementalBuildDir}/tasks`;
-		this.generatedDir = generatedDir;
-
 		this._files = fileTree;
 	}
 
 	static get rootDir() { return rootDir; }
+	static get generatedDir() { return generatedDir; }
 	static get scratchDir() { return `${generatedDir}/scratch`; }
 	static get packageJson() { return `${rootDir}/package.json`; }
 	static get timestampsBuildDir() { return `${incrementalBuildDir}/timestamps`; }
+	static get tasksDir() { return `${incrementalBuildDir}/tasks`; }
 
 	static get tscBinary() { return `${rootDir}/node_modules/typescript/bin/tsc`; }
 	static get typescriptConfigFile() { return `${rootDir}/tsconfig.json`; }
