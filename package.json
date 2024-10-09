@@ -6,6 +6,10 @@
     "node": "20.17.0"
   },
   "type": "module",
+  "exports": {
+    ".": "./dist/tests/index.js",
+    "./*.js": "./dist/tests/*.js"
+  },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
     "@sinonjs/fake-timers": "^13.0.2",
