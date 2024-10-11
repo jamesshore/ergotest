@@ -1,8 +1,14 @@
-import { TestCaseResult, TestResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
 import { AssertionError } from "node:assert";
 export declare class TestRenderer {
     #private;
     static create(): TestRenderer;
+    /**
+     * @param {TestSuiteResult} testSuiteResult The test suite to render.
+     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
+     * @returns {string} A summary of the results of a test suite, including the average time required per test.
+     */
+    renderSummary(testSuiteResult: TestSuiteResult, elapsedMs: number): string;
     /**
      * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
      */

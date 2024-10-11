@@ -65,7 +65,7 @@ export default test(({ describe }) => {
 
 	describe("test suite rendering", ({ it }) => {
 
-		it("renders marks, failure, and timeouts to a nicely-formatted string", () => {
+		it("renders marks, errors, and a summary to a nicely-formatted string", () => {
 			const fail = createFail();
 			const result = createSuite({ children: [
 				createPass({ mark: TestMark.only }),
@@ -75,7 +75,7 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(),
+			assert.equal(result.render(100),
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
 					createSkip({ mark: TestMark.skip })
@@ -83,29 +83,53 @@ export default test(({ describe }) => {
 				renderer.renderAsMultipleLines([
 					fail,
 					createTimeout(),
-				]),
+				]) + "\n\n" +
+				renderer.renderSummary(result, 100),
 			);
 		});
 
-		it.skip("doesn't render blank lines if there's no failures or timeouts", () => {
-			const fail = createFail();
+		it("renders marks and summary without errors", () => {
 			const result = createSuite({ children: [
 				createPass({ mark: TestMark.only }),
 				createSkip({ mark: TestMark.skip }),
-				fail,
-				createTimeout(),
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(),
+			assert.equal(result.render(100),
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
 					createSkip({ mark: TestMark.skip })
 				]) + "\n\n" +
+				renderer.renderSummary(result, 100),
+			);
+		});
+
+		it("renders errors and summary without marks", () => {
+			const fail = createFail();
+			const result = createSuite({ children: [
+					fail,
+					createTimeout(),
+			]});
+
+			const renderer = TestRenderer.create();
+			assert.equal(result.render(100),
 				renderer.renderAsMultipleLines([
 					fail,
 					createTimeout(),
-				]),
+				]) + "\n\n" +
+				renderer.renderSummary(result, 100),
+			);
+		});
+
+		it("renders summary alone", () => {
+			const result = createSuite({ children: [
+				createPass(),
+				createSkip(),
+			]});
+
+			const renderer = TestRenderer.create();
+			assert.equal(result.render(100),
+				renderer.renderSummary(result, 100),
 			);
 		});
 

@@ -134,8 +134,8 @@ export default test(({ describe })=>{
             }));
         });
     });
-    describe("test suite rendering", ({ it })=>{
-        it.only("renders marks, failure, and timeouts to a nicely-formatted string", ()=>{
+    describe.skip("test suite rendering", ({ it })=>{
+        it("renders marks, errors, and a summary to a nicely-formatted string", ()=>{
             const fail = createFail();
             const result = createSuite({
                 children: [
@@ -150,20 +150,19 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(), renderer.renderMarksAsLines([
+            assert.equal(result.render(100), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
                 createSkip({
                     mark: TestMark.skip
                 })
-            ]) + "\n\n" + renderer.renderAsMultipleLines([
+            ]) + "\n\n\n" + renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]));
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
         });
-        it.skip("doesn't render blank lines if there's no failures or timeouts", ()=>{
-            const fail = createFail();
+        it("renders marks and summary without errors", ()=>{
             const result = createSuite({
                 children: [
                     createPass({
@@ -171,23 +170,42 @@ export default test(({ describe })=>{
                     }),
                     createSkip({
                         mark: TestMark.skip
-                    }),
-                    fail,
-                    createTimeout()
+                    })
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(), renderer.renderMarksAsLines([
+            assert.equal(result.render(100), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
                 createSkip({
                     mark: TestMark.skip
                 })
-            ]) + "\n\n" + renderer.renderAsMultipleLines([
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("renders errors and summary without marks", ()=>{
+            const fail = createFail();
+            const result = createSuite({
+                children: [
+                    fail,
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]));
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("renders summary alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass(),
+                    createSkip()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderSummary(result, 100));
         });
     });
     describe("test case", ({ it })=>{

@@ -98,11 +98,9 @@ export default class Tests {
 			});
 			await this.#writeTimestampFilesAsync(testResult);
 
-			const testCount = testResult.count();
-			this.#reportMarks(report, testResult);
-			this.#reportErrors(report, testResult);
-			this.#reportSummary(report, testCount);
+			testResult.render(report.elapsedMs);
 
+			const testCount = testResult.count();
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");
 			if (testCount.total - testCount.skip === 0) throw new TaskError("No tests found");
 		});

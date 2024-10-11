@@ -170,9 +170,10 @@ export declare class TestSuiteResult extends TestResult {
      *
      * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
      *
+     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
      * @returns The formatted string.
      */
-    render(): string;
+    render(elapsedMs: number): string;
     /**
      * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
      */

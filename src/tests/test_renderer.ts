@@ -3,7 +3,7 @@
 import * as ensure from "../util/ensure.js";
 import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import { TestMark } from "./test_suite.js";
-import { Colors } from "../infrastructure/colors.js";
+import { ColorFn, Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
 import util from "node:util";
@@ -15,6 +15,7 @@ const timeoutMessageColor = Colors.purple;
 const expectedColor = Colors.green;
 const actualColor = Colors.brightRed;
 const diffColor = Colors.brightYellow.bold;
+const summaryColor = Colors.brightWhite.dim;
 
 export class TestRenderer {
 
@@ -25,7 +26,7 @@ export class TestRenderer {
 	// can't use a normal constant due to a circular dependency between TestResult and TestRenderer
 	static get #PROGRESS_RENDERING() {
 		return {
-			[TestStatus.pass]: Colors.white("."),
+			[TestStatus.pass]: ".",
 			[TestStatus.fail]: Colors.brightRed.inverse("X"),
 			[TestStatus.skip]: Colors.cyan.dim("_"),
 			[TestStatus.timeout]: Colors.purple.inverse("!"),
@@ -40,6 +41,41 @@ export class TestRenderer {
 			[TestStatus.skip]: Colors.brightCyan("skipped"),
 			[TestStatus.timeout]: Colors.brightPurple("timeout"),
 		};
+	}
+
+	/**
+	 * @param {TestSuiteResult} testSuiteResult The test suite to render.
+	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
+	 * @returns {string} A summary of the results of a test suite, including the average time required per test.
+	 */
+	renderSummary(testSuiteResult: TestSuiteResult, elapsedMs: number): string {
+		ensure.signature(arguments, [ TestSuiteResult, Number ]);
+
+		const { total, pass, fail, timeout, skip } = testSuiteResult.count();
+
+		return summaryColor("(") +
+			renderCount(fail, "failed", Colors.brightRed) +
+			renderCount(timeout, "timed out", Colors.purple) +
+			renderCount(skip, "skipped", Colors.cyan) +
+			renderCount(pass, "passed", Colors.green) +
+			renderMsEach(elapsedMs, total, skip) +
+			summaryColor(")");
+
+		function renderCount(number: number, description: string, color: ColorFn): string {
+			if (number === 0) {
+				return "";
+			}
+			else {
+				return color(`${number} ${description}; `);
+			}
+		}
+
+		function renderMsEach(elapsedMs: number, total: number, skip: number): string {
+			if (total - skip === 0) return summaryColor("none ran");
+
+			const msEach = (elapsedMs / (total - skip)).toFixed(1);
+			return summaryColor(`${msEach}ms avg.`);
+		}
 	}
 
 	/**
