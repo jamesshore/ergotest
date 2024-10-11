@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
-import { TestMark, TestMarkValue } from "./test_suite.js";
+import { TestMark } from "./test_suite.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -43,19 +43,23 @@ export class TestRenderer {
 	/**
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */
-	renderTestsAsSingleCharacters(testResult: TestResult): string {
-		return this.#renderAnyResult(testResult, "", "", (testCaseResult) => {
-			return PROGRESS_RENDERING[testCaseResult.status];
+	renderAsCharacters(testCaseResults: TestCaseResult | TestCaseResult[]): string {
+		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
+
+		return this.#renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult: TestCaseResult) => {
+			return PROGRESS_RENDERING[testResult.status];
 		});
 	}
 
 	/**
 	 * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
 	 */
-	renderTestsAsSummaryLines(testResult: TestResult): string {
-		return this.#renderAnyResult(testResult, "", "\n", (testCaseResult) => {
-			const status = this.renderStatusAsSingleWord(testCaseResult);
-			const name = this.renderNameOnOneLine(testCaseResult);
+	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
+		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
+
+		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
+			const status = this.renderStatusAsSingleWord(testResult);
+			const name = this.renderNameOnOneLine(testResult);
 
 			return `${status} ${name}`;
 		});
@@ -64,10 +68,12 @@ export class TestRenderer {
 	/**
 	 * @returns {string} A full explanation of this test result.
 	 */
-	renderTestsWithFullDetails(testResult: TestResult): string {
-		return this.#renderAnyResult(testResult, "\n", "\n\n", (testCaseResult) => {
-			const name = this.renderNameOnMultipleLines(testCaseResult);
-			const status = this.renderStatusWithMultiLineDetails(testCaseResult);
+	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
+		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
+
+		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
+			const name = this.renderNameOnMultipleLines(testResult);
+			const status = this.renderStatusWithMultiLineDetails(testResult);
 
 			return `${name}\n${status}`;
 		});
@@ -76,21 +82,24 @@ export class TestRenderer {
 	/**
 	 * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
 	 */
-	renderMarksAsSummaryLines(testResult: TestResult): string {
-		return this.#renderAnyResult(testResult, "", "\n", (testCaseResult) => {
-			const mark = this.renderMarkAsSingleWord(testCaseResult);
-			const name = this.renderNameOnOneLine(testCaseResult);
+	renderMarksAsLines(testResults: TestResult | TestResult[]): string {
+		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
+
+		return this.#renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
+			const mark = this.renderMarkAsSingleWord(testResult);
+			const name = this.renderNameOnOneLine(testResult);
 
 			if (mark === "") return "";
 			else return `${mark} ${name}`;
 		});
+
 	}
 
 	/**
 	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
 	 */
-	renderNameOnOneLine(testCaseResult: TestCaseResult) {
-		ensure.signature(arguments, [ TestCaseResult ]);
+	renderNameOnOneLine(testCaseResult: TestResult) {
+		ensure.signature(arguments, [ TestResult ]);
 
 		const filename = testCaseResult.filename === undefined
 			? ""
@@ -145,12 +154,12 @@ export class TestRenderer {
 	/**
 	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
 	 */
-	renderMarkAsSingleWord(testCaseResult: TestCaseResult) {
-		switch (testCaseResult.mark) {
-			case TestMark.none: return "";
+	renderMarkAsSingleWord(testResult: TestResult) {
+		switch (testResult.mark) {
+			case TestMark.none: return "(no mark)";
 			case TestMark.skip: return Colors.brightCyan(".skip");
 			case TestMark.only: return Colors.brightCyan(".only");
-			default: ensure.unreachable(`Unrecognized test mark: ${testCaseResult.mark}`);
+			default: ensure.unreachable(`Unrecognized test mark: ${testResult.mark}`);
 		}
 	}
 
@@ -228,24 +237,16 @@ export class TestRenderer {
 			actualColor("actual:   ") + actual.join("\n");
 	}
 
-	#renderAnyResult(
-		testResult: TestResult,
-		preamble: string,
-		postamble: string,
-		renderFn: (testCaseResult: TestCaseResult) => string,
+	#renderMultipleResults<T>(
+		testResults: T | T[],
+		separator: string,
+		expectedType: Function,   // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+		renderFn: (testResult: T) => string,
 	): string {
-		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult ], String, String, Function ]);
+		if (!Array.isArray(testResults)) testResults = [ testResults ];
+		testResults.forEach((result, i) => ensure.type(result, expectedType, `testResult[${i}]`));
 
-		if (testResult instanceof TestCaseResult) {
-			return renderFn(testResult);
-		}
-		else if (testResult instanceof TestSuiteResult) {
-			const allRenders = testResult.allTests().map(testCase => renderFn(testCase)).filter(render => render !== "");
-			return preamble + allRenders.join(postamble + preamble) + postamble;
-		}
-		else {
-			ensure.unreachable(`Unrecognized test result class: ${testResult}`);
-		}
+		return testResults.map(result => renderFn(result)).join(separator);
 	}
 
 }

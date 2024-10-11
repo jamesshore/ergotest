@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import { test, assert } from "tests";
+import { test, assert } from "../tests.js";
 import { TestMark, TestMarkValue, TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestStatus, TestResult } from "./test_result.js";

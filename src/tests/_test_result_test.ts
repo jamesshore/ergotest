@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import { assert, test } from "tests";
+import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestMark, TestMarkValue } from "./test_suite.js";
 import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
@@ -214,6 +214,7 @@ export default test(({ describe }) => {
 			], "multiple statuses");
 		});
 
+
 		it("flattens all marked results into a single list", () => {
 			const suite = createSuite({ children: [
 				createPass({ name: "test 0.1", mark: TestMark.none }),
@@ -247,6 +248,12 @@ export default test(({ describe }) => {
 				createPass({ name: "test 1.1.1", mark: TestMark.skip }),
 				createSuite({ name: "suite 1.2", mark: TestMark.skip }),
 			]);
+		});
+
+		it("includes parent suite", () => {
+			const suite = createSuite({ mark: TestMark.skip });
+
+			assert.deepEqual(suite.allMarkedResults(), [ createSuite({ mark: TestMark.skip }) ]);
 		});
 
 		it("flattens results with requested marks into a single list", () => {
@@ -390,17 +397,16 @@ export default test(({ describe }) => {
 
 		it("can be serialized and deserialized", () => {
 			const suite = createSuite({ children: [
-				createPass({ name: "pass" }),
-				createSkip({ name: "skip" }),
-				createFail({ name: "fail" }),
+				createPass({ name: "pass", mark: TestMark.none }),
+				createSkip({ name: "skip", mark: TestMark.skip }),
+				createFail({ name: "fail", mark: TestMark.only }),
 				createTimeout({ name: "timeout" }),
-				createSuite({ name: "child", children: [
+				createSuite({ name: "child", mark: TestMark.skip, children: [
 					createPass({ name: [ "child", "child pass" ]}),
 				]}),
 			]});
 
 			const serialized = suite.serialize();
-			// console.log(serialized);
 			const deserialized = TestResult.deserialize(serialized);
 
 			assert.objEqual(deserialized, suite);

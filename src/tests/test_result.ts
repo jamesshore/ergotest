@@ -27,6 +27,7 @@ export interface TestCount {
 export interface SerializedTestSuiteResult {
 	type: "TestSuiteResult";
 	name: string[];
+	mark: TestMarkValue;
 	filename?: string;
 	suite: SerializedTestResult[];
 }
@@ -34,6 +35,7 @@ export interface SerializedTestSuiteResult {
 export interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	name: string[];
+	mark: TestMarkValue;
 	filename?: string;
 	status: TestStatusValue;
 	error?: unknown;
@@ -201,16 +203,17 @@ export class TestSuiteResult extends TestResult {
 	 * @returns {TestSuiteResult} The result object.
 	 * @see TestResult#deserialize
 	 */
-	static deserialize({ name, filename, suite }: SerializedTestSuiteResult): TestSuiteResult {
+	static deserialize({ name, filename, suite, mark }: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
+			mark: String,
 			filename: [ undefined, String ],
 			suite: Array,
 		}], [ "serialized TestSuiteResult" ]);
 
 		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
-		return new TestSuiteResult(name, deserializedSuite, filename);
+		return new TestSuiteResult(name, deserializedSuite, filename, mark);
 	}
 
 	private readonly _name: string[];
@@ -276,9 +279,9 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), including suites, flattened into a single
-	 *   list. Although the test results are all in a single list, any suites in the list still have all their children.
-	 *   Tests without a mark are not included.
+	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), not including results without marks, but
+	 *   including suites, flattened into a single list. Although the test results are all in a single list, any suites
+	 *   in the list still have all their children.
 	 */
 	allMarkedResults(): TestResult[] {
 		ensure.signature(arguments, []);
@@ -292,6 +295,7 @@ export class TestSuiteResult extends TestResult {
 		ensureValidMarks(marks);
 
 		const results = new Set<TestResult>();
+		if (marks.includes(this.mark)) results.add(this);
 		this._children.forEach((result: TestResult) => {
 			if (marks.includes(result.mark)) results.add(result);
 			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));
@@ -352,6 +356,7 @@ export class TestSuiteResult extends TestResult {
 		return {
 			type: "TestSuiteResult",
 			name: this._name,
+			mark: this._mark,
 			filename: this._filename,
 			suite: this._children.map(test => test.serialize()),
 		};
@@ -390,14 +395,15 @@ export class TestCaseResult extends TestResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
+			mark: String,
 			filename: [ undefined, String ],
 			status: String,
 			error: [ undefined, String, Object ],
 			timeout: [ undefined, Number ],
 		}], [ "serialized TestCaseResult" ]);
 
-		const { name, filename, status, error, timeout } = serializedResult;
-		return new TestCaseResult(name, status, { error: deserializeError(error), timeout, filename });
+		const { name, filename, mark, status, error, timeout } = serializedResult;
+		return new TestCaseResult(name, status, { error: deserializeError(error), timeout, filename, mark });
 
 		function deserializeError(serializedError?: unknown) {
 			if (serializedError === undefined || typeof serializedError === "string") return serializedError;
@@ -545,6 +551,7 @@ export class TestCaseResult extends TestResult {
 		return {
 			type: "TestCaseResult",
 			name: this._name,
+			mark: this._mark,
 			filename: this._filename,
 			status: this._status,
 			error: serializeError(this._error),

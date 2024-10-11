@@ -19,7 +19,7 @@ export const TestMark = {
 
 export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 
-interface Describe {
+export interface Describe {
 	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
 	skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite,
 	only: (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction) => TestSuite,
@@ -95,6 +95,7 @@ export class TestSuite implements Runnable {
 		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.none);
 		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.skip);
 		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.only);
+
 		return result;
 	}
 
@@ -234,6 +235,7 @@ export class TestSuite implements Runnable {
 		afterEachFns?: BeforeAfterFn[],
 		timeout?: Milliseconds,
 	}) {
+
 		this._name = name;
 		this._mark = mark;
 		this._tests = tests;
@@ -331,7 +333,8 @@ export class TestSuite implements Runnable {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResult.suite(options.name, results, options.filename, this._mark);
+		const testSuiteResult = TestResult.suite(options.name, results, options.filename, this._mark);
+		return testSuiteResult;
 	}
 
 }
