@@ -4,6 +4,7 @@ import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
 import { TestMark, TestMarkValue } from "./test_suite.js";
+import { TestRenderer } from "./test_renderer.js";
 
 export const TestStatus = {
 	pass: "pass",
@@ -254,6 +255,25 @@ export class TestSuiteResult extends TestResult {
 	 */
 	get children(): TestResult[] {
 		return this._children;
+	}
+
+	/**
+	 * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
+	 * and provides details about the tests that have failed or timed out. It doesn't provide any details about the tests
+	 * that have passed or been skipped, except for the ones that have marks. After the details, it displays a summary of
+	 * the number of tests that have passed, failed, etc., and the average time required per test.
+	 *
+	 * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
+	 *
+	 * @returns The formatted string.
+	 */
+	render() {
+		const renderer = TestRenderer.create();
+		const marks = this.allMarkedResults();
+		const errors = this.allMatchingTests(TestStatus.fail, TestStatus.timeout);
+
+		return renderer.renderMarksAsLines(marks) + "\n\n\n" +
+			renderer.renderAsMultipleLines(errors);
 	}
 
 	/**

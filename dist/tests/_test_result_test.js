@@ -3,6 +3,7 @@ import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestMark } from "./test_suite.js";
 import { TestResult, TestStatus } from "./test_result.js";
+import { TestRenderer } from "./test_renderer.js";
 export default test(({ describe })=>{
     describe("test suite", ({ it })=>{
         it("has a name and list of test results", ()=>{
@@ -131,6 +132,62 @@ export default test(({ describe })=>{
                     })
                 ]
             }));
+        });
+    });
+    describe("test suite rendering", ({ it })=>{
+        it.only("renders marks, failure, and timeouts to a nicely-formatted string", ()=>{
+            const fail = createFail();
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createSkip({
+                        mark: TestMark.skip
+                    }),
+                    fail,
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(), renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                }),
+                createSkip({
+                    mark: TestMark.skip
+                })
+            ]) + "\n\n" + renderer.renderAsMultipleLines([
+                fail,
+                createTimeout()
+            ]));
+        });
+        it.skip("doesn't render blank lines if there's no failures or timeouts", ()=>{
+            const fail = createFail();
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createSkip({
+                        mark: TestMark.skip
+                    }),
+                    fail,
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(), renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                }),
+                createSkip({
+                    mark: TestMark.skip
+                })
+            ]) + "\n\n" + renderer.renderAsMultipleLines([
+                fail,
+                createTimeout()
+            ]));
         });
     });
     describe("test case", ({ it })=>{

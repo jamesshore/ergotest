@@ -13,21 +13,27 @@ const timeoutMessageColor = Colors.purple;
 const expectedColor = Colors.green;
 const actualColor = Colors.brightRed;
 const diffColor = Colors.brightYellow.bold;
-const PROGRESS_RENDERING = {
-    [TestStatus.pass]: Colors.white("."),
-    [TestStatus.fail]: Colors.brightRed.inverse("X"),
-    [TestStatus.skip]: Colors.cyan.dim("_"),
-    [TestStatus.timeout]: Colors.purple.inverse("!")
-};
-const DESCRIPTION_RENDERING = {
-    [TestStatus.pass]: Colors.green("passed"),
-    [TestStatus.fail]: Colors.brightRed("failed"),
-    [TestStatus.skip]: Colors.brightCyan("skipped"),
-    [TestStatus.timeout]: Colors.brightPurple("timeout")
-};
 export class TestRenderer {
     static create() {
         return new TestRenderer();
+    }
+    // can't use a normal constant due to a circular dependency between TestResult and TestRenderer
+    static get #PROGRESS_RENDERING() {
+        return {
+            [TestStatus.pass]: Colors.white("."),
+            [TestStatus.fail]: Colors.brightRed.inverse("X"),
+            [TestStatus.skip]: Colors.cyan.dim("_"),
+            [TestStatus.timeout]: Colors.purple.inverse("!")
+        };
+    }
+    // can't use a normal constant due to a circular dependency between TestResult and TestRenderer
+    static get #DESCRIPTION_RENDERING() {
+        return {
+            [TestStatus.pass]: Colors.green("passed"),
+            [TestStatus.fail]: Colors.brightRed("failed"),
+            [TestStatus.skip]: Colors.brightCyan("skipped"),
+            [TestStatus.timeout]: Colors.brightPurple("timeout")
+        };
     }
     /**
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
@@ -39,7 +45,7 @@ export class TestRenderer {
             ]
         ]);
         return this.#renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult)=>{
-            return PROGRESS_RENDERING[testResult.status];
+            return TestRenderer.#PROGRESS_RENDERING[testResult.status];
         });
     }
     /**
@@ -96,7 +102,7 @@ export class TestRenderer {
         ensure.signature(arguments, [
             TestResult
         ]);
-        const filename = testCaseResult.filename === undefined ? "" : highlightColor(path.basename(testCaseResult.filename)) + " » ";
+        const filename = testCaseResult.filename === undefined ? "" : headerColor(path.basename(testCaseResult.filename)) + " » ";
         const name = this.#normalizedName(testCaseResult).join(" » ");
         return `${filename}${name}`;
     }
@@ -124,13 +130,13 @@ export class TestRenderer {
     /**
 	 * @returns {string} The color-coded status of the test.
 	 */ renderStatusAsSingleWord(testCaseResult) {
-        return DESCRIPTION_RENDERING[testCaseResult.status];
+        return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
     }
     renderStatusWithMultiLineDetails(testCaseResult) {
         switch(testCaseResult.status){
             case TestStatus.pass:
             case TestStatus.skip:
-                return DESCRIPTION_RENDERING[testCaseResult.status];
+                return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
             case TestStatus.fail:
                 return this.#renderFailure(testCaseResult);
             case TestStatus.timeout:

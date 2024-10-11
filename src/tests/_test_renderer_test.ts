@@ -179,12 +179,12 @@ export default test(({ describe }) => {
 
 		it("renders filename and name together", () => {
 			const result = createPass({ filename: "my_file", name: "my name" });
-			assert.equal(render(result), highlightColor("my_file") +" » my name");
+			assert.equal(render(result), headerColor("my_file") +" » my name");
 		});
 
 		it("strips directories from filename", () => {
 			const result = createPass({ filename: "/root/parent/child/my_file", name: "my name" });
-			assert.equal(render(result), highlightColor("my_file") + " » my name");
+			assert.equal(render(result), headerColor("my_file") + " » my name");
 		});
 
 		function render(result: TestCaseResult): string {
