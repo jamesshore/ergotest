@@ -98,7 +98,7 @@ export default class Tests {
 			});
 			await this.#writeTimestampFilesAsync(testResult);
 
-			testResult.render(report.elapsedMs);
+			report.footer(testResult.render(report.elapsedMs, "\n") + "\n");
 
 			const testCount = testResult.count();
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");

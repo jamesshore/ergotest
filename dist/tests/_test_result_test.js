@@ -134,7 +134,7 @@ export default test(({ describe })=>{
             }));
         });
     });
-    describe.skip("test suite rendering", ({ it })=>{
+    describe("test suite rendering", ({ it })=>{
         it("renders marks, errors, and a summary to a nicely-formatted string", ()=>{
             const fail = createFail();
             const result = createSuite({
@@ -206,6 +206,55 @@ export default test(({ describe })=>{
             });
             const renderer = TestRenderer.create();
             assert.equal(result.render(100), renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has marks and errors", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                })
+            ]) + "\n\n\n" + renderer.renderAsMultipleLines([
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has marks alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    })
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                })
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has errors alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("doesn't add preamble when result has no marks or errors", ()=>{
+            const result = createSuite();
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), renderer.renderSummary(result, 100));
         });
     });
     describe("test case", ({ it })=>{

@@ -266,10 +266,12 @@ export class TestSuiteResult extends TestResult {
 	 * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
 	 *
 	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
+	 * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+	 *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
 	 * @returns The formatted string.
 	 */
-	render(elapsedMs: number): string {
-		ensure.signature(arguments, [ Number ]);
+	render(elapsedMs: number, preamble: string = ""): string {
+		ensure.signature(arguments, [ Number, [ undefined, String ]]);
 
 		const renderer = TestRenderer.create();
 		const marks = this.allMarkedResults();
@@ -280,13 +282,13 @@ export class TestSuiteResult extends TestResult {
 		const summaryRender = renderer.renderSummary(this, elapsedMs);
 
 		if (marks.length > 0 && errors.length > 0) {
-			return markRender + "\n\n\n" + errorRender + "\n\n" + summaryRender;
+			return preamble + markRender + "\n\n\n" + errorRender + "\n\n" + summaryRender;
 		}
 		else if (marks.length > 0) {
-			return markRender + "\n\n" + summaryRender;
+			return preamble + markRender + "\n\n" + summaryRender;
 		}
 		else if (errors.length > 0) {
-			return errorRender + "\n\n" + summaryRender;
+			return preamble + errorRender + "\n\n" + summaryRender;
 		}
 		else {
 			return summaryRender;
