@@ -328,9 +328,11 @@ class FailureTestCase extends TestCase {
         this._error = error;
     }
     async _recursiveRunAsync(parentMark, beforeEachFns, afterEachFns, options) {
-        return await TestResult.fail([
+        const result = TestResult.fail([
             this._name
         ], this._error, this._filename);
+        options.notifyFn(result);
+        return await result;
     }
 }
 async function runBeforeOrAfterFnsAsync(name, fns, mark, options) {

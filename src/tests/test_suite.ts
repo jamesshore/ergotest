@@ -434,7 +434,9 @@ class FailureTestCase extends TestCase {
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		return await TestResult.fail([ this._name ], this._error, this._filename);
+		const result = TestResult.fail([ this._name ], this._error, this._filename);
+		options.notifyFn(result);
+		return await result;
 	}
 
 }

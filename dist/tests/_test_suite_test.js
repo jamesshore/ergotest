@@ -239,19 +239,6 @@ export default test(({ describe })=>{
                 TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'"))
             ]));
         });
-        it("runs notify function", async ()=>{
-            const suite = TestSuite.create(({ it })=>{
-                it("my test", ()=>{});
-            });
-            let testResult;
-            function notifyFn(result) {
-                testResult = result;
-            }
-            await suite.runAsync({
-                notifyFn
-            });
-            assert.objEqual(testResult, TestResult.pass("my test"));
-        });
     });
     describe("naming", ({ it })=>{
         it("test suites can be created with and without a name", async ()=>{
@@ -1188,6 +1175,51 @@ export default test(({ describe })=>{
                     })
                 ]
             }));
+        });
+    });
+    describe("notification", ({ it })=>{
+        it("runs notify function when test completes", async ()=>{
+            const suite = TestSuite.create(({ it })=>{
+                it("my test", ()=>{});
+            });
+            let testResult;
+            function notifyFn(result) {
+                testResult = result;
+            }
+            await suite.runAsync({
+                notifyFn
+            });
+            assert.objEqual(testResult, TestResult.pass("my test"));
+        });
+        it("runs notify function if module fails to require()", async ()=>{
+            const suite = await TestSuite.fromModulesAsync([
+                "./_module_throws.js"
+            ]);
+            let testResult;
+            function notifyFn(result) {
+                testResult = result;
+            }
+            await suite.runAsync({
+                notifyFn
+            });
+            assert.deepEqual(testResult.name, [
+                "error when requiring _module_throws.js"
+            ]);
+        });
+        it("runs notify function if module doesn't export a test suite", async ()=>{
+            const suite = await TestSuite.fromModulesAsync([
+                "./_module_no_export.js"
+            ]);
+            let testResult;
+            function notifyFn(result) {
+                testResult = result;
+            }
+            await suite.runAsync({
+                notifyFn
+            });
+            assert.deepEqual(testResult.name, [
+                "error when requiring _module_no_export.js"
+            ]);
         });
     });
 });
