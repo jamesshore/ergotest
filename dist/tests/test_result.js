@@ -3,6 +3,7 @@ import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
 import { TestMark } from "./test_suite.js";
+import { TestRenderer } from "./test_renderer.js";
 export const TestStatus = {
     pass: "pass",
     fail: "fail",
@@ -227,6 +228,42 @@ export const TestStatus = {
 	 *   results.
 	 */ get children() {
         return this._children;
+    }
+    /**
+	 * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
+	 * and provides details about the tests that have failed or timed out. It doesn't provide any details about the tests
+	 * that have passed or been skipped, except for the ones that have marks. After the details, it displays a summary of
+	 * the number of tests that have passed, failed, etc., and the average time required per test.
+	 *
+	 * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
+	 *
+	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
+	 * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+	 *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
+	 * @returns The formatted string.
+	 */ render(elapsedMs, preamble = "") {
+        ensure.signature(arguments, [
+            Number,
+            [
+                undefined,
+                String
+            ]
+        ]);
+        const renderer = TestRenderer.create();
+        const marks = this.allMarkedResults();
+        const errors = this.allMatchingTests(TestStatus.fail, TestStatus.timeout);
+        const markRender = renderer.renderMarksAsLines(marks);
+        const errorRender = renderer.renderAsMultipleLines(errors);
+        const summaryRender = renderer.renderSummary(this, elapsedMs);
+        if (marks.length > 0 && errors.length > 0) {
+            return preamble + markRender + "\n\n\n" + errorRender + "\n\n" + summaryRender;
+        } else if (marks.length > 0) {
+            return preamble + markRender + "\n\n" + summaryRender;
+        } else if (errors.length > 0) {
+            return preamble + errorRender + "\n\n" + summaryRender;
+        } else {
+            return summaryRender;
+        }
     }
     /**
 	 * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
@@ -469,6 +506,39 @@ export const TestStatus = {
 	 */ isTimeout() {
         ensure.signature(arguments, []);
         return this.status === TestStatus.timeout;
+    }
+    /**
+	 * Render the test case as a single color-coded character.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsCharacters()}. For more control over rendering,
+	 * use that class instead.
+	 *
+	 * @returns The formatted character.
+	 */ renderAsCharacter() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsCharacters(this);
+    }
+    /**
+	 * Render the test case as a single line containing its status (pass, fail, etc.) and names.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsSingleLines()}. For more control over
+	 * rendering, use that class instead.
+	 *
+	 * @returns The formatted line.
+	 */ renderAsSingleLine() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsSingleLines(this);
+    }
+    /**
+	 * Render the test case as a multiple lines containing all of its details.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsMultipleLines()}. For more control over
+	 * rendering, use that class instead.
+	 *
+	 * @returns The formatted lines.
+	 */ renderAsMultipleLines() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsMultipleLines(this);
     }
     /**
 	 * @returns {TestCaseResult[]} This test converted into a list of one.

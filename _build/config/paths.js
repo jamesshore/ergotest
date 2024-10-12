@@ -49,6 +49,7 @@ export default class Paths {
 		return [
 			`${rootDir}/_build/**`,
 			`${rootDir}/package.json`,
+			`${this.typescriptDistDir}`,
 		];
 	}
 

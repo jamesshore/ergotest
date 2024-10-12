@@ -6,11 +6,45 @@ import { TestResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import { TestMark } from "./test_suite.js";
 const headerColor = Colors.brightWhite.bold;
-const highlightColor = Colors.brightWhite;
+const summaryColor = Colors.brightWhite.dim;
+const failColor = Colors.brightRed;
+const timeoutColor = Colors.purple;
+const skipColor = Colors.cyan;
+const passColor = Colors.green;
 export default test(({ describe })=>{
+    describe("summary", ({ it })=>{
+        it("renders summary", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass(),
+                    createSkip(),
+                    createSkip(),
+                    createFail(),
+                    createFail(),
+                    createFail(),
+                    createTimeout(),
+                    createTimeout(),
+                    createTimeout(),
+                    createTimeout()
+                ]
+            });
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + failColor("3 failed; ") + timeoutColor("4 timed out; ") + skipColor("2 skipped; ") + passColor("1 passed; ") + summaryColor("125.0ms avg.") + summaryColor(")"));
+        });
+        it("only renders information for non-zero counts", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + passColor("1 passed; ") + summaryColor("1000.0ms avg.") + summaryColor(")"));
+        });
+        it("handles empty results gracefully", ()=>{
+            assert.equal(TestRenderer.create().renderSummary(createSuite(), 1000), summaryColor("(") + summaryColor("none ran") + summaryColor(")"));
+        });
+    });
     describe("single-character test cases", ({ it })=>{
         it("renders test cases as progress marker", ()=>{
-            assert.equal(renderCharacterTest(createPass()), Colors.white("."), "pass");
+            assert.equal(renderCharacterTest(createPass()), ".", "pass");
             assert.equal(renderCharacterTest(createFail()), Colors.brightRed.inverse("X"), "fail");
             assert.equal(renderCharacterTest(createSkip()), Colors.cyan.dim("_"), "skip");
             assert.equal(renderCharacterTest(createTimeout()), Colors.purple.inverse("!"), "timeout");
@@ -178,14 +212,14 @@ export default test(({ describe })=>{
                 filename: "my_file",
                 name: "my name"
             });
-            assert.equal(render(result), highlightColor("my_file") + " » my name");
+            assert.equal(render(result), headerColor("my_file") + " » my name");
         });
         it("strips directories from filename", ()=>{
             const result = createPass({
                 filename: "/root/parent/child/my_file",
                 name: "my name"
             });
-            assert.equal(render(result), highlightColor("my_file") + " » my name");
+            assert.equal(render(result), headerColor("my_file") + " » my name");
         });
         function render(result) {
             return TestRenderer.create().renderNameOnOneLine(result);

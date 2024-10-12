@@ -163,6 +163,20 @@ export declare class TestSuiteResult extends TestResult {
      */
     get children(): TestResult[];
     /**
+     * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
+     * and provides details about the tests that have failed or timed out. It doesn't provide any details about the tests
+     * that have passed or been skipped, except for the ones that have marks. After the details, it displays a summary of
+     * the number of tests that have passed, failed, etc., and the average time required per test.
+     *
+     * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
+     *
+     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
+     * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+     *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
+     * @returns The formatted string.
+     */
+    render(elapsedMs: number, preamble?: string): string;
+    /**
      * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
      */
     allTests(): TestCaseResult[];
@@ -257,6 +271,33 @@ export declare class TestCaseResult extends TestResult {
      * @returns {boolean} True if this test timed out.
      */
     isTimeout(): boolean;
+    /**
+     * Render the test case as a single color-coded character.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsCharacters()}. For more control over rendering,
+     * use that class instead.
+     *
+     * @returns The formatted character.
+     */
+    renderAsCharacter(): string;
+    /**
+     * Render the test case as a single line containing its status (pass, fail, etc.) and names.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsSingleLines()}. For more control over
+     * rendering, use that class instead.
+     *
+     * @returns The formatted line.
+     */
+    renderAsSingleLine(): string;
+    /**
+     * Render the test case as a multiple lines containing all of its details.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsMultipleLines()}. For more control over
+     * rendering, use that class instead.
+     *
+     * @returns The formatted lines.
+     */
+    renderAsMultipleLines(): string;
     /**
      * @returns {TestCaseResult[]} This test converted into a list of one.
      */

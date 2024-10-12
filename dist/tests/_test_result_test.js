@@ -3,6 +3,7 @@ import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestMark } from "./test_suite.js";
 import { TestResult, TestStatus } from "./test_result.js";
+import { TestRenderer } from "./test_renderer.js";
 export default test(({ describe })=>{
     describe("test suite", ({ it })=>{
         it("has a name and list of test results", ()=>{
@@ -131,6 +132,129 @@ export default test(({ describe })=>{
                     })
                 ]
             }));
+        });
+    });
+    describe("test suite rendering", ({ it })=>{
+        it("renders marks, errors, and a summary to a nicely-formatted string", ()=>{
+            const fail = createFail();
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createSkip({
+                        mark: TestMark.skip
+                    }),
+                    fail,
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                }),
+                createSkip({
+                    mark: TestMark.skip
+                })
+            ]) + "\n\n\n" + renderer.renderAsMultipleLines([
+                fail,
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("renders marks and summary without errors", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createSkip({
+                        mark: TestMark.skip
+                    })
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                }),
+                createSkip({
+                    mark: TestMark.skip
+                })
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("renders errors and summary without marks", ()=>{
+            const fail = createFail();
+            const result = createSuite({
+                children: [
+                    fail,
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderAsMultipleLines([
+                fail,
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("renders summary alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass(),
+                    createSkip()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100), renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has marks and errors", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    }),
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                })
+            ]) + "\n\n\n" + renderer.renderAsMultipleLines([
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has marks alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass({
+                        mark: TestMark.only
+                    })
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+                createPass({
+                    mark: TestMark.only
+                })
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("adds optional preamble when result has errors alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createTimeout()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
+                createTimeout()
+            ]) + "\n\n" + renderer.renderSummary(result, 100));
+        });
+        it("doesn't add preamble when result has no marks or errors", ()=>{
+            const result = createSuite();
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(100, "my_preamble"), renderer.renderSummary(result, 100));
         });
     });
     describe("test case", ({ it })=>{
@@ -323,6 +447,15 @@ export default test(({ describe })=>{
             }), createPass({
                 mark: TestMark.none
             }));
+        });
+    });
+    describe("test case rendering", ({ it })=>{
+        it("renders test case as character, single line, or multi-line", ()=>{
+            const renderer = TestRenderer.create();
+            const result = createPass();
+            assert.equal(result.renderAsCharacter(), renderer.renderAsCharacters(result));
+            assert.equal(result.renderAsSingleLine(), renderer.renderAsSingleLines(result));
+            assert.equal(result.renderAsMultipleLines(), renderer.renderAsMultipleLines(result));
         });
     });
     describe("flattening", ({ it })=>{

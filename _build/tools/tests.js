@@ -6,15 +6,7 @@ import Colors from "infrastructure/colors.js";
 import FileSystem from "infrastructure/file_system.js";
 import DependencyTree from "tasks/dependency_tree.js";
 import { TestRunner } from "tests/test_runner.js";
-import { TestResult, TestStatus } from "tests/test_result.js";
-import { TestRenderer } from "tests/test_renderer.js";
 import path from "node:path";
-
-const failColor = Colors.brightRed;
-const timeoutColor = Colors.purple;
-const skipColor = Colors.cyan;
-const passColor = Colors.green;
-const summaryColor = Colors.brightWhite.dim;
 
 export default class Tests {
 
@@ -28,7 +20,6 @@ export default class Tests {
 		this._fileSystem = fileSystem;
 		this._dependencyTree = DependencyTree.create(fileSystem, globsToIgnore);
 		this._testRunner = TestRunner.create();
-		this._testRenderer = TestRenderer.create();
 	}
 
 	async runAsync({ description, files, config, reporter }) {
@@ -93,16 +84,14 @@ export default class Tests {
 			const testResult = await this._testRunner.runIsolatedAsync(filesToRun, {
 				config,
 				notifyFn: testResult => {
-					report.progress({ text: this._testRenderer.renderAsCharacters(testResult) });
+					report.progress({ text: testResult.renderAsCharacter() });
 				},
 			});
 			await this.#writeTimestampFilesAsync(testResult);
 
-			const testCount = testResult.count();
-			this.#reportMarks(report, testResult);
-			this.#reportErrors(report, testResult);
-			this.#reportSummary(report, testCount);
+			report.footer(testResult.render(report.elapsedMs, "\n") + "\n");
 
+			const testCount = testResult.count();
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");
 			if (testCount.total - testCount.skip === 0) throw new TaskError("No tests found");
 		});
@@ -114,47 +103,4 @@ export default class Tests {
 		}));
 	}
 
-	#reportErrors(report, testResult) {
-		const allFailures = testResult.allMatchingTests(TestStatus.fail, TestStatus.timeout);
-		if (allFailures.length > 0) {
-			report.footer("\n" + this._testRenderer.renderAsMultipleLines(allFailures) + "\n\n");
-		}
-	}
-
-	#reportMarks(report, testResult) {
-		const markedResults = testResult.allMarkedResults();
-		if (markedResults.length > 0) {
-			report.footer("\n" + this._testRenderer.renderMarksAsLines(markedResults) + "\n\n");
-		}
-	}
-
-	#reportSummary(report, testCount) {
-		const { total, pass, fail, timeout, skip } = testCount;
-
-		report.footer(
-			summaryColor("(") +
-			renderCount(fail, "failed", failColor) +
-			renderCount(timeout, "timed out", timeoutColor) +
-			renderCount(skip, "skipped", skipColor) +
-			renderCount(pass, "passed", passColor) +
-			renderMsEach(report.elapsedMs, total, skip) +
-			summaryColor(")") + "\n"
-		);
-
-		function renderCount(number, description, color) {
-			if (number === 0) {
-				return "";
-			}
-			else {
-				return color(`${number} ${description}; `);
-			}
-		}
-
-		function renderMsEach(elapsedMs, total, skip) {
-			if (total - skip === 0) return summaryColor("none ran");
-
-			const msEach = (elapsedMs / (total - skip)).toFixed(1);
-			return summaryColor(`${msEach}ms avg.`);
-		}
-	}
 }
