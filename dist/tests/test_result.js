@@ -243,7 +243,10 @@ export const TestStatus = {
 	 * @returns The formatted string.
 	 */ render(elapsedMs, preamble = "") {
         ensure.signature(arguments, [
-            Number,
+            [
+                undefined,
+                Number
+            ],
             [
                 undefined,
                 String

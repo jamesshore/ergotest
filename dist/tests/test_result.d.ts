@@ -175,7 +175,7 @@ export declare class TestSuiteResult extends TestResult {
      *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
      * @returns The formatted string.
      */
-    render(elapsedMs: number, preamble?: string): string;
+    render(elapsedMs?: number, preamble?: string): string;
     /**
      * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
      */

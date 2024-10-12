@@ -18,6 +18,7 @@ Ergotest (pronounced *air-go-test*) is a library for writing and running tests. 
 * Concise, readable test output that's easy to customize
 * Shows which tests are marked with `.only` or `.skip`
 * Clean, well-documented API
+* Small and easy to audit, with no dependencies
 
 
 ## Example Test
@@ -85,8 +86,10 @@ function reportProgress(testCase) {
 Save the above as `build.js` and run it as follows:
 
 ```shell
-node build.js *.test.js
+node --enable-source-maps build.js *.test.js
 ```
+
+(The `--enable-source-maps` option causes Node to render TypeScript stack traces correctly.)
 
 
 ## Documentation

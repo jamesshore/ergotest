@@ -270,8 +270,8 @@ export class TestSuiteResult extends TestResult {
 	 *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
 	 * @returns The formatted string.
 	 */
-	render(elapsedMs: number, preamble: string = ""): string {
-		ensure.signature(arguments, [ Number, [ undefined, String ]]);
+	render(elapsedMs?: number, preamble: string = ""): string {
+		ensure.signature(arguments, [ [ undefined, Number ], [ undefined, String ]]);
 
 		const renderer = TestRenderer.create();
 		const marks = this.allMarkedResults();

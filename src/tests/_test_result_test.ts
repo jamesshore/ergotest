@@ -89,6 +89,17 @@ export default test(({ describe }) => {
 			);
 		});
 
+		it("doesn't require elapsed time", () => {
+			const result = createSuite({ children: [
+				createPass(),
+			]});
+
+			const renderer = TestRenderer.create();
+			assert.equal(result.render(),
+				renderer.renderSummary(result),
+			);
+		});
+
 		it("renders marks and summary without errors", () => {
 			const result = createSuite({ children: [
 				createPass({ mark: TestMark.only }),

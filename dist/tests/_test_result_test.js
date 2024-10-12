@@ -162,6 +162,15 @@ export default test(({ describe })=>{
                 createTimeout()
             ]) + "\n\n" + renderer.renderSummary(result, 100));
         });
+        it("doesn't require elapsed time", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(), renderer.renderSummary(result));
+        });
         it("renders marks and summary without errors", ()=>{
             const result = createSuite({
                 children: [
