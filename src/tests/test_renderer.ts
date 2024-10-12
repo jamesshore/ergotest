@@ -48,30 +48,33 @@ export class TestRenderer {
 	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
 	 * @returns {string} A summary of the results of a test suite, including the average time required per test.
 	 */
-	renderSummary(testSuiteResult: TestSuiteResult, elapsedMs: number): string {
-		ensure.signature(arguments, [ TestSuiteResult, Number ]);
+	renderSummary(testSuiteResult: TestSuiteResult, elapsedMs?: number): string {
+		ensure.signature(arguments, [ TestSuiteResult, [ undefined, Number ]]);
 
 		const { total, pass, fail, timeout, skip } = testSuiteResult.count();
 
-		return summaryColor("(") +
-			renderCount(fail, "failed", Colors.brightRed) +
-			renderCount(timeout, "timed out", Colors.purple) +
-			renderCount(skip, "skipped", Colors.cyan) +
-			renderCount(pass, "passed", Colors.green) +
-			renderMsEach(elapsedMs, total, skip) +
-			summaryColor(")");
+		const renders = [
+			renderCount(fail, "failed", Colors.brightRed),
+			renderCount(timeout, "timed out", Colors.purple),
+			renderCount(skip, "skipped", Colors.cyan),
+			renderCount(pass, "passed", Colors.green),
+			renderMsEach(elapsedMs, total, skip),
+		].filter(render => render !== "");
+
+		return summaryColor("(") + renders.join(summaryColor("; ")) + summaryColor(")");
 
 		function renderCount(number: number, description: string, color: ColorFn): string {
 			if (number === 0) {
 				return "";
 			}
 			else {
-				return color(`${number} ${description}; `);
+				return color(`${number} ${description}`);
 			}
 		}
 
-		function renderMsEach(elapsedMs: number, total: number, skip: number): string {
+		function renderMsEach(elapsedMs: number | undefined, total: number, skip: number): string {
 			if (total - skip === 0) return summaryColor("none ran");
+			if (elapsedMs === undefined) return "";
 
 			const msEach = (elapsedMs / (total - skip)).toFixed(1);
 			return summaryColor(`${msEach}ms avg.`);

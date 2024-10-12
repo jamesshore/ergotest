@@ -16,6 +16,7 @@ Ergotest (pronounced *air-go-test*) is a library for writing and running tests. 
 * Test configuration provided from build to tests
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
+* Shows which tests are marked with `.only` or `.skip`
 * Clean, well-documented API
 
 

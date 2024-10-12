@@ -28,7 +28,7 @@ export default test(({ describe })=>{
                     createTimeout()
                 ]
             });
-            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + failColor("3 failed; ") + timeoutColor("4 timed out; ") + skipColor("2 skipped; ") + passColor("1 passed; ") + summaryColor("125.0ms avg.") + summaryColor(")"));
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + failColor("3 failed") + summaryColor("; ") + timeoutColor("4 timed out") + summaryColor("; ") + skipColor("2 skipped") + summaryColor("; ") + passColor("1 passed") + summaryColor("; ") + summaryColor("125.0ms avg.") + summaryColor(")"));
         });
         it("only renders information for non-zero counts", ()=>{
             const result = createSuite({
@@ -36,7 +36,15 @@ export default test(({ describe })=>{
                     createPass()
                 ]
             });
-            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + passColor("1 passed; ") + summaryColor("1000.0ms avg.") + summaryColor(")"));
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + passColor("1 passed") + summaryColor("; ") + summaryColor("1000.0ms avg.") + summaryColor(")"));
+        });
+        it("leaves out test time if elapsed time not provided", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            assert.equal(TestRenderer.create().renderSummary(result), summaryColor("(") + passColor("1 passed") + summaryColor(")"));
         });
         it("handles empty results gracefully", ()=>{
             assert.equal(TestRenderer.create().renderSummary(createSuite(), 1000), summaryColor("(") + summaryColor("none ran") + summaryColor(")"));

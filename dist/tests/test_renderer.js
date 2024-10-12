@@ -43,19 +43,30 @@ export class TestRenderer {
 	 */ renderSummary(testSuiteResult, elapsedMs) {
         ensure.signature(arguments, [
             TestSuiteResult,
-            Number
+            [
+                undefined,
+                Number
+            ]
         ]);
         const { total, pass, fail, timeout, skip } = testSuiteResult.count();
-        return summaryColor("(") + renderCount(fail, "failed", Colors.brightRed) + renderCount(timeout, "timed out", Colors.purple) + renderCount(skip, "skipped", Colors.cyan) + renderCount(pass, "passed", Colors.green) + renderMsEach(elapsedMs, total, skip) + summaryColor(")");
+        const renders = [
+            renderCount(fail, "failed", Colors.brightRed),
+            renderCount(timeout, "timed out", Colors.purple),
+            renderCount(skip, "skipped", Colors.cyan),
+            renderCount(pass, "passed", Colors.green),
+            renderMsEach(elapsedMs, total, skip)
+        ].filter((render)=>render !== "");
+        return summaryColor("(") + renders.join(summaryColor("; ")) + summaryColor(")");
         function renderCount(number, description, color) {
             if (number === 0) {
                 return "";
             } else {
-                return color(`${number} ${description}; `);
+                return color(`${number} ${description}`);
             }
         }
         function renderMsEach(elapsedMs, total, skip) {
             if (total - skip === 0) return summaryColor("none ran");
+            if (elapsedMs === undefined) return "";
             const msEach = (elapsedMs / (total - skip)).toFixed(1);
             return summaryColor(`${msEach}ms avg.`);
         }
