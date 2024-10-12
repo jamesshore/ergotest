@@ -11,6 +11,7 @@ import path from "node:path";
 const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
+const TEST_SUITE_PATH = path.resolve(import.meta.dirname, "./test_suite.js");
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 const EXCEED_TIMEOUT = DEFAULT_TIMEOUT + 1;
@@ -36,9 +37,25 @@ export default test(({ describe })=>{
                 "./_module_passes.js"
             ]);
             const result = (await suite.runAsync()).allTests()[0];
-            assert.objEqual(result, createFail());
+            assert.deepEqual(result.name, [
+                "error when importing _module_passes.js"
+            ]);
+            assert.isUndefined(result.filename);
+            assert.equal(result.status, TestStatus.fail);
+            assert.equal(result.error, "Test module filenames must use absolute paths: ./_module_passes.js");
         });
-        it("fails gracefully if module doesn't exist");
+        it("fails gracefully if module doesn't exist", async ()=>{
+            const suite = await TestSuite.fromModulesAsync([
+                "/no_such_module.js"
+            ]);
+            const result = (await suite.runAsync()).allTests()[0];
+            assert.deepEqual(result.name, [
+                "error when importing no_such_module.js"
+            ]);
+            assert.equal(result.filename, "/no_such_module.js");
+            assert.equal(result.status, TestStatus.fail);
+            assert.equal(result.error, `Test module not found: /no_such_module.js`);
+        });
         it("fails gracefully if module fails to require()", async ()=>{
             const suite = await TestSuite.fromModulesAsync([
                 THROWS_MODULE_PATH
@@ -61,7 +78,7 @@ export default test(({ describe })=>{
             ]);
             assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
             assert.equal(result.status, TestStatus.fail);
-            assert.equal(result.error, `doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
+            assert.equal(result.error, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
         });
     });
     describe("test suites", ({ it })=>{

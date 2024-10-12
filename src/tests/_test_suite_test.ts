@@ -43,10 +43,7 @@ export default test(({ describe }) => {
 			assert.deepEqual(result.name, [ "error when importing _module_passes.js" ]);
 			assert.isUndefined(result.filename);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(
-				(result!.error as { message: string }).message,
-				"Module filenames must use absolute paths: ./_module_passes.js"
-			);
+			assert.equal(result.error, "Test module filenames must use absolute paths: ./_module_passes.js");
 		});
 
 		it("fails gracefully if module doesn't exist", async () => {
@@ -56,10 +53,7 @@ export default test(({ describe }) => {
 			assert.deepEqual(result.name, [ "error when importing no_such_module.js" ]);
 			assert.equal(result.filename, "/no_such_module.js");
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(
-				(result!.error as { message: string }).message,
-				`Cannot find module '/no_such_module.js' imported from ${TEST_SUITE_PATH}`
-			);
+			assert.equal(result.error, `Test module not found: /no_such_module.js`);
 		});
 
 		it("fails gracefully if module fails to require()", async () => {
@@ -79,7 +73,7 @@ export default test(({ describe }) => {
 			assert.deepEqual(result.name, [ "error when importing _module_no_export.js" ]);
 			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.error, `doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
+			assert.equal(result.error, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
 		});
 
 	});

@@ -122,7 +122,9 @@ export class TestSuite implements Runnable {
 		async function loadModuleAsync(filename: string): Promise<TestSuite> {
 			const errorName = `error when importing ${path.basename(filename)}`;
 
-			if (!path.isAbsolute(filename)) return createFailure(errorName, new Error(`Module filenames must use absolute paths: ${filename}`));
+			if (!path.isAbsolute(filename)) {
+				return createFailure(errorName, `Test module filenames must use absolute paths: ${filename}`);
+			}
 			try {
 				const { default: suite } = await import(filename);
 				if (suite instanceof TestSuite) {
@@ -130,11 +132,17 @@ export class TestSuite implements Runnable {
 					return suite;
 				}
 				else {
-					return createFailure(errorName, `doesn't export a test suite: ${filename}`, filename);
+					return createFailure(errorName, `Test module doesn't export a test suite: ${filename}`, filename);
 				}
 			}
 			catch(err) {
-				return createFailure(errorName, err, filename);
+				const code = (err as { code: string })?.code;
+				if (code === "ERR_MODULE_NOT_FOUND") {
+					return createFailure(errorName, `Test module not found: ${filename}`, filename);
+				}
+				else {
+					return createFailure(errorName, err, filename);
+				}
 			}
 		}
 
