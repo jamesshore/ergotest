@@ -62,7 +62,7 @@ export default test(({ describe }) => {
 		});
 
 	});
-	
+
 
 	describe("test suite rendering", ({ it }) => {
 
@@ -296,6 +296,20 @@ export default test(({ describe }) => {
 			// marks
 			assert.objEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
 			assert.objNotEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
+		});
+
+	});
+
+
+	describe("test case rendering", ({ it }) => {
+
+		it("renders test case as character, single line, or multi-line", () => {
+			const renderer = TestRenderer.create();
+			const result = createPass();
+
+			assert.equal(result.renderAsCharacter(), renderer.renderAsCharacters(result));
+			assert.equal(result.renderAsSingleLine(), renderer.renderAsSingleLines(result));
+			assert.equal(result.renderAsMultipleLines(), renderer.renderAsMultipleLines(result));
 		});
 
 	});

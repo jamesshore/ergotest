@@ -272,6 +272,33 @@ export declare class TestCaseResult extends TestResult {
      */
     isTimeout(): boolean;
     /**
+     * Render the test case as a single color-coded character.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsCharacters()}. For more control over rendering,
+     * use that class instead.
+     *
+     * @returns The formatted character.
+     */
+    renderAsCharacter(): string;
+    /**
+     * Render the test case as a single line containing its status (pass, fail, etc.) and names.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsSingleLines()}. For more control over
+     * rendering, use that class instead.
+     *
+     * @returns The formatted line.
+     */
+    renderAsSingleLine(): string;
+    /**
+     * Render the test case as a multiple lines containing all of its details.
+     *
+     * This is a convenience method that calls {@link TestRenderer.renderAsMultipleLines()}. For more control over
+     * rendering, use that class instead.
+     *
+     * @returns The formatted lines.
+     */
+    renderAsMultipleLines(): string;
+    /**
      * @returns {TestCaseResult[]} This test converted into a list of one.
      */
     allTests(): TestCaseResult[];

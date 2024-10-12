@@ -508,6 +508,39 @@ export const TestStatus = {
         return this.status === TestStatus.timeout;
     }
     /**
+	 * Render the test case as a single color-coded character.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsCharacters()}. For more control over rendering,
+	 * use that class instead.
+	 *
+	 * @returns The formatted character.
+	 */ renderAsCharacter() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsCharacters(this);
+    }
+    /**
+	 * Render the test case as a single line containing its status (pass, fail, etc.) and names.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsSingleLines()}. For more control over
+	 * rendering, use that class instead.
+	 *
+	 * @returns The formatted line.
+	 */ renderAsSingleLine() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsSingleLines(this);
+    }
+    /**
+	 * Render the test case as a multiple lines containing all of its details.
+	 *
+	 * This is a convenience method that calls {@link TestRenderer.renderAsMultipleLines()}. For more control over
+	 * rendering, use that class instead.
+	 *
+	 * @returns The formatted lines.
+	 */ renderAsMultipleLines() {
+        ensure.signature(arguments, []);
+        return TestRenderer.create().renderAsMultipleLines(this);
+    }
+    /**
 	 * @returns {TestCaseResult[]} This test converted into a list of one.
 	 */ allTests() {
         ensure.signature(arguments, []);
