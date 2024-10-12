@@ -170,12 +170,12 @@ export declare class TestSuiteResult extends TestResult {
      *
      * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
      *
-     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
      * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
      *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
      * @returns The formatted string.
      */
-    render(elapsedMs?: number, preamble?: string): string;
+    render(preamble?: string, elapsedMs?: number): string;
     /**
      * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
      */

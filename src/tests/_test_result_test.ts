@@ -76,7 +76,7 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100),
+			assert.equal(result.render(),
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
 					createSkip({ mark: TestMark.skip })
@@ -85,17 +85,6 @@ export default test(({ describe }) => {
 					fail,
 					createTimeout(),
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
-			);
-		});
-
-		it("doesn't require elapsed time", () => {
-			const result = createSuite({ children: [
-				createPass(),
-			]});
-
-			const renderer = TestRenderer.create();
-			assert.equal(result.render(),
 				renderer.renderSummary(result),
 			);
 		});
@@ -107,12 +96,12 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100),
+			assert.equal(result.render(),
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
 					createSkip({ mark: TestMark.skip })
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
+				renderer.renderSummary(result),
 			);
 		});
 
@@ -124,23 +113,34 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100),
+			assert.equal(result.render(),
 				renderer.renderAsMultipleLines([
 					fail,
 					createTimeout(),
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
+				renderer.renderSummary(result),
 			);
 		});
 
 		it("renders summary alone", () => {
 			const result = createSuite({ children: [
 				createPass(),
+			]});
+
+			const renderer = TestRenderer.create();
+			assert.equal(result.render(),
+				renderer.renderSummary(result),
+			);
+		});
+
+		it("can include average test time in summary", () => {
+			const result = createSuite({ children: [
+				createPass(),
 				createSkip(),
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100),
+			assert.equal(result.render("", 100),
 				renderer.renderSummary(result, 100),
 			);
 		});
@@ -152,7 +152,7 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100, "my_preamble"),
+			assert.equal(result.render("my_preamble"),
 				"my_preamble" +
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
@@ -160,7 +160,7 @@ export default test(({ describe }) => {
 				renderer.renderAsMultipleLines([
 					createTimeout(),
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
+				renderer.renderSummary(result),
 			);
 		});
 
@@ -170,12 +170,12 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100, "my_preamble"),
+			assert.equal(result.render("my_preamble"),
 				"my_preamble" +
 				renderer.renderMarksAsLines([
 					createPass({ mark: TestMark.only }),
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
+				renderer.renderSummary(result),
 			);
 		});
 
@@ -185,12 +185,12 @@ export default test(({ describe }) => {
 			]});
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100, "my_preamble"),
+			assert.equal(result.render("my_preamble"),
 				"my_preamble" +
 				renderer.renderAsMultipleLines([
 					createTimeout(),
 				]) + "\n\n" +
-				renderer.renderSummary(result, 100),
+				renderer.renderSummary(result),
 			);
 		});
 
@@ -198,8 +198,8 @@ export default test(({ describe }) => {
 			const result = createSuite();
 
 			const renderer = TestRenderer.create();
-			assert.equal(result.render(100, "my_preamble"),
-				renderer.renderSummary(result, 100),
+			assert.equal(result.render("my_preamble"),
+				renderer.renderSummary(result),
 			);
 		});
 

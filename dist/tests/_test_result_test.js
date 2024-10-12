@@ -150,7 +150,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderMarksAsLines([
+            assert.equal(result.render(), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
@@ -160,16 +160,7 @@ export default test(({ describe })=>{
             ]) + "\n\n\n" + renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
-        });
-        it("doesn't require elapsed time", ()=>{
-            const result = createSuite({
-                children: [
-                    createPass()
-                ]
-            });
-            const renderer = TestRenderer.create();
-            assert.equal(result.render(), renderer.renderSummary(result));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders marks and summary without errors", ()=>{
             const result = createSuite({
@@ -183,14 +174,14 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderMarksAsLines([
+            assert.equal(result.render(), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
                 createSkip({
                     mark: TestMark.skip
                 })
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders errors and summary without marks", ()=>{
             const fail = createFail();
@@ -201,12 +192,21 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderAsMultipleLines([
+            assert.equal(result.render(), renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders summary alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(), renderer.renderSummary(result));
+        });
+        it("can include average test time in summary", ()=>{
             const result = createSuite({
                 children: [
                     createPass(),
@@ -214,7 +214,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderSummary(result, 100));
+            assert.equal(result.render("", 100), renderer.renderSummary(result, 100));
         });
         it("adds optional preamble when result has marks and errors", ()=>{
             const result = createSuite({
@@ -226,13 +226,13 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 })
             ]) + "\n\n\n" + renderer.renderAsMultipleLines([
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("adds optional preamble when result has marks alone", ()=>{
             const result = createSuite({
@@ -243,11 +243,11 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 })
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("adds optional preamble when result has errors alone", ()=>{
             const result = createSuite({
@@ -256,14 +256,14 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("doesn't add preamble when result has no marks or errors", ()=>{
             const result = createSuite();
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), renderer.renderSummary(result, 100));
+            assert.equal(result.render("my_preamble"), renderer.renderSummary(result));
         });
     });
     describe("test case", ({ it })=>{
