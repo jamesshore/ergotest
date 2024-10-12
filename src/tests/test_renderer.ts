@@ -116,7 +116,7 @@ export class TestRenderer {
 			const name = this.renderNameOnMultipleLines(testResult);
 			const status = this.renderStatusWithMultiLineDetails(testResult);
 
-			return `${name}\n${status}`;
+			return `${name}\n\n${status}`;
 		});
 	}
 

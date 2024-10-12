@@ -160,7 +160,7 @@ export default test(({ describe }) => {
 
 			assert.equal(
 				renderMultiLineTest(result),
-				renderer.renderNameOnMultipleLines(result) + "\n" + renderer.renderStatusWithMultiLineDetails(result)
+				renderer.renderNameOnMultipleLines(result) + "\n\n" + renderer.renderStatusWithMultiLineDetails(result)
 			);
 		});
 

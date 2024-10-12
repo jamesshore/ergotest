@@ -112,7 +112,7 @@ export class TestRenderer {
         return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult)=>{
             const name = this.renderNameOnMultipleLines(testResult);
             const status = this.renderStatusWithMultiLineDetails(testResult);
-            return `${name}\n${status}`;
+            return `${name}\n\n${status}`;
         });
     }
     /**

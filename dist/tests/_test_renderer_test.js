@@ -115,7 +115,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(renderMultiLineTest(result), renderer.renderNameOnMultipleLines(result) + "\n" + renderer.renderStatusWithMultiLineDetails(result));
+            assert.equal(renderMultiLineTest(result), renderer.renderNameOnMultipleLines(result) + "\n\n" + renderer.renderStatusWithMultiLineDetails(result));
         });
         it("renders multiple results with a two-line gap between each result", ()=>{
             const fail = createFail(); // have to use the same fail each time, or the stack trace will be different
