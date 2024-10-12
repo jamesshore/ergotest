@@ -5,20 +5,27 @@
 Ergotest (pronounced *air-go-test*) is a library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented Node API. It has all the features you need and none of the complexity you don't.
 
 
-## Features
+## Why Ergotest?
+
+Compared to other testing frameworks, Ergotest is:
+
+* Simple to understand with a great automation API
+* Small and easy to audit, with no dependencies
+* Very fast
+
+Despite its size, Ergotest is a modern test library with support for all the most important features:
 
 * Supports TypeScript, JavaScript, and ES Modules
 * `describe()` for test suites, `it()` for tests
-* `beforeEach(), afterEach(), beforeAll(), afterAll()`
-* `.only` to run specific tests and `.skip` to skip tests; they work across files and nest cleanly
+* `beforeAll(), afterAll(), beforeEach(), afterEach()`
+* `.only` and `.skip` control which tests are run; they work across files and nest cleanly
 * `async / await` for asynchronous code
+* Compatible with any assertion library (uses `AssertionError` for test failures)
 * Timeouts, infinite loop detection, and uncaught exception detection
-* Test configuration provided from build to tests
+* Test configuration provided to tests (useful for integration tests)
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
-* Shows which tests are marked with `.only` or `.skip`
-* Clean, well-documented API
-* Small and easy to audit, with no dependencies
+* TypeScript types and JSDoc documentation
 
 
 ## Example Test
@@ -57,7 +64,7 @@ Ergotest is designed for experienced practitioners using test-driven development
 * **[Nullables](https://www.jamesshore.com/s/nullables)** or hand-rolled test doubles, not mocking libraries
 * **Node APIs**, not command-line tools
 
-Features for slow, flaky tests are deliberately excluded, as are features for auto-mocking.
+Features needed by slow, flaky test suites are deliberately excluded, as are features for auto-mocking.
 
 Ergotest doesn't include a command-line tool. You're expected to integrate it into your automated build, as shown below.
 
