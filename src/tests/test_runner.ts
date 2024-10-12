@@ -1,8 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestSuite, TestConfig } from "./test_suite.js";
-import { SerializedTestResult, TestResult } from "./test_result.js";
+import { NotifyFn, TestConfig, TestOptions, TestSuite } from "./test_suite.js";
+import {
+	SerializedTestCaseResult,
+	SerializedTestSuiteResult,
+	TestCaseResult,
+	TestResult,
+	TestSuiteResult,
+} from "./test_result.js";
 import child_process, { ChildProcess } from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
@@ -21,11 +27,12 @@ export interface WorkerInput {
 export type WorkerOutput = {
 	type: "keepalive"
 } | {
-	type: "progress" | "complete",
-	result: SerializedTestResult,
+	type: "progress",
+	result: SerializedTestCaseResult,
+} | {
+	type: "complete",
+	result: SerializedTestSuiteResult,
 }
-
-export type NotifyFn = (testResult: TestResult) => void;
 
 /**
  * Loads and runs tests in an isolated process.
@@ -48,27 +55,46 @@ export class TestRunner {
 	}
 
 	/**
-	 * Load and run a set of test modules in an isolated process.
+	 * Load and run a set of test modules in the current process. Note that, because Node.js caches modules, this means
+	 * that you can't make changes to your tests. Future test runs won't see your changes because the previous modules
+	 * will have been cached.
+	 *
 	 * @param {string[]} modulePaths The test files to load and run.
 	 * @param {object} [config] Configuration data to provide to the tests as they run.
 	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
-	 * @returns {Promise<void>}
+	 * @returns {Promise<TestSuiteResult>}
 	 */
-	async runIsolatedAsync(modulePaths: string[], {
+	async runInCurrentProcessAsync(modulePaths: string[], options?: TestOptions): Promise<TestSuiteResult> {
+		ensure.signature(arguments, [ Array, [ undefined, {
+			config: [ undefined, Object ],
+			notifyFn: [ undefined, Function ],
+		}]]);
+
+		const suite = await TestSuite.fromModulesAsync(modulePaths);
+		return await suite.runAsync(options);
+	}
+
+	/**
+	 * Load and run a set of test modules in an isolated child process.
+	 *
+	 * @param {string[]} modulePaths The test files to load and run.
+	 * @param {object} [config] Configuration data to provide to the tests as they run.
+	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @returns {Promise<TestSuiteResult>}
+	 */
+	async runInChildProcessAsync(modulePaths: string[], {
 		config,
 		notifyFn = () => {},
-	}: {
-		config?: Record<string, unknown>,
-		notifyFn?: NotifyFn,
-	} = {}) {
+	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, {
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
 		}]]);
 
 		const child = child_process.fork(WORKER_FILENAME);
-		const result = await runTestsInChildProcess(child, this._clock, modulePaths, config, notifyFn);
+		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, config, notifyFn);
 		await killChildProcess(child);
 
 		return result;
@@ -76,14 +102,14 @@ export class TestRunner {
 
 }
 
-async function runTestsInChildProcess(
+async function runTestsInChildProcessAsync(
 	child: ChildProcess,
 	clock: Clock,
 	modulePaths: string[],
 	config: TestConfig | undefined,
 	notifyFn: NotifyFn,
-) {
-	const result = await new Promise<TestResult>((resolve, reject) => {
+): Promise<TestSuiteResult> {
+	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
 		const workerData = { modulePaths, config };
 		child.send(workerData);
 
@@ -98,7 +124,7 @@ async function runTestsInChildProcess(
 	return result;
 }
 
-function detectInfiniteLoops(clock: Clock, resolve: (result: TestResult) => void) {
+function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) => void) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
 		const errorResult = TestResult.suite([], [
 			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
@@ -113,18 +139,18 @@ function handleMessage(
 	aliveFn: () => void,
 	cancelFn: () => void,
 	notifyFn: NotifyFn,
-	resolve: (result: TestResult) => void,
+	resolve: (result: TestSuiteResult) => void,
 ) {
 	switch (message.type) {
 		case "keepalive":
 			aliveFn();
 			break;
 		case "progress":
-			notifyFn(TestResult.deserialize(message.result));
+			notifyFn(TestCaseResult.deserialize(message.result));
 			break;
 		case "complete":
 			cancelFn();
-			resolve(TestResult.deserialize(message.result));
+			resolve(TestSuiteResult.deserialize(message.result));
 			break;
 		default:
 			// @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime

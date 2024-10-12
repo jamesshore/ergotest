@@ -1,5 +1,11 @@
 import { Clock } from "../infrastructure/clock.js";
-import { TestResult, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
+export type TestOptions = {
+    config?: Record<string, unknown>;
+    notifyFn?: NotifyFn;
+    clock?: Clock;
+};
+export type NotifyFn = (testResult: TestCaseResult) => void;
 export declare const TestMark: {
     none: string;
     skip: string;
@@ -41,7 +47,7 @@ interface RecursiveRunOptions {
     name: string[];
     filename?: string;
     clock: Clock;
-    notifyFn: (result: TestResult) => void;
+    notifyFn: NotifyFn;
     timeout: Milliseconds;
     config: TestConfig;
 }
@@ -96,11 +102,7 @@ export declare class TestSuite implements Runnable {
      * @param {Clock} [clock] The clock to use. Meant for internal use.
      * @returns {Promise<TestSuiteResult>} The results of the test suite.
      */
-    runAsync({ config, notifyFn, clock, }?: {
-        config?: TestConfig;
-        notifyFn?: (result: TestResult) => void;
-        clock?: Clock;
-    }): Promise<TestSuiteResult>;
+    runAsync({ config, notifyFn, clock, }?: TestOptions): Promise<TestSuiteResult>;
     /** @private */
     _setFilename(filename: string): void;
     /** @private */

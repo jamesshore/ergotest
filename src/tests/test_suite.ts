@@ -11,6 +11,14 @@ import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
+export type TestOptions = {
+	config?: Record<string, unknown>,
+	notifyFn?: NotifyFn,
+	clock?: Clock,
+};
+
+export type NotifyFn = (testResult: TestCaseResult) => void;
+
 export const TestMark = {
 	none: "none",
 	skip: "skip",
@@ -61,7 +69,7 @@ interface RecursiveRunOptions {
 	name: string[];
 	filename?: string;
 	clock: Clock,
-	notifyFn: (result: TestResult) => void,
+	notifyFn: NotifyFn,
 	timeout: Milliseconds,
 	config: TestConfig,
 }
@@ -260,11 +268,7 @@ export class TestSuite implements Runnable {
 		config = {},
 		notifyFn = () => {},
 		clock = Clock.create(),
-	}: {
-		config?: TestConfig,
-		notifyFn?: (result: TestResult) => void,
-		clock?: Clock,
-	} = {}): Promise<TestSuiteResult> {
+	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],

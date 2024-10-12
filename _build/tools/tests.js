@@ -81,7 +81,7 @@ export default class Tests {
 
 	async #runTestsAsync(reporter, description, filesToRun, config) {
 		await reporter.startAsync(`Running ${description}`, async (report) => {
-			const testResult = await this._testRunner.runIsolatedAsync(filesToRun, {
+			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
 				config,
 				notifyFn: testResult => {
 					report.progress({ text: testResult.renderAsCharacter() });
