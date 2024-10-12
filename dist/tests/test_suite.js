@@ -40,7 +40,8 @@ export const TestMark = {
             tests: suites
         });
         async function loadModuleAsync(filename) {
-            const errorName = `error when requiring ${path.basename(filename)}`;
+            const errorName = `error when importing ${path.basename(filename)}`;
+            if (!path.isAbsolute(filename)) return createFailure(errorName, new Error(`Module filenames must use absolute paths: ${filename}`));
             try {
                 const { default: suite } = await import(filename);
                 if (suite instanceof TestSuite) {

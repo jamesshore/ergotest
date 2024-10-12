@@ -12,6 +12,10 @@ import path from "node:path";
 // Tests for my test library. (How meta.)
 
 const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
+const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
+const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
+const TEST_SUITE_PATH = path.resolve(import.meta.dirname, "./test_suite.js");
+
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 const EXCEED_TIMEOUT = DEFAULT_TIMEOUT + 1;
@@ -32,24 +36,50 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("fails gracefully if module fails to require()", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
+		it("fails gracefully if module isn't an absolute path", async () => {
+			const suite = await TestSuite.fromModulesAsync([ "./_module_passes.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when requiring _module_throws.js" ]);
-			assert.equal(result.filename, "./_module_throws.js");
+			assert.deepEqual(result.name, [ "error when importing _module_passes.js" ]);
+			assert.isUndefined(result.filename);
+			assert.equal(result.status, TestStatus.fail);
+			assert.equal(
+				(result!.error as { message: string }).message,
+				"Module filenames must use absolute paths: ./_module_passes.js"
+			);
+		});
+
+		it("fails gracefully if module doesn't exist", async () => {
+			const suite = await TestSuite.fromModulesAsync([ "/no_such_module.js" ]);
+			const result = (await suite.runAsync()).allTests()[0];
+
+			assert.deepEqual(result.name, [ "error when importing no_such_module.js" ]);
+			assert.equal(result.filename, "/no_such_module.js");
+			assert.equal(result.status, TestStatus.fail);
+			assert.equal(
+				(result!.error as { message: string }).message,
+				`Cannot find module '/no_such_module.js' imported from ${TEST_SUITE_PATH}`
+			);
+		});
+
+		it("fails gracefully if module fails to require()", async () => {
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const result = (await suite.runAsync()).allTests()[0];
+
+			assert.deepEqual(result.name, [ "error when importing _module_throws.js" ]);
+			assert.equal(result.filename, THROWS_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
 			assert.match((result.error as { message: string }).message, /my require error/);
 		});
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "./_module_no_export.js" ]);
+			const suite = await TestSuite.fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when requiring _module_no_export.js" ]);
-			assert.equal(result.filename, "./_module_no_export.js");
+			assert.deepEqual(result.name, [ "error when importing _module_no_export.js" ]);
+			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.error, "doesn't export a test suite: ./_module_no_export.js");
+			assert.equal(result.error, `doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
 		});
 
 	});
@@ -1147,7 +1177,7 @@ export default test(({ describe }) => {
 			}
 
 			await suite.runAsync({ notifyFn });
-			assert.deepEqual(testResult!.name, [ "error when requiring _module_throws.js" ]);
+			assert.deepEqual(testResult!.name, [ "error when importing _module_throws.js" ]);
 		});
 
 		it("runs notify function if module doesn't export a test suite", async () => {
@@ -1160,7 +1190,7 @@ export default test(({ describe }) => {
 			}
 
 			await suite.runAsync({ notifyFn });
-			assert.deepEqual(testResult!.name, [ "error when requiring _module_no_export.js" ]);
+			assert.deepEqual(testResult!.name, [ "error when importing _module_no_export.js" ]);
 		});
 
 	});

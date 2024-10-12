@@ -120,7 +120,9 @@ export class TestSuite implements Runnable {
 		return new TestSuite("", TestMark.none, { tests: suites });
 
 		async function loadModuleAsync(filename: string): Promise<TestSuite> {
-			const errorName = `error when requiring ${path.basename(filename)}`;
+			const errorName = `error when importing ${path.basename(filename)}`;
+
+			if (!path.isAbsolute(filename)) return createFailure(errorName, new Error(`Module filenames must use absolute paths: ${filename}`));
 			try {
 				const { default: suite } = await import(filename);
 				if (suite instanceof TestSuite) {
