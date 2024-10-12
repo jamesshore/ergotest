@@ -97,6 +97,7 @@ node --enable-source-maps build.js *.test.js
 * Test API
 * Assertion API
 * Test Runner API
+* Changelog
 
 
 ## License
