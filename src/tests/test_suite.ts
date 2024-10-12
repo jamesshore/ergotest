@@ -48,11 +48,11 @@ export interface SuiteParameters {
 	afterAll: BeforeAfter,
 	beforeEach: BeforeAfter,
 	afterEach: BeforeAfter,
-	setTimeout: (newTimeout: Milliseconds) => void,
+	setTimeout: (newTimeoutInMs: Milliseconds) => void,
 }
 
 export interface TestParameters {
-	getConfig: <T>(name: string) => T,
+	getConfig: <T>(key: string) => T,
 }
 
 export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
@@ -219,7 +219,7 @@ export class TestSuite implements Runnable {
 			afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
 			beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
 			afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
-			setTimeout: (newTimeout) => { timeout = newTimeout; },
+			setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
 		});
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });

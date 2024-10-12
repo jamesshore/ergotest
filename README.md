@@ -31,13 +31,9 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 ## Example Test
 
 ```javascript
-// Write your own "/tests.js" by re-exporting the Ergotest API. This allows
-// you to swap out parts of Ergotest in the future if you like. You can use
-// Ergotest's built-in assertion library or use a library such as Chai.
-import { assert, test } from "/tests.js";
+import { assert, test } from "ergotest";
 import { hello } from "./hello.js";
 
-// The test() function returns a TestSuite.
 export default test(() => {
 
   it("runs tests", async () => {
@@ -47,14 +43,8 @@ export default test(() => {
 });
 ```
 
-Example `/tests.js`. This isolates Ergotest, allowing you to customize or replace it without changing all your tests:
 
-```javascript
-export * from "ergotest";
-```
-
-
-## Prerequisites
+## Limitations
 
 Ergotest is designed for experienced practitioners using test-driven development. It's designed to be used by people who want:
 
@@ -69,11 +59,40 @@ Features needed by slow, flaky test suites are deliberately excluded, as are fea
 Ergotest doesn't include a command-line tool. You're expected to integrate it into your automated build, as shown below.
 
 
-## Example Build
+## Quick Start
 
-Use Ergotest's API to run tests from your automated build. If you don't have an automated build, the following example will get you started. 
+### 1. Isolate Ergotest
 
-For more advanced builds, consider using [Automatopia](https://github.com/jamesshore/automatopia) instead, which supports Ergotest out of the box. It includes features such as file globs, file watching, incremental testing, linting, and TypeScript compilation. (It’s also ridiculously fast, clocking in at a fraction of a second in most cases.)
+Isolate your tests from Ergotest by creating a `tests.js` file. This allows you to easily customize or replace Ergotest in the future:
+
+```javascript
+// tests.js
+import { TestSuite } from "ergotest/test_suite.js";
+
+export const test = TestSuite.create;
+export * as assert from "ergotest/assert.js";
+```
+
+### 2. Write a test
+
+Write a simple test:
+
+```javascript
+// example.test.js
+import { assert, test } from "./tests.js";
+
+export default test(() => {
+	
+	it("runs tests", () => {
+		assert.equal(2 + 2, 4);
+  });
+	
+});
+```
+
+### 3. Create a test runner
+
+Use Ergotest's API to run tests from your automated build. For now, create a simple `build.js` file:
 
 ```javascript
 import { TestRunner } from "ergotest/test_runner.js";
@@ -90,7 +109,11 @@ function reportProgress(testCase) {
 }
 ```
 
-Save the above as `build.js` and run it as follows:
+For more advanced builds, consider using [Automatopia](https://github.com/jamesshore/automatopia), which supports Ergotest out of the box. It includes features such as file globs, file watching, incremental testing, linting, and TypeScript compilation. (It’s also ridiculously fast, clocking at a fraction of a second in most cases.)
+
+### 4. Run your tests
+
+Run your tests:
 
 ```shell
 node --enable-source-maps build.js *.test.js
@@ -98,12 +121,14 @@ node --enable-source-maps build.js *.test.js
 
 (The `--enable-source-maps` option causes Node to render TypeScript stack traces correctly.)
 
+For more information, see the documentation below.
+
 
 ## Documentation
 
-* Test API
+* [Test API](docs/test_api.md)
 * Assertion API
-* Test Runner API
+* Automation API
 * Changelog
 
 
