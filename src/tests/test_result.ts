@@ -3,7 +3,6 @@
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
-import { TestMark, TestMarkValue } from "./test_suite.js";
 import { TestRenderer } from "./test_renderer.js";
 
 export const TestStatus = {
@@ -13,9 +12,15 @@ export const TestStatus = {
 	timeout: "timeout",
 } as const;
 
-export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
-
 export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
+
+export const TestMark = {
+	none: "none",
+	skip: "skip",
+	only: "only",
+};
+
+export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 
 export interface TestCount {
 	pass: number;
@@ -24,6 +29,8 @@ export interface TestCount {
 	timeout: number;
 	total: number;
 }
+
+export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
 export interface SerializedTestSuiteResult {
 	type: "TestSuiteResult";

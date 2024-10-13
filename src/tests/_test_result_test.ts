@@ -2,8 +2,7 @@
 
 import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
-import { TestMark, TestMarkValue } from "./test_suite.js";
-import { TestCaseResult, TestResult, TestStatus } from "./test_result.js";
+import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { TestRenderer } from "./test_renderer.js";
 
 export default test(({ describe }) => {

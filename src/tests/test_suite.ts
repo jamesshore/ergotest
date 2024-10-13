@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -18,14 +18,6 @@ export type TestOptions = {
 };
 
 export type NotifyFn = (testResult: TestCaseResult) => void;
-
-export const TestMark = {
-	none: "none",
-	skip: "skip",
-	only: "only",
-};
-
-export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 
 export interface Describe {
 	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
@@ -347,8 +339,7 @@ export class TestSuite implements Runnable {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		const testSuiteResult = TestResult.suite(options.name, results, options.filename, this._mark);
-		return testSuiteResult;
+		return TestResult.suite(options.name, results, options.filename, this._mark);
 	}
 
 }

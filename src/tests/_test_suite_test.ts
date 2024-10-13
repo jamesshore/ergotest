@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import { test, assert } from "../tests.js";
-import { TestMark, TestMarkValue, TestSuite } from "./test_suite.js";
+import { TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestStatus, TestResult, TestCaseResult } from "./test_result.js";
+import { TestStatus, TestResult, TestCaseResult, TestMark, TestMarkValue } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -14,7 +14,6 @@ import path from "node:path";
 const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
-const TEST_SUITE_PATH = path.resolve(import.meta.dirname, "./test_suite.js");
 
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;

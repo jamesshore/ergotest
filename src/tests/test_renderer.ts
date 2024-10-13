@@ -1,8 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
-import { TestMark } from "./test_suite.js";
+import { TestCaseResult, TestMark, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import { ColorFn, Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
