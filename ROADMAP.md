@@ -14,6 +14,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 
 My goal is for Ergo to reach the point where it’s “fully baked” and not incorporating new features. Here’s what I’d like to finish before declaring it “done:”
 
+* **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
 * **Parallel test runs.** This isn’t that high on my list, given that my tests run in a matter of seconds, and [Automatopia’s](https://github.com/jamesshore/automatopia) incremental watch script brings that down to a fraction of a second, but it would be good for bragging rights.
   * Specifically, I want to spawn multiple child processes and have them each process one test module at time off of a shared queue. 
