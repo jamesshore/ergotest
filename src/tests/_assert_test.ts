@@ -128,6 +128,24 @@ export default test(({ describe }) => {
 			});
 		});
 
+		it("passes if arrays have the same reference", () => {
+			const actual: string[] = [];
+			const expected = actual;
+
+			expectPass(() => {
+				assert.identity(actual, expected);
+			});
+		});
+
+		it("passes if functions have the same reference", () => {
+			const actual = () => {};
+			const expected = actual;
+
+			expectPass(() => {
+				assert.identity(actual, expected);
+			});
+		});
+
 		it("fails if objects don't have the same reference, even if the contents are identical", () => {
 			const actual = {};
 			const expected = {};
