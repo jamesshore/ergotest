@@ -11,11 +11,11 @@ Links to other documentation:
 * [README](../README.md)
 * [Changelog](../CHANGELOG.md)
 
-In this document:
+In this document **(the bold entries are all you need)**:
 
-* [Start Here](#start-here)
+* **[Start Here](#start-here)**
 * [TestRunner](#testrunner)
-  * [TestRunner.create()](#testrunnercreate)
+  * **[TestRunner.create()](#testrunnercreate)**
   * **[testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync)**
   * [testRunner.runInCurrentProcessAsync()](#testrunnerrunincurrentprocessasync)
 * [TestSuiteResult](#testsuiteresult)
@@ -24,7 +24,7 @@ In this document:
   * [testSuiteResult.mark](#testsuiteresultmark)
   * [testSuiteResult.children](#testsuiteresultchildren)
   * **[testSuiteResult.render()](#testsuiteresultrender)**
-  * [testSuiteResult.count()](#testsuiteresultcount)
+  * **[testSuiteResult.count()](#testsuiteresultcount)**
   * [testSuiteResult.allTests()](#testsuiteresultalltests)
   * [testSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests)
   * [testSuiteResult.allMarkedResults()](#testsuiteresultallmarkedresults)
@@ -69,15 +69,27 @@ In this document:
   * [TestStatusValue](#teststatusvalue)
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
-
-* TestSuite
+* [TestSuite](#testsuite)
+  * [TestSuite.create()](#testsuitecreate)
+  * [TestSuite.fromModulesAsync()](#testsuitefrommodulesasync)
+  * [testSuite.runAsync()](#testsuiterunasync)
+  * [TestOptions](#testoptions)
 
 
 ## Start Here
 
 > **The Golden Rule:** Instantiate all classes by calling the `TheClass.create()` factory method, *not* the `new TheClass()` constructor! Constructors are reserved for internal use only in this codebase.
 
-The best way to run your tests is to use [testRunner.runInChildProcessAsync()]. It takes a list of filenames which it will bundle up into a suite and run in an isolated child process.
+There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
+
+* **TestRunner** is how you run your tests.
+* **TestSuiteResult** is how you get more details, and it has a convenient method for rendering the results.
+* **TestCaseResult** has the details of a single test, and it also has convenient rendering methods.
+* **TestRenderer** is how you create customized renderings, if you want to.
+* **TestResult** has factory methods for creating test results, and is the parent to `TestSuiteResult` and `TestCaseResult`.
+* **TestSuite** is used to create tests, and the important parts are described in the [test API documentation](test_api.md).
+
+The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it run in an isolated child process.
 
 The `runInChildProcessAsync()` method returns the results of the test run as a `TestSuiteResult` instance. You can render those results to a string by calling [TestSuiteResult.render()](#testsuiteresultrender). To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount)
 
@@ -91,7 +103,7 @@ Bringing it all together, here's an annotated version of a simple command-line i
 import { TestRunner } from "ergotest/test_runner.js";
 import path from "node:path";
 
-// Get the command-line arguments, ignoring 'node' and the build script.
+// Get the command-line arguments
 const args = process.argv.slice(2);
 
 // Convert the command-line arguments to absolute paths.
@@ -114,7 +126,7 @@ const count = result.count();
 if (count.fail + count.timeout > 0) {
   console.log("Tests failed :-(");
 }
-else if (count.total === 0) {
+else if (count.total - count.skip === 0) {
   console.log("No tests ran :-O");
 }
 else {
@@ -154,7 +166,7 @@ Instantiate `TestRunner`.
 
 * testRunner.runInChildProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
 
-Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.)
+Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
 
 The modules will be loaded fresh every time this method is called, allowing you to detect when files change and run the tests again.
 
@@ -175,7 +187,7 @@ Use `options` to provide configuration data to the tests or specify a callback f
 
 > **Warning:** It's typically better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
 
-Import the modules in `modulePaths` in the current process and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.)
+Import the modules in `modulePaths` in the current process and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed. As a result, this method is only suitable for automation that exits back to the command line after running the tests.
 
@@ -552,7 +564,7 @@ Render `testCaseResults` as a series of color-coded characters representing the 
 
 * testRenderer.renderAsSingleLines(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
 
-Render `testCaseResults` as a series of consecutive lines containing the test status and name. Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine](#testrendererrendernameononeline()). 
+Render `testCaseResults` as a series of consecutive lines containing the test status and name. Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline). 
 
 [Back to top](#automation-api)
 
@@ -772,3 +784,71 @@ A type for the possible values of [TestMark](#testmark).
 
 [Back to top](#automation-api)
 
+
+---
+
+
+## TestSuite
+
+* import { TestSuite } from "ergotest/test_suite.js"
+
+You’re very unlikely to use this class outside of your tests, but I’ve included it for completeness. For details about how to use it *in* your tests, see the [test API documentation](test_api.md).
+
+[Back to top](#automation-api)
+
+
+## TestSuite.create()
+
+* TestSuite.create(fn?: DescribeFunction)
+* TestSuite.create(name?: string, fn?: DescribeFunction)
+* TestSuite.create.only(...)
+* TestSuite.create.skip(...)
+
+Create a test suite. Documented in the [test API documentation](test_api.md).
+
+[Back to top](#automation-api)
+
+
+## TestSuite.fromModulesAsync()
+
+* TestSuite.fromModulesAsync(moduleFilenames: string[]): Promise\<TestSuite\>
+
+> **Warning:** It’s probably better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
+
+Import the modules in `modulePaths` in the current process and groups them into a single suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
+
+The modules will *not* be reloaded if they have been loaded before, even if they have changed.
+
+Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite.
+
+[Back to top](#automation-api)
+
+
+## testSuite.runAsync()
+
+* testSuite.runAsync(options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
+
+> **Warning:** It's probably better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
+
+Run the tests in the test suite. (See the [test API](test_api.md) for details.) Does *not* detect infinite loops or uncaught exceptions.
+
+Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+
+[Back to top](#automation-api)
+
+
+## TestOptions
+
+* import { TestOptions } from "ergotest/test_suite.js"
+
+You can configure test runs with this interface. Provide an object with two optional parameters:
+
+* **config: Record<string, unknown>**
+  * An object with key/value pairs. The values can be anything you want. Retrieve the values in your tests by calling `getConfig` as describe in the [test API](test_api.md).
+  * Defaults to an empty object.
+
+* **notifyFn: (testCaseResult: TestCaseResult) => void**
+  * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
+  * Defaults to a no-op.
+
+[Back to top](#automation-api)

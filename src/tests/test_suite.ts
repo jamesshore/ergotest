@@ -11,11 +11,11 @@ import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
-export type TestOptions = {
+export interface TestOptions {
 	config?: Record<string, unknown>,
 	notifyFn?: NotifyFn,
 	clock?: Clock,
-};
+}
 
 export type NotifyFn = (testResult: TestCaseResult) => void;
 
@@ -178,7 +178,7 @@ export class TestSuite implements Runnable {
 	static #runDescribeFunction(
 		describeFn: DescribeFunction,
 		name: string,
-		mark: string,
+		mark: TestMarkValue,
 	): TestSuite {
 		const tests: Runnable[] = [];
 		const beforeAllFns: Test[] = [];
