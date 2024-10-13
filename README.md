@@ -34,6 +34,11 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my code in about 0.2 seconds. 
 
 
+## Wait for v1.0
+
+Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still ironing out the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you’re probably best off waiting unless you like being on the bleeding edge.
+
+
 ## Example Test
 
 ```javascript
