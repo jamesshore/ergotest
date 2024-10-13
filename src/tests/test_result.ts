@@ -18,7 +18,7 @@ export const TestMark = {
 	none: "none",
 	skip: "skip",
 	only: "only",
-};
+} as const;
 
 export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 

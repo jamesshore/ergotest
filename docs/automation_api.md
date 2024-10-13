@@ -59,11 +59,17 @@ In this document:
   * [testRenderer.renderStatusWithMultilineDetails()](#testrendererrenderstatuswithmultilinedetails)
   * [testRenderer.renderStack()](#testrendererrenderstack)
   * [testRenderer.renderDiff()](#testrendererrenderdiff)
-* TestResult
-  * TestStatus
-  * TestStatusValue
-  * TestMark
-  * TestMarkValue
+* [TestResult](#testresult)
+  * [TestResult.suite()](#testresultsuite)
+  * [TestResult.pass()](#testresultpass)
+  * [TestResult.fail()](#testresultfail)
+  * [TestResult.skip()](#testresultskip)
+  * [TestResult.timeout()](#testresulttimeout)
+  * [TestStatus](#teststatus)
+  * [TestStatusValue](#teststatusvalue)
+  * [TestMark](#testmark)
+  * [TestMarkValue](#testmarkvalue)
+
 * TestSuite
 
 
@@ -131,10 +137,6 @@ function reportProgress(testCase) {
 * import { TestRunner } from "ergotest/test_runner.js"
 
 Use the `TestRunner` class to run your tests.
-
-* [TestRunner.create()](#testrunnercreate) - Instantiate `TestRunner`
-* [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync) - Run tests in a child process
-* [testRunner.runInCurrentProcessAsync()](#testrunnerrunincurrentprocessasync) - Run tests in the current process
 
 [Back to top](#automation-api)
 
@@ -667,3 +669,106 @@ If the rendered values are more than one line, the strings are compared line by 
 In the future, I’d like to implement a more sophisticated mechanism for highlighting differences, but this works surprisingly well for such a cheap trick.
 
 [Back to top](#automation-api)
+
+
+---
+
+
+## TestResult
+
+* import { TestResult } from "ergotest/test_result.js"
+
+`TestResult` is the parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult). It doesn’t have any methods of its own, but it does have several static factory methods.
+
+[Back to top](#automation-api)
+
+
+## TestResult.suite()
+
+* TestResult.suite(names: string | string[], children: [TestResult](#testresult)[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestSuiteResult](#testsuiteresult)
+
+Create a test result for a suite of tests.
+
+[Back to top](#automation-api)
+
+
+## TestResult.pass()
+
+* TestResult.pass(names: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+
+Create a passing test result.
+
+[Back to top](#automation-api)
+
+
+## TestResult.fail()
+
+* TestResult.fail(names: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+
+Create a failing test result, where `error` is the reason for the failure. If it’s an `Error`, the failure will be rendered with a stack trace. If it’s an `AssertionError`, it will also be rendered with expected and actual values.
+
+[Back to top](#automation-api)
+
+
+## TestResult.skip()
+
+* TestResult.skip(names: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+
+Create a skipped test result.
+
+[Back to top](#automation-api)
+
+
+## TestResult.timeout()
+
+* TestResult.pass(names: string | string[], timeout: number, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+
+Create a timed out test result, where `timeout` is the length of the timeout (*not* the time the test actually took to run).
+
+[Back to top](#automation-api)
+
+
+## TestStatus
+
+* import { TestStatus } from "ergotest/test_result.js"
+
+An “enum” object with the following options:
+
+* `pass`: for tests that passed
+* `fail`: for tests that failed
+* `skip`: for tests that were skipped
+* `timeout`: for tests that timed out
+
+[Back to top](#automation-api)
+
+
+## TestStatusValue
+
+* import { TestStatusValue } from "ergotest/test_result.js"
+
+A type for the possible values of [TestStatus](#teststatus).
+
+[Back to top](#automation-api)
+
+
+## TestMark
+
+* import { TestMark } from "ergotest/test_result.js"
+
+An “enum” object with the following options:
+
+* `only`: for tests and suites that were defined with `.only`
+* `skip`: for tests and suites that were defined with `.skip`, or that were defined without a body
+* `none`: for all other tests and suites
+
+[Back to top](#automation-api)
+
+
+## TestMarkValue
+
+* import { TestStatus } from "ergotest/test_result.js"
+
+A type for the possible values of [TestMark](#testmark).
+
+[Back to top](#automation-api)
+
