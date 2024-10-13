@@ -10,6 +10,7 @@ Links to other documentation:
 * Automation API
 * [README](../README.md)
 * [Changelog](../CHANGELOG.md)
+* [Roadmap](../ROADMAP.md)
 
 In this document **(the bold entries are all you need)**:
 
@@ -113,24 +114,27 @@ const files = args.map(arg => path.resolve(process.cwd(), arg));
 // Instantiate TestRunner
 const testRunner = TestRunner.create();
 
+// Let the user know what's happening
+process.stdout.write("Running tests: ");
+
 // Run the tests, calling the reportProgress() function after each test completes
 const result = await testRunner.runInChildProcessAsync(files, { notifyFn: reportProgress });
 
-// Display the test results
-console.log("\n" + result.render());
+// Display the test results, with some blank lines to make it look nice
+console.log("\n" + result.render("\n") + "\n");
 
 // Get a summary of the test results
 const count = result.count();
 
 // Check to see if the tests passed or failed
 if (count.fail + count.timeout > 0) {
-  console.log("Tests failed :-(");
+  console.log("Tests failed :-(\n");
 }
 else if (count.total - count.skip === 0) {
-  console.log("No tests ran :-O");
+  console.log("No tests ran :-O\n");
 }
 else {
-  console.log("Tests passed :-)");
+  console.log("Tests passed :-)\n");
 }
 
 // This function is called every time a test finishes running

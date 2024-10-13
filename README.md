@@ -2,14 +2,14 @@
 
 *I think, therefore I test*
 
-Ergotest (pronounced *air-go-test*) is a library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented Node API. It has all the features you need and none of the complexity you don't.
+Ergotest (pronounced *air-go-test*) is a Node.js library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented automation API. It has all the features you need and none of the complexity you don't.
 
 
 ## Why build yet another testing library?
 
-I care deeply about fast feedback. If the build takes longer than half a second, I notice. When it takes longer than a second, I’m frustrated. And when it takes longer than five seconds, I’m unhappy.
+I care deeply about fast feedback. If the build takes longer than half a second, I notice. When it takes longer than a second, I’m unhappy. And when it takes longer than five seconds, I’m frustrated.
 
-In my production code, I kept running into problems with slow builds. I responded by creating the build automation that eventually became [Automatopia](https://github.com/jamesshore/automatopia). But I kept running into problems with test frameworks. They were designed to be run from the command-line, stealing valuable milliseconds, and they didn’t make it easy to write a fast, incremental build that could interoperate with other tools. So I said, “Screw it! How hard could it be?” It worked out. Years later, I decided to open-source my test library, and here we are. 
+In my production code, I kept running into problems with slow builds. I responded by creating the build automation that eventually became [Automatopia](https://github.com/jamesshore/automatopia). But I kept running into problems with test frameworks. They were designed to be run from the command-line, stealing valuable milliseconds, and they didn’t make it easy to interoperate with other tools. So I said, “Screw it! How hard could it be?” Not that hard, as it turns out. Years later, I decided to open-source my solution, and here we are. 
 
 Ergotest is a battletested library that I’ve used for years in my own production codebases. Compared to other testing tools, Ergotest is:
 
@@ -22,7 +22,7 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * Supports TypeScript, JavaScript, and ES Modules
 * `describe()` for test suites, `it()` for tests
 * `beforeAll()`, `afterAll()`, `beforeEach()`, `afterEach()`
-* `.only` and `.skip` work across files and nest cleanly
+* `.only` and `.skip` to select tests; they work across files and nest cleanly
 * `async / await` for asynchronous code
 * Includes a nice assertion library if you want it; compatible with any assertion library if you don’t
 * Timeouts, infinite loop detection, and uncaught exception detection
@@ -36,7 +36,7 @@ Ergotest works particularly well with [Automatopia](https://github.com/jamesshor
 
 ## Wait for v1.0
 
-Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still ironing out the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you’re probably best off waiting unless you like being on the bleeding edge.
+Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you’re probably best off waiting to adopt Ergotest unless you like being on the bleeding edge.
 
 
 ## Example Test
@@ -57,7 +57,9 @@ export default test(() => {
 
 ## Limitations
 
-Ergotest is designed for experienced practitioners using test-driven development. It's designed to be used by people who want:
+Ergotest is for **Node.js only**. It uses Node.js APIs and won’t work in the browser.
+
+Other than that, Ergotest is designed for experienced practitioners using test-driven development. It's designed to be used by people who want:
 
 * **fast unit tests**, not slow end-to-end tests
 * **reliable tests**, not flaky tests
@@ -93,15 +95,15 @@ Write a simple test:
 import { assert, test } from "./tests.js";
 
 export default test(() => {
-	
-	it("runs tests", () => {
-		assert.equal(2 + 2, 4);
+  
+  it("runs tests", () => {
+    assert.equal(2 + 2, 4);
   });
-	
+  
 });
 ```
 
-### 3. Create a test runner
+### 3. Create a command-line interface
 
 Use Ergotest's API to run tests from your automated build. For now, create a simple `build.js` file:
 
@@ -112,8 +114,9 @@ import path from "node:path";
 const args = process.argv.slice(2);
 const files = args.map(arg => path.resolve(process.cwd(), arg));
 
+process.stdout.write("Running tests: ");
 const result = await TestRunner.create().runInChildProcessAsync(files, { notifyFn: reportProgress });
-console.log("\n" + result.render());
+console.log("\n" + result.render("\n"));
 
 function reportProgress(testCase) {
   process.stdout.write(testCase.renderAsCharacter());
@@ -137,14 +140,13 @@ For more information, see the documentation below.
 
 ## Documentation
 
-* [Test API](docs/test_api.md)
-* Assertion API
-* Automation API
-* Changelog
+* [Test API](docs/test_api.md) - How to write your tests
+* [Assertion API](docs/assertion_api.md) - How to make assertions
+* [Automation API](docs/automation_api.md) - How to run your tests
+* [Changelog](CHANGELOG.md)
+* [Roadmap](ROADMAP.md)
 
 
 ## License
 
 MIT License. See [LICENSE.TXT](LICENSE.TXT).
-
-

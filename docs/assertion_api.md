@@ -1,12 +1,12 @@
-# Test API
+# Assertion API
 
-Use the test API to write your tests.
+Use the assertion API inside your tests.
 
 
 Links to other documentation:
 
-* Test API
-* [Assertion API](assertion_api.md)
+* [Test API](test_api.md)
+* Assertion API
 * [Automation API](automation_api.md)
 * [README](../README.md)
 * [Changelog](../CHANGELOG.md)
@@ -15,14 +15,16 @@ Links to other documentation:
 In this document:
 
 * [Start Here](#start-here)
-* [TestSuite.create](#testsuitecreate) aka test() or describe()
-* [it()](#it)
-* [beforeAll()](#beforeall)
-* [afterAll()](#afterall)
-* [beforeEach()](#beforeeach)
-* [afterEach()](#aftereach)
-* [setTimeout()](#settimeout)
-* [getConfig()](#getconfig)
+* 
+
+## Start Here
+
+Ergotest works with any assertion library that throws an exception on failure. It works best with libraries that throw an `AssertionError` on failure
+
+
+
+
+
 
 ## Start Here
 
