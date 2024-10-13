@@ -69,6 +69,8 @@ The remainder of this document describes the assertions in `ergotest/assert.js`.
 
 ## assert.fail()
 ## assert.todo()
+## assert.identity()
+## assert.notIdentity()
 ## assert.equal()
 ## assert.notEqual()
 ## assert.isDefined()
