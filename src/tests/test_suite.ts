@@ -48,7 +48,7 @@ export interface SuiteParameters {
 	afterAll: BeforeAfter,
 	beforeEach: BeforeAfter,
 	afterEach: BeforeAfter,
-	setTimeout: (newTimeoutInMs: Milliseconds) => void,
+	setTimeout: (newTimeout: Milliseconds) => void,
 }
 
 export interface TestParameters {

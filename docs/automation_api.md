@@ -1,19 +1,166 @@
-# Test API
+# Automation API
 
-Use the test API to write your tests.
+Use the automation API to run your tests and display their results.
 
 
 Links to other documentation:
 
 * [Test API](test_api.md)
 * [Assertion API](assertion_api.md)
-* [Automation API](automation_api.md)
+* Automation API
+* [README](../README.md)
 * [Changelog](../CHANGELOG.md)
 
-In this documentation:
+In this document:
 
-* [Start Here](#start-here)
-* [TestSuite.create](#testsuitecreate)
+* TBD
+* [TestRunner](#testrunner)
+  * [TestRunner.create()](#testrunnercreate)
+  * [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync)
+  * [testRunner.runInCurrentProcessAsync()](#testrunnerrunincurrentprocessasync)
+* TestSuiteResult
+* TestCaseResult
+* TestRenderer
+* TestResult
+* TestSuite
+
+
+## Start Here
+
+> **The Golden Rule:** Instantiate all classes by calling the `TheClass.create()` factory method, *not* the `new TheClass()` constructor! Constructors are reserved for internal use only in this codebase.
+
+The best way to run your tests is to use [testRunner.runInChildProcessAsync()]. It takes a list of filenames which it will bundle up into a suite and run in an isolated child process.
+
+The `runInChildProcessAsync()` method returns the results of the test run as a `TestSuiteResult` instance. You can render those results to a string by calling [TestSuiteResult.render()](#testsuiteresultrender). To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount)
+
+If you want more fine-grained control, you can use the methods and properties on `TestSuiteResult` and `TestCaseResult`. Create a `TestRenderer` instance for more rendering options.
+
+To see the results of the tests as they’re running, pass `notifyFn` to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will be called with a `TestCaseResult`, which you can then render with the [testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines) methods.
+
+Bringing it all together, here's an annotated version of a simple command-line interface for running tests:
+
+```javascript
+import { TestRunner } from "ergotest/test_runner.js";
+import path from "node:path";
+
+// Get the command-line arguments, ignoring 'node' and the build script.
+const args = process.argv.slice(2);
+
+// Convert the command-line arguments to absolute paths.
+// (TestRunner requires absolute paths.)
+const files = args.map(arg => path.resolve(process.cwd(), arg));
+
+// Instantiate TestRunner
+const testRunner = TestRunner.create();
+
+// Run the tests, calling the reportProgress() function after each test completes
+const result = await testRunner.runInChildProcessAsync(files, { notifyFn: reportProgress });
+
+// Display the test results
+console.log("\n" + result.render());
+
+// Get a summary of the test results
+const count = result.count();
+
+// Check to see if the tests passed or failed
+if (count.fail + count.timeout > 0) {
+  console.log("Tests failed :-(");
+}
+else if (count.total === 0) {
+  console.log("No tests ran :-O");
+}
+else {
+  console.log("Tests passed :-)");
+}
+
+// This function is called every time a test finishes running
+function reportProgress(testCase) {
+  // Write the test result as a dot, X, etc.
+  process.stdout.write(testCase.renderAsCharacter());
+}
+```
+
+
+---
+
+
+## TestRunner
+
+Use `TestRunner` to run your tests.
+
+* [TestRunner.create()](#testrunnercreate) - Instantiate `TestRunner`
+* [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync) - Run tests in a child process
+* [testRunner.runInCurrentProcessAsync()](#testrunnerrunincurrentprocessasync) - Run tests in the current process
+
+[Back to top](#automation-api)
+
+
+## TestRunner.create()
+
+* TestRunner.create(): TestRunner
+
+Instantiate `TestRunner`.
+
+[Back to top](#automation-api)
+
+
+## testRunner.runInChildProcessAsync()
+
+* testRunner.runInChildProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
+
+Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.)
+
+The modules will be loaded fresh every time this method is called, allowing you to detect when files change and run the tests again.
+
+If the tests enter an infinite loop or throw an uncaught exception, a test watchdog will kill the tests and generate a corresponding test failure.
+
+Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+
+Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+
+[Back to top](#automation-api)
+
+
+## testRunner.runInCurrentProcessAsync()
+
+* testRunner.runInCurrentProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
+
+> **Warning:** It's typically better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
+
+Import the modules in `modulePaths` in the current process and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.)
+
+The modules will *not* be reloaded if they have been loaded before, even if they have changed. As a result, this method is only suitable for automation that exits back to the command line after running the tests.
+
+Does *not* detect infinite loops or uncaught exceptions.
+
+Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+
+Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+
+[Back to top](#automation-api)
+
+
+---
+
+## testRunner.runInChildProcessAsync()
+
+
+## testSuiteResult.render()
+
+
+## testSuiteResult.count()
+
+
+## testCaseResult.renderAsCharacter()
+
+
+## testCaseResult.renderAsSingleLine()
+
+
+## testCaseResult.renderAsMultipleLines()
+
+
+
 
 ## Start Here
 
@@ -66,6 +213,8 @@ export { expect } from "chai";
 ```
 
 Even better, you can export custom assertion methods that are built for the needs of your project. See the [Assertion API documentation](assertion_api.md) for details. 
+
+[Back to top](#test-api)
 
 
 ## TestSuite.create()
@@ -157,6 +306,8 @@ export default test(({ describe, beforeAll, afterAll }) => {
 });
 ```
 
+[Back to top](#test-api)
+
 
 ## it()
 
@@ -235,6 +386,8 @@ export default test(({ it }) => {
 });
 ```
 
+[Back to top](#test-api)
+
 
 ## beforeAll()
 
@@ -247,6 +400,8 @@ If there are multiple `beforeAll()` functions in a suite, they will run in the o
 If there are no tests in this suite or its sub-suites, or they're all skipped, `fn()` will not be run.
 
 If `fn()` throws an exception or times out, the tests won't run.
+
+[Back to top](#test-api)
 
 
 ## afterAll()
@@ -261,6 +416,8 @@ If any tests throw an exception or time out, `fn()` will still be run.
 
 If no tests in this suite or its sub-suites ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeAll) threw an exception, `fn()` will not be run.
 
+[Back to top](#test-api)
+
 
 ## beforeEach()
 
@@ -273,6 +430,8 @@ If there are multiple `beforeEach()` functions in a suite, `fn()` will be run in
 If no tests in this suite or its sub-suites will be run—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) threw an exception, `fn()` will not be run.
 
 If `fn()` throws an exception or times out, the corresponding test will not be run.
+
+[Back to top](#test-api)
 
 
 ## afterEach()
@@ -287,12 +446,16 @@ If any tests throw an exception or time out, `fn()` will still be run for each t
 
 If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, `fn()` will not be run.
 
+[Back to top](#test-api)
+
 
 ## setTimeout()
 
 * setTimeout(newTimeout: number)
 
 Set the timeout, in milliseconds, for each test in this suite and any nested suites.
+
+[Back to top](#test-api)
 
 
 ## getConfig()
@@ -334,3 +497,5 @@ export default test(({ beforeAll, beforeEach, it }) => {
   
 });
 ```
+
+[Back to top](#test-api)

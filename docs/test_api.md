@@ -5,11 +5,13 @@ Use the test API to write your tests.
 
 Links to other documentation:
 
+* Test API
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
+* [README](../README.md)
 * [Changelog](../CHANGELOG.md)
 
-In this documentation:
+In this document:
 
 * [Start Here](#start-here)
 * [TestSuite.create](#testsuitecreate) aka test() or describe()
