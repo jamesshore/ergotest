@@ -92,6 +92,72 @@ export default test(({ describe })=>{
             });
         });
     });
+    describe("identity()", ({ it })=>{
+        it("passes if objects have the same reference", ()=>{
+            const actual = {};
+            const expected = actual;
+            expectPass(()=>{
+                assert.identity(actual, expected);
+            });
+        });
+        it("passes if arrays have the same reference", ()=>{
+            const actual = [];
+            const expected = actual;
+            expectPass(()=>{
+                assert.identity(actual, expected);
+            });
+        });
+        it("passes if functions have the same reference", ()=>{
+            const actual = ()=>{};
+            const expected = actual;
+            expectPass(()=>{
+                assert.identity(actual, expected);
+            });
+        });
+        it("fails if objects don't have the same reference, even if the contents are identical", ()=>{
+            const actual = {};
+            const expected = {};
+            expectFail(()=>{
+                assert.identity(actual, expected);
+            }, "should have same object reference", actual, expected);
+        });
+        it("fails if expected isn't an object", ()=>{
+            expectFail(()=>{
+                assert.identity({}, "foo");
+            }, "'expected' is not an object", {}, "foo");
+        });
+        it("fails if expected is null", ()=>{
+            expectFail(()=>{
+                assert.identity({}, null);
+            }, "'expected' is null", {}, null);
+        });
+    });
+    describe("notIdentity()", ({ it })=>{
+        it("fails if objects have the same reference", ()=>{
+            const actual = {};
+            const expected = actual;
+            expectFail(()=>{
+                assert.notIdentity(actual, expected);
+            }, "should not have same object reference", actual, expected);
+        });
+        it("passes if objects don't have the same reference, even if the contents are identical", ()=>{
+            const actual = {};
+            const expected = {};
+            expectPass(()=>{
+                assert.notIdentity(actual, expected);
+            });
+        });
+        it("fails if expected isn't an object", ()=>{
+            expectFail(()=>{
+                assert.notIdentity({}, "foo");
+            }, "'expected' is not an object", {}, "foo");
+        });
+        it("fails if expected is null", ()=>{
+            expectFail(()=>{
+                assert.notIdentity({}, null);
+            }, "'expected' is null", {}, null);
+        });
+    });
     describe("dotEquals()", ({ it })=>{
         it("passes if expected.equals() returns true", ()=>{
             const expected = {

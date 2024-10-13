@@ -4,7 +4,7 @@
 // ****
 /* eslint @typescript-eslint/no-unsafe-function-type: "off" */ // Several assertions operate on arbitrary functions.
 import util from "node:util";
-import * as typeLib from "../util/type.js";
+import { check as typeCheck, describe as describeType } from "../util/type.js";
 import { AssertionError } from "node:assert";
 export function fail(message) {
     throw new AssertionError({
@@ -14,6 +14,20 @@ export function fail(message) {
 export function todo(message) {
     message = message ? `: ${message}` : "";
     fail(`TO DO${message}`);
+}
+export function identity(actual, expected, message) {
+    checkExpected(expected);
+    if (typeof expected !== "object" && typeof expected !== "function") {
+        throwAssertionError(message, "'expected' is not an object", actual, expected);
+    }
+    if (expected === null) throwAssertionError(message, "'expected' is null", actual, expected);
+    if (actual !== expected) throwAssertionError(message, "should have same object reference", actual, expected);
+}
+export function notIdentity(actual, expected, message) {
+    checkExpected(expected);
+    if (typeof expected !== "object") throwAssertionError(message, "'expected' is not an object", actual, expected);
+    if (expected === null) throwAssertionError(message, "'expected' is null", actual, expected);
+    if (actual === expected) throwAssertionError(message, "should not have same object reference", actual, expected);
 }
 export function equal(actual, expected, message) {
     checkExpected(expected);
@@ -61,29 +75,27 @@ export function isNotNull(actual, message) {
 }
 export function atLeast(actual, expected, message) {
     checkExpected(expected);
-    if (actual < expected) throwAssertionError(message, `should be at least ${expected}`, actual, expected);
+    if (actual < expected) {
+        throwAssertionError(message, `should be at least ${expected}`, actual, expected);
+    }
 }
 export function atMost(actual, expected, message) {
     checkExpected(expected);
-    if (actual > expected) throwAssertionError(message, `should be at most ${expected}`, actual, expected);
+    if (actual > expected) {
+        throwAssertionError(message, `should be at most ${expected}`, actual, expected);
+    }
 }
-export function between(value, min, max, message) {
-    isDefined(value, message);
+export function between(actual, min, max, message) {
+    isDefined(actual, message);
     message = message ? `${message}: ` : "";
-    if (value < min || value > max) {
-        fail(message + "should be between " + min + " and " + max + " (inclusive), but was " + value);
+    if (actual < min || actual > max) {
+        fail(message + "should be between " + min + " and " + max + " (inclusive), but was " + actual);
     }
 }
-export function type(actual, expected, message) {
+export function match(actual, expected, message) {
     checkExpected(expected);
-    const error = typeLib.check(actual, expected);
-    if (error !== null) {
-        throwAssertionError(message, "type should match", actual, typeLib.describe(expected));
-    }
-}
-export function match(actual, expectedRegex, message) {
     if (typeof actual !== "string") throwAssertionError(message, `should have been string, but was ${typeof actual}`);
-    if (!expectedRegex.test(actual)) throwAssertionError(message, "should match regex", actual, expectedRegex);
+    if (!expected.test(actual)) throwAssertionError(message, "should match regex", actual, expected);
 }
 export function matchesGroup(actual, regex, expectedMatch, message) {
     message = message ?? "regex group";
@@ -101,26 +113,28 @@ export function matchesGroup(actual, regex, expectedMatch, message) {
 }
 export function includes(actual, expected, message) {
     checkExpected(expected);
+    isDefined(actual, message);
     if (!actual.includes(expected)) {
         throwAssertionError(message, "actual value should include expected value", actual, expected);
     }
 }
 export function notIncludes(actual, expected, message) {
     checkExpected(expected);
+    isDefined(actual, message);
     if (actual.includes(expected)) {
         throwAssertionError(message, "actual value should not include expected value", actual, expected);
     }
 }
-export function error(fn, expectedRegexOrExactString, message) {
+export function error(fn, expected, message) {
     try {
         fn();
     } catch (err) {
-        if (expectedRegexOrExactString === undefined) return;
+        if (expected === undefined) return;
         if (!(err instanceof Error)) fail(`should have thrown Error, but was: ${err}`);
-        if (typeof expectedRegexOrExactString === "string") {
-            equal(err.message, expectedRegexOrExactString, message);
+        if (typeof expected === "string") {
+            equal(err.message, expected, message);
         } else {
-            match(err.message, expectedRegexOrExactString, message);
+            match(err.message, expected, message);
         }
         return;
     }
@@ -146,6 +160,13 @@ export async function errorAsync(fnAsync, expectedRegexOrExactString, message) {
 }
 export async function notErrorAsync(fnAsync) {
     await fnAsync();
+}
+export function type(actual, expected, message) {
+    checkExpected(expected);
+    const error = typeCheck(actual, expected);
+    if (error !== null) {
+        throwAssertionError(message, "type should match", actual, describeType(expected));
+    }
 }
 function checkExpected(expected) {
     if (expected === undefined) fail("'undefined' provided as expected value in assertion");
