@@ -31,7 +31,21 @@ In this document:
   * [testSuiteResult.allMatchingMarks()](#testsuiteresultallmatchingmarks)
   * [testSuiteResult.allPassingFiles()](#testsuiteresultallpassingfiles)
   * [testSuiteResult.equals()](#testsuiteresultequals)
-* TestCaseResult
+* [TestCaseResult](#testcaseresult)
+  * [testCaseResult.filename](#testcaseresultfilename)
+  * [testCaseResult.name](#testcaseresultname)
+  * [testCaseResult.status](#testcaseresultstatus)
+  * [testCaseResult.mark](#testcaseresultmark)
+  * [testCaseResult.error](#testcaseresulterror)
+  * [testCaseResult.timeout](#testcaseresulttimeout)
+  * **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter)**
+  * **[testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline)**
+  * **[testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines)**
+  * [testCaseResult.isPass()](#testcaseresultispass)
+  * [testCaseResult.isFail()](#testcaseresultisfail)
+  * [testCaseResult.isSkip()](#testcaseresultisskip)
+  * [testCaseResult.isTimeout()](#testcaseresultistimeout)
+
 * TestRenderer
 * TestResult
   * TestStatus
@@ -104,7 +118,7 @@ function reportProgress(testCase) {
 
 * import { TestRunner } from "ergotest/test_runner.js"
 
-Use `TestRunner` to run your tests.
+Use the `TestRunner` class to run your tests.
 
 * [TestRunner.create()](#testrunnercreate) - Instantiate `TestRunner`
 * [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync) - Run tests in a child process
@@ -163,8 +177,9 @@ Use `options` to provide configuration data to the tests or specify a callback f
 ## TestSuiteResult
 
 * import { TestSuiteResult } from "ergotest/test_result.js"
+* extends [TestResult](#testresult)
 
-`TestSuiteResult` instances represent the results of running a test suite. (See the [test API documentation](test_api.md) for details.) 
+`TestSuiteResult` instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s (which is the result of `test()` and `describe()` blocks) and [TestCaseResult](#testcaseresult)s (which is the result of `it()` blocks). See the [test API documentation](test_api.md) for more about writing tests with `test()`, `describe()`, and `it()`. 
 
 [Back to top](#automation-api)
 
@@ -173,7 +188,7 @@ Use `options` to provide configuration data to the tests or specify a callback f
 
 * testSuiteResult.filename?: string
 
-If this test suite was loaded from a module (and they typically will be), this property contains absolute path of the module. Otherwise, it’s undefined. 
+If this test suite was loaded from a module (and they typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
 
 [Back to top](#automation-api)
 
@@ -182,14 +197,14 @@ If this test suite was loaded from a module (and they typically will be), this p
 
 * testSuiteResult.name: string[]
 
-The name of the suite and all its parent suites, with the outermost suite first. If none of the suites had a name, this array will be empty.
+The name of the suite and all its parent suites, with the outermost suite first. Suites with no name aren’t included, so if none of the suites had a name, this array will be empty.
 
 [Back to top](#automation-api)
 
 
 ## testSuiteResult.mark
 
-* testSuiteResult.mark: [TestMarkValue](#testmarkvalue)[]
+* testSuiteResult.mark: [TestMarkValue](#testmarkvalue)
 
 Indicates whether the suite was marked with `.skip` or `.only` (or not marked at all). Only suites that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, the tests in a suite can be skipped but without the suite being *marked* `.skip`.
 
@@ -303,13 +318,161 @@ Determine if this suite is equal to another test result. To be equal, they must 
 ---
 
 
+## TestCaseResult
+
+* import { TestCaseResult } from "ergotest/test_result.js"
+* extends [TestResult](#testresult)
+
+`TestCaseResult` instances represent the result of running a single test. You’ll get them from [TestSuiteResult](#testsuiteresult), typically by calling [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests).
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.filename
+
+* testCaseResult.filename?: string
+
+If this test suite was loaded from a module (and they typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.name
+
+* testCaseResult.name: string[]
+
+The name of the test and all its parent suites, with the outermost suite first. Suites with no name aren’t included.
+
+All normal tests have a name, so there should be at least one name element, but it is technically possible to manually create a test case result with a name that’s an empty array. 
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.mark
+
+* testCaseResult.mark: [TestMarkValue](#testmarkvalue)
+
+Indicates whether the test was marked with `.skip` or `.only` (or not marked at all). Only tests that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, tests can be skipped but not be *marked* `.skip`.
+
+Tests with no function body are considered to be marked `.skip`.
+
+
+## testCaseResult.status
+
+* testCaseResult.status: [TestStatus](#teststatus)
+
+Whether this test passed, failed, etc. 
+
+See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFail](#testcaseresultisfail), [testCaseResult.isSkip](#testcaseresultisskip), and [testCaseResult.isTimeout()](#testcaseresultistimeout) .
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.error
+
+* testCaseResult.error?: unknown
+
+If this test failed, contains the error that was thrown. Otherwise, it’s undefined.
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.timeout
+
+* testCaseResult.timeout?: number
+
+If this test timed out, contains the timeout value in milliseconds. Otherwise, it’s undefined.
+
+Please note that this value is the timeout value the test was expected to meet, *not* the actual run time of the test. Due to the nature of JavaScript, the actual run time could be shorter or longer than the timeout value.
+
+[Back to top](#automation-api)
+
+
 ## testCaseResult.renderAsCharacter()
+
+* testCaseResult.renderAsCharacter(): string
+
+Render this test as a single color-coded character representing its status:
+
+* *pass:* normal-colored dot
+* *fail:* red inverse X
+* *skip:* light cyan underline
+* *timeout:* purple inverse !
+
+This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+
+
+[Back to top](#automation-api)
 
 
 ## testCaseResult.renderAsSingleLine()
 
+* testCaseResult.renderAsSingleLine(): string
+
+Render this test as a single color-coded line containing its status and name.
+
+This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+
+[Back to top](#automation-api)
+
 
 ## testCaseResult.renderAsMultipleLines()
+
+* testCaseResult.renderAsMultipleLines(): string
+
+Render this test with all its color-coded detail. The rendering includes:
+
+* The filename and name of the test on two lines
+* The status of the test, if it didn’t fail
+* The error, stack trace, and expected/actual results, if it did fail
+
+This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.isPass()
+
+* testCaseResult.isPass(): boolean
+
+Returns true if this test passed; false otherwise.
+
+See also [testCaseResult.status](#testcaseresultstatus).
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.isFail()
+
+* testCaseResult.isFail(): boolean
+
+Returns true if this test failed; false otherwise.
+
+See also [testCaseResult.status](#testcaseresultstatus).
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.isSkip()
+
+* testCaseResult.isSkip(): boolean
+
+Returns true if this test was skipped; false otherwise.
+
+See also [testCaseResult.status](#testcaseresultstatus).
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.isTimeout()
+
+* testCaseResult.isTimeout(): boolean
+
+Returns true if this test timed out; false otherwise.
+
+See also [testCaseResult.status](#testcaseresultstatus).
+
+[Back to top](#automation-api)
 
 
 
