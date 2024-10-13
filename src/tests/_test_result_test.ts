@@ -42,19 +42,19 @@ export default test(({ describe }) => {
 
 		it("can be compared using equals()", () => {
 			assert.dotEquals(createSuite({ name: "my name" }), createSuite({ name: "my name" }));
-			assert.objNotEqual(createSuite({ name: "my name" }), createSuite({ name: "different" }));
+			assert.notDotEquals(createSuite({ name: "my name" }), createSuite({ name: "different" }));
 
 			assert.dotEquals(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.skip }));
-			assert.objNotEqual(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.only }));
+			assert.notDotEquals(createSuite({ mark: TestMark.skip }), createSuite({ mark: TestMark.only }));
 
 			assert.dotEquals(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "child" ]}));
-			assert.objNotEqual(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
+			assert.notDotEquals(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
 
 			assert.dotEquals(
 				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
 				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
 			);
-			assert.objNotEqual(
+			assert.notDotEquals(
 				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
 				createSuite({ name: "my name", children: [ createPass({ name: "different" }) ]}),
 			);
@@ -294,18 +294,18 @@ export default test(({ describe }) => {
 				createFail({ name: "my name", error: new Error("my error") }),
 			);
 
-			assert.objNotEqual(createPass({ name: "my name" }), createPass({ name: "different" }));
-			assert.objNotEqual(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "different" ] }));
-			assert.objNotEqual(createPass({ name: "my name" }), createSkip({ name: "my name" }));
-			assert.objNotEqual(createPass({ name: "my name" }), createFail({ name: "my name", error: new Error() }));
-			assert.objNotEqual(
+			assert.notDotEquals(createPass({ name: "my name" }), createPass({ name: "different" }));
+			assert.notDotEquals(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "different" ] }));
+			assert.notDotEquals(createPass({ name: "my name" }), createSkip({ name: "my name" }));
+			assert.notDotEquals(createPass({ name: "my name" }), createFail({ name: "my name", error: new Error() }));
+			assert.notDotEquals(
 				createTimeout({ name: "my name", timeout: 1 }),
 				createTimeout({ name: "my name", timeout: 2 }),
 			);
 
 			// marks
 			assert.dotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
-			assert.objNotEqual(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
+			assert.notDotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
 		});
 
 	});

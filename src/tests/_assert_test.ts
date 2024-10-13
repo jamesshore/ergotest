@@ -1,6 +1,7 @@
 // Copyright Titanium I.T. LLC.
 
-import { assert, test } from "../tests.js";
+import { test } from "../tests.js";
+import * as assert from "./assert.js";
 import { AssertionError } from "node:assert";
 
 /* eslint @typescript-eslint/no-unsafe-function-type: "off" */
@@ -23,7 +24,7 @@ export default test(({ describe }) => {
 		it("fails if actual doesn't strictly equal expected", () => {
 			expectFail(() => {
 				assert.equal("1", 1);
-			}, "expected equality", "1", 1);
+			}, "should be equal", "1", 1);
 		});
 
 	});
@@ -102,7 +103,7 @@ export default test(({ describe }) => {
 		it("fails if first group doesn't match expected text", () => {
 			expectFail(() => {
 				assert.matchesGroup("-abc-", /-(.*?)-/, "xxx");
-			}, "regex group: expected equality", "abc", "xxx");
+			}, "regex group: should be equal", "abc", "xxx");
 		});
 
 		it("fails if group not found", () => {
@@ -120,7 +121,7 @@ export default test(({ describe }) => {
 		it("has optional failure message", () => {
 			expectFail(() => {
 				assert.matchesGroup("-actual-", /-(.*?)-/, "expected", "my failure message");
-			}, "my failure message: expected equality", "actual", "expected");
+			}, "my failure message: should be equal", "actual", "expected");
 		});
 
 	});
@@ -244,7 +245,7 @@ export default test(({ describe }) => {
 					() => { throw new Error("my error"); },
 					"not my error"
 				);
-			}, "expected equality", "my error", "not my error");
+			}, "should be equal", "my error", "not my error");
 		});
 
 		it("passes if function throws and error message doesn't match regex", () => {
@@ -297,7 +298,7 @@ export default test(({ describe }) => {
 					() => Promise.reject(new Error("my error")),
 					"not my error"
 				);
-			}, "expected equality", "my error", "not my error");
+			}, "should be equal", "my error", "not my error");
 		});
 
 		it("passes if function throws and error message doesn't match regex", async () => {
