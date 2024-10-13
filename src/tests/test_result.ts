@@ -243,7 +243,7 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 * @return { TestMarkValue } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
 	 */
 	get mark(): TestMarkValue {
 		return this._mark;
