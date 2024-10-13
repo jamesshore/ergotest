@@ -5,7 +5,7 @@ export default test(({ describe, it })=>{
     describe("condition checking", ({ describe, it })=>{
         it("checks if condition is true", ()=>{
             const that = wrap(ensure.that);
-            assert.noException(that(true));
+            assert.notError(that(true));
             assertEnsureError(that(false), /Expected condition to be true/);
             assertEnsureError(that(false, "a message"), /a message/);
             assertEnsureError(that("foo"), /Expected condition to be true or false/);
@@ -21,13 +21,13 @@ export default test(({ describe, it })=>{
         const signature = wrap(ensure.signature);
         const signatureMinimum = wrap(ensure.signatureMinimum);
         it("checks no arguments", ()=>{
-            assert.noException(signature([]));
+            assert.notError(signature([]));
             assertEnsureError(signature([
                 "foo"
             ]), /Function called with too many arguments: expected 0 but got 1/);
         });
         it("checks one argument", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 "foo"
             ], [
                 String
@@ -45,7 +45,7 @@ export default test(({ describe, it })=>{
             ]), /Argument #1 must be a string, but it was a number/, "invalid");
         });
         it("checks multiple arguments", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 "foo",
                 "bar",
                 "baz"
@@ -99,7 +99,7 @@ export default test(({ describe, it })=>{
             ]), /Argument #2 must be a string, but it was a number/, "falls back to generic names if some names not specified");
         });
         it("signatureMinimum allows extra keys in object signatures", ()=>{
-            assert.noException(signatureMinimum([
+            assert.notError(signatureMinimum([
                 {
                     requiredParm: true,
                     extraParm: true
@@ -111,7 +111,7 @@ export default test(({ describe, it })=>{
             ]));
         });
         it("signatureMinimum allows extra parameters", ()=>{
-            assert.noException(signatureMinimum([
+            assert.notError(signatureMinimum([
                 1,
                 2
             ], [
@@ -119,7 +119,7 @@ export default test(({ describe, it })=>{
             ]));
         });
         it("supports built-in types", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 false
             ], [
                 Boolean
@@ -129,7 +129,7 @@ export default test(({ describe, it })=>{
             ], [
                 String
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 "1"
             ], [
                 String
@@ -139,7 +139,7 @@ export default test(({ describe, it })=>{
             ], [
                 Number
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 1
             ], [
                 Number
@@ -149,7 +149,7 @@ export default test(({ describe, it })=>{
             ], [
                 Function
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 function() {}
             ], [
                 Function
@@ -159,7 +159,7 @@ export default test(({ describe, it })=>{
             ], [
                 Object
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 {}
             ], [
                 Object
@@ -169,7 +169,7 @@ export default test(({ describe, it })=>{
             ], [
                 Array
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 []
             ], [
                 Array
@@ -179,7 +179,7 @@ export default test(({ describe, it })=>{
             ], [
                 RegExp
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 /foo/
             ], [
                 RegExp
@@ -191,7 +191,7 @@ export default test(({ describe, it })=>{
             ]));
         });
         it("supports weird types (primarily for allowing nullable objects, etc.)", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 undefined
             ], [
                 undefined
@@ -201,7 +201,7 @@ export default test(({ describe, it })=>{
             ], [
                 null
             ]), /Argument #1 must be null, but it was undefined/);
-            assert.noException(signature([
+            assert.notError(signature([
                 null
             ], [
                 null
@@ -211,7 +211,7 @@ export default test(({ describe, it })=>{
             ], [
                 NaN
             ]), /Argument #1 must be NaN, but it was null/);
-            assert.noException(signature([
+            assert.notError(signature([
                 NaN
             ], [
                 NaN
@@ -228,12 +228,12 @@ export default test(({ describe, it })=>{
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const NoName = function() {};
             delete NoName.name;
-            assert.noException(signature([
+            assert.notError(signature([
                 new MyClass()
             ], [
                 MyClass
             ]));
-            assert.noException(signature([
+            assert.notError(signature([
                 new NoName()
             ], [
                 NoName
@@ -255,7 +255,7 @@ export default test(({ describe, it })=>{
             ]), /Argument #1 must be a MyClass instance, but it was an <anon> instance/, "invalid anon instance");
         });
         it("supports multiple types", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 1
             ], [
                 [
@@ -274,7 +274,7 @@ export default test(({ describe, it })=>{
             ]), /Argument #1 must be a string, a boolean, or a MyClass instance, but it was a number/, "invalid");
         });
         it("allows optional arguments", ()=>{
-            assert.noException(signature([
+            assert.notError(signature([
                 1
             ], [
                 Number,
@@ -286,7 +286,7 @@ export default test(({ describe, it })=>{
             assertEnsureError(signature([], [
                 Number
             ]), /Argument #1 must be a number, but it was undefined/, "required parameter");
-            assert.noException(signature([
+            assert.notError(signature([
                 {}
             ], [
                 [
@@ -307,8 +307,8 @@ export default test(({ describe, it })=>{
     describe("type checking", ({ describe, it })=>{
         it("checks if variable is defined", ()=>{
             const defined = wrap(ensure.defined);
-            assert.noException(defined("foo"));
-            assert.noException(defined(null));
+            assert.notError(defined("foo"));
+            assert.notError(defined(null));
             assertEnsureError(defined(undefined), /variable was not defined/);
             assertEnsureError(defined(undefined, "myVariable"), /myVariable was not defined/);
         });
@@ -317,7 +317,7 @@ export default test(({ describe, it })=>{
             assertEnsureError(type("string", Number, "const name"), /const name must be a number, but it was a string/);
         });
         it("type checking supports extra keys in object signatures", ()=>{
-            assert.noException(()=>ensure.typeMinimum({
+            assert.notError(()=>ensure.typeMinimum({
                     requiredParm: true,
                     extraParm: true
                 }, {

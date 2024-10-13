@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
 import { TestSuite } from "./test_suite.js";
-import { TestResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
 import child_process from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
@@ -22,13 +22,44 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
         this._clock = clock;
     }
     /**
-	 * Load and run a set of test modules in an isolated process.
+	 * Load and run a set of test modules in the current process. Note that, because Node.js caches modules, this means
+	 * that you can't make changes to your tests. Future test runs won't see your changes because the previous modules
+	 * will have been cached.
+	 *
 	 * @param {string[]} modulePaths The test files to load and run.
 	 * @param {object} [config] Configuration data to provide to the tests as they run.
 	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
-	 * @returns {Promise<void>}
-	 */ async runIsolatedAsync(modulePaths, { config, notifyFn = ()=>{} } = {}) {
+	 * @returns {Promise<TestSuiteResult>}
+	 */ async runInCurrentProcessAsync(modulePaths, options) {
+        ensure.signature(arguments, [
+            Array,
+            [
+                undefined,
+                {
+                    config: [
+                        undefined,
+                        Object
+                    ],
+                    notifyFn: [
+                        undefined,
+                        Function
+                    ]
+                }
+            ]
+        ]);
+        const suite = await TestSuite.fromModulesAsync(modulePaths);
+        return await suite.runAsync(options);
+    }
+    /**
+	 * Load and run a set of test modules in an isolated child process.
+	 *
+	 * @param {string[]} modulePaths The test files to load and run.
+	 * @param {object} [config] Configuration data to provide to the tests as they run.
+	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @returns {Promise<TestSuiteResult>}
+	 */ async runInChildProcessAsync(modulePaths, { config, notifyFn = ()=>{} } = {}) {
         ensure.signature(arguments, [
             Array,
             [
@@ -46,12 +77,12 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
             ]
         ]);
         const child = child_process.fork(WORKER_FILENAME);
-        const result = await runTestsInChildProcess(child, this._clock, modulePaths, config, notifyFn);
+        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, config, notifyFn);
         await killChildProcess(child);
         return result;
     }
 }
-async function runTestsInChildProcess(child, clock, modulePaths, config, notifyFn) {
+async function runTestsInChildProcessAsync(child, clock, modulePaths, config, notifyFn) {
     const result = await new Promise((resolve, reject)=>{
         const workerData = {
             modulePaths,
@@ -85,11 +116,11 @@ function handleMessage(message, aliveFn, cancelFn, notifyFn, resolve) {
             aliveFn();
             break;
         case "progress":
-            notifyFn(TestResult.deserialize(message.result));
+            notifyFn(TestCaseResult.deserialize(message.result));
             break;
         case "complete":
             cancelFn();
-            resolve(TestResult.deserialize(message.result));
+            resolve(TestSuiteResult.deserialize(message.result));
             break;
         default:
             // @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime

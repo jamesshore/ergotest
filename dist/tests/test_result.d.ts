@@ -1,12 +1,16 @@
-import { TestMarkValue } from "./test_suite.js";
 export declare const TestStatus: {
     readonly pass: "pass";
     readonly fail: "fail";
     readonly skip: "skip";
     readonly timeout: "timeout";
 };
-export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
+export declare const TestMark: {
+    readonly none: "none";
+    readonly skip: "skip";
+    readonly only: "only";
+};
+export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 export interface TestCount {
     pass: number;
     fail: number;
@@ -14,6 +18,7 @@ export interface TestCount {
     timeout: number;
     total: number;
 }
+export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 export interface SerializedTestSuiteResult {
     type: "TestSuiteResult";
     name: string[];
@@ -154,7 +159,7 @@ export declare class TestSuiteResult extends TestResult {
      */
     get filename(): string | undefined;
     /**
-     * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+     * @return { TestMarkValue } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
      */
     get mark(): TestMarkValue;
     /**
@@ -170,12 +175,12 @@ export declare class TestSuiteResult extends TestResult {
      *
      * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
      *
-     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
      * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+     * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
      *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
      * @returns The formatted string.
      */
-    render(elapsedMs: number, preamble?: string): string;
+    render(preamble?: string, elapsedMs?: number): string;
     /**
      * @returns {TestCaseResult[]} All the test results, excluding test suites, flattened into a single list.
      */

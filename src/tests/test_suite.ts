@@ -2,7 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
@@ -11,13 +11,13 @@ import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
-export const TestMark = {
-	none: "none",
-	skip: "skip",
-	only: "only",
-};
+export interface TestOptions {
+	config?: Record<string, unknown>,
+	notifyFn?: NotifyFn,
+	clock?: Clock,
+}
 
-export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
+export type NotifyFn = (testResult: TestCaseResult) => void;
 
 export interface Describe {
 	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
@@ -44,7 +44,7 @@ export interface SuiteParameters {
 }
 
 export interface TestParameters {
-	getConfig: <T>(name: string) => T,
+	getConfig: <T>(key: string) => T,
 }
 
 export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
@@ -61,7 +61,7 @@ interface RecursiveRunOptions {
 	name: string[];
 	filename?: string;
 	clock: Clock,
-	notifyFn: (result: TestResult) => void,
+	notifyFn: NotifyFn,
 	timeout: Milliseconds,
 	config: TestConfig,
 }
@@ -112,7 +112,11 @@ export class TestSuite implements Runnable {
 		return new TestSuite("", TestMark.none, { tests: suites });
 
 		async function loadModuleAsync(filename: string): Promise<TestSuite> {
-			const errorName = `error when requiring ${path.basename(filename)}`;
+			const errorName = `error when importing ${path.basename(filename)}`;
+
+			if (!path.isAbsolute(filename)) {
+				return createFailure(errorName, `Test module filenames must use absolute paths: ${filename}`);
+			}
 			try {
 				const { default: suite } = await import(filename);
 				if (suite instanceof TestSuite) {
@@ -120,11 +124,17 @@ export class TestSuite implements Runnable {
 					return suite;
 				}
 				else {
-					return createFailure(errorName, `doesn't export a test suite: ${filename}`, filename);
+					return createFailure(errorName, `Test module doesn't export a test suite: ${filename}`, filename);
 				}
 			}
 			catch(err) {
-				return createFailure(errorName, err, filename);
+				const code = (err as { code: string })?.code;
+				if (code === "ERR_MODULE_NOT_FOUND") {
+					return createFailure(errorName, `Test module not found: ${filename}`, filename);
+				}
+				else {
+					return createFailure(errorName, err, filename);
+				}
 			}
 		}
 
@@ -168,7 +178,7 @@ export class TestSuite implements Runnable {
 	static #runDescribeFunction(
 		describeFn: DescribeFunction,
 		name: string,
-		mark: string,
+		mark: TestMarkValue,
 	): TestSuite {
 		const tests: Runnable[] = [];
 		const beforeAllFns: Test[] = [];
@@ -201,7 +211,7 @@ export class TestSuite implements Runnable {
 			afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
 			beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
 			afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
-			setTimeout: (newTimeout) => { timeout = newTimeout; },
+			setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
 		});
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
@@ -260,11 +270,7 @@ export class TestSuite implements Runnable {
 		config = {},
 		notifyFn = () => {},
 		clock = Clock.create(),
-	}: {
-		config?: TestConfig,
-		notifyFn?: (result: TestResult) => void,
-		clock?: Clock,
-	} = {}): Promise<TestSuiteResult> {
+	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
@@ -333,8 +339,7 @@ export class TestSuite implements Runnable {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		const testSuiteResult = TestResult.suite(options.name, results, options.filename, this._mark);
-		return testSuiteResult;
+		return TestResult.suite(options.name, results, options.filename, this._mark);
 	}
 
 }
@@ -430,7 +435,9 @@ class FailureTestCase extends TestCase {
 		afterEachFns: Test[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		return await TestResult.fail([ this._name ], this._error, this._filename);
+		const result = TestResult.fail([ this._name ], this._error, this._filename);
+		options.notifyFn(result);
+		return await result;
 	}
 
 }

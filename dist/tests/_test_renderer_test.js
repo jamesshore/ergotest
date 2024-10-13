@@ -2,9 +2,8 @@
 import { assert, test } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
-import { TestResult } from "./test_result.js";
+import { TestMark, TestResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
-import { TestMark } from "./test_suite.js";
 const headerColor = Colors.brightWhite.bold;
 const summaryColor = Colors.brightWhite.dim;
 const failColor = Colors.brightRed;
@@ -28,7 +27,7 @@ export default test(({ describe })=>{
                     createTimeout()
                 ]
             });
-            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + failColor("3 failed; ") + timeoutColor("4 timed out; ") + skipColor("2 skipped; ") + passColor("1 passed; ") + summaryColor("125.0ms avg.") + summaryColor(")"));
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + failColor("3 failed") + summaryColor("; ") + timeoutColor("4 timed out") + summaryColor("; ") + skipColor("2 skipped") + summaryColor("; ") + passColor("1 passed") + summaryColor("; ") + summaryColor("125.0ms avg.") + summaryColor(")"));
         });
         it("only renders information for non-zero counts", ()=>{
             const result = createSuite({
@@ -36,7 +35,15 @@ export default test(({ describe })=>{
                     createPass()
                 ]
             });
-            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + passColor("1 passed; ") + summaryColor("1000.0ms avg.") + summaryColor(")"));
+            assert.equal(TestRenderer.create().renderSummary(result, 1000), summaryColor("(") + passColor("1 passed") + summaryColor("; ") + summaryColor("1000.0ms avg.") + summaryColor(")"));
+        });
+        it("leaves out test time if elapsed time not provided", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            assert.equal(TestRenderer.create().renderSummary(result), summaryColor("(") + passColor("1 passed") + summaryColor(")"));
         });
         it("handles empty results gracefully", ()=>{
             assert.equal(TestRenderer.create().renderSummary(createSuite(), 1000), summaryColor("(") + summaryColor("none ran") + summaryColor(")"));
@@ -107,7 +114,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(renderMultiLineTest(result), renderer.renderNameOnMultipleLines(result) + "\n" + renderer.renderStatusWithMultiLineDetails(result));
+            assert.equal(renderMultiLineTest(result), renderer.renderNameOnMultipleLines(result) + "\n\n" + renderer.renderStatusWithMultiLineDetails(result));
         });
         it("renders multiple results with a two-line gap between each result", ()=>{
             const fail = createFail(); // have to use the same fail each time, or the stack trace will be different
@@ -426,21 +433,21 @@ export default test(({ describe })=>{
         it("highlights differences between expected and actual values when they have more than one line", ()=>{
             const expected = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
             const actual = "1234567890\n1234567890\nXXXXXXXXXX\n1234567890\n1234567890\n1234567890\n1234567890\n";
-            assert.deepEqual(render(expected, actual), Colors.green("expected: ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'\n" + Colors.brightRed("actual:   ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'");
+            assert.equal(render(expected, actual), Colors.green("expected: ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'\n" + Colors.brightRed("actual:   ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'");
         });
         it("highlights differences between expected and actual values when expected has one line", ()=>{
             // This test depends on util.inspect() behavior, which is not guaranteed to remain consistent across
             // Node versions, so it could break after a Node version upgrade.
             const oneLine = "1234567890123456789012345678901234567890\n";
             const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
-            assert.deepEqual(render(oneLine, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
+            assert.equal(render(oneLine, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
         });
         it("doesn't break when actual and expected have different numbers of lines", ()=>{
             // This test depends on util.inspect() behavior, which is not guaranteed to remain consistent across
             // Node versions, so it could break after a Node version upgrade.
             const sevenLines = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
             const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
-            assert.deepEqual(render(sevenLines, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
+            assert.equal(render(sevenLines, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
         });
         function render(expected, actual) {
             const error = new AssertionError({

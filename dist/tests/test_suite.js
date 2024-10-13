@@ -1,16 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestResult, TestStatus } from "./test_result.js";
+import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
 // more control over test execution, while also shielding me from dependency churn.
 const DEFAULT_TIMEOUT_IN_MS = 2000;
-export const TestMark = {
-    none: "none",
-    skip: "skip",
-    only: "only"
-};
 /**
  * A simple but full-featured test runner. It's notable for not using globals.
  */ export class TestSuite {
@@ -40,17 +35,25 @@ export const TestMark = {
             tests: suites
         });
         async function loadModuleAsync(filename) {
-            const errorName = `error when requiring ${path.basename(filename)}`;
+            const errorName = `error when importing ${path.basename(filename)}`;
+            if (!path.isAbsolute(filename)) {
+                return createFailure(errorName, `Test module filenames must use absolute paths: ${filename}`);
+            }
             try {
                 const { default: suite } = await import(filename);
                 if (suite instanceof TestSuite) {
                     suite._setFilename(filename);
                     return suite;
                 } else {
-                    return createFailure(errorName, `doesn't export a test suite: ${filename}`, filename);
+                    return createFailure(errorName, `Test module doesn't export a test suite: ${filename}`, filename);
                 }
             } catch (err) {
-                return createFailure(errorName, err, filename);
+                const code = err?.code;
+                if (code === "ERR_MODULE_NOT_FOUND") {
+                    return createFailure(errorName, `Test module not found: ${filename}`, filename);
+                } else {
+                    return createFailure(errorName, err, filename);
+                }
             }
         }
         function createFailure(name, error, filename) {
@@ -130,8 +133,8 @@ export const TestMark = {
             afterEach: (fnAsync)=>{
                 afterEachFns.push(fnAsync);
             },
-            setTimeout: (newTimeout)=>{
-                timeout = newTimeout;
+            setTimeout: (newTimeoutInMs)=>{
+                timeout = newTimeoutInMs;
             }
         });
         return new TestSuite(name, mark, {
@@ -255,8 +258,7 @@ export const TestMark = {
             ], this._afterAllFns, TestMark.none, options);
             if (!isSuccess(afterResult)) results.push(afterResult);
         }
-        const testSuiteResult = TestResult.suite(options.name, results, options.filename, this._mark);
-        return testSuiteResult;
+        return TestResult.suite(options.name, results, options.filename, this._mark);
     }
 }
 class TestCase {
@@ -328,9 +330,11 @@ class FailureTestCase extends TestCase {
         this._error = error;
     }
     async _recursiveRunAsync(parentMark, beforeEachFns, afterEachFns, options) {
-        return await TestResult.fail([
+        const result = TestResult.fail([
             this._name
         ], this._error, this._filename);
+        options.notifyFn(result);
+        return await result;
     }
 }
 async function runBeforeOrAfterFnsAsync(name, fns, mark, options) {

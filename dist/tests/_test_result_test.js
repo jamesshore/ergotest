@@ -1,8 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
-import { TestMark } from "./test_suite.js";
-import { TestResult, TestStatus } from "./test_result.js";
+import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import { TestRenderer } from "./test_renderer.js";
 export default test(({ describe })=>{
     describe("test suite", ({ it })=>{
@@ -18,10 +17,10 @@ export default test(({ describe })=>{
             const result = TestResult.suite([
                 "my name"
             ], list);
-            assert.deepEqual(result.name, [
+            assert.equal(result.name, [
                 "my name"
             ]);
-            assert.deepEqual(result.children, list);
+            assert.equal(result.children, list);
         });
         it("name can include parent suites", ()=>{
             const suite = createSuite({
@@ -31,7 +30,7 @@ export default test(({ describe })=>{
                     "grandchild"
                 ]
             });
-            assert.deepEqual(suite.name, [
+            assert.equal(suite.name, [
                 "parent",
                 "child",
                 "grandchild"
@@ -60,27 +59,27 @@ export default test(({ describe })=>{
             assert.equal(only.mark, TestMark.only);
         });
         it("can be compared using equals()", ()=>{
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: "my name"
             }), createSuite({
                 name: "my name"
             }));
-            assert.objNotEqual(createSuite({
+            assert.notDotEquals(createSuite({
                 name: "my name"
             }), createSuite({
                 name: "different"
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 mark: TestMark.skip
             }), createSuite({
                 mark: TestMark.skip
             }));
-            assert.objNotEqual(createSuite({
+            assert.notDotEquals(createSuite({
                 mark: TestMark.skip
             }), createSuite({
                 mark: TestMark.only
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: [
                     "parent",
                     "child"
@@ -91,7 +90,7 @@ export default test(({ describe })=>{
                     "child"
                 ]
             }));
-            assert.objNotEqual(createSuite({
+            assert.notDotEquals(createSuite({
                 name: [
                     "parent",
                     "child"
@@ -102,7 +101,7 @@ export default test(({ describe })=>{
                     "different"
                 ]
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: "my name",
                 children: [
                     createPass({
@@ -117,7 +116,7 @@ export default test(({ describe })=>{
                     })
                 ]
             }));
-            assert.objNotEqual(createSuite({
+            assert.notDotEquals(createSuite({
                 name: "my name",
                 children: [
                     createPass({
@@ -150,7 +149,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderMarksAsLines([
+            assert.equal(result.render(), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
@@ -160,7 +159,7 @@ export default test(({ describe })=>{
             ]) + "\n\n\n" + renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders marks and summary without errors", ()=>{
             const result = createSuite({
@@ -174,14 +173,14 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderMarksAsLines([
+            assert.equal(result.render(), renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 }),
                 createSkip({
                     mark: TestMark.skip
                 })
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders errors and summary without marks", ()=>{
             const fail = createFail();
@@ -192,12 +191,21 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderAsMultipleLines([
+            assert.equal(result.render(), renderer.renderAsMultipleLines([
                 fail,
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("renders summary alone", ()=>{
+            const result = createSuite({
+                children: [
+                    createPass()
+                ]
+            });
+            const renderer = TestRenderer.create();
+            assert.equal(result.render(), renderer.renderSummary(result));
+        });
+        it("can include average test time in summary", ()=>{
             const result = createSuite({
                 children: [
                     createPass(),
@@ -205,7 +213,7 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100), renderer.renderSummary(result, 100));
+            assert.equal(result.render("", 100), renderer.renderSummary(result, 100));
         });
         it("adds optional preamble when result has marks and errors", ()=>{
             const result = createSuite({
@@ -217,13 +225,13 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 })
             ]) + "\n\n\n" + renderer.renderAsMultipleLines([
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("adds optional preamble when result has marks alone", ()=>{
             const result = createSuite({
@@ -234,11 +242,11 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderMarksAsLines([
                 createPass({
                     mark: TestMark.only
                 })
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("adds optional preamble when result has errors alone", ()=>{
             const result = createSuite({
@@ -247,14 +255,14 @@ export default test(({ describe })=>{
                 ]
             });
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
+            assert.equal(result.render("my_preamble"), "my_preamble" + renderer.renderAsMultipleLines([
                 createTimeout()
-            ]) + "\n\n" + renderer.renderSummary(result, 100));
+            ]) + "\n\n" + renderer.renderSummary(result));
         });
         it("doesn't add preamble when result has no marks or errors", ()=>{
             const result = createSuite();
             const renderer = TestRenderer.create();
-            assert.equal(result.render(100, "my_preamble"), renderer.renderSummary(result, 100));
+            assert.equal(result.render("my_preamble"), renderer.renderSummary(result));
         });
     });
     describe("test case", ({ it })=>{
@@ -271,7 +279,7 @@ export default test(({ describe })=>{
             const onlyMark = createPass({
                 mark: TestMark.only
             });
-            assert.deepEqual(result.name, [
+            assert.equal(result.name, [
                 "my name"
             ], "name");
             assert.equal(result.status, TestStatus.pass, "status");
@@ -288,7 +296,7 @@ export default test(({ describe })=>{
                     "grandchild"
                 ]
             });
-            assert.deepEqual(test.name, [
+            assert.equal(test.name, [
                 "parent",
                 "child",
                 "grandchild"
@@ -314,7 +322,7 @@ export default test(({ describe })=>{
             const onlyMark = createFail({
                 mark: TestMark.only
             });
-            assert.deepEqual(result.name, [
+            assert.equal(result.name, [
                 "my name"
             ], "name");
             assert.equal(result.status, TestStatus.fail, "status");
@@ -344,7 +352,7 @@ export default test(({ describe })=>{
             const onlyMark = createSkip({
                 mark: TestMark.only
             });
-            assert.deepEqual(result.name, [
+            assert.equal(result.name, [
                 "my name"
             ], "name");
             assert.equal(result.status, TestStatus.skip, "status");
@@ -367,7 +375,7 @@ export default test(({ describe })=>{
             const onlyMark = createTimeout({
                 mark: TestMark.only
             });
-            assert.deepEqual(result.name, [
+            assert.equal(result.name, [
                 "my name"
             ], "name");
             assert.equal(result.status, TestStatus.timeout, "status");
@@ -378,12 +386,12 @@ export default test(({ describe })=>{
             assert.equal(onlyMark.mark, TestMark.only, "mark");
         });
         it("can be compared using equals()", ()=>{
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 name: "my name"
             }), createPass({
                 name: "my name"
             }));
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 name: [
                     "parent",
                     "child"
@@ -395,19 +403,19 @@ export default test(({ describe })=>{
                 ]
             }));
             // disregard stack when comparing errors: if name is equal, error is equal
-            assert.objEqual(createFail({
+            assert.dotEquals(createFail({
                 name: "my name",
                 error: new Error("my error")
             }), createFail({
                 name: "my name",
                 error: new Error("my error")
             }));
-            assert.objNotEqual(createPass({
+            assert.notDotEquals(createPass({
                 name: "my name"
             }), createPass({
                 name: "different"
             }));
-            assert.objNotEqual(createPass({
+            assert.notDotEquals(createPass({
                 name: [
                     "parent",
                     "child"
@@ -418,18 +426,18 @@ export default test(({ describe })=>{
                     "different"
                 ]
             }));
-            assert.objNotEqual(createPass({
+            assert.notDotEquals(createPass({
                 name: "my name"
             }), createSkip({
                 name: "my name"
             }));
-            assert.objNotEqual(createPass({
+            assert.notDotEquals(createPass({
                 name: "my name"
             }), createFail({
                 name: "my name",
                 error: new Error()
             }));
-            assert.objNotEqual(createTimeout({
+            assert.notDotEquals(createTimeout({
                 name: "my name",
                 timeout: 1
             }), createTimeout({
@@ -437,12 +445,12 @@ export default test(({ describe })=>{
                 timeout: 2
             }));
             // marks
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 mark: TestMark.skip
             }), createPass({
                 mark: TestMark.skip
             }));
-            assert.objNotEqual(createPass({
+            assert.notDotEquals(createPass({
                 mark: TestMark.skip
             }), createPass({
                 mark: TestMark.none
@@ -479,7 +487,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allTests(), [
+            assert.equal(suite.allTests(), [
                 createPass(),
                 createSkip(),
                 createFail({
@@ -513,7 +521,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allMatchingTests(TestStatus.fail), [
+            assert.equal(suite.allMatchingTests(TestStatus.fail), [
                 createFail({
                     name: "fail 1"
                 }),
@@ -521,7 +529,7 @@ export default test(({ describe })=>{
                     name: "fail 2"
                 })
             ], "one status");
-            assert.deepEqual(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
+            assert.equal(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
                 createFail({
                     name: "fail 1"
                 }),
@@ -582,7 +590,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allMarkedResults(), [
+            assert.equal(suite.allMarkedResults(), [
                 createPass({
                     name: "test 0.2",
                     mark: TestMark.skip
@@ -645,7 +653,7 @@ export default test(({ describe })=>{
             const suite = createSuite({
                 mark: TestMark.skip
             });
-            assert.deepEqual(suite.allMarkedResults(), [
+            assert.equal(suite.allMarkedResults(), [
                 createSuite({
                     mark: TestMark.skip
                 })
@@ -686,7 +694,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allMatchingMarks(TestMark.skip), [
+            assert.equal(suite.allMatchingMarks(TestMark.skip), [
                 createPass({
                     name: "test 0.2",
                     mark: TestMark.skip
@@ -696,7 +704,7 @@ export default test(({ describe })=>{
                     mark: TestMark.skip
                 })
             ], ".skip");
-            assert.deepEqual(suite.allMatchingMarks(TestMark.only), [
+            assert.equal(suite.allMatchingMarks(TestMark.only), [
                 createPass({
                     name: "test 0.3",
                     mark: TestMark.only
@@ -735,7 +743,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), [
+            assert.equal(suite.allPassingFiles(), [
                 "file2"
             ]);
         });
@@ -750,7 +758,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), [
+            assert.equal(suite.allPassingFiles(), [
                 "my_file"
             ]);
         });
@@ -765,7 +773,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), [
+            assert.equal(suite.allPassingFiles(), [
                 "my_file1"
             ]);
         });
@@ -780,7 +788,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), [
+            assert.equal(suite.allPassingFiles(), [
                 "my_file1"
             ]);
         });
@@ -795,7 +803,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), [
+            assert.equal(suite.allPassingFiles(), [
                 "my_file1"
             ]);
         });
@@ -816,7 +824,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.allPassingFiles(), []);
+            assert.equal(suite.allPassingFiles(), []);
         });
     });
     describe("summarization", ({ it })=>{
@@ -835,7 +843,7 @@ export default test(({ describe })=>{
                     createTimeout()
                 ]
             });
-            assert.deepEqual(suite.count(), {
+            assert.equal(suite.count(), {
                 [TestStatus.pass]: 1,
                 [TestStatus.fail]: 2,
                 [TestStatus.skip]: 3,
@@ -857,7 +865,7 @@ export default test(({ describe })=>{
                     })
                 ]
             });
-            assert.deepEqual(suite.count(), {
+            assert.equal(suite.count(), {
                 [TestStatus.pass]: 1,
                 [TestStatus.fail]: 3,
                 [TestStatus.skip]: 1,
@@ -901,14 +909,14 @@ export default test(({ describe })=>{
             });
             const serialized = suite.serialize();
             const deserialized = TestResult.deserialize(serialized);
-            assert.objEqual(deserialized, suite);
+            assert.dotEquals(deserialized, suite);
         });
         it("handles string errors", ()=>{
             const test = createFail({
                 error: "my error"
             });
             const serialized = test.serialize();
-            assert.objEqual(TestResult.deserialize(serialized), test);
+            assert.dotEquals(TestResult.deserialize(serialized), test);
         });
         it("handles assertion errors", ()=>{
             const error = new AssertionError({
@@ -922,7 +930,7 @@ export default test(({ describe })=>{
             });
             const serialized = test.serialize();
             const deserialized = TestResult.deserialize(serialized);
-            assert.deepEqual(deserialized.error, error);
+            assert.equal(deserialized.error, error);
             assert.equal(deserialized.error.stack, error.stack);
         });
         it("handles other errors", ()=>{
@@ -932,7 +940,7 @@ export default test(({ describe })=>{
             });
             const serialized = test.serialize();
             const deserialized = TestResult.deserialize(serialized);
-            assert.deepEqual(deserialized.error, error);
+            assert.equal(deserialized.error, error);
             assert.equal(deserialized.error.stack, error.stack);
         });
         it("propagates custom fields", ()=>{
@@ -944,7 +952,7 @@ export default test(({ describe })=>{
             });
             const serialized = test.serialize();
             const deserialized = TestResult.deserialize(serialized);
-            assert.deepEqual(deserialized.error, error);
+            assert.equal(deserialized.error, error);
             assert.equal(deserialized.error.stack, error.stack);
         });
     });

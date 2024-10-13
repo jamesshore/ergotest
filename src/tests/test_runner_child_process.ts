@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import { TestSuite } from "./test_suite.js";
-import { TestResult } from "./test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
@@ -37,14 +37,14 @@ async function runWorkerAsync({ modulePaths, config }: WorkerInput) {
 	});
 }
 
-function sendProgress(result: TestResult) {
+function sendProgress(result: TestCaseResult) {
 	process.send!({
 		type: "progress",
 		result: result.serialize(),
 	});
 }
 
-function sendFinalResult(result: TestResult) {
+function sendFinalResult(result: TestSuiteResult) {
 	process.send!({
 		type: "complete",
 		result: result.serialize(),

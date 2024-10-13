@@ -1,6 +1,7 @@
 // Copyright Titanium I.T. LLC.
 
-import { assert, test } from "../tests.js";
+import { test } from "../tests.js";
+import * as assert from "./assert.js";
 import { AssertionError } from "node:assert";
 
 /* eslint @typescript-eslint/no-unsafe-function-type: "off" */
@@ -23,17 +24,12 @@ export default test(({ describe }) => {
 		it("fails if actual doesn't strictly equal expected", () => {
 			expectFail(() => {
 				assert.equal("1", 1);
-			}, "expected equality", "1", 1);
+			}, "should be equal", "1", 1);
 		});
-
-	});
-
-
-	describe("deepEqual()", ({ it }) => {
 
 		it("passes if all elements of actual strictly equals all elements of expected, recursively", () => {
 			expectPass(() => {
-				assert.deepEqual({
+				assert.equal({
 					a: 1,
 					b: {
 						c: 2,
@@ -61,8 +57,176 @@ export default test(({ describe }) => {
 				},
 			};
 			expectFail(() => {
-				assert.deepEqual(actual, expected);
-			}, "expected deep equality", actual, expected);
+				assert.equal(actual, expected);
+			}, "should be equal", actual, expected);
+		});
+
+	});
+
+
+	describe("notEqual()", ({ it }) => {
+
+		it("fails if actual strictly equals expected", () => {
+			expectFail(() => {
+				assert.notEqual("abc", "abc");
+			}, "should not be equal", "abc", "abc");
+		});
+
+		it("passes if actual doesn't strictly equal expected", () => {
+			expectPass(() => {
+				assert.notEqual("1", 1);
+			});
+		});
+
+		it("fails if all elements of actual strictly equals all elements of expected, recursively", () => {
+			const expected = {
+				a: 1,
+				b: {
+					c: 2,
+				},
+			};
+			const actual = {
+				a: 1,
+				b: {
+					c: 2,
+				},
+			};
+			expectFail(() => {
+				assert.notEqual(actual, expected);
+			}, "should not be equal", actual, expected);
+		});
+
+		it("passes if actual doesn't strictly and deeply equal expected", () => {
+			const actual = {
+				a: 1,
+				b: {
+					c: 2,
+				},
+			};
+			const expected = {
+				a: 1,
+				b: {
+					c: "2",
+				},
+			};
+			expectPass(() => {
+				assert.notEqual(actual, expected);
+			});
+		});
+
+	});
+
+
+	describe("identity()", ({ it }) => {
+
+		it("passes if objects have the same reference", () => {
+			const actual = {};
+			const expected = actual;
+
+			expectPass(() => {
+				assert.identity(actual, expected);
+			});
+		});
+
+		it("passes if arrays have the same reference", () => {
+			const actual: string[] = [];
+			const expected = actual;
+
+			expectPass(() => {
+				assert.identity(actual, expected);
+			});
+		});
+
+		it("passes if functions have the same reference", () => {
+			const actual = () => {};
+			const expected = actual;
+
+			expectPass(() => {
+				assert.identity(actual, expected);
+			});
+		});
+
+		it("fails if objects don't have the same reference, even if the contents are identical", () => {
+			const actual = {};
+			const expected = {};
+
+			expectFail(() => {
+				assert.identity(actual, expected);
+			}, "should have same object reference", actual, expected);
+		});
+
+		it("fails if expected isn't an object", () => {
+			expectFail(() => {
+				assert.identity({}, "foo");
+			}, "'expected' is not an object", {}, "foo");
+		});
+
+		it("fails if expected is null", () => {
+			expectFail(() => {
+				assert.identity({}, null);
+			}, "'expected' is null", {}, null);
+		});
+
+	});
+
+
+	describe("notIdentity()", ({ it }) => {
+
+		it("fails if objects have the same reference", () => {
+			const actual = {};
+			const expected = actual;
+
+			expectFail(() => {
+				assert.notIdentity(actual, expected);
+			}, "should not have same object reference", actual, expected);
+		});
+
+		it("passes if objects don't have the same reference, even if the contents are identical", () => {
+			const actual = {};
+			const expected = {};
+
+			expectPass(() => {
+				assert.notIdentity(actual, expected);
+			});
+		});
+
+		it("fails if expected isn't an object", () => {
+			expectFail(() => {
+				assert.notIdentity({}, "foo");
+			}, "'expected' is not an object", {}, "foo");
+		});
+
+		it("fails if expected is null", () => {
+			expectFail(() => {
+				assert.notIdentity({}, null);
+			}, "'expected' is null", {}, null);
+		});
+
+	});
+
+
+	describe("dotEquals()", ({ it }) => {
+
+		it("passes if expected.equals() returns true", () => {
+			const expected = { equals() { return true; }};
+			expectPass(() => {
+				assert.dotEquals({}, expected);
+			});
+		});
+
+		it("fails if expected.equals() returns false", () => {
+			const expected = { equals() { return false; }};
+			const actual = {};
+
+			expectFail(() => {
+				assert.dotEquals(actual, expected);
+			}, "should be .equals()", actual, expected);
+		});
+
+		it("fails if expected.equals() doesn't exist", () => {
+			expectFail(() => {
+				assert.dotEquals({}, {} as ObjEquals);
+			}, "'expected' does not have equals() method");
 		});
 
 	});
@@ -102,7 +266,7 @@ export default test(({ describe }) => {
 		it("fails if first group doesn't match expected text", () => {
 			expectFail(() => {
 				assert.matchesGroup("-abc-", /-(.*?)-/, "xxx");
-			}, "regex group: expected equality", "abc", "xxx");
+			}, "regex group: should be equal", "abc", "xxx");
 		});
 
 		it("fails if group not found", () => {
@@ -120,7 +284,7 @@ export default test(({ describe }) => {
 		it("has optional failure message", () => {
 			expectFail(() => {
 				assert.matchesGroup("-actual-", /-(.*?)-/, "expected", "my failure message");
-			}, "my failure message: expected equality", "actual", "expected");
+			}, "my failure message: should be equal", "actual", "expected");
 		});
 
 	});
@@ -162,33 +326,6 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("objEqual()", ({ it }) => {
-
-		it("passes if expected.equals() returns true", () => {
-			const expected = { equals() { return true; }};
-			expectPass(() => {
-				assert.objEqual({}, expected);
-			});
-		});
-
-		it("fails if expected.equals() returns false", () => {
-			const expected = { equals() { return false; }};
-			const actual = {};
-
-			expectFail(() => {
-				assert.objEqual(actual, expected);
-			}, "should be equal()", actual, expected);
-		});
-
-		it("fails if expected.equals() doesn't exist", () => {
-			expectFail(() => {
-				assert.objEqual({}, {} as ObjEquals);
-			}, "'expected' does not have equals() method");
-		});
-
-	});
-
-
 	describe("type()", ({ it }) => {
 
 		it("passes if type of actual matches expected type", () => {
@@ -210,13 +347,13 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and there's no expectation", () => {
 			expectPass(() => {
-				assert.exception(() => { throw new Error("any error"); });
+				assert.error(() => { throw new Error("any error"); });
 			});
 		});
 
 		it("passes if function throws and error message matches expected string", () => {
 			expectPass(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my error"); },
 					"my error"
 				);
@@ -225,7 +362,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message matches regex", () => {
 			expectPass(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my complicated error message"); },
 					/complicated/
 				);
@@ -234,22 +371,22 @@ export default test(({ describe }) => {
 
 		it("fails if function doesn't throw", () => {
 			expectFail(() => {
-				assert.exception(() => {});
+				assert.error(() => {});
 			}, "Expected exception");
 		});
 
 		it("fails if function throws and error message doesn't match expected string", () => {
 			expectFail(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my error"); },
 					"not my error"
 				);
-			}, "expected equality", "my error", "not my error");
+			}, "should be equal", "my error", "not my error");
 		});
 
 		it("passes if function throws and error message doesn't match regex", () => {
 			expectFail(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my complicated error message"); },
 					/not-found/
 				);
@@ -263,13 +400,13 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and there's no expectation", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(() => Promise.reject(new Error("any error")));
+				await assert.errorAsync(() => Promise.reject(new Error("any error")));
 			});
 		});
 
 		it("passes if function throws and error message matches expected string", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my error")),
 					"my error"
 				);
@@ -278,7 +415,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message matches regex", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my complicated error message")),
 					/complicated/
 				);
@@ -287,22 +424,22 @@ export default test(({ describe }) => {
 
 		it("fails if function doesn't throw", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(() => Promise.resolve());
+				await assert.errorAsync(() => Promise.resolve());
 			}, "Expected exception");
 		});
 
 		it("fails if function throws and error message doesn't match expected string", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my error")),
 					"not my error"
 				);
-			}, "expected equality", "my error", "not my error");
+			}, "should be equal", "my error", "not my error");
 		});
 
 		it("passes if function throws and error message doesn't match regex", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my complicated error message")),
 					/not-found/
 				);
@@ -316,13 +453,13 @@ export default test(({ describe }) => {
 
 		it("passes if function does not throw exception", async () => {
 			await expectPassAsync(async () => {
-				await assert.noExceptionAsync(() => Promise.resolve());
+				await assert.notErrorAsync(() => Promise.resolve());
 			});
 		});
 
 		it("fails if function does throw exception", async () => {
 			await expectFailAsync(async () => {
-				await assert.noExceptionAsync(() => Promise.reject(new Error("my error")));
+				await assert.notErrorAsync(() => Promise.reject(new Error("my error")));
 			}, "my error");
 		});
 
@@ -366,6 +503,6 @@ function checkError(err: unknown, actual: unknown, expected: unknown, expectedFa
 
 	function check(actual: unknown, expected: unknown, message: string) {
 		if (actual === undefined) assert.isUndefined(actual, message);
-		else assert.deepEqual(actual, expected, message);
+		else assert.equal(actual, expected, message);
 	}
 }

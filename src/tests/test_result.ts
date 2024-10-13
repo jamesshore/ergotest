@@ -3,7 +3,6 @@
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
-import { TestMark, TestMarkValue } from "./test_suite.js";
 import { TestRenderer } from "./test_renderer.js";
 
 export const TestStatus = {
@@ -13,9 +12,15 @@ export const TestStatus = {
 	timeout: "timeout",
 } as const;
 
-export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
-
 export type TestStatusValue = typeof TestStatus[keyof typeof TestStatus];
+
+export const TestMark = {
+	none: "none",
+	skip: "skip",
+	only: "only",
+} as const;
+
+export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 
 export interface TestCount {
 	pass: number;
@@ -24,6 +29,8 @@ export interface TestCount {
 	timeout: number;
 	total: number;
 }
+
+export type SerializedTestResult = SerializedTestSuiteResult | SerializedTestCaseResult;
 
 export interface SerializedTestSuiteResult {
 	type: "TestSuiteResult";
@@ -243,7 +250,7 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 * @return { TestMarkValue } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
 	 */
 	get mark(): TestMarkValue {
 		return this._mark;
@@ -265,13 +272,13 @@ export class TestSuiteResult extends TestResult {
 	 *
 	 * This is a convenience method. For more control over rendering, use {@link TestRenderer} instead.
 	 *
-	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
 	 * @param {string} [preamble=""] A string to write before the test results, but only if there are any marks or errors.
+	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
 	 *   If there are no marks or errors, the preamble is ignored. Defaults to an empty string.
 	 * @returns The formatted string.
 	 */
-	render(elapsedMs: number, preamble: string = ""): string {
-		ensure.signature(arguments, [ Number, [ undefined, String ]]);
+	render(preamble: string = "", elapsedMs?: number): string {
+		ensure.signature(arguments, [ [ undefined, String ], [ undefined, Number ]]);
 
 		const renderer = TestRenderer.create();
 		const marks = this.allMarkedResults();

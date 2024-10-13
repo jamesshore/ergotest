@@ -8,7 +8,7 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 
-export default test(({ beforeEach, it }) => {
+export default test(({ beforeEach, describe }) => {
 
 	let TEST_MODULE_PATH: string;
 
@@ -19,108 +19,129 @@ export default test(({ beforeEach, it }) => {
 		await deleteTempFilesAsync(testDir);
 	});
 
-	it("runs test modules", async () => {
-		const { runner } = create();
-		await writeTestModuleAsync(`// passes`);
 
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+	describe("current process", ({ it }) => {
 
-		const expectedResult = TestResult.suite([], [
-			TestResult.suite([], [
-				TestResult.pass("test", TEST_MODULE_PATH)
-			], TEST_MODULE_PATH),
-		]);
+		it("runs test modules and passes through config", async () => {
+			const myConfig = { myConfig: "my_config" };
+			const { runner } = create();
 
-		assert.objEqual(results, expectedResult);
+			await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
+			const results = await runner.runInCurrentProcessAsync([ TEST_MODULE_PATH ], { config: myConfig });
+
+			assertFailureMessage(results, "my_config");
+		});
+
+		// remaining behaviors not tested because of annoyances from them not being isolated
+
 	});
 
-	it("passes through config", async () => {
-		const myConfig = { myConfig: "my_config" };
-		const { runner } = create();
 
-		await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ], { config: myConfig });
+	describe("child process", ({ it }) => {
 
-		assertFailureMessage(results, "my_config");
-	});
+		it("runs test modules", async () => {
+			const { runner } = create();
+			await writeTestModuleAsync(`// passes`);
 
-	it("notifies caller of completed tests", async () => {
-		const { runner } = create();
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-		const progress: TestResult[] = [];
-		const notifyFn = (result: TestResult) => progress.push(result);
+			const expectedResult = TestResult.suite([], [
+				TestResult.suite([], [
+					TestResult.pass("test", TEST_MODULE_PATH)
+				], TEST_MODULE_PATH),
+			]);
 
-		await writeTestModuleAsync(`// passes`);
-		await runner.runIsolatedAsync([ TEST_MODULE_PATH ], { notifyFn });
+			assert.dotEquals(results, expectedResult);
+		});
 
-		assert.deepEqual(progress, [
-			TestResult.pass("test", TEST_MODULE_PATH),
-		]);
-	});
+		it("passes through config", async () => {
+			const myConfig = { myConfig: "my_config" };
+			const { runner } = create();
 
-	it("does not cache test modules from run to run", async () => {
-		const { runner } = create();
+			await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { config: myConfig });
 
-		await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
-		await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+			assertFailureMessage(results, "my_config");
+		});
 
-		await writeTestModuleAsync(`throw new Error("module was not cached");`);
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+		it("notifies caller of completed tests", async () => {
+			const { runner } = create();
 
-		assertFailureMessage(results, "module was not cached");
-	});
+			const progress: TestResult[] = [];
+			const notifyFn = (result: TestResult) => progress.push(result);
 
-	it("isolates tests", async () => {
-		const { runner } = create();
+			await writeTestModuleAsync(`// passes`);
+			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { notifyFn });
 
-		await writeTestModuleAsync(`global._test_runner_test = true;`);
-		await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+			assert.equal(progress, [
+				TestResult.pass("test", TEST_MODULE_PATH),
+			]);
+		});
 
-		await writeTestModuleAsync(`throw new Error("global should be undefined: " + global._test_runner_test);`);
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+		it("does not cache test modules from run to run", async () => {
+			const { runner } = create();
 
-		assertFailureMessage(results, "global should be undefined: undefined");
-	});
+			await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
+			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-	it("supports process.chdir(), which isn't allowed in Worker threads", async () => {
-		const { runner } = create();
+			await writeTestModuleAsync(`throw new Error("module was not cached");`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-		await writeTestModuleAsync(`
-			process.chdir(".");
-			throw new Error("process.chdir() should execute without error");
-		`);
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+			assertFailureMessage(results, "module was not cached");
+		});
 
-		assertFailureMessage(results, "process.chdir() should execute without error");
-	});
+		it("isolates tests", async () => {
+			const { runner } = create();
 
-	it("handles uncaught promise rejections", async () => {
-		const { runner } = create();
+			await writeTestModuleAsync(`global._test_runner_test = true;`);
+			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-		await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
-		const results = await runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+			await writeTestModuleAsync(`throw new Error("global should be undefined: " + global._test_runner_test);`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-		assert.deepEqual(results, TestResult.suite([], [
-			TestResult.fail("Unhandled error in tests", new Error("my error")),
-		]));
-	});
+			assertFailureMessage(results, "global should be undefined: undefined");
+		});
 
-	it("handles infinite loops", async () => {
-		const { runner, clock } = create();
+		it("supports process.chdir(), which isn't allowed in Worker threads", async () => {
+			const { runner } = create();
 
-		await writeTestModuleAsync(`while (true);`);
-		const resultsPromise = runner.runIsolatedAsync([ TEST_MODULE_PATH ]);
+			await writeTestModuleAsync(`
+				process.chdir(".");
+				throw new Error("process.chdir() should execute without error");
+			`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-		await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+			assertFailureMessage(results, "process.chdir() should execute without error");
+		});
 
-		assert.deepEqual(await resultsPromise, TestResult.suite([], [
-			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
-		]));
+		it("handles uncaught promise rejections", async () => {
+			const { runner } = create();
+
+			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+
+			assert.equal(results, TestResult.suite([], [
+				TestResult.fail("Unhandled error in tests", new Error("my error")),
+			]));
+		});
+
+		it("handles infinite loops", async () => {
+			const { runner, clock } = create();
+
+			await writeTestModuleAsync(`while (true);`);
+			const resultsPromise = runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+
+			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+
+			assert.equal(await resultsPromise, TestResult.suite([], [
+				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
+			]));
+		});
 	});
 
 
 	function assertFailureMessage(results: TestResult, expectedFailure: string) {
-		// @ts-expect-error This is pretty janky, but the tests will fail if it breaks
+		// @ts-expect-error This line is pretty janky, but that's okay because the tests will fail if stops working
 		assert.equal(results.children[0].children[0].error.message, expectedFailure);
 	}
 
@@ -138,7 +159,7 @@ export default test(({ beforeEach, it }) => {
 	}
 
 	async function deleteTempFilesAsync(testDir: string) {
-		assert.defined(testDir);
+		assert.isDefined(testDir);
 		await fs.rm(testDir, { recursive: true, force: true });
 		await fs.mkdir(testDir, { recursive: true });
 	}
