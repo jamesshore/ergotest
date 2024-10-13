@@ -2,13 +2,17 @@
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
 import { AssertionError } from "node:assert";
-import { TestMark } from "./test_suite.js";
 import { TestRenderer } from "./test_renderer.js";
 export const TestStatus = {
     pass: "pass",
     fail: "fail",
     skip: "skip",
     timeout: "timeout"
+};
+export const TestMark = {
+    none: "none",
+    skip: "skip",
+    only: "only"
 };
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
@@ -219,7 +223,7 @@ export const TestStatus = {
         return this._filename;
     }
     /**
-	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
+	 * @return { TestMarkValue } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
 	 */ get mark() {
         return this._mark;
     }

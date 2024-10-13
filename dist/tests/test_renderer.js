@@ -1,7 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
-import { TestCaseResult, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
-import { TestMark } from "./test_suite.js";
+import { TestCaseResult, TestMark, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -38,8 +37,9 @@ export class TestRenderer {
     }
     /**
 	 * @param {TestSuiteResult} testSuiteResult The test suite to render.
-	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
-	 * @returns {string} A summary of the results of a test suite, including the average time required per test.
+	 * @param {number} [elapsedMs] The total time required to run the test suite, in milliseconds.
+	 * @returns {string} A summary of the results of a test suite, including the average time required per test if
+	 *   `elapsedMs` is defined.
 	 */ renderSummary(testSuiteResult, elapsedMs) {
         ensure.signature(arguments, [
             TestSuiteResult,

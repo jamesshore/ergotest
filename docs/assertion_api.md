@@ -65,3 +65,9 @@ export * as assert from "./assert.js";
 The remainder of this document describes the assertions in `ergotest/assert.js`.
 
 [Back to top](#assertion-api)
+
+
+## assert.fail
+## assert.todo
+## assert.equal
+## assert.notEqual

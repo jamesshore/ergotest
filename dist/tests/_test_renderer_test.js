@@ -2,9 +2,8 @@
 import { assert, test } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
-import { TestResult } from "./test_result.js";
+import { TestMark, TestResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
-import { TestMark } from "./test_suite.js";
 const headerColor = Colors.brightWhite.bold;
 const summaryColor = Colors.brightWhite.dim;
 const failColor = Colors.brightRed;

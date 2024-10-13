@@ -15,7 +15,15 @@ export function todo(message) {
     message = message ? `: ${message}` : "";
     fail(`TO DO${message}`);
 }
-export function defined(actual, message) {
+export function equal(actual, expected, message) {
+    checkExpected(expected);
+    if (expected !== actual) throwAssertionError(message, "expected equality", actual, expected);
+}
+export function notEqual(actual, expected, message) {
+    checkExpected(expected);
+    if (expected === actual) throwAssertionError(message, "expected no equality", actual, expected);
+}
+export function isDefined(actual, message) {
     if (actual === undefined) throwAssertionError(message, "expected value, but was undefined");
 }
 export function isUndefined(actual, message) {
@@ -41,14 +49,6 @@ export function atMost(actual, expected, message) {
     checkExpected(expected);
     if (actual > expected) throwAssertionError(message, `expected at most ${expected}`, actual, expected);
 }
-export function equal(actual, expected, message) {
-    checkExpected(expected);
-    if (expected !== actual) throwAssertionError(message, "expected equality", actual, expected);
-}
-export function notEqual(actual, expected, message) {
-    checkExpected(expected);
-    if (expected === actual) throwAssertionError(message, "expected no equality", actual, expected);
-}
 export function deepEqual(actual, expected, message) {
     checkExpected(expected);
     if (!util.isDeepStrictEqual(actual, expected)) {
@@ -65,19 +65,19 @@ export function type(actual, expected, message) {
 export function objEqual(actual, expected, message) {
     checkExpected(expected);
     message = message ? `${message}: ` : "";
-    defined(actual, message);
+    isDefined(actual, message);
     if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
     if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
 }
 export function objNotEqual(actual, expected, message) {
     checkExpected(expected);
     message = message ? `${message}: ` : "";
-    defined(actual, message);
+    isDefined(actual, message);
     if (actual.equals === undefined) fail(message + "does not have equals() method");
     isFalse(actual.equals(expected), message + "expected '" + expected + "' and '" + actual + "' to be not be equal(), but they were");
 }
 export function between(value, min, max, message) {
-    defined(value, message);
+    isDefined(value, message);
     message = message ? `${message}: ` : "";
     if (value < min || value > max) {
         fail(message + "expected value between " + min + " and " + max + " (inclusive), but was " + value);

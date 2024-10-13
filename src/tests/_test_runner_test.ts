@@ -159,7 +159,7 @@ export default test(({ beforeEach, describe }) => {
 	}
 
 	async function deleteTempFilesAsync(testDir: string) {
-		assert.defined(testDir);
+		assert.isDefined(testDir);
 		await fs.rm(testDir, { recursive: true, force: true });
 		await fs.mkdir(testDir, { recursive: true });
 	}

@@ -7,7 +7,9 @@ interface Includes {
 }
 export declare function fail(message: string): never;
 export declare function todo(message?: string): never;
-export declare function defined(actual: unknown, message?: string): void;
+export declare function equal(actual: unknown, expected: unknown, message?: string): void;
+export declare function notEqual(actual: unknown, expected: unknown, message?: string): void;
+export declare function isDefined(actual: unknown, message?: string): void;
 export declare function isUndefined(actual: unknown, message?: string): void;
 export declare function isTrue(actual: unknown, message?: string): void;
 export declare function isFalse(actual: unknown, message?: string): void;
@@ -15,8 +17,6 @@ export declare function isNull(actual: unknown, message?: string): void;
 export declare function isNotNull(actual: unknown, message?: string): void;
 export declare function atLeast(actual: number, expected: number, message?: string): void;
 export declare function atMost(actual: number, expected: number, message?: string): void;
-export declare function equal(actual: unknown, expected: unknown, message?: string): void;
-export declare function notEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function deepEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function type(actual: unknown, expected: typeLib.TypeDescriptor, message?: string): void;
 export declare function objEqual(actual: unknown, expected: ObjEquals, message?: string): void;

@@ -1,17 +1,11 @@
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
-export type TestOptions = {
+import { TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+export interface TestOptions {
     config?: Record<string, unknown>;
     notifyFn?: NotifyFn;
     clock?: Clock;
-};
+}
 export type NotifyFn = (testResult: TestCaseResult) => void;
-export declare const TestMark: {
-    none: string;
-    skip: string;
-    only: string;
-};
-export type TestMarkValue = typeof TestMark[keyof typeof TestMark];
 export interface Describe {
     (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite;
     skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite;
@@ -33,7 +27,7 @@ export interface SuiteParameters {
     setTimeout: (newTimeout: Milliseconds) => void;
 }
 export interface TestParameters {
-    getConfig: <T>(name: string) => T;
+    getConfig: <T>(key: string) => T;
 }
 export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
 export type Test = (testUtilities: TestParameters) => Promise<void> | void;

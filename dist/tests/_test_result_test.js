@@ -1,8 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, test } from "../tests.js";
 import { AssertionError } from "node:assert";
-import { TestMark } from "./test_suite.js";
-import { TestResult, TestStatus } from "./test_result.js";
+import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import { TestRenderer } from "./test_renderer.js";
 export default test(({ describe })=>{
     describe("test suite", ({ it })=>{
