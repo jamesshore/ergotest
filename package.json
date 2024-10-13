@@ -1,15 +1,40 @@
 {
   "name": "ergotest",
-  "version": "0.0.0",
-  "private": true,
-  "engines": {
-    "node": "20.17.0"
-  },
+  "author": "James Shore <jshore@jamesshore.com> (https://www.jamesshore.com)",
+  "version": "0.1.0",
+  "description": "A test runner with all the features you want, none of the complexity you don't, and no dependencies.",
   "type": "module",
+  "files": [
+    "README.md",
+    "CHANGELOG.md",
+    "READMAP.md",
+    "LICENSE.TXT",
+    "dist",
+    "docs"
+  ],
   "exports": {
     ".": "./dist/tests/index.js",
     "./*.js": "./dist/tests/*.js",
     "./*.d.ts": "./dist/tests/*.d.ts"
+  },
+  "engines": {
+    "node": "20.17.0"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [
+    "test",
+    "tdd"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jamesshore/ergotest/issues"
+  },
+  "homepage": "https://github.com/jamesshore/ergotest",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jamesshore/ergotest.git"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
