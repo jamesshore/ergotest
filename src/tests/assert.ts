@@ -36,6 +36,14 @@ export function identity(actual: unknown, expected: unknown, message?: string) {
 	if (actual !== expected) throwAssertionError(message, "should have same object reference", actual, expected);
 }
 
+export function notIdentity(actual: unknown, expected: unknown, message?: string) {
+	checkExpected(expected);
+	if (typeof expected !== "object") throwAssertionError(message, "'expected' is not an object", actual, expected);
+	if (expected === null) throwAssertionError(message, "'expected' is null", actual, expected);
+
+	if (actual === expected) throwAssertionError(message, "should not have same object reference", actual, expected);
+}
+
 export function equal(actual: unknown, expected: unknown,  message?: string) {
 	checkExpected(expected);
 	if (!util.isDeepStrictEqual(actual, expected)) {

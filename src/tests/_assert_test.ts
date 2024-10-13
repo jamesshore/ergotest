@@ -152,6 +152,41 @@ export default test(({ describe }) => {
 	});
 
 
+	describe("notIdentity()", ({ it }) => {
+
+		it("fails if objects have the same reference", () => {
+			const actual = {};
+			const expected = actual;
+
+			expectFail(() => {
+				assert.notIdentity(actual, expected);
+			}, "should not have same object reference", actual, expected);
+		});
+
+		it("passes if objects don't have the same reference, even if the contents are identical", () => {
+			const actual = {};
+			const expected = {};
+
+			expectPass(() => {
+				assert.notIdentity(actual, expected);
+			});
+		});
+
+		it("fails if expected isn't an object", () => {
+			expectFail(() => {
+				assert.notIdentity({}, "foo");
+			}, "'expected' is not an object", {}, "foo");
+		});
+
+		it("fails if expected is null", () => {
+			expectFail(() => {
+				assert.notIdentity({}, null);
+			}, "'expected' is null", {}, null);
+		});
+
+	});
+
+
 	describe("dotEquals()", ({ it }) => {
 
 		it("passes if expected.equals() returns true", () => {
