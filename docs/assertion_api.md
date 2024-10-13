@@ -85,3 +85,7 @@ The remainder of this document describes the assertions in `ergotest/assert.js`.
 ## assert.matchesGroup()
 ## assert.includes()
 ## assert.notIncludes()
+## assert.error()
+## assert.notError()
+## assert.errorAsync()
+## assert.notErrorAsync()
