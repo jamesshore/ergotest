@@ -9,7 +9,7 @@ Ergotest (pronounced *air-go-test*) is a Node.js library for writing and running
 
 I care deeply about fast feedback. If the build takes longer than half a second, I notice. When it takes longer than a second, I’m unhappy. And when it takes longer than five seconds, I’m frustrated.
 
-In my production code, I kept running into problems with slow builds. I responded by creating the build automation that eventually became [Automatopia](https://github.com/jamesshore/automatopia). But I kept running into problems with test frameworks. They were designed to be run from the command-line, stealing valuable milliseconds, and they didn’t make it easy to interoperate with other tools. So I said, “Screw it! How hard could it be?” Not that hard, as it turns out. Years later, I decided to open-source my solution, and here we are. 
+In my production code, I kept running into problems with slow builds. I responded by creating the build automation that eventually became [Automatopia](https://github.com/jamesshore/automatopia). But test frameworks were a problem. They were designed to be run from the command-line, stealing valuable milliseconds, and they didn’t make it easy to interoperate with other tools. After fighting with them for a several years, I said, “Screw it! How hard could it be to write my own?” (Not that hard, as it turns out.) I eventually decided to open-source my solution, and here we are. 
 
 Ergotest is a battletested library that I’ve used for years in my own production codebases. Compared to other testing tools, Ergotest is:
 
@@ -31,12 +31,12 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * Concise, readable test output that's easy to customize
 * TypeScript types and JSDoc documentation
 
-Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my code in about 0.2 seconds. 
+Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my TypeScript code in about 0.2 seconds. 
 
 
 ## Wait for v1.0
 
-Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you’re probably best off waiting to adopt Ergotest unless you like being on the bleeding edge.
+Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you might want to wait.
 
 
 ## Example Test
@@ -59,17 +59,15 @@ export default test(() => {
 
 Ergotest is for **Node.js only**. It uses Node.js APIs and won’t work in the browser.
 
-Other than that, Ergotest is designed for experienced practitioners using test-driven development. It's designed to be used by people who want:
+Other than that, Ergotest is designed for experienced practitioners using test-driven development. Several popular features are deliberately excluded, and are unlikely to ever be added:
 
-* **fast unit tests**, not slow end-to-end tests
-* **reliable tests**, not flaky tests
-* **composable libraries**, not do-everything frameworks
-* **[Nullables](https://www.jamesshore.com/s/nullables)** or hand-rolled test doubles, not mocking libraries
-* **Node APIs**, not command-line tools
+* **no auto-mocking**
+* **no automatic retries**
+* **no parameterized tests**
+* **no test coverage**
+* **no benchmarking**
 
-Features needed by slow, flaky test suites are deliberately excluded, as are features for auto-mocking.
-
-Ergotest doesn't include a command-line tool. You're expected to integrate it into your automated build, as shown below.
+Ergotest also doesn't include a command-line tool. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
 
 
 ## Quick Start
