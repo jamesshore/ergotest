@@ -44,8 +44,9 @@ export class TestRenderer {
 
 	/**
 	 * @param {TestSuiteResult} testSuiteResult The test suite to render.
-	 * @param {number} elapsedMs The total time required to run the test suite, in milliseconds.
-	 * @returns {string} A summary of the results of a test suite, including the average time required per test.
+	 * @param {number} [elapsedMs] The total time required to run the test suite, in milliseconds.
+	 * @returns {string} A summary of the results of a test suite, including the average time required per test if
+	 *   `elapsedMs` is defined.
 	 */
 	renderSummary(testSuiteResult: TestSuiteResult, elapsedMs?: number): string {
 		ensure.signature(arguments, [ TestSuiteResult, [ undefined, Number ]]);

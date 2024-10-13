@@ -45,8 +45,20 @@ In this document:
   * [testCaseResult.isFail()](#testcaseresultisfail)
   * [testCaseResult.isSkip()](#testcaseresultisskip)
   * [testCaseResult.isTimeout()](#testcaseresultistimeout)
-
-* TestRenderer
+* [TestRenderer](#testrenderer)
+  * [TestRenderer.create()](#testrunnercreate)
+  * [testRenderer.renderSummary()](#testrendererrendersummary)
+  * [testRenderer.renderAsCharacters()](#testrendererrenderascharacters)
+  * [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines)
+  * [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines)
+  * [testRenderer.renderMarksAsLines()](#testrendererrendermarksaslines)
+  * [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline)
+  * [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines)
+  * [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword)
+  * [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword)
+  * [testRenderer.renderStatusWithMultilineDetails()](#testrendererrenderstatuswithmultilinedetails)
+  * [testRenderer.renderStack()](#testrendererrenderstack)
+  * [testRenderer.renderDiff()](#testrendererrenderdiff)
 * TestResult
   * TestStatus
   * TestStatusValue
@@ -475,4 +487,183 @@ See also [testCaseResult.status](#testcaseresultstatus).
 [Back to top](#automation-api)
 
 
+---
 
+
+## TestRenderer
+
+* import { TestRenderer } from "ergotest/test_renderer.js"
+
+`TestRenderer` is a utility class for converting test results into strings. For most people, the `renderXxx()` convenience methods on [TestSuiteResult](#testsuiteresult) or [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class.
+
+> *Note:* Although some rendered strings include line feeds, for added flexibility, none of them have a line feed at the end.
+
+Of course, for the maximum control possible, you can ignore `TestRenderer` entirely and write your own rendering using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
+
+But for a happy middle ground, consider subclassing `TestRenderer` and overriding specific methods. For example, if you like how [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) works, but you want it to display emojis for status, override [testRenderer.renderStatusAsSingleWord](#testrendererrenderstatusassingleword) Or you can override [testRenderer.renderDiff](#testrendererrenderdiff) to change the way [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) displays errors.
+
+If you do subclass `TestRenderer`, you’ll have to call it yourself rather than using the convenience methods on [TestSuiteResult](#testsuiteresult) or [TestCaseResult](#testcaseresult). There’s no way to make them use your custom renderer. Luckily, it’s easy enough to do so.
+
+[Back to top](#automation-api)
+
+
+## TestRenderer.create()
+
+* TestRenderer.create(): TestRenderer
+
+Create a `TestRenderer` instance.
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderSummary()
+
+* testRenderer.renderSummary(testSuiteResult: [TestSuiteResult](#testsuiteresult), elapsedMs?: number): string
+
+Convert a `testSuiteResult` into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded as follows and rendered in this order:
+
+* *failed:* bright red
+* *timed out:* purple
+* *skipped:* cyan
+* *passed:* green
+
+If `elapsedMs` is defined, the summary will include the average amount of time required for each test in grey. This is a simple division operation; it’s up to you to determine the elapsed time correctly.
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderAsCharacters()
+
+* testRenderer.renderAsCharacters(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
+
+Render `testCaseResults` as a series of color-coded characters representing the tests’ statuses, as follows:
+
+* *pass:* normal-colored dot
+* *fail:* red inverse X
+* *skip:* light cyan underline
+* *timeout:* purple inverse !
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderAsSingleLines()
+
+* testRenderer.renderAsSingleLines(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
+
+Render `testCaseResults` as a series of consecutive lines containing the test status and name. Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine](#testrendererrendernameononeline()). 
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderAsMultipleLines()
+
+* testRenderer.renderAsMultipleLines(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
+
+Render `testCaseResults` as detailed explanations of each result, each separated by two blank lines. Under the covers, this calls [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines) and [testRenderer.renderStatusWithMultiLineDetails()](#testrendererrenderstatuswithmultilinedetails).
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderMarksAsLines()
+
+* testRenderer.renderMarksAsLines(testResults: [TestResult](#testresult) | [TestResult](#testresult)[]): string
+
+Render `testResults` as a series of consecutive lines containing the test mark and name. Under the covers, this calls [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline).
+
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderNameOnOneLine()
+
+* testRenderer.renderNameOnOneLine(testResult: [TestResult](#testresult)): string
+
+If the test or suite has a filename, that’s rendered first in bold bright white. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons (` » `). 
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderNameOnMultipleLines()
+
+* testRenderer.renderNameOnMultipleLines(testResult: [TestResult](#testresult)): string
+
+If the test or suite has a filename, that’s rendered first. Next comes the name of the outermost suites down to the parent suite, from left to right, separated by chevrons (` » `). Finally, the name of test result is rendered on the following line.
+
+The whole string is rendered in bold bright white.
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderMarkAsSingleWord()
+
+* testRenderer.renderMarkAsSingleWord(testResult: [TestResult](#testresult)): string
+
+Renders the mark of the test or suite as a color-coded string, as follows:
+
+* *no mark:* `(no mark)` in default color
+* *.only:* `.only` in bright cyan
+* *.skip:* `.skip` in bright cyan
+* *no body:* same as .skip
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderStatusAsSingleWord()
+
+* testRenderer.renderMarkAsSingleWord(testCaseResult: [TestCaseResult](#testcaseresult)): string
+
+Renders the status of the test as a color-coded string, as follows:
+
+* *pass:* `passed` in green
+* *fail:* `failed` in bright red
+* *skip:* `skipped` in bright cyan
+* *timeout:* `timeout` in bright purple 
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderStatusWithMultilineDetails()
+
+* testRenderer.renderMarkWithMultilineDetails(testCaseResult: [TestCaseResult](#testcaseresult)): string
+
+Renders the status of the test with all its details, as follows:
+
+* *pass:* `passed` in green
+* *skip:* `skipped` in bright cyan
+* *timeout:* `Timed out after ###ms` in purple
+
+Failed tests are more complicated.
+
+* If `testCaseResult.error.stack` is defined, it renders the stack trace by calling [testRenderer.renderStack()](#testrendererrenderstack). Then, if `testCaseResult.error.message` is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
+* If `testCaseResult.error.stack` isn’t defined, it just converts `testCaseResult.error` to a string and renders it in red.
+* Finally, if `testCaseResult.error` is an `AssertionError`, it adds a blank line and renders the expected and actual results by calling [testRenderer.renderDiff()](#testrendererrenderdiff).
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderStack()
+
+* testRenderer.renderStack(testCaseResult: [TestCaseResult](#testcaseresult)): string
+
+Pulls out a failed test’s stack trace and highlights the lines that reference the test’s filename by adding an arrow (`-->`) and coloring them bold bright white.
+
+If the stack trace isn’t a string, converts it to a string and returns it without attempting to perform any highlighting. If the test doesn’t have an error, or it doesn’t have a stack trace, returns an empty string.
+
+[Back to top](#automation-api)
+
+
+## testRenderer.renderDiff()
+
+* testRenderer.renderDiff(error: AssertionError): string
+
+Renders the `expected` and `actual` values of `error` as consecutive lines, with highlighting to make comparing the results easier. If `error` doesn’t have `expected` and `actual` values, returns an empty string.
+
+Renders `expected:` first in green, followed by the expected value in the default color. It’s converted to a string by calling `util.inspect()` with infinite depth.
+
+Then it renders `actual:  ` in red on the following line, with padding after the colon to make the results line up, followed by the actual value in the default color. This is also converted to a string by calling `util.inspect()`.
+
+If the rendered values are more than one line, the strings are compared line by line. Any lines that are different are highlighted by coloring them bold bright yellow.
+
+In the future, I’d like to implement a more sophisticated mechanism for highlighting differences, but this works surprisingly well for such a cheap trick.
+
+[Back to top](#automation-api)
