@@ -13,11 +13,9 @@ export default test(({ describe })=>{
                 assert.equal("1", 1);
             }, "should be equal", "1", 1);
         });
-    });
-    describe("deepEqual()", ({ it })=>{
         it("passes if all elements of actual strictly equals all elements of expected, recursively", ()=>{
             expectPass(()=>{
-                assert.deepEqual({
+                assert.equal({
                     a: 1,
                     b: {
                         c: 2
@@ -44,8 +42,8 @@ export default test(({ describe })=>{
                 }
             };
             expectFail(()=>{
-                assert.deepEqual(actual, expected);
-            }, "expected deep equality", actual, expected);
+                assert.equal(actual, expected);
+            }, "should be equal", actual, expected);
         });
     });
     describe("matches()", ({ it })=>{
@@ -272,7 +270,7 @@ function checkError(err, actual, expected, expectedFailureMessage) {
     check(typedErr.actual, actual, "actual");
     function check(actual, expected, message) {
         if (actual === undefined) assert.isUndefined(actual, message);
-        else assert.deepEqual(actual, expected, message);
+        else assert.equal(actual, expected, message);
     }
 }
 

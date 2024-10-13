@@ -495,7 +495,7 @@ export default test(({ describe }) => {
 			const expected = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
 			const actual = "1234567890\n1234567890\nXXXXXXXXXX\n1234567890\n1234567890\n1234567890\n1234567890\n";
 
-			assert.deepEqual(render(expected, actual),
+			assert.equal(render(expected, actual),
 				Colors.green("expected: ") + "'1234567890\\n' +\n" +
 				"  '1234567890\\n' +\n" +
 				Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
@@ -519,7 +519,7 @@ export default test(({ describe }) => {
 			const oneLine = "1234567890123456789012345678901234567890\n";
 			const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
 
-			assert.deepEqual(render(oneLine, twoLines),
+			assert.equal(render(oneLine, twoLines),
 				Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" +
 				Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" +
 				Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'")
@@ -532,7 +532,7 @@ export default test(({ describe }) => {
 			const sevenLines = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
 			const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
 
-			assert.deepEqual(render(sevenLines, twoLines),
+			assert.equal(render(sevenLines, twoLines),
 				Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" +
 				Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +
 				Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" +

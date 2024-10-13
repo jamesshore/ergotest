@@ -66,7 +66,7 @@ export default test(({ beforeEach, describe })=>{
             ], {
                 notifyFn
             });
-            assert.deepEqual(progress, [
+            assert.equal(progress, [
                 TestResult.pass("test", TEST_MODULE_PATH)
             ]);
         });
@@ -111,7 +111,7 @@ export default test(({ beforeEach, describe })=>{
             const results = await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
             ]);
-            assert.deepEqual(results, TestResult.suite([], [
+            assert.equal(results, TestResult.suite([], [
                 TestResult.fail("Unhandled error in tests", new Error("my error"))
             ]));
         });
@@ -122,7 +122,7 @@ export default test(({ beforeEach, describe })=>{
                 TEST_MODULE_PATH
             ]);
             await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
-            assert.deepEqual(await resultsPromise, TestResult.suite([], [
+            assert.equal(await resultsPromise, TestResult.suite([], [
                 TestResult.fail("Test runner watchdog", "Detected infinite loop in tests")
             ]));
         });

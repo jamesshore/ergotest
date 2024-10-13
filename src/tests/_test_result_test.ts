@@ -13,14 +13,14 @@ export default test(({ describe }) => {
 			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
 			const result = TestResult.suite([ "my name" ], list);
 
-			assert.deepEqual(result.name, [ "my name" ]);
-			assert.deepEqual(result.children, list);
+			assert.equal(result.name, [ "my name" ]);
+			assert.equal(result.children, list);
 		});
 
 		it("name can include parent suites", () => {
 			const suite = createSuite({ name: [ "parent", "child", "grandchild" ] });
 
-			assert.deepEqual(suite.name, [ "parent", "child", "grandchild" ]);
+			assert.equal(suite.name, [ "parent", "child", "grandchild" ]);
 		});
 
 		it("has optional filename", () => {
@@ -213,7 +213,7 @@ export default test(({ describe }) => {
 			const skipMark = createPass({ mark: TestMark.skip });
 			const onlyMark = createPass({ mark: TestMark.only });
 
-			assert.deepEqual(result.name, [ "my name" ], "name");
+			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.pass, "status");
 
 			assert.equal(result.mark, TestMark.none, "mark");
@@ -224,7 +224,7 @@ export default test(({ describe }) => {
 
 		it("name can include parent suites", () => {
 			const test = createPass({ name: [ "parent", "child", "grandchild" ] });
-			assert.deepEqual(test.name, [ "parent", "child", "grandchild" ]);
+			assert.equal(test.name, [ "parent", "child", "grandchild" ]);
 		});
 
 		it("has optional filename", () => {
@@ -238,7 +238,7 @@ export default test(({ describe }) => {
 			const skipMark = createFail({ mark: TestMark.skip });
 			const onlyMark = createFail({ mark: TestMark.only });
 
-			assert.deepEqual(result.name, [ "my name" ], "name");
+			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal((result.error as Error).message, "my error", "error");
 
@@ -259,7 +259,7 @@ export default test(({ describe }) => {
 			const skipMark = createSkip({ mark: TestMark.skip });
 			const onlyMark = createSkip({ mark: TestMark.only });
 
-			assert.deepEqual(result.name, [ "my name" ], "name");
+			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.skip, "status");
 
 			assert.equal(result.mark, TestMark.none, "mark");
@@ -274,7 +274,7 @@ export default test(({ describe }) => {
 			const skipMark = createTimeout({ mark: TestMark.skip });
 			const onlyMark = createTimeout({ mark: TestMark.only });
 
-			assert.deepEqual(result.name, [ "my name" ], "name");
+			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.timeout, "status");
 			assert.equal(result.timeout, 999);
 
@@ -338,7 +338,7 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allTests(), [
+			assert.equal(suite.allTests(), [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
@@ -358,12 +358,12 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allMatchingTests(TestStatus.fail), [
+			assert.equal(suite.allMatchingTests(TestStatus.fail), [
 				createFail({ name: "fail 1" }),
 				createFail({ name: "fail 2" }),
 			], "one status");
 
-			assert.deepEqual(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
+			assert.equal(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
 				createFail({ name: "fail 1" }),
 				createTimeout({ name: "timeout" }),
 				createFail({ name: "fail 2" }),
@@ -387,7 +387,7 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allMarkedResults(), [
+			assert.equal(suite.allMarkedResults(), [
 				createPass({ name: "test 0.2", mark: TestMark.skip }),
 				createPass({ name: "test 0.3", mark: TestMark.only }),
 				createSuite({ name: "suite 1", mark: TestMark.only, children: [
@@ -409,7 +409,7 @@ export default test(({ describe }) => {
 		it("includes parent suite", () => {
 			const suite = createSuite({ mark: TestMark.skip });
 
-			assert.deepEqual(suite.allMarkedResults(), [ createSuite({ mark: TestMark.skip }) ]);
+			assert.equal(suite.allMarkedResults(), [ createSuite({ mark: TestMark.skip }) ]);
 		});
 
 		it("flattens results with requested marks into a single list", () => {
@@ -424,12 +424,12 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allMatchingMarks(TestMark.skip), [
+			assert.equal(suite.allMatchingMarks(TestMark.skip), [
 				createPass({ name: "test 0.2", mark: TestMark.skip }),
 				createPass({ name: "test 1.2", mark: TestMark.skip }),
 			], ".skip");
 
-			assert.deepEqual(suite.allMatchingMarks(TestMark.only), [
+			assert.equal(suite.allMatchingMarks(TestMark.only), [
 				createPass({ name: "test 0.3", mark: TestMark.only }),
 				createSuite({ name: "suite 1", mark: TestMark.only, children: [
 					createPass({ name: "test 1.1", mark: TestMark.only }),
@@ -449,7 +449,7 @@ export default test(({ describe }) => {
 			const suite = createSuite({ children: [
 				createPass({ filename: "file2" }),
 			]});
-			assert.deepEqual(suite.allPassingFiles(), [ "file2" ]);
+			assert.equal(suite.allPassingFiles(), [ "file2" ]);
 		});
 
 		it("does not include filenames more than once", () => {
@@ -457,7 +457,7 @@ export default test(({ describe }) => {
 				createPass({ filename: "my_file" }),
 				createPass({ filename: "my_file" }),
 			]});
-			assert.deepEqual(suite.allPassingFiles(), [ "my_file" ]);
+			assert.equal(suite.allPassingFiles(), [ "my_file" ]);
 		});
 
 		it("does not include filenames of failing tests", () => {
@@ -465,7 +465,7 @@ export default test(({ describe }) => {
 				createPass({ filename: "my_file1" }),
 				createFail({ filename: "my_file2" }),
 			]});
-			assert.deepEqual(suite.allPassingFiles(), [ "my_file1" ]);
+			assert.equal(suite.allPassingFiles(), [ "my_file1" ]);
 		});
 
 		it("does not include filenames of skipped tests", () => {
@@ -473,7 +473,7 @@ export default test(({ describe }) => {
 				createPass({ filename: "my_file1" }),
 				createSkip({ filename: "my_file2" }),
 			]});
-			assert.deepEqual(suite.allPassingFiles(), [ "my_file1" ]);
+			assert.equal(suite.allPassingFiles(), [ "my_file1" ]);
 		});
 
 		it("does not include filenames of timed out tests", () => {
@@ -482,7 +482,7 @@ export default test(({ describe }) => {
 				createTimeout({ filename: "my_file2" }),
 			]});
 
-			assert.deepEqual(suite.allPassingFiles(), [ "my_file1" ]);
+			assert.equal(suite.allPassingFiles(), [ "my_file1" ]);
 		});
 
 		it("[bugfix] does not include filenames of failing tests even when sibling tests pass", () => {
@@ -495,7 +495,7 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.allPassingFiles(), []);
+			assert.equal(suite.allPassingFiles(), []);
 		});
 
 	});
@@ -517,7 +517,7 @@ export default test(({ describe }) => {
 				createTimeout(),
 			]});
 
-			assert.deepEqual(suite.count(), {
+			assert.equal(suite.count(), {
 				[TestStatus.pass]: 1,
 				[TestStatus.fail]: 2,
 				[TestStatus.skip]: 3,
@@ -537,7 +537,7 @@ export default test(({ describe }) => {
 				]}),
 			]});
 
-			assert.deepEqual(suite.count(), {
+			assert.equal(suite.count(), {
 				[TestStatus.pass]: 1,
 				[TestStatus.fail]: 3,
 				[TestStatus.skip]: 1,
@@ -587,7 +587,7 @@ export default test(({ describe }) => {
 			const serialized = test.serialize();
 			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
-			assert.deepEqual(deserialized.error, error);
+			assert.equal(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 
@@ -598,7 +598,7 @@ export default test(({ describe }) => {
 			const serialized = test.serialize();
 			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
-			assert.deepEqual(deserialized.error, error);
+			assert.equal(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 
@@ -616,7 +616,7 @@ export default test(({ describe }) => {
 			const serialized = test.serialize();
 			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
-			assert.deepEqual(deserialized.error, error);
+			assert.equal(deserialized.error, error);
 			assert.equal((deserialized.error as Error).stack, error.stack);
 		});
 

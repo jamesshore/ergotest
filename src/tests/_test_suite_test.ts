@@ -39,7 +39,7 @@ export default test(({ describe }) => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_passes.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when importing _module_passes.js" ]);
+			assert.equal(result.name, [ "error when importing _module_passes.js" ]);
 			assert.isUndefined(result.filename);
 			assert.equal(result.status, TestStatus.fail);
 			assert.equal(result.error, "Test module filenames must use absolute paths: ./_module_passes.js");
@@ -49,7 +49,7 @@ export default test(({ describe }) => {
 			const suite = await TestSuite.fromModulesAsync([ "/no_such_module.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when importing no_such_module.js" ]);
+			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
 			assert.equal(result.filename, "/no_such_module.js");
 			assert.equal(result.status, TestStatus.fail);
 			assert.equal(result.error, `Test module not found: /no_such_module.js`);
@@ -59,7 +59,7 @@ export default test(({ describe }) => {
 			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when importing _module_throws.js" ]);
+			assert.equal(result.name, [ "error when importing _module_throws.js" ]);
 			assert.equal(result.filename, THROWS_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
 			assert.match((result.error as { message: string }).message, /my require error/);
@@ -69,7 +69,7 @@ export default test(({ describe }) => {
 			const suite = await TestSuite.fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.deepEqual(result.name, [ "error when importing _module_no_export.js" ]);
+			assert.equal(result.name, [ "error when importing _module_no_export.js" ]);
 			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
 			assert.equal(result.error, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
@@ -149,7 +149,7 @@ export default test(({ describe }) => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.deepEqual(await actualPromise, TestResult.suite([], [
+			assert.equal(await actualPromise, TestResult.suite([], [
 				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				createFail({ name: "fail", error: new Error("fail"), filename }),
@@ -229,7 +229,7 @@ export default test(({ describe }) => {
 			});
 
 			const results = await suite.runAsync({});
-			assert.deepEqual(results, TestResult.suite([], [
+			assert.equal(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -242,7 +242,7 @@ export default test(({ describe }) => {
 			});
 
 			const results = await suite.runAsync({ config: {} });
-			assert.deepEqual(results, TestResult.suite([], [
+			assert.equal(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -340,7 +340,7 @@ export default test(({ describe }) => {
 			});
 
 			await suite.runAsync();
-			assert.deepEqual(ordering, [
+			assert.equal(ordering, [
 				"parent before 1",
 				"parent before 2",
 				"test 1",
@@ -374,7 +374,7 @@ export default test(({ describe }) => {
 			});
 
 			await suite.runAsync();
-			assert.deepEqual(ordering, [
+			assert.equal(ordering, [
 				"parent before 1",
 				"parent before 2",
 				"test 1",
@@ -928,7 +928,7 @@ export default test(({ describe }) => {
 				it("not .only", () => {});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ children: [
 					createPass({ name: ".only", mark: TestMark.only }),
 					createSkip({ name: "not .only" }),
@@ -948,7 +948,7 @@ export default test(({ describe }) => {
 			const resultPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.deepEqual(await resultPromise,
+			assert.equal(await resultPromise,
 				createSuite({ children: [
 					createPass({ name: "pass", mark: TestMark.only }),
 					createFail({ name: "fail", error: new Error("my error"), mark: TestMark.only }),
@@ -969,7 +969,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				TestResult.suite([], [
 					TestResult.suite("not .only", [
 						TestResult.skip([ "not .only", "test1" ]),
@@ -990,7 +990,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite([], [
 						TestResult.pass("test"),
@@ -1005,7 +1005,7 @@ export default test(({ describe }) => {
 				it.only("only", () => {});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSkip({ name: "not only" }),
 					createPass({ name: "only", mark: TestMark.only }),
@@ -1021,7 +1021,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "not only" }),
@@ -1041,7 +1041,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite("not only", [
 						TestResult.skip([ "not only", "test1" ]),
@@ -1061,7 +1061,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
@@ -1079,7 +1079,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ children: [
 						createPass({ name: "test1", mark: TestMark.only }),
@@ -1097,7 +1097,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ mark: TestMark.skip, children: [
 						TestResult.skip("test1"),
@@ -1115,7 +1115,7 @@ export default test(({ describe }) => {
 				});
 			});
 
-			assert.deepEqual(await suite.runAsync(),
+			assert.equal(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ mark: TestMark.only, children: [
 						TestResult.pass("test1"),
@@ -1170,7 +1170,7 @@ export default test(({ describe }) => {
 			}
 
 			await suite.runAsync({ notifyFn });
-			assert.deepEqual(testResult!.name, [ "error when importing _module_throws.js" ]);
+			assert.equal(testResult!.name, [ "error when importing _module_throws.js" ]);
 		});
 
 		it("runs notify function if module doesn't export a test suite", async () => {
@@ -1183,7 +1183,7 @@ export default test(({ describe }) => {
 			}
 
 			await suite.runAsync({ notifyFn });
-			assert.deepEqual(testResult!.name, [ "error when importing _module_no_export.js" ]);
+			assert.equal(testResult!.name, [ "error when importing _module_no_export.js" ]);
 		});
 
 	});

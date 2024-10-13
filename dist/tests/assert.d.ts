@@ -8,7 +8,6 @@ interface Includes {
 export declare function fail(message: string): never;
 export declare function todo(message?: string): never;
 export declare function equal(actual: unknown, expected: unknown, message?: string): void;
-export declare function deepEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function notEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function dotEquals(actual: unknown, expected: DotEquals, message?: string): void;
 export declare function notDotEquals(actual: unknown, expected: DotEquals, message?: string): void;

@@ -30,13 +30,8 @@ export function todo(message?: string): never {
 
 export function equal(actual: unknown, expected: unknown,  message?: string) {
 	checkExpected(expected);
-	if (expected !== actual) throwAssertionError(message, "should be equal", actual, expected);
-}
-
-export function deepEqual(actual: unknown, expected: unknown,  message?: string) {
-	checkExpected(expected);
 	if (!util.isDeepStrictEqual(actual, expected)) {
-		throwAssertionError(message, "expected deep equality", actual, expected);
+		throwAssertionError(message, "should be equal", actual, expected);
 	}
 }
 

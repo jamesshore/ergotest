@@ -433,21 +433,21 @@ export default test(({ describe })=>{
         it("highlights differences between expected and actual values when they have more than one line", ()=>{
             const expected = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
             const actual = "1234567890\n1234567890\nXXXXXXXXXX\n1234567890\n1234567890\n1234567890\n1234567890\n";
-            assert.deepEqual(render(expected, actual), Colors.green("expected: ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'\n" + Colors.brightRed("actual:   ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'");
+            assert.equal(render(expected, actual), Colors.green("expected: ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'\n" + Colors.brightRed("actual:   ") + "'1234567890\\n' +\n" + "  '1234567890\\n' +\n" + Colors.brightYellow.bold("  'XXXXXXXXXX\\n' +") + "\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n' +\n" + "  '1234567890\\n'");
         });
         it("highlights differences between expected and actual values when expected has one line", ()=>{
             // This test depends on util.inspect() behavior, which is not guaranteed to remain consistent across
             // Node versions, so it could break after a Node version upgrade.
             const oneLine = "1234567890123456789012345678901234567890\n";
             const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
-            assert.deepEqual(render(oneLine, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
+            assert.equal(render(oneLine, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
         });
         it("doesn't break when actual and expected have different numbers of lines", ()=>{
             // This test depends on util.inspect() behavior, which is not guaranteed to remain consistent across
             // Node versions, so it could break after a Node version upgrade.
             const sevenLines = "1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n1234567890\n";
             const twoLines = "1234567890123456789012345678901234567890\n1234567890123456789012345678901234567890\n";
-            assert.deepEqual(render(sevenLines, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
+            assert.equal(render(sevenLines, twoLines), Colors.green("expected: ") + Colors.brightYellow.bold("'1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890\\n'") + "\n" + Colors.brightRed("actual:   ") + Colors.brightYellow.bold("'1234567890123456789012345678901234567890\\n' +") + "\n" + Colors.brightYellow.bold("  '1234567890123456789012345678901234567890\\n'"));
         });
         function render(expected, actual) {
             const error = new AssertionError({
