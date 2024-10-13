@@ -192,7 +192,7 @@ export async function errorAsync(fnAsync: Function, expectedRegexOrExactString?:
 	throwAssertionError(message, "Expected exception");
 }
 
-export async function noExceptionAsync(fnAsync: Function) {
+export async function notErrorAsync(fnAsync: Function) {
 	await fnAsync();
 }
 

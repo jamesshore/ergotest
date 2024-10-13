@@ -317,13 +317,13 @@ export default test(({ describe }) => {
 
 		it("passes if function does not throw exception", async () => {
 			await expectPassAsync(async () => {
-				await assert.noExceptionAsync(() => Promise.resolve());
+				await assert.notErrorAsync(() => Promise.resolve());
 			});
 		});
 
 		it("fails if function does throw exception", async () => {
 			await expectFailAsync(async () => {
-				await assert.noExceptionAsync(() => Promise.reject(new Error("my error")));
+				await assert.notErrorAsync(() => Promise.reject(new Error("my error")));
 			}, "my error");
 		});
 

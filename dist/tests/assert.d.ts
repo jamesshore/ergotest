@@ -29,5 +29,5 @@ export declare function notIncludes(actual: Includes, expected: unknown, message
 export declare function error(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string): void;
 export declare function notError(fn: Function): void;
 export declare function errorAsync(fnAsync: Function, expectedRegexOrExactString?: RegExp | string, message?: string): Promise<void>;
-export declare function noExceptionAsync(fnAsync: Function): Promise<void>;
+export declare function notErrorAsync(fnAsync: Function): Promise<void>;
 export {};
