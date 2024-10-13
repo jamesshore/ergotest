@@ -5,9 +5,13 @@
 Ergotest (pronounced *air-go-test*) is a library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented Node API. It has all the features you need and none of the complexity you don't.
 
 
-## Why Ergotest?
+## Why build yet another testing library?
 
-Compared to other testing frameworks, Ergotest is:
+I care deeply about fast feedback. If the build takes longer than half a second, I notice. When it takes longer than a second, I’m frustrated. And when it takes longer than five seconds, I’m unhappy.
+
+In my production code, I kept running into problems with slow builds. I responded by creating the build automation that eventually became [Automatopia](https://github.com/jamesshore/automatopia). But I kept running into problems with test frameworks. They were designed to be run from the command-line, stealing valuable milliseconds, and they didn’t make it easy to write a fast, incremental build that could interoperate with other tools. So I said, “Screw it! How hard could it be?” It worked out. Years later, I decided to open-source my test library, and here we are. 
+
+Ergotest is a battletested library that I’ve used for years in my own production codebases. Compared to other testing tools, Ergotest is:
 
 * Simple to understand with a great automation API
 * Small and easy to audit, with no dependencies
@@ -17,15 +21,17 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 
 * Supports TypeScript, JavaScript, and ES Modules
 * `describe()` for test suites, `it()` for tests
-* `beforeAll(), afterAll(), beforeEach(), afterEach()`
-* `.only` and `.skip` control which tests are run; they work across files and nest cleanly
+* `beforeAll()`, `afterAll()`, `beforeEach()`, `afterEach()`
+* `.only` and `.skip` work across files and nest cleanly
 * `async / await` for asynchronous code
-* Compatible with any assertion library (uses `AssertionError` for test failures)
+* Includes a nice assertion library if you want it; compatible with any assertion library if you don’t
 * Timeouts, infinite loop detection, and uncaught exception detection
 * Test configuration provided to tests (useful for integration tests)
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
 * TypeScript types and JSDoc documentation
+
+Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my code in about 0.2 seconds. 
 
 
 ## Example Test
