@@ -27,7 +27,7 @@ export declare function matchesGroup(actual: string, regex: RegExp, expectedMatc
 export declare function includes(actual: Includes, expected: unknown, message?: string): void;
 export declare function notIncludes(actual: Includes, expected: unknown, message?: string): void;
 export declare function error(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string): void;
-export declare function noException(fn: Function): void;
+export declare function notError(fn: Function): void;
 export declare function exceptionAsync(fnAsync: Function, expectedRegexOrExactString?: RegExp | string, message?: string): Promise<void>;
 export declare function noExceptionAsync(fnAsync: Function): Promise<void>;
 export {};

@@ -170,7 +170,7 @@ export function error(fn: Function, expectedRegexOrExactString?: RegExp | string
 	throwAssertionError(message, "Expected exception");
 }
 
-export function noException(fn: Function) {
+export function notError(fn: Function) {
 	fn();
 }
 

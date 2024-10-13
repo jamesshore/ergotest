@@ -128,7 +128,7 @@ export function error(fn, expectedRegexOrExactString, message) {
     }
     throwAssertionError(message, "Expected exception");
 }
-export function noException(fn) {
+export function notError(fn) {
     fn();
 }
 export async function exceptionAsync(fnAsync, expectedRegexOrExactString, message) {
