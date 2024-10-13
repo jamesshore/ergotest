@@ -174,7 +174,7 @@ export function notError(fn: Function) {
 	fn();
 }
 
-export async function exceptionAsync(fnAsync: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
+export async function errorAsync(fnAsync: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
 	try {
 		await fnAsync();
 	}

@@ -131,7 +131,7 @@ export function error(fn, expectedRegexOrExactString, message) {
 export function notError(fn) {
     fn();
 }
-export async function exceptionAsync(fnAsync, expectedRegexOrExactString, message) {
+export async function errorAsync(fnAsync, expectedRegexOrExactString, message) {
     try {
         await fnAsync();
     } catch (err) {

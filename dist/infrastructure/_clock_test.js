@@ -120,7 +120,7 @@ export default test(({ describe })=>{
             const clock = Clock.createNull();
             const timeoutFnAsync = createTimeoutFn();
             const promise = Promise.reject(new Error("my error"));
-            await assert.exceptionAsync(()=>clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync), "my error", "should return result of promise");
+            await assert.errorAsync(()=>clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync), "my error", "should return result of promise");
             assert.equal(timeoutFnAsync.ran, false, "should not run timeout function");
             await clock.tickUntilTimersExpireAsync();
             assert.equal(clock.now(), 0, "should resolve immediately");
@@ -144,7 +144,7 @@ export default test(({ describe })=>{
             await clock.tickUntilTimersExpireAsync();
             assert.equal(clock.now(), 10000, "should wait for timeout");
             assert.equal(timeoutFnAsync.ran, true, "should run timeout function");
-            await assert.exceptionAsync(()=>timeoutPromise, "my error", "should reject because timeout function rejected");
+            await assert.errorAsync(()=>timeoutPromise, "my error", "should reject because timeout function rejected");
         });
         it("ignores promise rejection after timeout", async ()=>{
             const clock = Clock.createNull();
@@ -188,8 +188,8 @@ export default test(({ describe })=>{
         });
         it("fails fast when attempting to advance the system clock", async ()=>{
             const clock = Clock.create();
-            await assert.exceptionAsync(()=>clock.tickAsync(10), "Can't advance the clock because it isn't a null clock");
-            await assert.exceptionAsync(()=>clock.tickUntilTimersExpireAsync(), "Can't advance the clock because it isn't a null clock");
+            await assert.errorAsync(()=>clock.tickAsync(10), "Can't advance the clock because it isn't a null clock");
+            await assert.errorAsync(()=>clock.tickUntilTimersExpireAsync(), "Can't advance the clock because it isn't a null clock");
         });
         it("can wait", async ()=>{
             const clock = Clock.createNull();

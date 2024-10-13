@@ -264,13 +264,13 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and there's no expectation", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(() => Promise.reject(new Error("any error")));
+				await assert.errorAsync(() => Promise.reject(new Error("any error")));
 			});
 		});
 
 		it("passes if function throws and error message matches expected string", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my error")),
 					"my error"
 				);
@@ -279,7 +279,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message matches regex", async () => {
 			await expectPassAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my complicated error message")),
 					/complicated/
 				);
@@ -288,13 +288,13 @@ export default test(({ describe }) => {
 
 		it("fails if function doesn't throw", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(() => Promise.resolve());
+				await assert.errorAsync(() => Promise.resolve());
 			}, "Expected exception");
 		});
 
 		it("fails if function throws and error message doesn't match expected string", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my error")),
 					"not my error"
 				);
@@ -303,7 +303,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message doesn't match regex", async () => {
 			await expectFailAsync(async () => {
-				await assert.exceptionAsync(
+				await assert.errorAsync(
 					() => Promise.reject(new Error("my complicated error message")),
 					/not-found/
 				);
