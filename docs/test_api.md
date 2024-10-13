@@ -41,7 +41,7 @@ export default test(() => {
 
 The `test()` function is an alias for [TestSuite.create()](#testsuitecreate), described below.
 
-Instead of importing `ergotest` directly, create a `tests.js` wrapper that re-exports Ergotest. That way, if you ever decide to change test libraries, you won’t have to go update every single test. Like this:
+Instead of importing `ergotest` directly, create a `tests.ts` (or `tests.js`) wrapper that re-exports Ergotest. That way, if you ever decide to change test libraries, you won’t have to go update every single test. Like this:
 
 ```typescript
 // tests.ts
@@ -55,7 +55,7 @@ Then use it in your tests like this:
 
 ```typescript
 // RECOMMENDED
-import { test, assert } from "/tests.js";
+import { test, assert } from "tests.js";
 
 export default test(() => {
   
