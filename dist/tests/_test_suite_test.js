@@ -22,7 +22,7 @@ export default test(({ describe })=>{
                 SUCCESS_MODULE_PATH
             ]);
             const testCaseResult = TestResult.pass("passes", SUCCESS_MODULE_PATH);
-            assert.objEqual(await suite.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
                 TestResult.suite([], [
                     testCaseResult
                 ], SUCCESS_MODULE_PATH),
@@ -100,7 +100,7 @@ export default test(({ describe })=>{
                 it("test 3", ()=>{});
             });
             const result = await suite.runAsync();
-            assert.objEqual(result, TestResult.suite([], [
+            assert.dotEquals(result, TestResult.suite([], [
                 TestResult.pass("test 1"),
                 TestResult.pass("test 2"),
                 TestResult.pass("test 3")
@@ -115,7 +115,7 @@ export default test(({ describe })=>{
                 });
             });
             const result = await top.runAsync();
-            assert.objEqual(result, TestResult.suite("top", [
+            assert.dotEquals(result, TestResult.suite("top", [
                 TestResult.suite([
                     "top",
                     "middle"
@@ -217,14 +217,14 @@ export default test(({ describe })=>{
         });
         it("passes when test doesn't throw exception", async ()=>{
             const result = await runTestAsync("my test", ()=>{});
-            assert.objEqual(result, TestResult.pass("my test"));
+            assert.dotEquals(result, TestResult.pass("my test"));
         });
         it("fails when test throws exception", async ()=>{
             const error = new Error("my error");
             const result = await runTestAsync("my test", ()=>{
                 throw error;
             });
-            assert.objEqual(result, TestResult.fail("my test", error));
+            assert.dotEquals(result, TestResult.fail("my test", error));
         });
         it("can retrieve config variables", async ()=>{
             const myConfig = {
@@ -274,13 +274,13 @@ export default test(({ describe })=>{
             const noName = TestSuite.create(({ it })=>{
                 it("has no name", ()=>{});
             });
-            assert.objEqual(await name.runAsync(), TestResult.suite("named", [
+            assert.dotEquals(await name.runAsync(), TestResult.suite("named", [
                 TestResult.pass([
                     "named",
                     "has a name"
                 ])
             ]));
-            assert.objEqual(await noName.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await noName.runAsync(), TestResult.suite([], [
                 TestResult.pass("has no name")
             ]));
         });
@@ -288,7 +288,7 @@ export default test(({ describe })=>{
             const suite = TestSuite.create(({ it })=>{
                 it("", ()=>{});
             });
-            assert.objEqual(await suite.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
                 TestResult.pass("(unnamed)")
             ]));
         });
@@ -301,7 +301,7 @@ export default test(({ describe })=>{
                 });
             });
             const result = await top.runAsync();
-            assert.objEqual(result, TestResult.suite([
+            assert.dotEquals(result, TestResult.suite([
                 "top"
             ], [
                 TestResult.suite([
@@ -332,7 +332,7 @@ export default test(({ describe })=>{
                 });
             });
             const result = await top.runAsync();
-            assert.objEqual(result, TestResult.suite("top", [
+            assert.dotEquals(result, TestResult.suite("top", [
                 TestResult.suite("top", [
                     TestResult.suite("top", [
                         TestResult.pass([
@@ -485,7 +485,7 @@ export default test(({ describe })=>{
                 it("test 1", async ()=>{});
                 it("test 2", async ()=>{});
             });
-            assert.objEqual(await suite.runAsync(), createSuite({
+            assert.dotEquals(await suite.runAsync(), createSuite({
                 name: "my suite",
                 children: [
                     createFail({
@@ -507,7 +507,7 @@ export default test(({ describe })=>{
                 it("test 1", async ()=>{});
                 it("test 2", async ()=>{});
             });
-            assert.objEqual(await suite.runAsync(), createSuite({
+            assert.dotEquals(await suite.runAsync(), createSuite({
                 name: "my suite",
                 children: [
                     createPass({
@@ -541,7 +541,7 @@ export default test(({ describe })=>{
                 it("test 1", async ()=>{});
                 it("test 2", async ()=>{});
             });
-            assert.objEqual(await suite.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
                 TestResult.fail("test 1", error),
                 TestResult.fail("test 2", error)
             ]));
@@ -568,7 +568,7 @@ export default test(({ describe })=>{
                 it("test 1", ()=>{});
                 it("test 2", ()=>{});
             });
-            assert.objEqual(await suite.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
                 TestResult.fail("test 1", error),
                 TestResult.fail("test 2", error)
             ]));
@@ -597,7 +597,7 @@ export default test(({ describe })=>{
                     throw testError;
                 });
             });
-            assert.objEqual(await suite.runAsync(), TestResult.suite([], [
+            assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
                 TestResult.fail("my test", testError)
             ]));
         });
@@ -622,7 +622,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.timeout("my test", DEFAULT_TIMEOUT)
             ]), "result");
             assert.equal(beforeTime, 0, "beforeEach() should run immediately");
@@ -647,7 +647,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite("my suite", [
+            assert.dotEquals(await actualPromise, TestResult.suite("my suite", [
                 TestResult.timeout([
                     "my suite",
                     "beforeAll()"
@@ -676,7 +676,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.pass("test 1"),
                 TestResult.pass("test 2"),
                 TestResult.timeout("afterAll()", DEFAULT_TIMEOUT)
@@ -703,7 +703,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.timeout("my test", DEFAULT_TIMEOUT)
             ]), "result");
             assert.equal(itTime, null, "it() should not run");
@@ -728,7 +728,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.timeout("my test", DEFAULT_TIMEOUT)
             ]), "result");
             assert.equal(beforeTime, 0, "beforeEach() should run immediately");
@@ -755,7 +755,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.pass("test 1"),
                 TestResult.pass("test 2")
             ]));
@@ -778,7 +778,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.pass("my test")
             ]));
         });
@@ -797,7 +797,7 @@ export default test(({ describe })=>{
                 clock
             });
             await clock.tickUntilTimersExpireAsync();
-            assert.objEqual(await actualPromise, TestResult.suite([], [
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
                 TestResult.suite([], [
                     TestResult.pass("my test")
                 ])
@@ -810,7 +810,7 @@ export default test(({ describe })=>{
                 it("my test");
             });
             const result = (await suite.runAsync()).allTests()[0];
-            assert.objEqual(result, createSkip({
+            assert.dotEquals(result, createSkip({
                 name: "my test",
                 mark: TestMark.skip
             }), "should be skipped");
@@ -824,7 +824,7 @@ export default test(({ describe })=>{
             });
             const result = (await suite.runAsync()).allTests()[0];
             assert.equal(testRan, false, "should not run test");
-            assert.objEqual(result, createSkip({
+            assert.dotEquals(result, createSkip({
                 name: "my test",
                 mark: TestMark.skip
             }));
@@ -833,11 +833,11 @@ export default test(({ describe })=>{
         it("skips suites that have no function", async ()=>{
             const suite = await TestSuite.create("my suite").runAsync();
             const noName = await TestSuite.create().runAsync();
-            assert.objEqual(suite, createSuite({
+            assert.dotEquals(suite, createSuite({
                 name: "my suite",
                 mark: TestMark.skip
             }));
-            assert.objEqual(noName, createSuite({
+            assert.dotEquals(noName, createSuite({
                 name: [],
                 mark: TestMark.skip
             }));
@@ -851,7 +851,7 @@ export default test(({ describe })=>{
                 });
             });
             const result = await suite.runAsync();
-            assert.objEqual(result, createSuite({
+            assert.dotEquals(result, createSuite({
                 mark: TestMark.skip,
                 children: [
                     TestResult.skip("test 1"),
@@ -868,7 +868,7 @@ export default test(({ describe })=>{
                 describe("suite", ()=>{});
             });
             const result = await suite.runAsync();
-            assert.objEqual(result, createSuite({
+            assert.dotEquals(result, createSuite({
                 mark: TestMark.skip,
                 children: [
                     createSkip({
@@ -885,7 +885,7 @@ export default test(({ describe })=>{
         it("generates failure when a suite is marked 'only' but has no body", async ()=>{
             const suite = TestSuite.create.only("my suite");
             const result = await suite.runAsync();
-            assert.objEqual(result, createSuite({
+            assert.dotEquals(result, createSuite({
                 name: "my suite",
                 mark: TestMark.only,
                 children: [
@@ -901,7 +901,7 @@ export default test(({ describe })=>{
                 it.only("my test");
             });
             const result = await suite.runAsync();
-            assert.objEqual(result, createSuite({
+            assert.dotEquals(result, createSuite({
                 name: "my suite",
                 children: [
                     createFail({
@@ -1188,7 +1188,7 @@ export default test(({ describe })=>{
                 it("my test");
             });
             const result = await suite.runAsync();
-            assert.objEqual(result, createSuite({
+            assert.dotEquals(result, createSuite({
                 name: "my suite",
                 mark: TestMark.only,
                 children: [
@@ -1215,7 +1215,7 @@ export default test(({ describe })=>{
             await suite.runAsync({
                 notifyFn
             });
-            assert.objEqual(testResult, TestResult.pass("my test"));
+            assert.dotEquals(testResult, TestResult.pass("my test"));
         });
         it("runs notify function if module fails to require()", async ()=>{
             const suite = await TestSuite.fromModulesAsync([

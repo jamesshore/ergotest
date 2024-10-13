@@ -19,6 +19,19 @@ export function equal(actual, expected, message) {
     checkExpected(expected);
     if (expected !== actual) throwAssertionError(message, "expected equality", actual, expected);
 }
+export function deepEqual(actual, expected, message) {
+    checkExpected(expected);
+    if (!util.isDeepStrictEqual(actual, expected)) {
+        throwAssertionError(message, "expected deep equality", actual, expected);
+    }
+}
+export function dotEquals(actual, expected, message) {
+    checkExpected(expected);
+    message = message ? `${message}: ` : "";
+    isDefined(actual, message);
+    if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
+    if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
+}
 export function notEqual(actual, expected, message) {
     checkExpected(expected);
     if (expected === actual) throwAssertionError(message, "expected no equality", actual, expected);
@@ -49,25 +62,12 @@ export function atMost(actual, expected, message) {
     checkExpected(expected);
     if (actual > expected) throwAssertionError(message, `expected at most ${expected}`, actual, expected);
 }
-export function deepEqual(actual, expected, message) {
-    checkExpected(expected);
-    if (!util.isDeepStrictEqual(actual, expected)) {
-        throwAssertionError(message, "expected deep equality", actual, expected);
-    }
-}
 export function type(actual, expected, message) {
     checkExpected(expected);
     const error = typeLib.check(actual, expected);
     if (error !== null) {
         throwAssertionError(message, "type should match", actual, typeLib.describe(expected));
     }
-}
-export function objEqual(actual, expected, message) {
-    checkExpected(expected);
-    message = message ? `${message}: ` : "";
-    isDefined(actual, message);
-    if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
-    if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
 }
 export function objNotEqual(actual, expected, message) {
     checkExpected(expected);

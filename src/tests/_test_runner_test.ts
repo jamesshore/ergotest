@@ -51,7 +51,7 @@ export default test(({ beforeEach, describe }) => {
 				], TEST_MODULE_PATH),
 			]);
 
-			assert.objEqual(results, expectedResult);
+			assert.dotEquals(results, expectedResult);
 		});
 
 		it("passes through config", async () => {

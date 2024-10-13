@@ -59,7 +59,7 @@ export default test(({ describe })=>{
             assert.equal(only.mark, TestMark.only);
         });
         it("can be compared using equals()", ()=>{
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: "my name"
             }), createSuite({
                 name: "my name"
@@ -69,7 +69,7 @@ export default test(({ describe })=>{
             }), createSuite({
                 name: "different"
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 mark: TestMark.skip
             }), createSuite({
                 mark: TestMark.skip
@@ -79,7 +79,7 @@ export default test(({ describe })=>{
             }), createSuite({
                 mark: TestMark.only
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: [
                     "parent",
                     "child"
@@ -101,7 +101,7 @@ export default test(({ describe })=>{
                     "different"
                 ]
             }));
-            assert.objEqual(createSuite({
+            assert.dotEquals(createSuite({
                 name: "my name",
                 children: [
                     createPass({
@@ -386,12 +386,12 @@ export default test(({ describe })=>{
             assert.equal(onlyMark.mark, TestMark.only, "mark");
         });
         it("can be compared using equals()", ()=>{
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 name: "my name"
             }), createPass({
                 name: "my name"
             }));
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 name: [
                     "parent",
                     "child"
@@ -403,7 +403,7 @@ export default test(({ describe })=>{
                 ]
             }));
             // disregard stack when comparing errors: if name is equal, error is equal
-            assert.objEqual(createFail({
+            assert.dotEquals(createFail({
                 name: "my name",
                 error: new Error("my error")
             }), createFail({
@@ -445,7 +445,7 @@ export default test(({ describe })=>{
                 timeout: 2
             }));
             // marks
-            assert.objEqual(createPass({
+            assert.dotEquals(createPass({
                 mark: TestMark.skip
             }), createPass({
                 mark: TestMark.skip
@@ -909,14 +909,14 @@ export default test(({ describe })=>{
             });
             const serialized = suite.serialize();
             const deserialized = TestResult.deserialize(serialized);
-            assert.objEqual(deserialized, suite);
+            assert.dotEquals(deserialized, suite);
         });
         it("handles string errors", ()=>{
             const test = createFail({
                 error: "my error"
             });
             const serialized = test.serialize();
-            assert.objEqual(TestResult.deserialize(serialized), test);
+            assert.dotEquals(TestResult.deserialize(serialized), test);
         });
         it("handles assertion errors", ()=>{
             const error = new AssertionError({

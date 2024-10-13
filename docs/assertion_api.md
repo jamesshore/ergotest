@@ -67,7 +67,15 @@ The remainder of this document describes the assertions in `ergotest/assert.js`.
 [Back to top](#assertion-api)
 
 
-## assert.fail
-## assert.todo
-## assert.equal
-## assert.notEqual
+## assert.fail()
+## assert.todo()
+## assert.equal()
+## assert.notEqual()
+## assert.isDefined()
+## assert.isUndefined()
+## assert.isNull()
+## assert.isNotNull()
+## assert.isTrue()
+## assert.isFalse()
+## assert.atLeast()
+## assert.atMost()

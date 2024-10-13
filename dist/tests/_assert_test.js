@@ -123,7 +123,7 @@ export default test(({ describe })=>{
                 }
             };
             expectPass(()=>{
-                assert.objEqual({}, expected);
+                assert.dotEquals({}, expected);
             });
         });
         it("fails if expected.equals() returns false", ()=>{
@@ -134,12 +134,12 @@ export default test(({ describe })=>{
             };
             const actual = {};
             expectFail(()=>{
-                assert.objEqual(actual, expected);
+                assert.dotEquals(actual, expected);
             }, "should be equal()", actual, expected);
         });
         it("fails if expected.equals() doesn't exist", ()=>{
             expectFail(()=>{
-                assert.objEqual({}, {});
+                assert.dotEquals({}, {});
             }, "'expected' does not have equals() method");
         });
     });

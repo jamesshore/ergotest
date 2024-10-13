@@ -41,7 +41,7 @@ export default test(({ beforeEach, describe })=>{
                     TestResult.pass("test", TEST_MODULE_PATH)
                 ], TEST_MODULE_PATH)
             ]);
-            assert.objEqual(results, expectedResult);
+            assert.dotEquals(results, expectedResult);
         });
         it("passes through config", async ()=>{
             const myConfig = {
@@ -144,7 +144,7 @@ export default test(({ beforeEach, describe })=>{
 		`);
     }
     async function deleteTempFilesAsync(testDir) {
-        assert.defined(testDir);
+        assert.isDefined(testDir);
         await fs.rm(testDir, {
             recursive: true,
             force: true

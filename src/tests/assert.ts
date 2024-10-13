@@ -11,7 +11,7 @@ import util from "node:util";
 import * as typeLib from "../util/type.js";
 import { AssertionError } from "node:assert";
 
-interface ObjEquals {
+interface DotEquals {
 	equals(that: unknown): boolean,
 }
 
@@ -31,6 +31,22 @@ export function todo(message?: string): never {
 export function equal(actual: unknown, expected: unknown,  message?: string) {
 	checkExpected(expected);
 	if (expected !== actual) throwAssertionError(message, "expected equality", actual, expected);
+}
+
+export function deepEqual(actual: unknown, expected: unknown,  message?: string) {
+	checkExpected(expected);
+	if (!util.isDeepStrictEqual(actual, expected)) {
+		throwAssertionError(message, "expected deep equality", actual, expected);
+	}
+}
+
+export function dotEquals(actual: unknown, expected: DotEquals,  message?: string) {
+	checkExpected(expected);
+
+	message = message ? `${message}: ` : "";
+	isDefined(actual, message);
+	if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
+	if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
 }
 
 export function notEqual(actual: unknown, expected: unknown,  message?: string) {
@@ -72,13 +88,6 @@ export function atMost(actual: number, expected: number,  message?: string) {
 	if (actual > expected) throwAssertionError(message, `expected at most ${expected}`, actual, expected);
 }
 
-export function deepEqual(actual: unknown, expected: unknown,  message?: string) {
-	checkExpected(expected);
-	if (!util.isDeepStrictEqual(actual, expected)) {
-		throwAssertionError(message, "expected deep equality", actual, expected);
-	}
-}
-
 export function type(actual: unknown, expected: typeLib.TypeDescriptor,  message?: string) {
 	checkExpected(expected);
 	const error = typeLib.check(actual, expected);
@@ -87,16 +96,7 @@ export function type(actual: unknown, expected: typeLib.TypeDescriptor,  message
 	}
 }
 
-export function objEqual(actual: unknown, expected: ObjEquals,  message?: string) {
-	checkExpected(expected);
-
-	message = message ? `${message}: ` : "";
-	isDefined(actual, message);
-	if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
-	if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
-}
-
-export function objNotEqual(actual: ObjEquals, expected: unknown,  message?: string) {
+export function objNotEqual(actual: DotEquals, expected: unknown,  message?: string) {
 	checkExpected(expected);
 
 	message = message ? `${message}: ` : "";

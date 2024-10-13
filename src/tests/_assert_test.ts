@@ -167,7 +167,7 @@ export default test(({ describe }) => {
 		it("passes if expected.equals() returns true", () => {
 			const expected = { equals() { return true; }};
 			expectPass(() => {
-				assert.objEqual({}, expected);
+				assert.dotEquals({}, expected);
 			});
 		});
 
@@ -176,13 +176,13 @@ export default test(({ describe }) => {
 			const actual = {};
 
 			expectFail(() => {
-				assert.objEqual(actual, expected);
+				assert.dotEquals(actual, expected);
 			}, "should be equal()", actual, expected);
 		});
 
 		it("fails if expected.equals() doesn't exist", () => {
 			expectFail(() => {
-				assert.objEqual({}, {} as ObjEquals);
+				assert.dotEquals({}, {} as ObjEquals);
 			}, "'expected' does not have equals() method");
 		});
 

@@ -1,5 +1,5 @@
 import * as typeLib from "../util/type.js";
-interface ObjEquals {
+interface DotEquals {
     equals(that: unknown): boolean;
 }
 interface Includes {
@@ -8,6 +8,8 @@ interface Includes {
 export declare function fail(message: string): never;
 export declare function todo(message?: string): never;
 export declare function equal(actual: unknown, expected: unknown, message?: string): void;
+export declare function deepEqual(actual: unknown, expected: unknown, message?: string): void;
+export declare function dotEquals(actual: unknown, expected: DotEquals, message?: string): void;
 export declare function notEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function isDefined(actual: unknown, message?: string): void;
 export declare function isUndefined(actual: unknown, message?: string): void;
@@ -17,10 +19,8 @@ export declare function isNull(actual: unknown, message?: string): void;
 export declare function isNotNull(actual: unknown, message?: string): void;
 export declare function atLeast(actual: number, expected: number, message?: string): void;
 export declare function atMost(actual: number, expected: number, message?: string): void;
-export declare function deepEqual(actual: unknown, expected: unknown, message?: string): void;
 export declare function type(actual: unknown, expected: typeLib.TypeDescriptor, message?: string): void;
-export declare function objEqual(actual: unknown, expected: ObjEquals, message?: string): void;
-export declare function objNotEqual(actual: ObjEquals, expected: unknown, message?: string): void;
+export declare function objNotEqual(actual: DotEquals, expected: unknown, message?: string): void;
 export declare function between(value: number, min: number, max: number, message?: string): void;
 export declare function match(actual: unknown, expectedRegex: RegExp, message?: string): void;
 export declare function matchesGroup(actual: string, regex: RegExp, expectedMatch: string | null, message?: string | null): void;
