@@ -37,7 +37,9 @@ export function equal(actual: unknown, expected: unknown,  message?: string) {
 
 export function notEqual(actual: unknown, expected: unknown,  message?: string) {
 	checkExpected(expected);
-	if (expected === actual) throwAssertionError(message, "should not be equal", actual, expected);
+	if (util.isDeepStrictEqual(actual, expected)) {
+		throwAssertionError(message, "should not be equal", actual, expected);
+	}
 }
 
 export function dotEquals(actual: unknown, expected: DotEquals,  message?: string) {
@@ -46,7 +48,7 @@ export function dotEquals(actual: unknown, expected: DotEquals,  message?: strin
 	message = message ? `${message}: ` : "";
 	isDefined(actual, message);
 	if (expected.equals === undefined) fail(message + "'expected' does not have equals() method");
-	if (!expected.equals(actual)) throwAssertionError(message, "should be equal()", actual, expected);
+	if (!expected.equals(actual)) throwAssertionError(message, "should be .equals()", actual, expected);
 }
 
 export function notDotEquals(actual: unknown, expected: DotEquals,  message?: string) {

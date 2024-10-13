@@ -46,6 +46,80 @@ export default test(({ describe })=>{
             }, "should be equal", actual, expected);
         });
     });
+    describe("notEqual()", ({ it })=>{
+        it("fails if actual strictly equals expected", ()=>{
+            expectFail(()=>{
+                assert.notEqual("abc", "abc");
+            }, "should not be equal", "abc", "abc");
+        });
+        it("passes if actual doesn't strictly equal expected", ()=>{
+            expectPass(()=>{
+                assert.notEqual("1", 1);
+            });
+        });
+        it("fails if all elements of actual strictly equals all elements of expected, recursively", ()=>{
+            const expected = {
+                a: 1,
+                b: {
+                    c: 2
+                }
+            };
+            const actual = {
+                a: 1,
+                b: {
+                    c: 2
+                }
+            };
+            expectFail(()=>{
+                assert.notEqual(actual, expected);
+            }, "should not be equal", actual, expected);
+        });
+        it("passes if actual doesn't strictly and deeply equal expected", ()=>{
+            const actual = {
+                a: 1,
+                b: {
+                    c: 2
+                }
+            };
+            const expected = {
+                a: 1,
+                b: {
+                    c: "2"
+                }
+            };
+            expectPass(()=>{
+                assert.notEqual(actual, expected);
+            });
+        });
+    });
+    describe("dotEquals()", ({ it })=>{
+        it("passes if expected.equals() returns true", ()=>{
+            const expected = {
+                equals () {
+                    return true;
+                }
+            };
+            expectPass(()=>{
+                assert.dotEquals({}, expected);
+            });
+        });
+        it("fails if expected.equals() returns false", ()=>{
+            const expected = {
+                equals () {
+                    return false;
+                }
+            };
+            const actual = {};
+            expectFail(()=>{
+                assert.dotEquals(actual, expected);
+            }, "should be .equals()", actual, expected);
+        });
+        it("fails if expected.equals() doesn't exist", ()=>{
+            expectFail(()=>{
+                assert.dotEquals({}, {});
+            }, "'expected' does not have equals() method");
+        });
+    });
     describe("matches()", ({ it })=>{
         it("passes if actual matches regex", ()=>{
             expectPass(()=>{
@@ -112,34 +186,6 @@ export default test(({ describe })=>{
             expectFail(()=>{
                 assert.notIncludes("abcdef", "bcd");
             }, "actual value should not include expected value", "abcdef", "bcd");
-        });
-    });
-    describe("objEqual()", ({ it })=>{
-        it("passes if expected.equals() returns true", ()=>{
-            const expected = {
-                equals () {
-                    return true;
-                }
-            };
-            expectPass(()=>{
-                assert.dotEquals({}, expected);
-            });
-        });
-        it("fails if expected.equals() returns false", ()=>{
-            const expected = {
-                equals () {
-                    return false;
-                }
-            };
-            const actual = {};
-            expectFail(()=>{
-                assert.dotEquals(actual, expected);
-            }, "should be equal()", actual, expected);
-        });
-        it("fails if expected.equals() doesn't exist", ()=>{
-            expectFail(()=>{
-                assert.dotEquals({}, {});
-            }, "'expected' does not have equals() method");
         });
     });
     describe("type()", ({ it })=>{
