@@ -152,7 +152,7 @@ export function notIncludes(actual: Includes, expected: unknown,  message?: stri
 	}
 }
 
-export function exception(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
+export function error(fn: Function, expectedRegexOrExactString?: RegExp | string, message?: string) {
 	try {
 		fn();
 	}

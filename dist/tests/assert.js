@@ -69,18 +69,18 @@ export function atMost(actual, expected, message) {
     checkExpected(expected);
     if (actual > expected) throwAssertionError(message, `should be at most ${expected}`, actual, expected);
 }
-export function type(actual, expected, message) {
-    checkExpected(expected);
-    const error = typeLib.check(actual, expected);
-    if (error !== null) {
-        throwAssertionError(message, "type should match", actual, typeLib.describe(expected));
-    }
-}
 export function between(value, min, max, message) {
     isDefined(value, message);
     message = message ? `${message}: ` : "";
     if (value < min || value > max) {
         fail(message + "should be between " + min + " and " + max + " (inclusive), but was " + value);
+    }
+}
+export function type(actual, expected, message) {
+    checkExpected(expected);
+    const error = typeLib.check(actual, expected);
+    if (error !== null) {
+        throwAssertionError(message, "type should match", actual, typeLib.describe(expected));
     }
 }
 export function match(actual, expectedRegex, message) {
@@ -113,15 +113,12 @@ export function notIncludes(actual, expected, message) {
         throwAssertionError(message, "actual value should not include expected value", actual, expected);
     }
 }
-export function noException(fn) {
-    fn();
-}
-export function exception(fn, expectedRegexOrExactString, message) {
+export function error(fn, expectedRegexOrExactString, message) {
     try {
         fn();
     } catch (err) {
         if (expectedRegexOrExactString === undefined) return;
-        if (!(err instanceof Error)) fail(`Should have thrown Error, but was: ${err}`);
+        if (!(err instanceof Error)) fail(`should have thrown Error, but was: ${err}`);
         if (typeof expectedRegexOrExactString === "string") {
             equal(err.message, expectedRegexOrExactString, message);
         } else {
@@ -131,12 +128,15 @@ export function exception(fn, expectedRegexOrExactString, message) {
     }
     throwAssertionError(message, "Expected exception");
 }
+export function noException(fn) {
+    fn();
+}
 export async function exceptionAsync(fnAsync, expectedRegexOrExactString, message) {
     try {
         await fnAsync();
     } catch (err) {
         if (expectedRegexOrExactString === undefined) return;
-        if (!(err instanceof Error)) fail(`Should have thrown Error, but was: ${err}`);
+        if (!(err instanceof Error)) fail(`should have thrown Error, but was: ${err}`);
         if (typeof expectedRegexOrExactString === "string") {
             equal(err.message, expectedRegexOrExactString, message);
         } else {

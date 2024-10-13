@@ -211,13 +211,13 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and there's no expectation", () => {
 			expectPass(() => {
-				assert.exception(() => { throw new Error("any error"); });
+				assert.error(() => { throw new Error("any error"); });
 			});
 		});
 
 		it("passes if function throws and error message matches expected string", () => {
 			expectPass(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my error"); },
 					"my error"
 				);
@@ -226,7 +226,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message matches regex", () => {
 			expectPass(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my complicated error message"); },
 					/complicated/
 				);
@@ -235,13 +235,13 @@ export default test(({ describe }) => {
 
 		it("fails if function doesn't throw", () => {
 			expectFail(() => {
-				assert.exception(() => {});
+				assert.error(() => {});
 			}, "Expected exception");
 		});
 
 		it("fails if function throws and error message doesn't match expected string", () => {
 			expectFail(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my error"); },
 					"not my error"
 				);
@@ -250,7 +250,7 @@ export default test(({ describe }) => {
 
 		it("passes if function throws and error message doesn't match regex", () => {
 			expectFail(() => {
-				assert.exception(
+				assert.error(
 					() => { throw new Error("my complicated error message"); },
 					/not-found/
 				);

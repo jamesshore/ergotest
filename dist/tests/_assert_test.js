@@ -159,40 +159,40 @@ export default test(({ describe })=>{
     describe("exception()", ({ it })=>{
         it("passes if function throws and there's no expectation", ()=>{
             expectPass(()=>{
-                assert.exception(()=>{
+                assert.error(()=>{
                     throw new Error("any error");
                 });
             });
         });
         it("passes if function throws and error message matches expected string", ()=>{
             expectPass(()=>{
-                assert.exception(()=>{
+                assert.error(()=>{
                     throw new Error("my error");
                 }, "my error");
             });
         });
         it("passes if function throws and error message matches regex", ()=>{
             expectPass(()=>{
-                assert.exception(()=>{
+                assert.error(()=>{
                     throw new Error("my complicated error message");
                 }, /complicated/);
             });
         });
         it("fails if function doesn't throw", ()=>{
             expectFail(()=>{
-                assert.exception(()=>{});
+                assert.error(()=>{});
             }, "Expected exception");
         });
         it("fails if function throws and error message doesn't match expected string", ()=>{
             expectFail(()=>{
-                assert.exception(()=>{
+                assert.error(()=>{
                     throw new Error("my error");
                 }, "not my error");
             }, "should be equal", "my error", "not my error");
         });
         it("passes if function throws and error message doesn't match regex", ()=>{
             expectFail(()=>{
-                assert.exception(()=>{
+                assert.error(()=>{
                     throw new Error("my complicated error message");
                 }, /not-found/);
             }, "should match regex", "my complicated error message", /not-found/);
