@@ -34,7 +34,7 @@
   "homepage": "https://github.com/jamesshore/ergotest",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jamesshore/ergotest.git"
+    "url": "git+https://github.com/jamesshore/ergotest.git"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
