@@ -92,7 +92,7 @@ Write a simple test:
 // example.test.js
 import { assert, test } from "./tests.js";
 
-export default test(() => {
+export default test(({ it }) => {
   
   it("runs tests", () => {
     assert.equal(2 + 2, 4);
@@ -114,7 +114,7 @@ const files = args.map(arg => path.resolve(process.cwd(), arg));
 
 process.stdout.write("Running tests: ");
 const result = await TestRunner.create().runInChildProcessAsync(files, { notifyFn: reportProgress });
-console.log("\n" + result.render("\n"));
+console.log("\n" + result.render("\n") + "\n");
 
 function reportProgress(testCase) {
   process.stdout.write(testCase.renderAsCharacter());
