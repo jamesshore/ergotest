@@ -49,8 +49,8 @@ export class Clock {
 	 * @param {number} [options.now=0] simulated current time
 	 * @returns {Clock} the simulated clock
 	 */
-	static createNull(options?: NulledClockConfiguration) {
-		return new Clock(nullGlobals(options));
+	static async createNullAsync(options?: NulledClockConfiguration): Promise<Clock> {
+		return new Clock(await nullGlobalsAsync(options));
 	}
 
 	private _globals: ClockGlobals;
@@ -199,7 +199,7 @@ export class Clock {
 
 }
 
-function nullGlobals({
+function nullGlobalsAsync({
 	now = FAKE_START_TIME,
 }: NulledClockConfiguration = {}) {
 	ensure.signature(arguments, [[ undefined, {
