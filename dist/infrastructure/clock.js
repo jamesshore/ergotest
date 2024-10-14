@@ -1,5 +1,4 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import FakeTimers from "@sinonjs/fake-timers";
 import * as ensure from "../util/ensure.js";
 const FAKE_START_TIME = 0;
 /** System clock. */ export class Clock {
@@ -27,8 +26,8 @@ const FAKE_START_TIME = 0;
 	 * @param [options] overridable options for the simulated clock
 	 * @param {number} [options.now=0] simulated current time
 	 * @returns {Clock} the simulated clock
-	 */ static createNull(options) {
-        return new Clock(nullGlobals(options));
+	 */ static async createNullAsync(options) {
+        return new Clock(await nullGlobalsAsync(options));
     }
     _globals;
     /** Only for use by tests. (Use a factory method instead.) */ constructor(globals){
@@ -167,7 +166,7 @@ const FAKE_START_TIME = 0;
         await this._globals.tickUntilTimersExpireAsync();
     }
 }
-function nullGlobals({ now = FAKE_START_TIME } = {}) {
+async function nullGlobalsAsync({ now = FAKE_START_TIME } = {}) {
     ensure.signature(arguments, [
         [
             undefined,
@@ -180,6 +179,12 @@ function nullGlobals({ now = FAKE_START_TIME } = {}) {
             }
         ]
     ]);
+    // Because this is production code, using a static import would require us to include Sinon as a production
+    // dependency. If we don’t, the code will fail to load when it encounters the static import.
+    //
+    // But we only use this code in our tests, so using a dynamic import allows us to make it work in development,
+    // but not have Sinon in our production release.
+    const FakeTimers = await import("@sinonjs/fake-timers");
     const fake = FakeTimers.createClock(now);
     return {
         Date: fake.Date,

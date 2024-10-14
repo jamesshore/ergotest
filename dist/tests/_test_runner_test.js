@@ -18,7 +18,7 @@ export default test(({ beforeEach, describe })=>{
             const myConfig = {
                 myConfig: "my_config"
             };
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
             const results = await runner.runInCurrentProcessAsync([
                 TEST_MODULE_PATH
@@ -31,7 +31,7 @@ export default test(({ beforeEach, describe })=>{
     });
     describe("child process", ({ it })=>{
         it("runs test modules", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`// passes`);
             const results = await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -47,7 +47,7 @@ export default test(({ beforeEach, describe })=>{
             const myConfig = {
                 myConfig: "my_config"
             };
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
             const results = await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -57,7 +57,7 @@ export default test(({ beforeEach, describe })=>{
             assertFailureMessage(results, "my_config");
         });
         it("notifies caller of completed tests", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             const progress = [];
             const notifyFn = (result)=>progress.push(result);
             await writeTestModuleAsync(`// passes`);
@@ -71,7 +71,7 @@ export default test(({ beforeEach, describe })=>{
             ]);
         });
         it("does not cache test modules from run to run", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
             await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -83,7 +83,7 @@ export default test(({ beforeEach, describe })=>{
             assertFailureMessage(results, "module was not cached");
         });
         it("isolates tests", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`global._test_runner_test = true;`);
             await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -95,7 +95,7 @@ export default test(({ beforeEach, describe })=>{
             assertFailureMessage(results, "global should be undefined: undefined");
         });
         it("supports process.chdir(), which isn't allowed in Worker threads", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`
 				process.chdir(".");
 				throw new Error("process.chdir() should execute without error");
@@ -106,7 +106,7 @@ export default test(({ beforeEach, describe })=>{
             assertFailureMessage(results, "process.chdir() should execute without error");
         });
         it("handles uncaught promise rejections", async ()=>{
-            const { runner } = create();
+            const { runner } = await createAsync();
             await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
             const results = await runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -116,7 +116,7 @@ export default test(({ beforeEach, describe })=>{
             ]));
         });
         it("handles infinite loops", async ()=>{
-            const { runner, clock } = create();
+            const { runner, clock } = await createAsync();
             await writeTestModuleAsync(`while (true);`);
             const resultsPromise = runner.runInChildProcessAsync([
                 TEST_MODULE_PATH
@@ -154,7 +154,8 @@ export default test(({ beforeEach, describe })=>{
         });
     }
 });
-function create({ clock = Clock.createNull() } = {}) {
+async function createAsync({ clock } = {}) {
+    clock ??= await Clock.createNullAsync();
     const runner = new TestRunner(clock);
     return {
         runner,

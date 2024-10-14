@@ -133,7 +133,7 @@ export default test(({ describe }) => {
 		});
 
 		it("propagates filename into children's test results", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 			const filename = "my_filename";
 
 			const suite = TestSuite.create(({ describe, it }) => {
@@ -580,7 +580,7 @@ export default test(({ describe }) => {
 	describe("timeouts", ({ it }) => {
 
 		it("times out when test doesn't complete in expected amount of time", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			let beforeTime = null;
 			let afterTime = null;
@@ -610,7 +610,7 @@ export default test(({ describe }) => {
 		});
 
 		it("times out when beforeAll doesn't complete in expected amount of time", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			let itTime = null;
 			let afterTime = null;
@@ -640,7 +640,7 @@ export default test(({ describe }) => {
 		});
 
 		it("times out when afterAll doesn't complete in expected amount of time", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			let beforeTime = null;
 			let itTime = null;
@@ -673,7 +673,7 @@ export default test(({ describe }) => {
 		});
 
 		it("times out when beforeEach doesn't complete in expected amount of time", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			let itTime = null;
 			let afterTime = null;
@@ -703,7 +703,7 @@ export default test(({ describe }) => {
 		});
 
 		it("times out when afterEach doesn't complete in expected amount of time", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			let beforeTime = null;
 			let itTime = null;
@@ -733,7 +733,7 @@ export default test(({ describe }) => {
 		});
 
 		it("times out each function separately", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 			const notQuiteTimeoutFn = async () => {
 				await clock.waitAsync(DEFAULT_TIMEOUT - 1);
 			};
@@ -765,7 +765,7 @@ export default test(({ describe }) => {
 		it("allows suites to configure timeout", async () => {
 			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 			const notQuiteTimeoutFn = async () => {
 				await clock.waitAsync(NEW_TIMEOUT - 1);
 			};
@@ -794,7 +794,7 @@ export default test(({ describe }) => {
 		it("inherits parent's timeout", async () => {
 			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 			const suite = TestSuite.create(({ describe, setTimeout }) => {
 				setTimeout(NEW_TIMEOUT);
 				describe(({ it }) => {
@@ -937,7 +937,7 @@ export default test(({ describe }) => {
 		});
 
 		it("marks test results as '.only'", async () => {
-			const clock = Clock.createNull();
+			const clock = await Clock.createNullAsync();
 
 			const suite = TestSuite.create(({ it }) => {
 				it.only("pass", () => {});
