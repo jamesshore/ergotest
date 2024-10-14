@@ -1,7 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import FakeTimers, { NodeTimer } from "@sinonjs/fake-timers";
 import * as ensure from "../util/ensure.js";
+
+// We don't want to import Sinon statically (see comment in nullGlobals below) because that will cause us
+// to have Sinon as a production dependency. However, we can import a Sinon type, because the TypeScript compiler
+// strips type imports out of the compiled code.
+import type { NodeTimer } from "@sinonjs/fake-timers";
+
 
 const FAKE_START_TIME = 0;
 
@@ -199,13 +203,21 @@ export class Clock {
 
 }
 
-function nullGlobalsAsync({
+
+
+async function nullGlobalsAsync({
 	now = FAKE_START_TIME,
 }: NulledClockConfiguration = {}) {
 	ensure.signature(arguments, [[ undefined, {
 		now: [ undefined, Number, Date ],
 	}]]);
 
+	// Because this is production code, using a static import would require us to include Sinon as a production
+	// dependency. If we don’t, the code will fail to load when it encounters the static import.
+	//
+	// But we only use this code in our tests, so using a dynamic import allows us to make it work in development,
+	// but not have Sinon in our production release.
+	const FakeTimers = await import("@sinonjs/fake-timers");
 	const fake = FakeTimers.createClock(now);
 
 	return {
