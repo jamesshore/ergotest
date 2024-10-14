@@ -25,7 +25,7 @@ export declare class Clock {
      * @param {number} [options.now=0] simulated current time
      * @returns {Clock} the simulated clock
      */
-    static createNull(options?: NulledClockConfiguration): Clock;
+    static createNullAsync(options?: NulledClockConfiguration): Promise<Clock>;
     private _globals;
     /** Only for use by tests. (Use a factory method instead.) */
     constructor(globals: ClockGlobals);

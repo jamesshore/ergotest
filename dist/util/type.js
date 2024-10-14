@@ -1,5 +1,4 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import arrayToSentence from "array-to-sentence";
 export const ANY_TYPE = [
     undefined,
     null,
@@ -73,10 +72,13 @@ export function describe(type, options = {}) {
     const descriptions = type.map(function(oneType) {
         return describeOneType(oneType);
     });
-    if (descriptions.length <= 2) return descriptions.join(" or ");
-    else return arrayToSentence(descriptions, {
-        lastSeparator: ", or "
-    }); // dat Oxford comma
+    // This is a ridiculous bit of perfectionism
+    if (descriptions.length <= 2) {
+        return descriptions.join(" or ");
+    } else {
+        const beginning = descriptions.slice(0, -1).join(", ");
+        return `${beginning}, or ${descriptions.slice(-1)}`;
+    }
     function describeOneType(type) {
         switch(type){
             case Boolean:

@@ -11,15 +11,15 @@ export default test(({ describe })=>{
             assert.equal(actual, expected);
         });
         it("tells us how many milliseconds have elapsed since a time", async ()=>{
-            const nullClock = Clock.createNull({
+            const nullClock = await Clock.createNullAsync({
                 now: 50
             });
             await nullClock.tickAsync(999);
             assert.equal(nullClock.millisecondsSince(50), 999, "should compare to number");
             assert.equal(nullClock.millisecondsSince(new Date(50)), 999, "should compare to Date");
         });
-        it("tells us how many milliseconds until a time", ()=>{
-            const nullClock = Clock.createNull({
+        it("tells us how many milliseconds until a time", async ()=>{
+            const nullClock = await Clock.createNullAsync({
                 now: 100
             });
             assert.equal(nullClock.millisecondsUntil(500), 400, "should compare to number");
@@ -37,7 +37,7 @@ export default test(({ describe })=>{
     });
     describe("repeat", ({ it })=>{
         it("calls a function every N milliseconds", async ()=>{
-            const clock = Clock.createNull(); // real clock is too nondeterministic to test directly
+            const clock = await Clock.createNullAsync(); // real clock is too nondeterministic to test directly
             let runCount = 0;
             const stopFn = clock.repeat(5, ()=>runCount++);
             await clock.tickAsync(15);
@@ -49,7 +49,7 @@ export default test(({ describe })=>{
     });
     describe("keepalive", ({ it })=>{
         it("runs a function after N milliseconds", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let expireTime;
             clock.keepAlive(10, ()=>{
                 expireTime = clock.now();
@@ -60,7 +60,7 @@ export default test(({ describe })=>{
             assert.equal(expireTime, 10, "should have expired");
         });
         it("resets the countdown when the 'alive' function is called", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let expireTime;
             const { aliveFn } = clock.keepAlive(10, ()=>{
                 expireTime = clock.now();
@@ -73,7 +73,7 @@ export default test(({ describe })=>{
             assert.equal(expireTime, 19, "should have expired");
         });
         it("stops the countdown when the 'cancel' function is called", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let expireTime;
             const { cancelFn } = clock.keepAlive(10, ()=>{
                 expireTime = clock.now();
@@ -84,7 +84,7 @@ export default test(({ describe })=>{
             assert.isUndefined(expireTime, "should not have expired");
         });
         it("'alive' function doesn't restart the countdown after 'cancel' called", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let expireTime;
             const { aliveFn, cancelFn } = clock.keepAlive(10, ()=>{
                 expireTime = clock.now();
@@ -107,7 +107,7 @@ export default test(({ describe })=>{
             return timeoutFn;
         }
         it("resolves if promise resolves before timeout", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             const timeoutFnAsync = createTimeoutFn();
             const promise = Promise.resolve("result");
             const result = await clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync);
@@ -117,7 +117,7 @@ export default test(({ describe })=>{
             assert.equal(clock.now(), 0, "should resolve immediately");
         });
         it("rejects if promise rejects before timeout", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             const timeoutFnAsync = createTimeoutFn();
             const promise = Promise.reject(new Error("my error"));
             await assert.errorAsync(()=>clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync), "my error", "should return result of promise");
@@ -126,7 +126,7 @@ export default test(({ describe })=>{
             assert.equal(clock.now(), 0, "should resolve immediately");
         });
         it("resolves via timeout function if promise times out", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             const timeoutFnAsync = createTimeoutFn("timeout result");
             const promise = new Promise(()=>{});
             const timeoutPromise = clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync);
@@ -136,7 +136,7 @@ export default test(({ describe })=>{
             assert.equal(await timeoutPromise, "timeout result", "should return result of timeout function");
         });
         it("rejects via timeout function if promise times out and timeout rejects", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             const timeoutFnAsync = createTimeoutFn(new Error("my error"));
             const promise = new Promise(()=>{});
             const timeoutPromise = clock.timeoutAsync(10000, ()=>promise, timeoutFnAsync);
@@ -147,7 +147,7 @@ export default test(({ describe })=>{
             await assert.errorAsync(()=>timeoutPromise, "my error", "should reject because timeout function rejected");
         });
         it("ignores promise rejection after timeout", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             const timeoutFnAsync = createTimeoutFn("timeout result");
             const promise = (async ()=>{
                 await clock.waitAsync(20000);
@@ -159,29 +159,29 @@ export default test(({ describe })=>{
         });
     });
     describe("nullability", ({ it })=>{
-        it("defaults 'now' to zero", ()=>{
-            const clock = Clock.createNull();
+        it("defaults 'now' to zero", async ()=>{
+            const clock = await Clock.createNullAsync();
             assert.equal(clock.now(), 0);
         });
-        it("allows 'now' to be configured using milliseconds", ()=>{
-            const clock = Clock.createNull({
+        it("allows 'now' to be configured using milliseconds", async ()=>{
+            const clock = await Clock.createNullAsync({
                 now: 300
             });
             assert.equal(clock.now(), 300);
         });
-        it("allows 'now' to be configured using date object", ()=>{
-            const clock = Clock.createNull({
+        it("allows 'now' to be configured using date object", async ()=>{
+            const clock = await Clock.createNullAsync({
                 now: new Date(400)
             });
             assert.equal(clock.now(), 400);
         });
         it("can advance the clock", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             await clock.tickAsync(10);
             assert.equal(clock.now(), 10);
         });
         it("can advance the clock until all timers expired", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             clock.waitAsync(999);
             await clock.tickUntilTimersExpireAsync();
             assert.equal(clock.now(), 999);
@@ -192,7 +192,7 @@ export default test(({ describe })=>{
             await assert.errorAsync(()=>clock.tickUntilTimersExpireAsync(), "Can't advance the clock because it isn't a null clock");
         });
         it("can wait", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let wait = "waiting";
             clock.waitAsync(10).then(()=>{
                 wait = clock.now();
@@ -202,7 +202,7 @@ export default test(({ describe })=>{
             assert.equal(wait, 10);
         });
         it("can repeat", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             let runCount = 0;
             const stopFn = clock.repeat(100, ()=>{
                 runCount++;
@@ -215,7 +215,7 @@ export default test(({ describe })=>{
             assert.equal(runCount, 51, "automatic tick");
         });
         it("can timeout", async ()=>{
-            const clock = Clock.createNull();
+            const clock = await Clock.createNullAsync();
             await clock.timeoutAsync(10, ()=>Promise.resolve(), ()=>{});
         });
     });
