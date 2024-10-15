@@ -108,7 +108,9 @@ export default class TypeScript {
 					await this._fileSystem.writeTextFileAsync(compiledFile, code + sourceMapLink);
 					await this._fileSystem.writeTextFileAsync(sourceMapFile, map);
 
-					report.debug(`\nCompile: ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`);
+					report.debug(`\n  Compile: ${sourceFile}`);
+					report.debug(`\n    Target: ${compiledFile}`);
+					report.debug(`\n    Source Map: ${sourceMapFile}`);
 					return true;
 				}
 				catch(err) {
@@ -140,14 +142,19 @@ export default class TypeScript {
 			reporter: Reporter,
 		}]);
 
+
 		await reporter.startAsync(`Type-checking ${description}`, async (report) => {
-			const { code } = await this._shell.execWithPreambleAsync("\n\n", tscBinary,
+			const command = [
+				tscBinary,
 				"-p", typescriptConfigFile,
 				"--outDir", outputDir,
 				"--noEmit", "false",
 				"--declaration", "--emitDeclarationOnly",
 				"--pretty",
-			);
+			];
+			report.debug(`\n  Run '${command.join(" ")}'`);
+
+			const { code } = await this._shell.execWithPreambleAsync.apply(this._shell, [ "\n\n", ...command ]);
 			if (code !== 0) throw new TaskError("Type check failed");
 		});
 	}

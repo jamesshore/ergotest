@@ -41,7 +41,10 @@ export default class Tests {
 			const { changed, errors } = await this._dependencyTree.findChangedFilesAsync(
 				files,
 				"test",
-				filename => report.debug(filename),
+				(filename) => {
+					report.debug(`\n  Analyze ${filename}`);
+					report.progress();
+				},
 			);
 
 			reportErrors(this._fileSystem, report, errors);
@@ -84,6 +87,7 @@ export default class Tests {
 			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
 				config,
 				notifyFn: testResult => {
+					report.debug("\n  " + testResult.renderAsSingleLine());
 					report.progress(testResult.renderAsCharacter());
 				},
 			});

@@ -55,7 +55,9 @@ export default class Build {
 
 	async #getPathsAsync(reporter) {
 		if (this._paths === undefined) {
-			this._paths = await reporter.startAsync("Scanning file tree", async () => {
+			this._paths = await reporter.startAsync("Scanning file tree", async (report) => {
+				report.debug(`\n  Scan ${Paths.rootDir}`);
+				report.debug(`\n  Ignore [\n    ${Paths.universalGlobsToExclude.join("\n    ")}\n  ]`);
 				const fileTree = await this._fileSystem.readFileTreeAsync(Paths.rootDir, Paths.universalGlobsToExclude);
 				return Paths.create(fileTree);
 			});
@@ -75,7 +77,8 @@ export default class Build {
 		});
 
 		tasks.defineTask("clean", async (options) => {
-			await options.reporter.startAsync("Deleting generated files", async () => {
+			await options.reporter.startAsync("Deleting generated files", async (report) => {
+				report.debug(`\n  Delete ${Paths.generatedDir}`);
 				await this._fileSystem.deleteAsync(Paths.generatedDir);
 			});
 		});
