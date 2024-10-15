@@ -24,9 +24,20 @@ export default class Build {
 
 	constructor() {
 		this._fileSystem = FileSystem.create(Paths.rootDir, Paths.timestampsBuildDir);
-		this._reporter = Reporter.create();
 		this._paths = undefined;
-		this._tasks = undefined;
+
+		this._tasks = this.#defineTasks();
+		this._tasks.setDescriptions({
+			default: "Clean and rebuild",
+			clean: "Erase all generated files (resets incremental build)",
+			quick: "Perform an incremental build",
+			version: "Check Node.js version",
+			lint: "Lint JavaScript code (incremental)",
+			unittest: "Run unit tests (incremental)",
+			compile: "Compile TypeScript (incremental)",
+			typecheck: "Type-check TypeScript and create declaration files",
+			dist: "Copy compiled files to distribution directory",
+		});
 	}
 
 	async runAsync({ resetTreeCache = false } = {}) {
@@ -35,35 +46,23 @@ export default class Build {
 		}]]);
 
 		if (resetTreeCache) this._paths = undefined;
-		return await TaskCli.create().runAsync(this.#getTasksAsync(), "BUILD OK", "BUILD FAILURE");
+		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames, options) => {
+			const reporter = Reporter.create({ debug: options.debug === true });
+
+			await this._tasks.runTasksAsync(taskNames, { reporter });
+		});
 	}
 
-	async #getPathsAsync() {
+	async #getPathsAsync(reporter) {
 		if (this._paths === undefined) {
-			this._paths = await this._reporter.startAsync("Scanning file tree", async () => {
+			this._paths = await reporter.startAsync("Scanning file tree", async (report) => {
+				report.debug(`\n  Scan ${Paths.rootDir}`);
+				report.debug(`\n  Ignore [\n    ${Paths.universalGlobsToExclude.join("\n    ")}\n  ]`);
 				const fileTree = await this._fileSystem.readFileTreeAsync(Paths.rootDir, Paths.universalGlobsToExclude);
 				return Paths.create(fileTree);
 			});
 		}
 		return this._paths;
-	}
-
-	#getTasksAsync() {
-		if (this._tasks === undefined) {
-			this._tasks = this.#defineTasks();
-			this._tasks.setDescriptions({
-				default: "Clean and rebuild",
-				clean: "Erase all generated files (resets incremental build)",
-				quick: "Perform an incremental build",
-				version: "Check Node.js version",
-				lint: "Lint JavaScript code (incremental)",
-				unittest: "Run unit tests (incremental)",
-				compile: "Compile TypeScript (incremental)",
-				typecheck: "Type-check TypeScript and create declaration files",
-				dist: "Copy compiled files to distribution directory",
-			});
-		}
-		return this._tasks;
 	}
 
 	#defineTasks() {
@@ -73,55 +72,56 @@ export default class Build {
 		const tests = Tests.create(this._fileSystem, Paths.dependencyTreeGlobsToExclude);
 		const typescript = TypeScript.create(this._fileSystem);
 
-		tasks.defineTask("default", async() => {
-			await tasks.runTasksAsync([ "clean", "quick", "typecheck" ]);
+		tasks.defineTask("default", async(options) => {
+			await tasks.runTasksAsync([ "clean", "quick", "typecheck" ], options);
 		});
 
-		tasks.defineTask("clean", async () => {
-			await this._reporter.startAsync("Deleting generated files", async () => {
+		tasks.defineTask("clean", async (options) => {
+			await options.reporter.startAsync("Deleting generated files", async (report) => {
+				report.debug(`\n  Delete ${Paths.generatedDir}`);
 				await this._fileSystem.deleteAsync(Paths.generatedDir);
 			});
 		});
 
-		tasks.defineTask("quick", async () => {
-			await tasks.runTasksAsync([ "version", "lint", "unittest" ]);
+		tasks.defineTask("quick", async (options) => {
+			await tasks.runTasksAsync([ "version", "lint", "unittest" ], options);
 		});
 
-		tasks.defineTask("version", async () => {
+		tasks.defineTask("version", async (options) => {
 			await version.checkAsync({
 				packageJson: Paths.packageJson,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
-		tasks.defineTask("lint", async () => {
-			const paths = await this.#getPathsAsync();
+		tasks.defineTask("lint", async (options) => {
+			const paths = await this.#getPathsAsync(options.reporter);
 
 			await lint.validateAsync({
 				description: "JavaScript",
 				files: paths.lintJavascriptFiles(),
 				config: lintJavascriptConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 
 			await lint.validateAsync({
 				description: "TypeScript",
 				files: paths.lintTypescriptFiles(),
 				config: lintTypescriptConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
-		tasks.defineTask("unittest", async () => {
-			const paths = await this.#getPathsAsync();
+		tasks.defineTask("unittest", async (options) => {
+			const paths = await this.#getPathsAsync(options.reporter);
 
-			await tasks.runTasksAsync([ "compile" ]);
+			await tasks.runTasksAsync([ "compile" ], options);
 
 			await tests.runAsync({
 				description: "JavaScript tests",
 				files: paths.buildTestFiles(),
 				config: testConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 
 			await tests.runAsync({
@@ -132,12 +132,12 @@ export default class Build {
 					outputDir: Paths.typescriptTargetDir,
 				}),
 				config: testConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
-		tasks.defineTask("compile", async () => {
-			const paths = await this.#getPathsAsync();
+		tasks.defineTask("compile", async (options) => {
+			const paths = await this.#getPathsAsync(options.reporter);
 
 			await typescript.compileAsync({
 				description: "TypeScript tree",
@@ -145,23 +145,23 @@ export default class Build {
 				sourceDir: Paths.typescriptSrcDir,
 				outputDir: Paths.typescriptTargetDir,
 				config: swcConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
-		tasks.defineTask("typecheck", async () => {
+		tasks.defineTask("typecheck", async (options) => {
 			await typescript.typecheckAndEmitDeclarationFilesAsync({
 				description: "TypeScript",
 				tscBinary: Paths.tscBinary,
 				typescriptConfigFile: Paths.typescriptConfigFile,
 				outputDir: Paths.typescriptTargetDir,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
-		tasks.defineTask("dist", async () => {
-			await tasks.runTasksAsync([ "compile", "typecheck" ]);
-			await this._reporter.startAsync("Building distribution", async () => {
+		tasks.defineTask("dist", async (options) => {
+			await tasks.runTasksAsync([ "compile", "typecheck" ], options);
+			await options.reporter.startAsync("Building distribution", async () => {
 				await this._fileSystem.deleteAsync(Paths.typescriptDistDir);
 				await this._fileSystem.copyAsync(Paths.typescriptTargetDir, Paths.typescriptDistDir);
 			});
