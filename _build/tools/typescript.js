@@ -80,12 +80,12 @@ export default class TypeScript {
 				}
 				else {
 					await this._fileSystem.copyAsync(source, target);
-					report.progress(undefined, { debug: `\nCopy: ${source} --> ${target}`});
+					report.debug(`\nCopy: ${source} --> ${target}`);
 				}
 			});
 			const deletePromises = filesToDelete.map(async ({ source, target }) => {
 				await this._fileSystem.deleteAsync(target);
-				report.progress(undefined, { debug: `\nDelete: ${target}`});
+				report.debug(`\nDelete: ${target}`);
 			});
 
 			await Promise.all([ ...copyPromises, ...deletePromises ]);
@@ -108,7 +108,7 @@ export default class TypeScript {
 					await this._fileSystem.writeTextFileAsync(compiledFile, code + sourceMapLink);
 					await this._fileSystem.writeTextFileAsync(sourceMapFile, map);
 
-					report.progress(undefined, { debug: `\nCompile: ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`});
+					report.debug(`\nCompile: ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`);
 					return true;
 				}
 				catch(err) {

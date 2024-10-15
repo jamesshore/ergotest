@@ -41,7 +41,7 @@ export default class Tests {
 			const { changed, errors } = await this._dependencyTree.findChangedFilesAsync(
 				files,
 				"test",
-				filename => report.progress(undefined, { debug: filename }),
+				filename => report.debug(filename),
 			);
 
 			reportErrors(this._fileSystem, report, errors);
