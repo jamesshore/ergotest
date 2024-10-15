@@ -26,7 +26,19 @@ export default class Build {
 		this._fileSystem = FileSystem.create(Paths.rootDir, Paths.timestampsBuildDir);
 		this._reporter = Reporter.create();
 		this._paths = undefined;
-		this._tasks = undefined;
+
+		this._tasks = this.#defineTasks();
+		this._tasks.setDescriptions({
+			default: "Clean and rebuild",
+			clean: "Erase all generated files (resets incremental build)",
+			quick: "Perform an incremental build",
+			version: "Check Node.js version",
+			lint: "Lint JavaScript code (incremental)",
+			unittest: "Run unit tests (incremental)",
+			compile: "Compile TypeScript (incremental)",
+			typecheck: "Type-check TypeScript and create declaration files",
+			dist: "Copy compiled files to distribution directory",
+		});
 	}
 
 	async runAsync({ resetTreeCache = false } = {}) {
@@ -35,7 +47,9 @@ export default class Build {
 		}]]);
 
 		if (resetTreeCache) this._paths = undefined;
-		return await TaskCli.create().runAsync(this.#getTasksAsync(), "BUILD OK", "BUILD FAILURE");
+		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames) => {
+			await this._tasks.runTasksAsync(taskNames);
+		});
 	}
 
 	async #getPathsAsync() {
@@ -46,24 +60,6 @@ export default class Build {
 			});
 		}
 		return this._paths;
-	}
-
-	#getTasksAsync() {
-		if (this._tasks === undefined) {
-			this._tasks = this.#defineTasks();
-			this._tasks.setDescriptions({
-				default: "Clean and rebuild",
-				clean: "Erase all generated files (resets incremental build)",
-				quick: "Perform an incremental build",
-				version: "Check Node.js version",
-				lint: "Lint JavaScript code (incremental)",
-				unittest: "Run unit tests (incremental)",
-				compile: "Compile TypeScript (incremental)",
-				typecheck: "Type-check TypeScript and create declaration files",
-				dist: "Copy compiled files to distribution directory",
-			});
-		}
-		return this._tasks;
 	}
 
 	#defineTasks() {
