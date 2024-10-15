@@ -24,7 +24,6 @@ export default class Build {
 
 	constructor() {
 		this._fileSystem = FileSystem.create(Paths.rootDir, Paths.timestampsBuildDir);
-		this._reporter = Reporter.create();
 		this._paths = undefined;
 
 		this._tasks = this.#defineTasks();
@@ -47,14 +46,16 @@ export default class Build {
 		}]]);
 
 		if (resetTreeCache) this._paths = undefined;
-		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames) => {
-			await this._tasks.runTasksAsync(taskNames, {});
+		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames, options) => {
+			const reporter = Reporter.create({ debug: options.debug === true });
+
+			await this._tasks.runTasksAsync(taskNames, { reporter });
 		});
 	}
 
-	async #getPathsAsync() {
+	async #getPathsAsync(reporter) {
 		if (this._paths === undefined) {
-			this._paths = await this._reporter.startAsync("Scanning file tree", async () => {
+			this._paths = await reporter.startAsync("Scanning file tree", async () => {
 				const fileTree = await this._fileSystem.readFileTreeAsync(Paths.rootDir, Paths.universalGlobsToExclude);
 				return Paths.create(fileTree);
 			});
@@ -74,7 +75,7 @@ export default class Build {
 		});
 
 		tasks.defineTask("clean", async (options) => {
-			await this._reporter.startAsync("Deleting generated files", async () => {
+			await options.reporter.startAsync("Deleting generated files", async () => {
 				await this._fileSystem.deleteAsync(Paths.generatedDir);
 			});
 		});
@@ -86,30 +87,30 @@ export default class Build {
 		tasks.defineTask("version", async (options) => {
 			await version.checkAsync({
 				packageJson: Paths.packageJson,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
 		tasks.defineTask("lint", async (options) => {
-			const paths = await this.#getPathsAsync();
+			const paths = await this.#getPathsAsync(options.reporter);
 
 			await lint.validateAsync({
 				description: "JavaScript",
 				files: paths.lintJavascriptFiles(),
 				config: lintJavascriptConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 
 			await lint.validateAsync({
 				description: "TypeScript",
 				files: paths.lintTypescriptFiles(),
 				config: lintTypescriptConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
 		tasks.defineTask("unittest", async (options) => {
-			const paths = await this.#getPathsAsync();
+			const paths = await this.#getPathsAsync(options.reporter);
 
 			await tasks.runTasksAsync([ "compile" ], options);
 
@@ -117,7 +118,7 @@ export default class Build {
 				description: "JavaScript tests",
 				files: paths.buildTestFiles(),
 				config: testConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 
 			await tests.runAsync({
@@ -128,12 +129,12 @@ export default class Build {
 					outputDir: Paths.typescriptTargetDir,
 				}),
 				config: testConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
 		tasks.defineTask("compile", async (options) => {
-			const paths = await this.#getPathsAsync();
+			const paths = await this.#getPathsAsync(options.reporter);
 
 			await typescript.compileAsync({
 				description: "TypeScript tree",
@@ -141,7 +142,7 @@ export default class Build {
 				sourceDir: Paths.typescriptSrcDir,
 				outputDir: Paths.typescriptTargetDir,
 				config: swcConfig,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
@@ -151,13 +152,13 @@ export default class Build {
 				tscBinary: Paths.tscBinary,
 				typescriptConfigFile: Paths.typescriptConfigFile,
 				outputDir: Paths.typescriptTargetDir,
-				reporter: this._reporter,
+				reporter: options.reporter,
 			});
 		});
 
 		tasks.defineTask("dist", async (options) => {
 			await tasks.runTasksAsync([ "compile", "typecheck" ], options);
-			await this._reporter.startAsync("Building distribution", async () => {
+			await options.reporter.startAsync("Building distribution", async () => {
 				await this._fileSystem.deleteAsync(Paths.typescriptDistDir);
 				await this._fileSystem.copyAsync(Paths.typescriptTargetDir, Paths.typescriptDistDir);
 			});
