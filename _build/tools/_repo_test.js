@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { test, assert } from "tests";
+import { assert, test } from "tests";
 import Repo from "./repo.js";
 import Shell from "infrastructure/shell.js";
 import ConsoleOutput from "infrastructure/console_output.js";
@@ -22,7 +22,13 @@ export default test(({ describe }) => {
 			};
 			const message = "my integration message";
 
-			await repo.integrateAsync({ config, message });
+			await repo.integrateAsync({
+				build: new BuildStub(stdout),
+				buildTask: "my_task",
+				buildOptions: { myOptions: true },
+				config,
+				message,
+			});
 
 			assertCommands(shellTracker, [
 				"git checkout my_integration_branch",
@@ -32,6 +38,8 @@ export default test(({ describe }) => {
 			]);
 
 			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nValidating build:\n"),
+				`Stubbed build: ${JSON.stringify({ taskNames: [ "my_task" ], options: { myOptions: true }})}\n`,
 				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
 				Colors.cyan("» git checkout my_integration_branch\n"),
 				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'\n"),
@@ -59,4 +67,16 @@ function assertCommands(shellTracker, expected) {
 	});
 
 	assert.equal(actual, expected);
+}
+
+class BuildStub {
+
+	constructor(stdout) {
+		this._stdout = stdout;
+	}
+
+	runAsync(taskNames, options) {
+		this._stdout.write(`Stubbed build: ${JSON.stringify({taskNames, options})}\n`);
+	}
+
 }

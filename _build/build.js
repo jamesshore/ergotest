@@ -47,10 +47,15 @@ export default class Build {
 
 		if (resetTreeCache) this._paths = undefined;
 		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames, options) => {
-			const reporter = Reporter.create({ debug: options.debug === true });
-
-			await this._tasks.runTasksAsync(taskNames, { reporter });
+			await this.runAsync(taskNames, options);
 		});
+	}
+
+	async runAsync(taskNames, options) {
+		const reporter = Reporter.create({ debug: options.debug === true });
+		const integrate = options.integrate === true;
+
+		await this._tasks.runTasksAsync(taskNames, { reporter, integrate });
 	}
 
 	async #getPathsAsync(reporter) {

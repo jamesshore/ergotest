@@ -12,19 +12,26 @@ export default class Repo {
 		return new Repo(Shell.createNull(), ConsoleOutput.createStdout());
 	}
 
-	constructor(shell, stdout) {
+	constructor(shell, stdout, build) {
 		this._shell = shell;
 		this._stdout = stdout;
 	}
 
-	async integrateAsync({ config, message }) {
+	async integrateAsync({ build, buildTask, buildOptions, config, message }) {
 		ensure.signature(arguments, [[ undefined, {
+			build: Object,
+			buildTask: String,
+			buildOptions: Object,
 			config: {
 				devBranch: String,
 				integrationBranch: String,
 			},
 			message: String
 		}]]);
+		ensure.typeMinimum(build, { runAsync: Function }, "options.build");
+
+		this.#writeHeadline("Validating build");
+		await build.runAsync([ buildTask ], buildOptions);
 
 		this.#writeHeadline(`Integrating ${config.devBranch} into ${config.integrationBranch}`);
 		await this.#execAsync("git", "checkout", config.integrationBranch);

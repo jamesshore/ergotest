@@ -7,6 +7,7 @@ import Paths from "./config/paths.js";
 import repoConfig from "./config/repo.conf.js";
 import Repo from "./tools/repo.js";
 import TaskError from "tasks/task_error.js";
+import Build from "./build.js";
 
 export default class Release {
 
@@ -35,6 +36,7 @@ export default class Release {
 		const fileSystem = FileSystem.create(Paths.rootDir, Paths.timestampsBuildDir);
 		const tasks = Tasks.create({ fileSystem, incrementalDir: Paths.tasksDir });
 		const repo = Repo.create();
+		const build = Build.create();
 
 		tasks.defineTask("integrate", async (options) => {
 			if (typeof options.args.message !== "string") {
@@ -42,6 +44,9 @@ export default class Release {
 			}
 
 			await repo.integrateAsync({
+				build,
+				buildTask: "default",
+				buildOptions: { integrate: true },
 				config: repoConfig,
 				message: options.args.message,
 			});
