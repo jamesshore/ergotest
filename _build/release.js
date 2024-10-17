@@ -4,7 +4,9 @@ import Tasks from "tasks/tasks.js";
 import TaskCli from "tasks/task_cli.js";
 import FileSystem from "infrastructure/file_system.js";
 import Paths from "./config/paths.js";
-import ConsoleOutput from "infrastructure/console_output.js";
+import repoConfig from "./config/repo.conf.js";
+import Repo from "./tools/repo.js";
+import TaskError from "tasks/task_error.js";
 
 export default class Release {
 
@@ -25,17 +27,24 @@ export default class Release {
 		ensure.signature(arguments, []);
 
 		return await TaskCli.create().runAsync(this._tasks, "SUCCESS", "FAILURE", async (taskNames, options) => {
-			await this._tasks.runTasksAsync(taskNames, {});
+			await this._tasks.runTasksAsync(taskNames, { args: options });
 		});
 	}
 
 	#defineTasks() {
 		const fileSystem = FileSystem.create(Paths.rootDir, Paths.timestampsBuildDir);
 		const tasks = Tasks.create({ fileSystem, incrementalDir: Paths.tasksDir });
-		const stdout = ConsoleOutput.createStdout();
+		const repo = Repo.create();
 
-		tasks.defineTask("integrate", () => {
-			console.log("TBD");
+		tasks.defineTask("integrate", async (options) => {
+			if (typeof options.args.message !== "string") {
+				throw new TaskError("Need --message argument for integration message");
+			}
+
+			await repo.integrateAsync({
+				config: repoConfig,
+				message: options.args.message,
+			});
 		});
 
 		return tasks;

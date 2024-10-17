@@ -32,7 +32,7 @@ export default test(({ describe }) => {
 			]);
 
 			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("Integrating my_dev_branch into my_integration_branch:\n"),
+				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
 				Colors.cyan("» git checkout my_integration_branch\n"),
 				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'\n"),
 				Colors.cyan("» git checkout my_dev_branch\n"),

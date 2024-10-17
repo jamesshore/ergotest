@@ -9,7 +9,7 @@ export default class Repo {
 	static create() {
 		ensure.signature(arguments, []);
 
-		return new Repo(Shell.create(), ConsoleOutput.createStdout());
+		return new Repo(Shell.createNull(), ConsoleOutput.createStdout());
 	}
 
 	constructor(shell, stdout) {
@@ -34,7 +34,7 @@ export default class Repo {
 	}
 
 	#writeHeadline(message) {
-		this._stdout.write(Colors.brightWhite.underline(`${message}:\n`));
+		this._stdout.write(Colors.brightWhite.underline(`\n${message}:\n`));
 	}
 
 	#execAsync(...command) {

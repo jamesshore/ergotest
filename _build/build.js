@@ -10,8 +10,8 @@ import Tests from "./tools/tests.js";
 import TypeScript from "./tools/typescript.js";
 import Paths from "./config/paths.js";
 import testConfig from "./config/tests.conf.js";
-import lintJavascriptConfig from "./config/eslint.javascript.config.js";
-import lintTypescriptConfig from "./config/eslint.typescript.config.js";
+import lintJavascriptConfig from "./config/eslint.javascript.conf.js";
+import lintTypescriptConfig from "./config/eslint.typescript.conf.js";
 import swcConfig from "./config/swc.conf.js";
 
 export default class Build {
