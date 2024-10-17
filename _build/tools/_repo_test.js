@@ -2,6 +2,8 @@
 import { test, assert } from "tests";
 import Repo from "./repo.js";
 import Shell from "infrastructure/shell.js";
+import ConsoleOutput from "infrastructure/console_output.js";
+import Colors from "infrastructure/colors.js";
 
 export default test(({ describe }) => {
 
@@ -10,7 +12,9 @@ export default test(({ describe }) => {
 		it("merges dev directory into integration directory", async () => {
 			const shell = Shell.createNull();
 			const shellTracker = shell.track();
-			const repo = new Repo(shell);
+			const stdout = ConsoleOutput.createNull();
+			const stdoutTracker = stdout.track();
+			const repo = new Repo(shell, stdout);
 
 			const config = {
 				devBranch: "my_dev_branch",
@@ -20,11 +24,19 @@ export default test(({ describe }) => {
 
 			await repo.integrateAsync({ config, message });
 
-			assert.equal(shellTracker.data, [
-				{ command: "git", args: [ "checkout", "my_integration_branch" ]},
-				{ command: "git", args: [ "merge", "my_dev_branch", "--no-ff", "--log=9999", "--message=my integration message" ]},
-				{ command: "git", args: [ "checkout", "my_dev_branch" ]},
-				{ command: "git", args: [ "merge", "my_integration_branch", "--ff-only" ]},
+			assertCommands(shellTracker, [
+				"git checkout my_integration_branch",
+				"git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'",
+				"git checkout my_dev_branch",
+				"git merge my_integration_branch --ff-only",
+			]);
+
+			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("Integrating my_dev_branch into my_integration_branch:\n"),
+				Colors.cyan("» git checkout my_integration_branch\n"),
+				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'\n"),
+				Colors.cyan("» git checkout my_dev_branch\n"),
+				Colors.cyan("» git merge my_integration_branch --ff-only\n"),
 			]);
 		});
 
@@ -39,3 +51,12 @@ export default test(({ describe }) => {
 	});
 
 });
+
+function assertCommands(shellTracker, expected) {
+	const actual = shellTracker.data.map(({ command, args }) => {
+		const quotedArgs = args.map((arg) => (arg.includes(" ") ? `'${arg}'` : arg));
+		return [ command, ...quotedArgs ].join(" ");
+	});
+
+	assert.equal(actual, expected);
+}
