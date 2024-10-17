@@ -40,7 +40,7 @@ export default class Build {
 		});
 	}
 
-	async runAsync({ resetTreeCache = false } = {}) {
+	async runCliAsync({ resetTreeCache = false } = {}) {
 		ensure.signature(arguments, [[ undefined, {
 			resetTreeCache: [ undefined, Boolean ],
 		}]]);
