@@ -45,7 +45,7 @@ export default class Repo {
 
 		this.#writeHeadline(`Integrating ${config.devBranch} into ${config.integrationBranch}`);
 		await this.#execAsync("git", "checkout", config.integrationBranch);
-		await this.#execAsync("git", "merge", config.devBranch, "--no-ff", "--log=9999", `--message=${message}`);
+		await this.#execAsync("git", "merge", config.devBranch, "--no-ff", "--log=9999", `--message=INTEGRATE: ${message}`);
 		await this.#execAsync("git", "checkout", config.devBranch);
 		await this.#execAsync("git", "merge", config.integrationBranch, "--ff-only");
 	}
