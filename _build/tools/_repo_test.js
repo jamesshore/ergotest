@@ -10,11 +10,10 @@ export default test(({ describe }) => {
 	describe("integrate", ({ it }) => {
 
 		it("merges dev directory into integration directory", async () => {
-			const shell = Shell.createNull();
-			const shellTracker = shell.track();
 			const stdout = ConsoleOutput.createNull();
 			const stdoutTracker = stdout.track();
-			const repo = new Repo(shell, stdout);
+			const repo = new Repo(Shell.createNull(), stdout);
+			const build = new BuildStub(stdout);
 
 			const config = {
 				devBranch: "my_dev_branch",
@@ -23,29 +22,81 @@ export default test(({ describe }) => {
 			const message = "my integration message";
 
 			await repo.integrateAsync({
-				build: new BuildStub(stdout),
+				build,
 				buildTask: "my_task",
 				buildOptions: { myOptions: true },
 				config,
 				message,
 			});
 
-			assertCommands(shellTracker, [
-				"git checkout my_integration_branch",
-				"git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'",
-				"git checkout my_dev_branch",
-				"git merge my_integration_branch --ff-only",
-			]);
-
 			assert.equal(stdoutTracker.data, [
 				Colors.brightWhite.underline("\nValidating build:\n"),
-				`Stubbed build: ${JSON.stringify({ taskNames: [ "my_task" ], options: { myOptions: true }})}\n`,
+				"Stub build passed\n",
 				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
 				Colors.cyan("» git checkout my_integration_branch\n"),
 				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=my integration message'\n"),
 				Colors.cyan("» git checkout my_dev_branch\n"),
 				Colors.cyan("» git merge my_integration_branch --ff-only\n"),
 			]);
+		});
+
+		it("runs build with provided task name and options", async () => {
+			const repo = new Repo(Shell.createNull(), ConsoleOutput.createNull());
+			const build = new BuildStub(ConsoleOutput.createNull());
+
+			const config = {
+				devBranch: "my_dev_branch",
+				integrationBranch: "my_integration_branch",
+			};
+			const message = "my integration message";
+
+			await repo.integrateAsync({
+				build,
+				buildTask: "my_task",
+				buildOptions: { myOptions: true },
+				config,
+				message,
+			});
+
+			assert.equal(build.taskNames, [ "my_task" ], "build task names");
+			assert.equal(build.options, { myOptions: true }, "build options");
+		});
+
+		it.skip("fails gracefully if repo has uncommitted changes", async () => {
+			const shell = Shell.createNull({
+				"git status --porcelain": { stdout: "some changes" },
+			});
+			const stdout = ConsoleOutput.createNull();
+			const stdoutTracker = stdout.track();
+			const repo = new Repo(shell, stdout);
+			const build = new BuildStub(stdout);
+
+			const config = {
+				devBranch: "my_dev_branch",
+				integrationBranch: "my_integration_branch",
+			};
+			const message = "my integration message";
+
+			await assert.errorAsync(
+				() => repo.integrateAsync({
+					build,
+					buildTask: "irrelevant_task",
+					buildOptions: { irrelevantOptions: true },
+					config,
+					message: "irrelevant integration message",
+				}),
+				"Commit changes before integrating",
+			);
+
+			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
+				Colors.cyan("» git status --porcelain\n"),
+				"some changes",
+			]);
+		});
+
+		it("fails gracefully if build fails", () => {
+
 		});
 
 		it("fails gracefully if unable to check out integration branch");
@@ -76,7 +127,9 @@ class BuildStub {
 	}
 
 	runAsync(taskNames, options) {
-		this._stdout.write(`Stubbed build: ${JSON.stringify({taskNames, options})}\n`);
+		this.taskNames = taskNames;
+		this.options = options;
+		this._stdout.write("Stub build passed\n");
 	}
 
 }

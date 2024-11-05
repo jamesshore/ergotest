@@ -12,7 +12,7 @@ export default class Repo {
 		return new Repo(Shell.createNull(), ConsoleOutput.createStdout());
 	}
 
-	constructor(shell, stdout, build) {
+	constructor(shell, stdout) {
 		this._shell = shell;
 		this._stdout = stdout;
 	}
