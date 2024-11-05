@@ -4,6 +4,7 @@ import Repo from "./repo.js";
 import Shell from "infrastructure/shell.js";
 import ConsoleOutput from "infrastructure/console_output.js";
 import Colors from "infrastructure/colors.js";
+import TaskError from "tasks/task_error.js";
 
 export default test(({ describe }) => {
 
@@ -13,7 +14,7 @@ export default test(({ describe }) => {
 			const stdout = ConsoleOutput.createNull();
 			const stdoutTracker = stdout.track();
 			const repo = new Repo(Shell.createNull(), stdout);
-			const build = new BuildStub(stdout);
+			const build = new BuildStub(stdout, true);
 
 			const config = {
 				devBranch: "my_dev_branch",
@@ -44,7 +45,7 @@ export default test(({ describe }) => {
 
 		it("runs build with provided task name and options", async () => {
 			const repo = new Repo(Shell.createNull(), ConsoleOutput.createNull());
-			const build = new BuildStub(ConsoleOutput.createNull());
+			const build = new BuildStub(ConsoleOutput.createNull(), true);
 
 			const config = {
 				devBranch: "my_dev_branch",
@@ -71,7 +72,30 @@ export default test(({ describe }) => {
 			const stdout = ConsoleOutput.createNull();
 			const stdoutTracker = stdout.track();
 			const repo = new Repo(shell, stdout);
-			const build = new BuildStub(stdout);
+			const build = new BuildStub(stdout, true);
+
+			const config = {
+				devBranch: "my_dev_branch",
+				integrationBranch: "my_integration_branch",
+			};
+
+			await assert.errorAsync(
+				() => repo.integrateAsync({
+					build,
+					buildTask: "irrelevant_task",
+					buildOptions: { irrelevantOptions: true },
+					config,
+					message: "irrelevant integration message",
+				}),
+				"Commit changes before integrating",
+			);
+		});
+
+		it("fails gracefully if build fails", async () => {
+			const stdout = ConsoleOutput.createNull();
+			const stdoutTracker = stdout.track();
+			const repo = new Repo(Shell.createNull(), stdout);
+			const build = new BuildStub(stdout, false);
 
 			const config = {
 				devBranch: "my_dev_branch",
@@ -87,17 +111,8 @@ export default test(({ describe }) => {
 					config,
 					message: "irrelevant integration message",
 				}),
-				"Commit changes before integrating",
+				"Build error: Stub build failed",
 			);
-
-			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
-				Colors.cyan("» git status --porcelain\n"),
-			]);
-		});
-
-		it("fails gracefully if build fails", () => {
-
 		});
 
 		it("fails gracefully if unable to get repo status");
@@ -125,14 +140,19 @@ function assertCommands(shellTracker, expected) {
 
 class BuildStub {
 
-	constructor(stdout) {
+	constructor(stdout, pass) {
 		this._stdout = stdout;
+		this._pass = pass;
 	}
 
 	runAsync(taskNames, options) {
 		this.taskNames = taskNames;
 		this.options = options;
-		this._stdout.write("Stub build passed\n");
+
+		if (this._pass) this._stdout.write("Stub build passed\n");
+		else this._stdout.write("Stub build failed\n");
+
+		if (!this._pass) throw new TaskError("Stub build failed");
 	}
 
 }

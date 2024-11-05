@@ -36,7 +36,12 @@ export default class Repo {
 		if (stdout.trim() !== "") throw new TaskError("Commit changes before integrating");
 
 		this.#writeHeadline("Validating build");
-		await build.runAsync([ buildTask ], buildOptions);
+		try {
+			await build.runAsync([ buildTask ], buildOptions);
+		}
+		catch (err) {
+			throw new TaskError(`Build error: ${err.message}`);
+		}
 
 		this.#writeHeadline(`Integrating ${config.devBranch} into ${config.integrationBranch}`);
 		await this.#execAsync("git", "checkout", config.integrationBranch);
