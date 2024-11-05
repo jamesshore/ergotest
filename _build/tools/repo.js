@@ -10,7 +10,7 @@ export default class Repo {
 	static create() {
 		ensure.signature(arguments, []);
 
-		return new Repo(Shell.createNull(), ConsoleOutput.createStdout());
+		return new Repo(Shell.create(), ConsoleOutput.createStdout());
 	}
 
 	constructor(shell, stdout) {
@@ -54,11 +54,15 @@ export default class Repo {
 		this._stdout.write(Colors.brightWhite.underline(`\n${message}:\n`));
 	}
 
-	#execAsync(...command) {
+	async #execAsync(...command) {
 		const render = command.map((element) => (element.includes(" ") ? `'${element}'` : element)).join(" ");
 
 		this._stdout.write(Colors.cyan(`» ${render}\n`));
-		return this._shell.execAsync.apply(this._shell, command);
+
+		const { code, stdout } = await this._shell.execAsync.apply(this._shell, command);
+		if (code !== 0) throw new TaskError(`${command[0]} ${command[1]} failed`);
+
+		return { stdout };
 	}
 
 }

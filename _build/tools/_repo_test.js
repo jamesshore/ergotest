@@ -7,6 +7,9 @@ import Colors from "infrastructure/colors.js";
 import TaskError from "tasks/task_error.js";
 import * as ensure from "util/ensure.js";
 
+const DEV_BRANCH = "my_dev_branch";
+const INTEGRATION_BRANCH = "my_integration_branch";
+
 export default test(({ describe }) => {
 
 	describe("integrate", ({ it }) => {
@@ -14,8 +17,6 @@ export default test(({ describe }) => {
 		it("merges dev directory into integration directory", async () => {
 			const { stdoutTracker } = await integrateAsync({
 				buildPasses: true,
-				devBranch: "my_dev_branch",
-				integrationBranch: "my_integration_branch",
 				buildTask: "my_task",
 				buildOptions: { buildOptions: true },
 				message: "my integration message",
@@ -64,23 +65,24 @@ export default test(({ describe }) => {
 			);
 		});
 
-		it("fails gracefully if unable to get repo status");
-
-		it("fails gracefully if unable to check out integration branch");
-
-		it("fails gracefully if unable to merge dev branch to integration");
-
-		it("fails gracefully if unable to check out dev branch");
-
-		it("fails gracefully if unable to merge integration branch to dev");
+		it("fails gracefully if git command fails", async () => {
+			await assert.errorAsync(
+				() => integrateAsync({
+					shellOptions: {
+						"git status --porcelain": { code: 127 },
+					},
+				}),
+				"git status failed",
+			);
+		});
 
 	});
 
 });
 
 async function integrateAsync({
-	devBranch = "irrelevant_dev_branch",
-	integrationBranch = "irrelevant_integration_branch",
+	devBranch = DEV_BRANCH,
+	integrationBranch = INTEGRATION_BRANCH,
 	buildTask = "irrelevant_build_task",
 	buildOptions = { irrelevantBuildOptions: true },
 	buildPasses = true,
@@ -104,8 +106,8 @@ async function integrateAsync({
 	const build = new BuildStub(stdout, buildPasses);
 
 	const config = {
-		devBranch,
-		integrationBranch,
+		devBranch: DEV_BRANCH,
+		integrationBranch: INTEGRATION_BRANCH,
 	};
 
 	await repo.integrateAsync({
