@@ -20,7 +20,7 @@ export default class Release {
 	constructor() {
 		this._tasks = this.#defineTasks();
 		this._tasks.setDescriptions({
-			integrate: "Integrate to the main branch",
+			default: "Integrate to the main branch",
 		});
 	}
 
@@ -38,7 +38,7 @@ export default class Release {
 		const repo = Repo.create();
 		const build = Build.create();
 
-		tasks.defineTask("integrate", async (options) => {
+		tasks.defineTask("default", async (options) => {
 			if (typeof options.args.message !== "string") {
 				throw new TaskError("Need --message argument for integration message");
 			}
