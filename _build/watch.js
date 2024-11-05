@@ -56,9 +56,15 @@ async function runBuildWhenAnyFilesChangeAsync(fileSystem, build) {
 	}
 }
 
+async function debouncedWaitForChangeAsync(fileSystem) {
+	await clock.waitAsync(DEBOUNCE_MS);
+	await fileSystem.waitForChangeAsync(Paths.buildWatchGlobs);
+	console.log(watchColor("\n*** Change detected"));
+}
+
 async function runBuildAsync(build) {
 	console.log(watchColor(`\n\n\n\n*** BUILD> ${args.join(" ")}`));
-	const buildPromise = build.runAsync({ resetTreeCache: fileTreeChanged });
+	const buildPromise = build.runCliAsync({ resetTreeCache: fileTreeChanged });
 	fileTreeChanged = false;
 	const buildResult = await buildPromise;
 
@@ -66,12 +72,6 @@ async function runBuildAsync(build) {
 
 	// We don't 'await' this because we want it to run in the background.
 	playBuildResultSoundAsync(buildResult);
-}
-
-async function debouncedWaitForChangeAsync(fileSystem) {
-	await clock.waitAsync(DEBOUNCE_MS);
-	await fileSystem.waitForChangeAsync(Paths.buildWatchGlobs);
-	console.log(watchColor("\n*** Change detected"));
 }
 
 async function playBuildResultSoundAsync(buildResult) {

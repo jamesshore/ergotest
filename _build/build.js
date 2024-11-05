@@ -10,8 +10,8 @@ import Tests from "./tools/tests.js";
 import TypeScript from "./tools/typescript.js";
 import Paths from "./config/paths.js";
 import testConfig from "./config/tests.conf.js";
-import lintJavascriptConfig from "./config/eslint.javascript.config.js";
-import lintTypescriptConfig from "./config/eslint.typescript.config.js";
+import lintJavascriptConfig from "./config/eslint.javascript.conf.js";
+import lintTypescriptConfig from "./config/eslint.typescript.conf.js";
 import swcConfig from "./config/swc.conf.js";
 
 export default class Build {
@@ -40,17 +40,22 @@ export default class Build {
 		});
 	}
 
-	async runAsync({ resetTreeCache = false } = {}) {
+	async runCliAsync({ resetTreeCache = false } = {}) {
 		ensure.signature(arguments, [[ undefined, {
 			resetTreeCache: [ undefined, Boolean ],
 		}]]);
 
 		if (resetTreeCache) this._paths = undefined;
 		return await TaskCli.create().runAsync(this._tasks, "BUILD OK", "BUILD FAILURE", async (taskNames, options) => {
-			const reporter = Reporter.create({ debug: options.debug === true });
-
-			await this._tasks.runTasksAsync(taskNames, { reporter });
+			await this.runAsync(taskNames, options);
 		});
+	}
+
+	async runAsync(taskNames, options) {
+		const reporter = Reporter.create({ debug: options.debug === true });
+		const integrate = options.integrate === true;
+
+		await this._tasks.runTasksAsync(taskNames, { reporter, integrate });
 	}
 
 	async #getPathsAsync(reporter) {

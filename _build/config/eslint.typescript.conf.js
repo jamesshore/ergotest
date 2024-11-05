@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import globalConfig from "./eslint.global.config.js";
+import globalConfig from "./eslint.global.conf.js";
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
