@@ -30,6 +30,8 @@ export default test(({ describe }) => {
 			});
 
 			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
+				Colors.cyan("» git status --porcelain\n"),
 				Colors.brightWhite.underline("\nValidating build:\n"),
 				"Stub build passed\n",
 				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
@@ -62,7 +64,7 @@ export default test(({ describe }) => {
 			assert.equal(build.options, { myOptions: true }, "build options");
 		});
 
-		it.skip("fails gracefully if repo has uncommitted changes", async () => {
+		it("fails gracefully if repo has uncommitted changes", async () => {
 			const shell = Shell.createNull({
 				"git status --porcelain": { stdout: "some changes" },
 			});
@@ -91,13 +93,14 @@ export default test(({ describe }) => {
 			assert.equal(stdoutTracker.data, [
 				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
 				Colors.cyan("» git status --porcelain\n"),
-				"some changes",
 			]);
 		});
 
 		it("fails gracefully if build fails", () => {
 
 		});
+
+		it("fails gracefully if unable to get repo status");
 
 		it("fails gracefully if unable to check out integration branch");
 

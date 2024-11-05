@@ -3,6 +3,7 @@ import * as ensure from "util/ensure.js";
 import Shell from "infrastructure/shell.js";
 import ConsoleOutput from "infrastructure/console_output.js";
 import Colors from "infrastructure/colors.js";
+import TaskError from "tasks/task_error.js";
 
 export default class Repo {
 
@@ -30,6 +31,10 @@ export default class Repo {
 		}]]);
 		ensure.typeMinimum(build, { runAsync: Function }, "options.build");
 
+		this.#writeHeadline("Checking for uncommitted changes");
+		const { stdout } = await this.#execAsync("git", "status", "--porcelain");
+		if (stdout.trim() !== "") throw new TaskError("Commit changes before integrating");
+
 		this.#writeHeadline("Validating build");
 		await build.runAsync([ buildTask ], buildOptions);
 
@@ -48,7 +53,7 @@ export default class Repo {
 		const render = command.map((element) => (element.includes(" ") ? `'${element}'` : element)).join(" ");
 
 		this._stdout.write(Colors.cyan(`» ${render}\n`));
-		this._shell.execAsync.apply(this._shell, command);
+		return this._shell.execAsync.apply(this._shell, command);
 	}
 
 }
