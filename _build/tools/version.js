@@ -17,22 +17,20 @@ export default class Version {
 		this._checked = false;
 	}
 
-	async checkAsync({ packageJson, reporter }) {
+	async checkAsync({ expectedVersion, reporter }) {
 		ensure.signature(arguments, [{
-			packageJson: String,
+			expectedVersion: String,
 			reporter: Reporter,
 		}]);
 
 		if (this._checked) return;
-		await reporter.startAsync("Checking Node.js version", async (report) => {
-			const json = await this._fileSystem.readTextFileAsync(packageJson);
-			const expectedVersion = "v" + JSON.parse(json).engines.node;
+		await reporter.startAsync("Checking Node.js version", (report) => {
 			const actualVersion = process.version;
 
 			report.debug(`\n  Expected: ${expectedVersion}`);
 			report.debug(`\n  Actual: ${actualVersion}`);
 
-			if (expectedVersion !== actualVersion) {
+			if ("v" + expectedVersion !== actualVersion) {
 				throw new TaskError(`Incorrect Node version. Expected ${expectedVersion}, but was ${actualVersion}.`);
 			}
 			this._checked = true;

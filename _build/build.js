@@ -14,6 +14,7 @@ import testConfig from "./config/tests.conf.js";
 import lintJavascriptConfig from "./config/eslint.javascript.conf.js";
 import lintTypescriptConfig from "./config/eslint.typescript.conf.js";
 import swcConfig from "./config/swc.conf.js";
+import nodeVersion from "./config/node_version.conf.js";
 import TaskError from "tasks/task_error.js";
 
 export default class Build {
@@ -100,7 +101,7 @@ export default class Build {
 
 		tasks.defineTask("version", async (options) => {
 			await version.checkAsync({
-				packageJson: Paths.packageJson,
+				expectedVersion: nodeVersion,
 				reporter: options.reporter,
 			});
 		});
