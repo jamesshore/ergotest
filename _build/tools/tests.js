@@ -22,18 +22,19 @@ export default class Tests {
 		this._testRunner = TestRunner.create();
 	}
 
-	async runAsync({ description, files, config, reporter }) {
+	async runAsync({ description, files, config, failOnSkip, reporter }) {
 		ensure.signature(arguments, [{
 			description: String,
 			files: Array,
 			config: Object,
+			failOnSkip: Boolean,
 			reporter: Reporter,
 		}]);
 
 		const filesToRun = await this.#findTestFilesAsync(reporter, description, files);
 		if (filesToRun.length === 0) return;
 
-		await this.#runTestsAsync(reporter, description, filesToRun, config);
+		await this.#runTestsAsync(reporter, description, filesToRun, failOnSkip, config);
 	}
 
 	async #findTestFilesAsync(reporter, description, files) {
@@ -82,7 +83,7 @@ export default class Tests {
 		}
 	}
 
-	async #runTestsAsync(reporter, description, filesToRun, config) {
+	async #runTestsAsync(reporter, description, filesToRun, failOnSkip, config) {
 		await reporter.startAsync(`Running ${description}`, async (report) => {
 			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
 				config,
@@ -97,6 +98,7 @@ export default class Tests {
 
 			const testCount = testResult.count();
 			if (testCount.fail + testCount.timeout > 0) throw new TaskError("Tests failed");
+			if (failOnSkip && testCount.skip > 0) throw new TaskError("Tests were skipped");
 			if (testCount.total - testCount.skip === 0) throw new TaskError("No tests found");
 		});
 	}

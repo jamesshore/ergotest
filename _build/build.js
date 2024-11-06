@@ -1,5 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "util/ensure.js";
+import * as type from "util/type.js";
 import Tasks from "tasks/tasks.js";
 import TaskCli from "tasks/task_cli.js";
 import Reporter from "tasks/reporter.js";
@@ -13,6 +14,7 @@ import testConfig from "./config/tests.conf.js";
 import lintJavascriptConfig from "./config/eslint.javascript.conf.js";
 import lintTypescriptConfig from "./config/eslint.typescript.conf.js";
 import swcConfig from "./config/swc.conf.js";
+import TaskError from "tasks/task_error.js";
 
 export default class Build {
 
@@ -52,6 +54,10 @@ export default class Build {
 	}
 
 	async runAsync(taskNames, options) {
+		if (options.integrate !== undefined && typeof options.integrate !== "boolean") {
+			throw new TaskError("--integrate option cannot have value");
+		}
+
 		const reporter = Reporter.create({ debug: options.debug === true });
 		const integrate = options.integrate === true;
 
@@ -126,6 +132,7 @@ export default class Build {
 				description: "JavaScript tests",
 				files: paths.buildTestFiles(),
 				config: testConfig,
+				failOnSkip: options.integrate,
 				reporter: options.reporter,
 			});
 
@@ -137,6 +144,7 @@ export default class Build {
 					outputDir: Paths.typescriptTargetDir,
 				}),
 				config: testConfig,
+				failOnSkip: options.integrate,
 				reporter: options.reporter,
 			});
 		});
