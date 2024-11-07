@@ -36,7 +36,7 @@ Ergotest works particularly well with [Automatopia](https://github.com/jamesshor
 
 ## Wait for v1.0
 
-Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for maintstream use. Until v1.0 is released, everything is subject to change, so you might want to wait.
+Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for mainstream use. Until v1.0 is released, everything is subject to change, so you might want to wait.
 
 
 ## Example Test
