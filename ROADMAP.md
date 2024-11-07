@@ -8,6 +8,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
 * **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestComplete()`.
 * **Remove clock.** The test runner takes an undocumented `clock` parameter. This was a hack I used for testing. I’d like to clean it up.
+* **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. I’m not sure if this is an `ergotest` problem or an `automatopia` problem. Either way, it needs to be fixed.
 
 
 ## Road to “fully baked”
