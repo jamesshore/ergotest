@@ -84,13 +84,13 @@ In this document **(the bold entries are all you need)**:
 There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
 
 * **TestRunner** is how you run your tests.
-* **TestSuiteResult** is how you get more details, and it has a convenient method for rendering the results.
+* **TestSuiteResult** has the results of your test run, and includes a convenient method for rendering the results.
 * **TestCaseResult** has the details of a single test, and it also has convenient rendering methods.
 * **TestRenderer** is how you create customized renderings, if you want to.
 * **TestResult** has factory methods for creating test results, and is the parent to `TestSuiteResult` and `TestCaseResult`.
 * **TestSuite** is used to create tests, and the important parts are described in the [test API documentation](test_api.md).
 
-The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it run in an isolated child process.
+The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it runs in an isolated child process.
 
 The `runInChildProcessAsync()` method returns the results of the test run as a `TestSuiteResult` instance. You can render those results to a string by calling [TestSuiteResult.render()](#testsuiteresultrender). To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount)
 
@@ -172,11 +172,13 @@ Instantiate `TestRunner`.
 
 Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
 
-The modules will be loaded fresh every time this method is called, allowing you to detect when files change and run the tests again.
+The modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
 
 If the tests enter an infinite loop or throw an uncaught exception, a test watchdog will kill the tests and generate a corresponding test failure.
 
 Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+
+> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
 Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
 
@@ -198,6 +200,8 @@ The modules will *not* be reloaded if they have been loaded before, even if they
 Does *not* detect infinite loops or uncaught exceptions.
 
 Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+
+> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
 Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
 
@@ -236,7 +240,7 @@ The name of the suite and all its parent suites, with the outermost suite first.
 
 * testSuiteResult.mark: [TestMarkValue](#testmarkvalue)
 
-Indicates whether the suite was marked with `.skip` or `.only` (or not marked at all). Only suites that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, the tests in a suite can be skipped but without the suite being *marked* `.skip`.
+Indicates whether the suite was marked with `.skip`, `.only` (or not marked at all). Only suites that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, the tests in a suite can be skipped but without the suite being *marked* `.skip`.
 
 Suites with no function body are considered to be marked `.skip`.
 
@@ -257,7 +261,7 @@ This suite’s direct children, which can either be [TestSuiteResult](#testsuite
 
 [Back to top](#automation-api)
 
-* testSuiteResult.render(preamble?: string = "", elapsedMs: number): string
+* testSuiteResult.render(preamble?: string = "", elapsedMs?: number): string
 
 Render this suite as a nicely formatted string. The rendering consists of three parts:
 
@@ -276,7 +280,7 @@ If `elapsedMs` is defined, the summary will include the average amount of time r
 
 * testSuiteResult.count(): { pass: number, fail: number, skip: number, timeout: number, total: number }
 
-A summary of this suite’s results. Includes a count of each type of test case result and the total number. Only counts  [TestCaseResult](#testcaseresult), not [TestSuiteResult](#testsuiteresult).
+A summary of this suite’s results. Includes a count of each type of test case result and the total number. Only counts  [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
 [Back to top](#automation-api)
 
@@ -285,7 +289,7 @@ A summary of this suite’s results. Includes a count of each type of test case 
 
 * testSuiteResult.allTests(): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results in this suite and all it’s sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult), not [TestSuiteResult](#testsuiteresult).
+Find all the test results in this suite and all it’s sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
 If you only want test results with a particular status (pass, fail, etc.), use [testSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests) instead.
 
@@ -296,7 +300,7 @@ If you only want test results with a particular status (pass, fail, etc.), use [
 
 * testSuiteResult.allMatchingTests(...statuses: [TestStatusValue](#teststatusvalue)[]): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results, in this suite and all its sub-suites, that match any of the `statuses` and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult), not [TestSuiteResult](#testsuiteresult).
+Find all the test results, in this suite and all its sub-suites, that match any of the `statuses` and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
 If you want all test results from this suite and its sub-suites, use [testSuiteResult.allTests](#testsuiteresultalltests) instead.
 
@@ -329,7 +333,7 @@ If you want all the test results that were marked, use [testSuiteResult.allMarke
 
 * testSuiteResult.allPassingFiles(): string[]
 
-Find all the files, in this suite and all its sub-suites, that only had passing tests. Files with failed, timed out, *or skipped* tests are not included.
+Find all the files, in this suite and all its sub-suites, that only had passing tests. Files with failed, timed out, or skipped tests are not included.
 
 This is useful for incremental builds. It allows you to ignore test files that have passed while re-testing files that had failures, timeouts, or skips.
 
@@ -340,7 +344,7 @@ This is useful for incremental builds. It allows you to ignore test files that h
 
 * testSuiteResult.equals(that: [TestResult](#testresult)): boolean
 
-Determine if this suite is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, and marks.
+Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, and marks.
 
 [Back to top](#automation-api)
 
@@ -362,7 +366,7 @@ Determine if this suite is equal to another test result. To be equal, they must 
 
 * testCaseResult.filename?: string
 
-If this test suite was loaded from a module (and they typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
+If this test was loaded from a module (and it typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
 
 [Back to top](#automation-api)
 
@@ -373,7 +377,7 @@ If this test suite was loaded from a module (and they typically will be), this p
 
 The name of the test and all its parent suites, with the outermost suite first. Suites with no name aren’t included.
 
-All normal tests have a name, so there should be at least one name element, but it is technically possible to manually create a test case result with a name that’s an empty array. 
+All normal tests have a name, so there should be at least one name element, but it is technically possible to create a test case result with a name that’s an empty array. 
 
 [Back to top](#automation-api)
 
@@ -424,10 +428,10 @@ Please note that this value is the timeout value the test was expected to meet, 
 
 Render this test as a single color-coded character representing its status:
 
-* *pass:* normal-colored dot
-* *fail:* red inverse X
-* *skip:* light cyan underline
-* *timeout:* purple inverse !
+* *pass:* normal-colored `.`
+* *fail:* red inverse `X`
+* *skip:* light cyan `_`
+* *timeout:* purple inverse `!`
 
 This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
 
@@ -452,7 +456,7 @@ This is a convenience method. For more control over rendering, use [TestRenderer
 
 Render this test with all its color-coded detail. The rendering includes:
 
-* The filename and name of the test on two lines
+* The filename, suites, and name of the test on two lines
 * The status of the test, if it didn’t fail
 * The error, stack trace, and expected/actual results, if it did fail
 
@@ -512,15 +516,13 @@ See also [testCaseResult.status](#testcaseresultstatus).
 
 * import { TestRenderer } from "ergotest/test_renderer.js"
 
-`TestRenderer` is a utility class for converting test results into strings. For most people, the `renderXxx()` convenience methods on [TestSuiteResult](#testsuiteresult) or [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class.
+`TestRenderer` is a utility class for converting test results into strings. For most people, the `renderXxx()` convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class.
 
 > *Note:* Although some rendered strings include line feeds, for added flexibility, none of them have a line feed at the end.
 
 Of course, for the maximum control possible, you can ignore `TestRenderer` entirely and write your own rendering using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
 
-But for a happy middle ground, consider subclassing `TestRenderer` and overriding specific methods. For example, if you like how [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) works, but you want it to display emojis for status, override [testRenderer.renderStatusAsSingleWord](#testrendererrenderstatusassingleword) Or you can override [testRenderer.renderDiff](#testrendererrenderdiff) to change the way [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) displays errors.
-
-If you do subclass `TestRenderer`, you’ll have to call it yourself rather than using the convenience methods on [TestSuiteResult](#testsuiteresult) or [TestCaseResult](#testcaseresult). There’s no way to make them use your custom renderer. Luckily, it’s easy enough to do so.
+But for a happy middle ground between control and reuse, consider subclassing `TestRenderer` and overriding specific methods. For example, if you like how [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) works, but you want it to display emojis for status, override [testRenderer.renderStatusAsSingleWord](#testrendererrenderstatusassingleword) Or you can override [testRenderer.renderDiff](#testrendererrenderdiff) to change the way [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) displays errors.
 
 [Back to top](#automation-api)
 
@@ -538,7 +540,7 @@ Create a `TestRenderer` instance.
 
 * testRenderer.renderSummary(testSuiteResult: [TestSuiteResult](#testsuiteresult), elapsedMs?: number): string
 
-Convert a `testSuiteResult` into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded as follows and rendered in this order:
+Convert a `testSuiteResult` into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded and rendered in the following order:
 
 * *failed:* bright red
 * *timed out:* purple
@@ -556,10 +558,10 @@ If `elapsedMs` is defined, the summary will include the average amount of time r
 
 Render `testCaseResults` as a series of color-coded characters representing the tests’ statuses, as follows:
 
-* *pass:* normal-colored dot
-* *fail:* red inverse X
-* *skip:* light cyan underline
-* *timeout:* purple inverse !
+* *pass:* normal-colored `.`
+* *fail:* red inverse `X`
+* *skip:* light cyan `_`
+* *timeout:* purple inverse `!`
 
 [Back to top](#automation-api)
 
@@ -694,7 +696,7 @@ In the future, I’d like to implement a more sophisticated mechanism for highli
 
 * import { TestResult } from "ergotest/test_result.js"
 
-`TestResult` is the parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult). It doesn’t have any methods of its own, but it does have several static factory methods.
+`TestResult` is the parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult). It doesn’t have any methods of its own, but it does have several static factory methods. You’re not likely to need them.
 
 [Back to top](#automation-api)
 
@@ -824,6 +826,8 @@ Import the modules in `modulePaths` in the current process and groups them into 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed.
 
 Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite.
+
+> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
 [Back to top](#automation-api)
 
