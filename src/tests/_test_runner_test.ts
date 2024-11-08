@@ -22,10 +22,6 @@ export default test(({ beforeEach, describe }) => {
 
 	describe("current process", ({ it }) => {
 
-		// it("deleteme", () => {
-		// 	assert.todo("TO DO: Finish ./release.sh major|minor|patch");
-		// });
-
 		it("runs test modules and passes through config", async () => {
 			const myConfig = { myConfig: "my_config" };
 			const { runner } = await createAsync();

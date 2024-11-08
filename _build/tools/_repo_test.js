@@ -78,6 +78,24 @@ export default test(({ describe }) => {
 
 	});
 
+
+	describe("release", ({ it }) => {
+
+		it("updates version and pushes to origin", async () => {
+			const { stdoutTracker } = await releaseAsync({
+				level: "minor",
+			});
+
+			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nReleasing:\n"),
+				Colors.cyan("» npm version minor\n"),
+				Colors.cyan("» git push\n"),
+				Colors.cyan("» git push --tags\n"),
+			]);
+		});
+
+	});
+
 });
 
 async function integrateAsync({
@@ -119,6 +137,25 @@ async function integrateAsync({
 	});
 
 	return { stdoutTracker, build };
+}
+
+async function releaseAsync({
+	level,
+	shellOptions,
+} = {}) {
+	ensure.signature(arguments, [[ undefined, {
+		level: [ String ],
+		shellOptions: [ undefined, Object ],
+	}]]);
+
+	const stdout = ConsoleOutput.createNull();
+	const stdoutTracker = stdout.track();
+	const shell = Shell.createNull(shellOptions);
+	const repo = new Repo(shell, stdout);
+
+	await repo.releaseAsync({ level });
+
+	return { stdoutTracker };
 }
 
 class BuildStub {
