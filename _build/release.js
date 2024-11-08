@@ -67,7 +67,7 @@ export default class Release {
 			await tasks.runTasksAsync([ "integrate" ], options);
 
 			await repo.releaseAsync({
-				type: name
+				level: name,
 			});
 		});
 	}
