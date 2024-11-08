@@ -20,7 +20,10 @@ export default class Release {
 	constructor() {
 		this._tasks = this.#defineTasks();
 		this._tasks.setDescriptions({
-			default: "Integrate to the main branch",
+			patch: "Release a patch version upgrade",
+			minor: "Release a minor version upgrade",
+			major: "Release a major version upgrade",
+			integrate: "Integrate to the main branch without releasing",
 		});
 	}
 
@@ -38,7 +41,11 @@ export default class Release {
 		const repo = Repo.create();
 		const build = Build.create();
 
-		tasks.defineTask("default", async (options) => {
+		this.#defineReleaseTask(tasks, repo, "patch");
+		this.#defineReleaseTask(tasks, repo, "minor");
+		this.#defineReleaseTask(tasks, repo, "major");
+
+		tasks.defineTask("integrate", async (options) => {
 			if (typeof options.args.message !== "string") {
 				throw new TaskError("Need --message argument for integration message");
 			}
@@ -53,5 +60,15 @@ export default class Release {
 		});
 
 		return tasks;
+	}
+
+	#defineReleaseTask(tasks, repo, name) {
+		tasks.defineTask(name, async (options) => {
+			await tasks.runTasksAsync([ "integrate" ], options);
+
+			await repo.releaseAsync({
+				level: name,
+			});
+		});
 	}
 }
