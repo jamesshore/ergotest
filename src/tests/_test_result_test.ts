@@ -569,57 +569,49 @@ export default test(({ describe }) => {
 		});
 
 		it("handles string errors", () => {
-			const test = createFail({ error: "my error" });
-
-			const serialized = test.serialize();
-			assert.dotEquals(TestResult.deserialize(serialized), test);
+			assertErrorWorks("my error");
 		});
 
 		it("handles assertion errors", () => {
-			const error = new AssertionError({
+			assertErrorWorks(new AssertionError({
 				message: "my message",
 				actual: "my actual",
 				expected: "my expected",
 				operator: "my operator",
-			});
-
-			const test = createFail({ error });
-			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
-
-			assert.equal(deserialized.error, error);
-			assert.equal((deserialized.error as Error).stack, error.stack);
+			}));
 		});
 
 		it("handles other errors", () => {
-			const error = new Error("my message");
+			assertErrorWorks(new Error("my message"));
+		});
 
+		it("propagates custom error fields", () => {
+			assertErrorWorks(createCustomError("custom1", "custom2"));
+		});
+
+		function assertErrorWorks(error: string | Error) {
 			const test = createFail({ error });
 			const serialized = test.serialize();
 			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
 
 			assert.equal(deserialized.error, error);
-			assert.equal((deserialized.error as Error).stack, error.stack);
-		});
+			if (error instanceof Error && error.stack !== undefined) {
+				assert.equal((deserialized.error as Error).stack, error.stack);
+			}
+		}
 
-		it("propagates custom fields", () => {
-			interface MyError extends Error {
-				custom1: string,
-				custom2: string,
+		function createCustomError(custom1: unknown, custom2: unknown) {
+			interface CustomError extends Error {
+				custom1: unknown,
+				custom2: unknown,
 			}
 
-			const error = new Error("my message") as MyError;
-			error.custom1 = "custom1";
-			error.custom2 = "custom2";
+			const error = new Error("my message") as CustomError;
+			error.custom1 = custom1;
+			error.custom2 = custom2;
 
-			const test = createFail({ error });
-			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
-
-			assert.equal(deserialized.error, error);
-			assert.equal((deserialized.error as Error).stack, error.stack);
-		});
-
+			return error;
+		}
 	});
 
 });
