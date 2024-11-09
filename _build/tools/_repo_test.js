@@ -21,7 +21,7 @@ export default test(({ describe }) => {
 			});
 
 			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("\nValidating build:\n"),
+				Colors.brightWhite.underline("\nValidating build and creating distribution:\n"),
 				"Stub build passed\n",
 				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
 				Colors.cyan("» git status --porcelain\n"),
@@ -85,10 +85,17 @@ export default test(({ describe }) => {
 			});
 
 			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nSwitching to integration branch:\n"),
+				Colors.cyan(`» git checkout ${INTEGRATION_BRANCH}\n`),
+
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
 				Colors.cyan("» git push --all\n"),
 				Colors.cyan("» git push --tags\n"),
+
+				Colors.brightWhite.underline("\nMerging release into dev branch:\n"),
+				Colors.cyan(`» git checkout ${DEV_BRANCH}\n`),
+				Colors.cyan(`» git merge ${INTEGRATION_BRANCH}\n`),
 			]);
 		});
 
@@ -151,7 +158,12 @@ async function releaseAsync({
 	const shell = Shell.createNull(shellOptions);
 	const repo = new Repo(shell, stdout);
 
-	await repo.releaseAsync({ level });
+	const config = {
+		devBranch: DEV_BRANCH,
+		integrationBranch: INTEGRATION_BRANCH,
+	};
+
+	await repo.releaseAsync({ level, config });
 
 	return { stdoutTracker };
 }

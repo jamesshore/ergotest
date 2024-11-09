@@ -5,6 +5,11 @@ import ConsoleOutput from "infrastructure/console_output.js";
 import Colors from "infrastructure/colors.js";
 import TaskError from "tasks/task_error.js";
 
+const CONFIG_TYPE = {
+	devBranch: String,
+	integrationBranch: String,
+};
+
 export default class Repo {
 
 	static create() {
@@ -23,15 +28,12 @@ export default class Repo {
 			build: Object,
 			buildTasks: Array,
 			buildOptions: Object,
-			config: {
-				devBranch: String,
-				integrationBranch: String,
-			},
+			config: CONFIG_TYPE,
 			message: String
 		}]]);
 		ensure.typeMinimum(build, { runAsync: Function }, "options.build");
 
-		this.#writeHeadline("Validating build");
+		this.#writeHeadline("Validating build and creating distribution");
 		try {
 			await build.runAsync(buildTasks, buildOptions);
 		}
@@ -50,19 +52,27 @@ export default class Repo {
 		await this.#execAsync("git", "merge", config.integrationBranch, "--ff-only");
 	}
 
-	async releaseAsync({ level }) {
+	async releaseAsync({ level, config }) {
 		ensure.signature(arguments, [[ undefined, {
 			level: String,
+			config: CONFIG_TYPE,
 		}]]);
 		ensure.that(
 			level === "patch" || level === "minor" || level === "major",
 			`Release level must be 'patch', 'minor', or 'major', but it was: ${level}`,
 		);
 
+		this.#writeHeadline(`Switching to integration branch`);
+		await this.#execAsync("git", "checkout", config.integrationBranch);
+
 		this.#writeHeadline("Releasing");
 		await this.#execAsync("npm", "version", level);
 		await this.#execAsync("git", "push", "--all");
 		await this.#execAsync("git", "push", "--tags");
+
+		this.#writeHeadline(`Merging release into dev branch`);
+		await this.#execAsync("git", "checkout", config.devBranch);
+		await this.#execAsync("git", "merge", config.integrationBranch);
 	}
 
 	#writeHeadline(message) {
