@@ -89,7 +89,7 @@ export default test(({ describe }) => {
 			assert.equal(stdoutTracker.data, [
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
-				Colors.cyan("» git push\n"),
+				Colors.cyan("» git push --all\n"),
 				Colors.cyan("» git push --tags\n"),
 			]);
 		});

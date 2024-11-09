@@ -61,7 +61,7 @@ export default class Repo {
 
 		this.#writeHeadline("Releasing");
 		await this.#execAsync("npm", "version", level);
-		await this.#execAsync("git", "push");
+		await this.#execAsync("git", "push", "--all");
 		await this.#execAsync("git", "push", "--tags");
 	}
 
