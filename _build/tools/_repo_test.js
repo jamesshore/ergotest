@@ -21,7 +21,7 @@ export default test(({ describe }) => {
 			});
 
 			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("\nValidating build:\n"),
+				Colors.brightWhite.underline("\nValidating build and creating distribution:\n"),
 				"Stub build passed\n",
 				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
 				Colors.cyan("» git status --porcelain\n"),

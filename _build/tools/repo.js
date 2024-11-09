@@ -33,7 +33,7 @@ export default class Repo {
 		}]]);
 		ensure.typeMinimum(build, { runAsync: Function }, "options.build");
 
-		this.#writeHeadline("Validating build");
+		this.#writeHeadline("Validating build and creating distribution");
 		try {
 			await build.runAsync(buildTasks, buildOptions);
 		}
