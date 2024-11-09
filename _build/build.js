@@ -1,6 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "util/ensure.js";
-import * as type from "util/type.js";
 import Tasks from "tasks/tasks.js";
 import TaskCli from "tasks/task_cli.js";
 import Reporter from "tasks/reporter.js";
