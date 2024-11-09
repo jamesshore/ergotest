@@ -1,4 +1,3 @@
-#!/usr/local/bin/node
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 // Automatically runs build when files change.
