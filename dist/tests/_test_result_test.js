@@ -928,10 +928,6 @@ export default test(({ describe })=>{
         it("propagates custom error fields", ()=>{
             assertErrorWorks(createCustomError("custom1", "custom2"));
         });
-        it("propagates regex error fields", ()=>{
-            assert.match("abc", /xyz/);
-            assertErrorWorks(createCustomError(/abc/, /xyz/));
-        });
         function assertErrorWorks(error) {
             const test = createFail({
                 error

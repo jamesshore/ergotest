@@ -18,10 +18,10 @@ export default class Repo {
 		this._stdout = stdout;
 	}
 
-	async integrateAsync({ build, buildTask, buildOptions, config, message }) {
+	async integrateAsync({ build, buildTasks, buildOptions, config, message }) {
 		ensure.signature(arguments, [[ undefined, {
 			build: Object,
-			buildTask: String,
+			buildTasks: Array,
 			buildOptions: Object,
 			config: {
 				devBranch: String,
@@ -31,17 +31,17 @@ export default class Repo {
 		}]]);
 		ensure.typeMinimum(build, { runAsync: Function }, "options.build");
 
-		this.#writeHeadline("Checking for uncommitted changes");
-		const { stdout } = await this.#execAsync("git", "status", "--porcelain");
-		if (stdout.trim() !== "") throw new TaskError("Commit changes before integrating");
-
 		this.#writeHeadline("Validating build");
 		try {
-			await build.runAsync([ buildTask ], buildOptions);
+			await build.runAsync(buildTasks, buildOptions);
 		}
 		catch (err) {
 			throw new TaskError(`Build error: ${err.message}`);
 		}
+
+		this.#writeHeadline("Checking for uncommitted changes");
+		const { stdout } = await this.#execAsync("git", "status", "--porcelain");
+		if (stdout.trim() !== "") throw new TaskError("Commit changes before integrating");
 
 		this.#writeHeadline(`Integrating ${config.devBranch} into ${config.integrationBranch}`);
 		await this.#execAsync("git", "checkout", config.integrationBranch);

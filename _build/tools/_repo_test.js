@@ -17,16 +17,14 @@ export default test(({ describe }) => {
 		it("merges dev directory into integration directory", async () => {
 			const { stdoutTracker } = await integrateAsync({
 				buildPasses: true,
-				buildTask: "my_task",
-				buildOptions: { buildOptions: true },
 				message: "my integration message",
 			});
 
 			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
-				Colors.cyan("» git status --porcelain\n"),
 				Colors.brightWhite.underline("\nValidating build:\n"),
 				"Stub build passed\n",
+				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
+				Colors.cyan("» git status --porcelain\n"),
 				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
 				Colors.cyan("» git checkout my_integration_branch\n"),
 				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=INTEGRATE: my integration message'\n"),
@@ -37,11 +35,11 @@ export default test(({ describe }) => {
 
 		it("runs build with provided task name and options", async () => {
 			const { build } = await integrateAsync({
-				buildTask: "my_task",
+				buildTasks: [ "task1", "task2" ],
 				buildOptions: { myOptions: true },
 			});
 
-			assert.equal(build.taskNames, [ "my_task" ], "build task names");
+			assert.equal(build.taskNames, [ "task1", "task2" ], "build task names");
 			assert.equal(build.options, { myOptions: true }, "build options");
 		});
 
@@ -101,7 +99,7 @@ export default test(({ describe }) => {
 async function integrateAsync({
 	devBranch = DEV_BRANCH,
 	integrationBranch = INTEGRATION_BRANCH,
-	buildTask = "irrelevant_build_task",
+	buildTasks = [ "irrelevant_build_task" ],
 	buildOptions = { irrelevantBuildOptions: true },
 	buildPasses = true,
 	message = "irrelevant_integration_message",
@@ -110,7 +108,7 @@ async function integrateAsync({
 	ensure.signature(arguments, [[ undefined, {
 		devBranch: [ undefined, String ],
 		integrationBranch: [ undefined, String ],
-		buildTask: [ undefined, String ],
+		buildTasks: [ undefined, Array ],
 		buildOptions: [ undefined, Object ],
 		buildPasses: [ undefined, Boolean ],
 		message: [ undefined, String ],
@@ -130,8 +128,8 @@ async function integrateAsync({
 
 	await repo.integrateAsync({
 		build,
-		buildTask: buildTask,
-		buildOptions: buildOptions,
+		buildTasks,
+		buildOptions,
 		config,
 		message,
 	});
