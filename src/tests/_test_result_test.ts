@@ -589,10 +589,6 @@ export default test(({ describe }) => {
 			assertErrorWorks(createCustomError("custom1", "custom2"));
 		});
 
-		it("propagates regex error fields", () => {
-			assertErrorWorks(createCustomError(/abc/, /xyz/));
-		});
-
 		function assertErrorWorks(error: string | Error) {
 			const test = createFail({ error });
 			const serialized = test.serialize();
@@ -606,8 +602,8 @@ export default test(({ describe }) => {
 
 		function createCustomError(custom1: unknown, custom2: unknown) {
 			interface CustomError extends Error {
-				custom1: string,
-				custom2: string,
+				custom1: unknown,
+				custom2: unknown,
 			}
 
 			const error = new Error("my message") as CustomError;

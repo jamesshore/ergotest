@@ -93,7 +93,7 @@ export class TestRunner {
 			notifyFn: [ undefined, Function ],
 		}]]);
 
-		const child = child_process.fork(WORKER_FILENAME);
+		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
 		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, config, notifyFn);
 		await killChildProcess(child);
 

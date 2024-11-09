@@ -589,9 +589,6 @@ export const TestMark = {
             };
             if (error instanceof AssertionError) {
                 serialized.type = "AssertionError";
-                serialized.actual = error.actual;
-                serialized.expected = error.expected;
-                serialized.operator = error.operator;
             }
             return serialized;
         }

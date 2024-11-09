@@ -7,6 +7,8 @@ import { TestSuite } from "./test_suite.js";
 import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
+import { AssertionError } from "node:assert";
+import { write } from "node:fs";
 
 export default test(({ beforeEach, describe }) => {
 
@@ -140,15 +142,42 @@ export default test(({ beforeEach, describe }) => {
 	});
 
 
-	function assertFailureMessage(results: TestResult, expectedFailure: string) {
+	describe("child process error serialization", ({ it }) => {
+
+		it("supports generic errors", async () => {
+			await assertErrorSerializationAsync(`throw new Error("my error")`, new Error("my error"));
+		});
+
+		it("supports regexes and similar types", async () => {
+			await assertErrorSerializationAsync(
+				`assert.match("abc", /xyz/)`,
+				new AssertionError({ message: "should match regex", actual: "abc", expected: /xyz/}),
+			);
+		});
+
+		async function assertErrorSerializationAsync(testCode: string, expectedError: unknown) {
+			const { runner } = await createAsync();
+			await writeTestModuleAsync(testCode);
+			const result = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			assert.equal(getErrorResult(result), expectedError);
+		}
+
+	});
+
+
+	function getErrorResult(result: TestResult) {
 		// @ts-expect-error This line is pretty janky, but that's okay because the tests will fail if stops working
-		assert.equal(results.children[0].children[0].error.message, expectedFailure);
+		return result.children[0].children[0].error;
+	}
+
+	function assertFailureMessage(results: TestResult, expectedFailure: string) {
+		assert.equal(getErrorResult(results).message, expectedFailure);
 	}
 
 	async function writeTestModuleAsync(bodySourceCode: string) {
-		const testSuitePath = path.resolve(import.meta.dirname, "./test_suite.js");
 		await fs.writeFile(TEST_MODULE_PATH, `
-			import { TestSuite } from ` + `"${testSuitePath}";
+			import { TestSuite } from ` + `"${(path.resolve(import.meta.dirname, "./test_suite.js"))}";
+			import * as assert from ` + `"${(path.resolve(import.meta.dirname, "./assert.js"))}";
 			
 			export default TestSuite.create(({ it }) => {
 				it("test", ({ getConfig }) => {
