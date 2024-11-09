@@ -68,6 +68,7 @@ export default class Release {
 
 			await repo.releaseAsync({
 				level: name,
+				config: repoConfig,
 			});
 		});
 	}
