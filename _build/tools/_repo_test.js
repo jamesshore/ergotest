@@ -23,10 +23,10 @@ export default test(({ describe }) => {
 			});
 
 			assert.equal(stdoutTracker.data, [
-				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
-				Colors.cyan("» git status --porcelain\n"),
 				Colors.brightWhite.underline("\nValidating build:\n"),
 				"Stub build passed\n",
+				Colors.brightWhite.underline("\nChecking for uncommitted changes:\n"),
+				Colors.cyan("» git status --porcelain\n"),
 				Colors.brightWhite.underline("\nIntegrating my_dev_branch into my_integration_branch:\n"),
 				Colors.cyan("» git checkout my_integration_branch\n"),
 				Colors.cyan("» git merge my_dev_branch --no-ff --log=9999 '--message=INTEGRATE: my integration message'\n"),
