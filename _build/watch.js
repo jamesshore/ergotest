@@ -36,7 +36,7 @@ async function runAsync() {
 
 async function restartWhenBuildFilesChangeAsync(fileSystem) {
 	await fileSystem.waitForChangeAsync(Paths.buildRestartGlobs);
-	console.log(watchColor("\n*** Build files changed"));
+	console.log(watchColor("*** Build files changed"));
 	process.exit(0);
 	// watch.sh will detect that the process exited cleanly and restart it
 }
