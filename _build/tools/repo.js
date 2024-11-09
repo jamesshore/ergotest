@@ -18,10 +18,10 @@ export default class Repo {
 		this._stdout = stdout;
 	}
 
-	async integrateAsync({ build, buildTask, buildOptions, config, message }) {
+	async integrateAsync({ build, buildTasks, buildOptions, config, message }) {
 		ensure.signature(arguments, [[ undefined, {
 			build: Object,
-			buildTask: String,
+			buildTasks: Array,
 			buildOptions: Object,
 			config: {
 				devBranch: String,
@@ -33,7 +33,7 @@ export default class Repo {
 
 		this.#writeHeadline("Validating build");
 		try {
-			await build.runAsync([ buildTask ], buildOptions);
+			await build.runAsync(buildTasks, buildOptions);
 		}
 		catch (err) {
 			throw new TaskError(`Build error: ${err.message}`);
