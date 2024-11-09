@@ -52,7 +52,7 @@ export default class Release {
 
 			await repo.integrateAsync({
 				build,
-				buildTask: "default",
+				buildTask: "dist",
 				buildOptions: { integrate: true },
 				config: repoConfig,
 				message: options.args.message,
