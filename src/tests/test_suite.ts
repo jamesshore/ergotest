@@ -34,12 +34,12 @@ interface It {
 type BeforeAfter = (fn: Test) => void;
 
 export interface SuiteParameters {
-	describe: Describe,
-	it: It,
-	beforeAll: BeforeAfter,
-	afterAll: BeforeAfter,
-	beforeEach: BeforeAfter,
-	afterEach: BeforeAfter,
+	describe?: Describe,
+	it?: It,
+	beforeAll?: BeforeAfter,
+	afterAll?: BeforeAfter,
+	beforeEach?: BeforeAfter,
+	afterEach?: BeforeAfter,
 	setTimeout: (newTimeout: Milliseconds) => void,
 }
 
@@ -77,7 +77,16 @@ interface Runnable {
 	_isSkipped: (mark: TestMarkValue) => boolean,
 }
 
-let testContext: Omit<SuiteParameters, "setTimeout">[] = [];
+interface TestContext {
+	describe: Describe,
+	it: It,
+	beforeAll: BeforeAfter,
+	afterAll: BeforeAfter,
+	beforeEach: BeforeAfter,
+	afterEach: BeforeAfter,
+}
+
+const testContext: TestContext[] = [];
 
 /**
  * A simple but full-featured test runner. It's notable for not using globals.
@@ -506,7 +515,6 @@ function startTest(
 	mark: TestMarkValue,
 ): TestSuite {
 	ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
-	testContext = [];   // delete this line when the above is uncommented
 
 	try {
 		return TestSuite._create(nameOrSuiteFn, possibleSuiteFn, mark);

@@ -1,15 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import { test, assert } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import * as ensure from "./ensure.js";
 
 interface NodeError extends Error {
 	stack: string;
 }
 
-export default test(({ describe, it }) => {
+export default test(() => {
 
-	describe("condition checking", ({ describe, it }) => {
+	describe("condition checking", () => {
 
 		it("checks if condition is true", () => {
 			const that = wrap(ensure.that);
@@ -30,7 +29,7 @@ export default test(({ describe, it }) => {
 
 	});
 
-	describe("signature checking", ({ describe, it }) => {
+	describe("signature checking", () => {
 
 		const signature = wrap(ensure.signature);
 		const signatureMinimum = wrap(ensure.signatureMinimum);
@@ -175,7 +174,7 @@ export default test(({ describe, it }) => {
 
 	});
 
-	describe("type checking", ({ describe, it }) => {
+	describe("type checking", () => {
 
 		it("checks if variable is defined", () => {
 			const defined = wrap(ensure.defined);

@@ -1,5 +1,4 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
 import { assert, test, describe, it } from "../tests.js";
 import {
 	TestSuite,
@@ -235,7 +234,7 @@ export default test(() => {
 				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
 			], filename));
 		});
-		
+
 		it("fails when test() is run within test()", () => {
 			test_sut(() => {
 				assert.error(

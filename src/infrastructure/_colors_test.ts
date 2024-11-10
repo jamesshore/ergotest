@@ -1,9 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import { test, assert } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { Colors } from "./colors.js";
 
-export default test(({ it }) => {
+export default test(() => {
 
 	const { red } = Colors;    // see production code for other supported colors
 

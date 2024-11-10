@@ -1,6 +1,5 @@
 // Copyright Titanium I.T. LLC.
-
-import { test } from "../tests.js";
+import { test, describe, it } from "../tests.js";
 import * as assert from "./assert.js";
 import { AssertionError } from "node:assert";
 
@@ -11,9 +10,9 @@ interface ObjEquals {
 	equals(that: unknown): boolean,
 }
 
-export default test(({ describe }) => {
+export default test(() => {
 
-	describe("equal()", ({ it }) => {
+	describe("equal()", () => {
 
 		it("passes if actual strictly equals expected", () => {
 			expectPass(() => {
@@ -64,7 +63,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("notEqual()", ({ it }) => {
+	describe("notEqual()", () => {
 
 		it("fails if actual strictly equals expected", () => {
 			expectFail(() => {
@@ -117,7 +116,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("identity()", ({ it }) => {
+	describe("identity()", () => {
 
 		it("passes if objects have the same reference", () => {
 			const actual = {};
@@ -170,7 +169,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("notIdentity()", ({ it }) => {
+	describe("notIdentity()", () => {
 
 		it("fails if objects have the same reference", () => {
 			const actual = {};
@@ -205,7 +204,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("dotEquals()", ({ it }) => {
+	describe("dotEquals()", () => {
 
 		it("passes if expected.equals() returns true", () => {
 			const expected = { equals() { return true; }};
@@ -232,7 +231,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("matches()", ({ it }) => {
+	describe("matches()", () => {
 
 		it("passes if actual matches regex", () => {
 			expectPass(() => {
@@ -249,7 +248,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("matchesGroup()", ({ it }) => {
+	describe("matchesGroup()", () => {
 
 		it("passes if first group in regex matches expected text", () => {
 			expectPass(() => {
@@ -290,7 +289,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("includes()", ({ it }) => {
+	describe("includes()", () => {
 
 		it("passes if actual includes string", () => {
 			expectPass(() => {
@@ -308,7 +307,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("notIncludes()", ({ it }) => {
+	describe("notIncludes()", () => {
 
 		it("passes if actual doesn't include string", () => {
 			expectPass(() => {
@@ -326,7 +325,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("type()", ({ it }) => {
+	describe("type()", () => {
 
 		it("passes if type of actual matches expected type", () => {
 			expectPass(() => {
@@ -343,7 +342,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("exception()", ({ it }) => {
+	describe("exception()", () => {
 
 		it("passes if function throws and there's no expectation", () => {
 			expectPass(() => {
@@ -396,7 +395,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("exceptionAsync()", ({ it }) => {
+	describe("exceptionAsync()", () => {
 
 		it("passes if function throws and there's no expectation", async () => {
 			await expectPassAsync(async () => {
@@ -449,7 +448,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("noExceptionAsync()", ({ it }) => {
+	describe("noExceptionAsync()", () => {
 
 		it("passes if function does not throw exception", async () => {
 			await expectPassAsync(async () => {
