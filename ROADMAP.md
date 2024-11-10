@@ -4,7 +4,7 @@
 
 Although I’ve been using Ergotest for many years, I’m planning to make a few breaking API changes prior to releasing v1.0. Most of these changes are to make Ergotest compatible with a subset of [Vitest](https://vitest.dev/). That makes trying Ergotest lower risk: you can give it a try and switch to Vitest later if it doesn’t do what you want. 
 
-* **Better test API.** Currently, `describe()`, `it()`, `beforeXxx()`, and `afterXxx()` are passed in as parameters to the test suite function. This is awkward and has some footguns. I’d like to you to be able to just import them like you do in Vitest.  
+* ✅ **Better test API.** Currently, `describe()`, `it()`, `beforeXxx()`, and `afterXxx()` are passed in as parameters to the test suite function. This is awkward and has some footguns. I’d like to you to be able to just import them like you do in Vitest.  
 * **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
 * **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestComplete()`.
 * **Remove clock.** The test runner takes an undocumented `clock` parameter. This was a hack I used for testing. I’d like to clean it up.
@@ -17,6 +17,7 @@ My goal is for Ergo to reach the point where it’s “fully baked” and not in
 
 * **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
+* **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
 * **Parallel test runs.** This isn’t that high on my list, given that my tests run in a matter of seconds, and [Automatopia’s](https://github.com/jamesshore/automatopia) incremental watch script brings that down to a fraction of a second, but it would be good for bragging rights.
   * Specifically, I want to spawn multiple child processes and have them each process one test module at time off of a shared queue. 
   * This isn't that hard, given that we already use a child process to run the tests. The main challenge is that we need to ensure that `.only` still works across files.
