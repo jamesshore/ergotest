@@ -1,13 +1,12 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { TestRenderer } from "./test_renderer.js";
 
-export default test(({ describe }) => {
+export default test(() => {
 
-	describe("test suite", ({ it }) => {
+	describe("test suite", () => {
 
 		it("has a name and list of test results", () => {
 			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
@@ -63,7 +62,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("test suite rendering", ({ it }) => {
+	describe("test suite rendering", () => {
 
 		it("renders marks, errors, and a summary to a nicely-formatted string", () => {
 			const fail = createFail();
@@ -205,7 +204,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("test case", ({ it }) => {
+	describe("test case", () => {
 
 		it("passing tests have a name, status, and mark", () => {
 			const result = createPass({ name: "my name" });
@@ -311,7 +310,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("test case rendering", ({ it }) => {
+	describe("test case rendering", () => {
 
 		it("renders test case as character, single line, or multi-line", () => {
 			const renderer = TestRenderer.create();
@@ -325,7 +324,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("flattening", ({ it }) => {
+	describe("flattening", () => {
 
 		it("flattens all test results into a single list", () => {
 			const suite = createSuite({ children: [
@@ -443,7 +442,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("passing test files", ({ it }) => {
+	describe("passing test files", () => {
 
 		it("provides names of files that have all passing tests", () => {
 			const suite = createSuite({ children: [
@@ -501,7 +500,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("summarization", ({ it }) => {
+	describe("summarization", () => {
 
 		it("provides test count", () => {
 			const suite = createSuite({ children: [
@@ -549,7 +548,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("serialization and deserialization", ({ it }) => {
+	describe("serialization and deserialization", () => {
 
 		it("can be serialized and deserialized", () => {
 			const suite = createSuite({ children: [

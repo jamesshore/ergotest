@@ -3,12 +3,12 @@
 /* eslint @typescript-eslint/no-explicit-any: "off" */
 // There are a lot of weird JavaScript manipulations in these tests, so we work around the type-checker with "as any"
 
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import * as type from "./type.js";
 
-export default test(({ describe, it }) => {
+export default test(() => {
 
-	describe("checker", ({ describe, it }) => {
+	describe("checker", () => {
 
 		const check = type.check;
 
@@ -137,7 +137,7 @@ export default test(({ describe, it }) => {
 
 	});
 
-	describe("describer", ({ describe, it }) => {
+	describe("describer", () => {
 
 		const MyClass = function MyClass() {} as any;
 

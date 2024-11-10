@@ -1,11 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { Clock } from "./clock.js";
 
-export default test(({ describe }) => {
+export default test(() => {
 
-	describe("information", ({ it }) => {
+	describe("information", () => {
 
 		it("provides current timestamp", () => {
 			const clock = Clock.create();
@@ -33,7 +32,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("wait", ({ it }) => {
+	describe("wait", () => {
 
 		it("waits N milliseconds", async () => {
 			const clock = Clock.create();
@@ -47,7 +46,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("repeat", ({ it }) => {
+	describe("repeat", () => {
 
 		it("calls a function every N milliseconds", async () => {
 			const clock = await Clock.createNullAsync();		// real clock is too nondeterministic to test directly
@@ -66,7 +65,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("keepalive", ({ it }) => {
+	describe("keepalive", () => {
 
 		it("runs a function after N milliseconds", async () => {
 			const clock = await Clock.createNullAsync();
@@ -127,7 +126,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("timeouts", ({ it }) => {
+	describe("timeouts", () => {
 
 		function createTimeoutFn(result: string | Error = "default timeout function result") {
 			const timeoutFn = () => {
@@ -216,7 +215,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("nullability", ({ it }) => {
+	describe("nullability", () => {
 
 		it("defaults 'now' to zero", async () => {
 			const clock = await Clock.createNullAsync();

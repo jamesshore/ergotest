@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC.
-import { test } from "../tests.js";
+import { test, describe, it } from "../tests.js";
 import * as assert from "./assert.js";
-export default test(({ describe })=>{
-    describe("equal()", ({ it })=>{
+export default test(()=>{
+    describe("equal()", ()=>{
         it("passes if actual strictly equals expected", ()=>{
             expectPass(()=>{
                 assert.equal("abc", "abc");
@@ -46,7 +46,7 @@ export default test(({ describe })=>{
             }, "should be equal", actual, expected);
         });
     });
-    describe("notEqual()", ({ it })=>{
+    describe("notEqual()", ()=>{
         it("fails if actual strictly equals expected", ()=>{
             expectFail(()=>{
                 assert.notEqual("abc", "abc");
@@ -92,7 +92,7 @@ export default test(({ describe })=>{
             });
         });
     });
-    describe("identity()", ({ it })=>{
+    describe("identity()", ()=>{
         it("passes if objects have the same reference", ()=>{
             const actual = {};
             const expected = actual;
@@ -132,7 +132,7 @@ export default test(({ describe })=>{
             }, "'expected' is null", {}, null);
         });
     });
-    describe("notIdentity()", ({ it })=>{
+    describe("notIdentity()", ()=>{
         it("fails if objects have the same reference", ()=>{
             const actual = {};
             const expected = actual;
@@ -158,7 +158,7 @@ export default test(({ describe })=>{
             }, "'expected' is null", {}, null);
         });
     });
-    describe("dotEquals()", ({ it })=>{
+    describe("dotEquals()", ()=>{
         it("passes if expected.equals() returns true", ()=>{
             const expected = {
                 equals () {
@@ -186,7 +186,7 @@ export default test(({ describe })=>{
             }, "'expected' does not have equals() method");
         });
     });
-    describe("matches()", ({ it })=>{
+    describe("matches()", ()=>{
         it("passes if actual matches regex", ()=>{
             expectPass(()=>{
                 assert.match("abc", /b/);
@@ -198,7 +198,7 @@ export default test(({ describe })=>{
             }, "should match regex", "abc", /x/);
         });
     });
-    describe("matchesGroup()", ({ it })=>{
+    describe("matchesGroup()", ()=>{
         it("passes if first group in regex matches expected text", ()=>{
             expectPass(()=>{
                 assert.matchesGroup("-abc-", /-(.*?)-/, "abc");
@@ -230,7 +230,7 @@ export default test(({ describe })=>{
             }, "my failure message: should be equal", "actual", "expected");
         });
     });
-    describe("includes()", ({ it })=>{
+    describe("includes()", ()=>{
         it("passes if actual includes string", ()=>{
             expectPass(()=>{
                 assert.includes("abcdef", "bcd");
@@ -242,7 +242,7 @@ export default test(({ describe })=>{
             }, "actual value should include expected value", "abcdef", "xxx");
         });
     });
-    describe("notIncludes()", ({ it })=>{
+    describe("notIncludes()", ()=>{
         it("passes if actual doesn't include string", ()=>{
             expectPass(()=>{
                 assert.notIncludes("abcdef", "xxx");
@@ -254,7 +254,7 @@ export default test(({ describe })=>{
             }, "actual value should not include expected value", "abcdef", "bcd");
         });
     });
-    describe("type()", ({ it })=>{
+    describe("type()", ()=>{
         it("passes if type of actual matches expected type", ()=>{
             expectPass(()=>{
                 assert.type(1, Number);
@@ -266,7 +266,7 @@ export default test(({ describe })=>{
             }, "type should match", 1, "string");
         });
     });
-    describe("exception()", ({ it })=>{
+    describe("exception()", ()=>{
         it("passes if function throws and there's no expectation", ()=>{
             expectPass(()=>{
                 assert.error(()=>{
@@ -308,7 +308,7 @@ export default test(({ describe })=>{
             }, "should match regex", "my complicated error message", /not-found/);
         });
     });
-    describe("exceptionAsync()", ({ it })=>{
+    describe("exceptionAsync()", ()=>{
         it("passes if function throws and there's no expectation", async ()=>{
             await expectPassAsync(async ()=>{
                 await assert.errorAsync(()=>Promise.reject(new Error("any error")));
@@ -340,7 +340,7 @@ export default test(({ describe })=>{
             }, "should match regex", "my complicated error message", /not-found/);
         });
     });
-    describe("noExceptionAsync()", ({ it })=>{
+    describe("noExceptionAsync()", ()=>{
         it("passes if function does not throw exception", async ()=>{
             await expectPassAsync(async ()=>{
                 await assert.notErrorAsync(()=>Promise.resolve());

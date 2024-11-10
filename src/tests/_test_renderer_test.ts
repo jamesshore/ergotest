@@ -1,6 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
@@ -13,9 +12,9 @@ const timeoutColor = Colors.purple;
 const skipColor = Colors.cyan;
 const passColor = Colors.green;
 
-export default test(({ describe }) => {
+export default test(() => {
 
-	describe("summary", ({ it }) => {
+	describe("summary", () => {
 
 		it("renders summary", () => {
 			const result = createSuite({ children: [
@@ -78,7 +77,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-character test cases", ({ it }) => {
+	describe("single-character test cases", () => {
 
 		it("renders test cases as progress marker", () => {
 			assert.equal(renderCharacterTest(createPass()), ".", "pass");
@@ -108,7 +107,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-line test cases", ({ it }) => {
+	describe("single-line test cases", () => {
 
 		it("pass", () => {
 			const result = createPass({ name: "my name" });
@@ -151,7 +150,7 @@ export default test(({ describe }) => {
 	});
 	
 
-	describe("multi-line test cases", ({ it }) => {
+	describe("multi-line test cases", () => {
 
 		it("renders multi-line name and status separated by a blank line", () => {
 			const result = createPass({ name: [ "my suite", "my name" ]});
@@ -186,7 +185,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-line test marks", ({ it }) => {
+	describe("single-line test marks", () => {
 
 		it("renders test case marks", () => {
 			assert.equal(
@@ -226,7 +225,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-line names", ({ it }) => {
+	describe("single-line names", () => {
 
 		it("renders default name when no name provided", () => {
 			const result = createPass({ name: [] });
@@ -260,7 +259,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("multi-line names", ({ it }) => {
+	describe("multi-line names", () => {
 
 		it("renders default name when no name provided", () => {
 			const result = createPass({ name: [] });
@@ -294,7 +293,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-word statuses", ({ it }) => {
+	describe("single-word statuses", () => {
 
 		it("renders all statuses", () => {
 			assert.equal(render(createPass()), Colors.green("passed"), "pass");
@@ -310,7 +309,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("multi-line statuses", ({ it, describe }) => {
+	describe("multi-line statuses", () => {
 
 		it("renders pass", () => {
 			assert.equal(render(createPass()), Colors.green("passed"));
@@ -417,7 +416,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("single-word marks", ({ it }) => {
+	describe("single-word marks", () => {
 
 		it("renders all marks", () => {
 			assert.equal(render(createPass({ mark: TestMark.none })), "(no mark)");
@@ -432,7 +431,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("stack traces", ({ it }) => {
+	describe("stack traces", () => {
 
 		const EXAMPLE_STACK = "Error: my error\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js:306:11\n" +
@@ -480,7 +479,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("actual / expected diffs", ({ it }) => {
+	describe("actual / expected diffs", () => {
 		// These tests depends on util.inspect() behavior, which is not guaranteed to remain consistent across
 		// Node versions, so it could break after a Node version upgrade.
 

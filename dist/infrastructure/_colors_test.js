@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { test, assert } from "../tests.js";
+import { assert, test, it } from "../tests.js";
 import { Colors } from "./colors.js";
-export default test(({ it })=>{
+export default test(()=>{
     const { red } = Colors; // see production code for other supported colors
     it("color-codes text", ()=>{
         assert.equal(red("text"), "\u001b[31mtext\u001b[0m");

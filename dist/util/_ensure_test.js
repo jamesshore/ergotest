@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { test, assert } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import * as ensure from "./ensure.js";
-export default test(({ describe, it })=>{
-    describe("condition checking", ({ describe, it })=>{
+export default test(()=>{
+    describe("condition checking", ()=>{
         it("checks if condition is true", ()=>{
             const that = wrap(ensure.that);
             assert.notError(that(true));
@@ -17,7 +17,7 @@ export default test(({ describe, it })=>{
             assertEnsureError(unreachable("foo"), /foo/);
         });
     });
-    describe("signature checking", ({ describe, it })=>{
+    describe("signature checking", ()=>{
         const signature = wrap(ensure.signature);
         const signatureMinimum = wrap(ensure.signatureMinimum);
         it("checks no arguments", ()=>{
@@ -304,7 +304,7 @@ export default test(({ describe, it })=>{
             ]), /Argument #1 must be undefined or an object, but it was a string/, "optional parameter filled in with wrong type");
         });
     });
-    describe("type checking", ({ describe, it })=>{
+    describe("type checking", ()=>{
         it("checks if variable is defined", ()=>{
             const defined = wrap(ensure.defined);
             assert.notError(defined("foo"));

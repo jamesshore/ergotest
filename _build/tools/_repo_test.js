@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test } from "tests";
+import { assert, test, describe, it } from "tests";
 import Repo from "./repo.js";
 import Shell from "infrastructure/shell.js";
 import ConsoleOutput from "infrastructure/console_output.js";
@@ -10,9 +10,9 @@ import * as ensure from "util/ensure.js";
 const DEV_BRANCH = "my_dev_branch";
 const INTEGRATION_BRANCH = "my_integration_branch";
 
-export default test(({ describe }) => {
+export default test(() => {
 
-	describe("integrate", ({ it }) => {
+	describe("integrate", () => {
 
 		it("merges dev directory into integration directory", async () => {
 			const { stdoutTracker } = await integrateAsync({
@@ -77,7 +77,7 @@ export default test(({ describe }) => {
 	});
 
 
-	describe("release", ({ it }) => {
+	describe("release", () => {
 
 		it("updates version and pushes to origin", async () => {
 			const { stdoutTracker } = await releaseAsync({
