@@ -90,6 +90,7 @@ export default test(({ describe }) => {
 
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
+				Colors.cyan("» npm publish\n"),
 				Colors.cyan("» git push --all\n"),
 				Colors.cyan("» git push --tags\n"),
 
