@@ -14,6 +14,7 @@ Links to other documentation:
 
 In this document:
 
+* [Example](#example)
 * [Start Here](#start-here)
 * [TestSuite.create](#testsuitecreate) aka test() or describe()
 * [it()](#it)
@@ -24,109 +25,14 @@ In this document:
 * [setTimeout()](#settimeout)
 * [getConfig()](#getconfig)
 
-## Start Here
 
-Your test files must export a `TestSuite` instance. The easiest way to do so is like this:
+
+## Example
 
 ```typescript
-// NOT RECOMMENDED
-import { test, assert } from "ergotest";
+import { assert, test, describe, it, beforeAll, afterAll } from "./tests.js";
 
 export default test(() => {
-  
-  // tests go here
-  
-});
-```
-
-The `test()` function is an alias for [TestSuite.create()](#testsuitecreate), described below.
-
-Instead of importing `ergotest` directly, create a `tests.ts` (or `tests.js`) wrapper that re-exports Ergotest. That way, if you ever decide to change test libraries, you won’t have to go update every single test. Like this:
-
-```typescript
-// tests.ts
-import { TestSuite } from "ergotest/test_suite.js";
-
-export const test = TestSuite.create;
-export * as assert from "ergotest/assert.js";
-```
-
-Then use it in your tests like this:
-
-```typescript
-// RECOMMENDED
-import { test, assert } from "tests.js";
-
-export default test(() => {
-  
-  // tests go here
-  
-});
-```
-
-This approach allows you to use any assertion library you want. If you prefer Chai's `expect` library, you'd put this in `tests.ts` instead:
-
-```typescript
-// tests.ts
-import { TestSuite } from "ergotest/test_suite.js";
-
-export const test = TestSuite.create;
-export { expect } from "chai";
-```
-
-Even better, you can export custom assertion methods that are built for the needs of your project. See the [Assertion API documentation](assertion_api.md) for details. 
-
-[Back to top](#test-api)
-
-
-## TestSuite.create()
-
-* TestSuite.create(fn?: DescribeFunction)
-* TestSuite.create(name?: string, fn?: DescribeFunction)
-* TestSuite.create.only(...)
-* TestSuite.create.skip(...)
-
-It's also known as `describe()` or `test()`:
-
-* describe(fn?: DescribeFunction)
-* describe(name?: string, fn?: DescribeFunction)
-* describe.only(...)
-* describe.skip(...)
-
-`TestSuite.create()` defines a set of tests. When called, it runs `fn()` with an object parameter you can use to define your tests. When `fn()` complete, `TestSuite.create()` will return a `TestSuite` instance that you can use to run the tests you defined. See [the automation API](automation_api.md) for more information about running tests. 
-
-### DescribeFunction
-
-* fn({ it, describe, beforeAll, afterAll, beforeEach, afterEach, setTimeout }) => void
-
-`fn()` is provided with an object parameter containing the following functions:
-
-* [it()](#it)
-* [describe()](#testsuitecreate)
-* [beforeAll()](#beforeall)
-* [afterAll()](#afterall)
-* [beforeEach()](#beforeeach)
-* [afterEach()](#aftereach)
-* [setTimeout()](#settimeout)
-
-Use these parameters to define your tests. You’ll use `describe()` and `it()` most frequently.
-
-`fn()` must run synchronously. Any return value is ignored.
-
-### .only and .skip
-
-Use the `.only` variant to skip all tests or test suites other than the ones marked `.only`. This works across modules, assuming the modules are bundled into a single suite (which they typically are).
-
-Use the `.skip` variant to skip this test suite. Leaving out `fn()` will also skip this test suite.
-
-The `.skip` and `.only` status is inherited by all tests and suites created by `fn()`, but can be overridden by using `.skip` or `.only` again.  
-
-### Example
-
-```typescript
-import { assert, test } from "ergotest";
-
-export default test(({ describe, beforeAll, afterAll }) => {
   
   beforeAll(() => {
     // runs before all tests in this module
@@ -137,14 +43,36 @@ export default test(({ describe, beforeAll, afterAll }) => {
   });
   
   describe("scenario 1", () => {
-    
-    it("does something", () => {
-      // ...
+
+    it("has a passing test", () => {
+      assert.equal(2 + 2, 4);
+    });
+      
+    it("has a test that fails because of an assertion", () => {
+      assert.equal("apples", "oranges");
     });
     
-    it("does something else", () => {
-      // ...
+    it("has a test that fails due to throwing an exception", () => {
+      throw new Error("YOLO");
     });
+    
+    it("has a test that fails due to rejecting a promise", async () => {
+      await new Promise((resolve, reject) => {
+        reject(new Error("I like turtles"));
+      });
+    });
+    
+    it("has a test that times out", async () => {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 100000);
+      });
+    });
+    
+    it.skip("has a test that's explicitly skipped", () => {
+      process.exit(0); // this never runs
+    });
+    
+    it("has a test that's skipped because it doesn't have a body");
     
   });
   
@@ -164,9 +92,97 @@ export default test(({ describe, beforeAll, afterAll }) => {
     });
     
   });
+	
+});
+```
+
+
+## Start Here
+
+Start by creating a `tests.ts` (or `tests.js`) wrapper that re-exports Ergotest. Like this:
+
+```typescript
+// tests.ts
+export * from "ergotest";
+```
+
+Then use it in your tests like this:
+
+```typescript
+import { assert, test, describe, it } from "./tests.js";
+
+export default test(() => {
+  
+  it("my test", () => {
+    // ...
+  })
+  
+  describe("my sub-suite", () => {
+    it("another test", () => {
+      // ...
+    });
+  });
   
 });
 ```
+
+Re-exporting Ergotest has two benefits: First, if you ever decide to change test libraries, you won’t have to go update every single test. Second, it lets you customize Ergotest to your preferences.
+
+Don’t like `it` and `describe`? Export different names:
+
+```typescript
+// tests.ts
+export {
+  test as module, describe as suite, it as test,
+  beforeAll, afterAll, beforeEach, afterEach, assert,
+} from "ergotest";
+```
+
+Prefer a different assertion library? Like `expect` better than `assert`? Use that instead:
+
+```typescript
+// tests.ts
+export { test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
+export { expect } from "chai";
+```
+
+You can also export custom assertion methods that are purpose-built for the needs of your project. See the [Assertion API documentation](assertion_api.md) for details. 
+
+The remainder of this document describes the functions you’ll use in your tests.
+
+[Back to top](#test-api)
+
+
+## test()
+
+* test(fn?: DescribeFunction)
+* test(name?: string, fn?: DescribeFunction)
+* test.only(...)
+* test.skip(...)
+
+Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [#afterEach](#aftereach) to define functions to run before and after your tests.
+
+If you call `test.skip()`, all the tests in this module will be skipped. If you call `test.only()`, all other tests that aren’t marked `.only` will be skipped. This status is inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
+
+You may not call `test()` inside of `fn`. If you want to create a sub-suite, call [describe()](#describe) instead.
+
+This function returns a `TestSuite` instance. You should export it using `export default`, but it is technically possible—but probably not worthwhile—to use the instance yourself. See [the automation API](automation_api.md) for more information about running tests. 
+
+
+### DescribeFunction
+
+* fn({ setTimeout }) => void
+
+`fn()` is provided with an object parameter containing the [setTimeout()](#settimeout) function. Use this parameter to change the timeout for tests in this suite and its sub-suites.
+
+## describe()
+
+* describe(fn?: DescribeFunction)
+* describe(name?: string, fn?: DescribeFunction)
+* describe.only(...)
+* describe.skip(...)
+
+Define a sub-suite. It’s just like [test()](#test), except that you use it inside your `test()` module and you can nest it as deeply as you like.
 
 [Back to top](#test-api)
 
@@ -177,100 +193,53 @@ export default test(({ describe, beforeAll, afterAll }) => {
 * it.only(...)
 * it.skip(...)
 
-Define an individual test. When the test suite is run (see [the automation API](automation_api.md) for details), it will run each test's `fn()` in the order `it()` was called.
+Define an individual test. When the test suite runs, it will run each test’s `fn()` in the order `it()` was called.
 
-> *Note:* If the tests are being run in parallel, tests in different modules could run at the same time. The order that modules will run is unpredictable. But all the tests in a single module will run one at a time in the order they were defined.
+> *Note:* In the future, ergotest may support parallel test runs. If the tests are being run in parallel, tests in different modules could run at the same time. The order that modules will run is unpredictable. But all the tests in a single module will run one at a time in the order they were defined.
 
 If `fn()` returns a promise, the test runner will `await` that promise before continuing.
+
+If you call `it.skip()`, this test will be skipped. If you call `test.only()` all other tests and suites that aren't also marked `.only` will be skipped.
 
 After the test runs, it will have one of the following statuses:
 
 * *Fail:* The function threw an exception.
-* *Timeout:* The function took too long to complete (defaults to two seconds).
+* *Timeout:* The function took too long to complete. Use [setTimeout()](#settimeout) to change the timeout (defaults to two seconds).
 * *Skip:* The test was skipped.
 * *Pass:* The function ran and exited normally.
 
-You’ll typically make your tests fail by throwing an `AssertionError`. Most assertion libraries will do this for you. For details about Ergotest's built-in assertion library, see the [assertion API documentation](assertion_api.md).
+You’ll typically make your tests fail by throwing an `AssertionError`. Most assertion libraries will do this for you. For details about Ergotest’s built-in assertion library, see the [assertion API documentation](assertion_api.md).
 
 ### ItFunction
 
 * fn({ getConfig }) => void | Promise\<void\>
 
-`fn()` is provided with an object parameter containing the following function:
+`fn()` is provided with an object parameter containing the [getConfig()](#getconfig) function. Use this parameter to get configuration data provided to the test from your automation.
 
-* [getConfig()](#getconfig)
-
-Use this parameter to get configuration data provided to the test from your automation.
-
-### .only and .skip
-
-Use the `.only` variant to skip all tests or test suites other than the ones marked `.only`. This works across modules, assuming the modules are bundled into a single suite (which they typically are).
-
-Use the `.skip` variant to skip this test. Leaving out `fn()` will also skip this test.
-
-### Example
-
-```typescript
-import { assert, test } from "ergotest";
-
-export default test(() => {
-  
-  it("has a passing test", () => {
-    assert.equal(2 + 2, 4);
-  });
-    
-  it("has a test that fails because of an assertion", () => {
-    assert.equal("apples", "oranges");
-  });
-  
-  it("has a test that fails due to throwing an exception", () => {
-    throw new Error("YOLO");
-  });
-  
-  it("has a test that fails due to rejecting a promise", async () => {
-    await new Promise((resolve, reject) => {
-      reject(new Error("I like turtles"));
-    });
-  });
-  
-  it("has a test that times out", async () => {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 100000);
-    });
-  });
-  
-  it.skip("has a test that's explicitly skipped", () => {
-    process.exit(0); // this never runs
-  });
-  
-  it("has a test that's skipped because it doesn't have a body");
-  
-});
-```
 
 [Back to top](#test-api)
 
 
 ## beforeAll()
 
-* beforeAll(fn: ({ [getConfig](#getconfig) }) => void)
+* beforeAll(fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 
-Define a function to run immediately before running any of the tests in this suite or its sub-suites.
+Define a function to run immediately before running any of the tests in this suite or its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing. 
 
 If there are multiple `beforeAll()` functions in a suite, they will run in the order `beforeAll()` was called. If there are multiple nested suites, they will run from the outside in.
 
-If there are no tests in this suite or its sub-suites, or they're all skipped, `fn()` will not be run.
+If there are no tests in this suite or its sub-suites, or they’re all skipped, `fn()` will not be run.
 
-If `fn()` throws an exception or times out, the tests won't run.
+If `fn()` throws an exception or times out, the tests won’t run.
 
 [Back to top](#test-api)
 
 
 ## afterAll()
 
-* afterAll(fn: ({ [getConfig](#getconfig} )) => void)
+* afterAll(fn: ({ [getConfig }](#getconfig} )) => void | Promise\<void>)
 
-Define a function to run immediately before running all the tests in this suite and its sub-suites.
+Define a function to run immediately before running all the tests in this suite and its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 
 If there are multiple `afterAll()` functions in a suite, `fn()` will run in the order `afterAll()` was called. If there are multiple nested suites, they will run from the inside out.
 
@@ -283,9 +252,9 @@ If no tests in this suite or its sub-suites ran—either because there weren’t
 
 ## beforeEach()
 
-* beforeEach(fn: ({ [getConfig](#getconfig} )) => void)
+* beforeEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
-Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test.
+Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 
 If there are multiple `beforeEach()` functions in a suite, `fn()` will be run in the order `beforeEach()` was called. If there are multiple nested suites, they will run from the outside in. If there are [beforeAll()](#beforeall) functions in the suite, they will run first.
 
@@ -298,9 +267,9 @@ If `fn()` throws an exception or times out, the corresponding test will not be r
 
 ## afterEach()
 
-* afterEach(fn: ({ [getConfig](#getconfig} )) => void)
+* afterEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
-Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test.
+Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 
 If there are multiple `afterEach()` functions in a suite, they will run in the order `afterEach()` was called. If there are multiple nested suites, they will be run from the inside out. If there are [afterAll()](#afterall) functions in the suite, they will run last.
 
@@ -324,9 +293,11 @@ Set the timeout, in milliseconds, for each test in this suite and any nested sui
 
 * getConfig<T>(key: string): T
 
-If this test suite was run with a configuration object (see the [automation API](automation_api.md)), gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
+Gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
 
 If no configuration object was defined, or if `key` doesn’t exist, `getConfig()` will throw an exception.
+
+See `TestRunner` in the [automation API](automation_api.md) for information about how to define the configuration object.
 
 ### Example
 
