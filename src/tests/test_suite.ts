@@ -85,20 +85,20 @@ const testContext: TestContext[] = [];
  */
 export class TestSuite implements Runnable {
 
+	private _name: string;
+	private _mark: TestMarkValue;
+	private _tests: Runnable[];
+	private _hasDotOnlyChildren: boolean;
+	private _allChildrenSkipped: boolean;
+	private _beforeAllFns: ItFn[];
+	private _afterAllFns: ItFn[];
+	private _beforeEachFns: ItFn[];
+	private _afterEachFns: ItFn[];
+	private _timeout?: Milliseconds;
+	private _filename?: string;
+
 	static get DEFAULT_TIMEOUT_IN_MS() {
 		return DEFAULT_TIMEOUT_IN_MS;
-	}
-
-	/**
-	 * @returns {function} A function for creating a test suite. In your test module, call this function and export the
-	 *   result.
-	 */
-	static get create(): Describe {
-		const result: Describe = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.none);
-		result.skip = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.skip);
-		result.only = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.only);
-
-		return result;
 	}
 
 	/**
@@ -145,6 +145,7 @@ export class TestSuite implements Runnable {
 		}
 	}
 
+	/** @private */
 	static _create(
 		nameOrSuiteFn: string | DescribeFn | undefined,
 		possibleSuiteFn: DescribeFn | undefined,
@@ -214,7 +215,6 @@ export class TestSuite implements Runnable {
 			beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
 			afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
 		});
-
 		try {
 			describeFn({
 				setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
@@ -226,18 +226,6 @@ export class TestSuite implements Runnable {
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
 	}
-
-	private _name: string;
-	private _mark: TestMarkValue;
-	private _tests: Runnable[];
-	private _hasDotOnlyChildren: boolean;
-	private _allChildrenSkipped: boolean;
-	private _beforeAllFns: ItFn[];
-	private _afterAllFns: ItFn[];
-	private _beforeEachFns: ItFn[];
-	private _afterEachFns: ItFn[];
-	private _timeout?: Milliseconds;
-	private _filename?: string;
 
 	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
 	constructor(name: string, mark: TestMarkValue, {
@@ -510,6 +498,16 @@ function startTest(
 	}
 }
 
+/**
+ * Creates a top-level test suite. In your test module, call this function and `export default` the result. Add `.skip`
+ * to skip this test suite and `.only` to only run this test suite.
+ * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass {@link fn} instead.
+ * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link beforeAll},
+ *   {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If undefined, this
+ *   test suite will be skipped.
+ * @returns {TestSuite} The test suite. You’ll typically `export default` the return value rather than using it
+ *   directly.
+ */
 export function test(optionalName?: string | DescribeFn, fn?: DescribeFn) {
 	return startTest(optionalName, fn, TestMark.none);
 }
@@ -522,6 +520,15 @@ test.only = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
 	return startTest(optionalName, fn, TestMark.only);
 };
 
+/**
+ * Adds a nested test suite to the current test suite. Must be run inside of a {@link test} or {@link describe}
+ * function. Add `.skip` to skip this test suite and `.only` to only run this test suite.
+ * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass {@link fn} instead.
+ * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link beforeAll},
+ *   {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If undefined, this
+ *   test suite will be skipped.
+ * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
+ */
 export function describe(optionalName?: string | DescribeFn, fn?: DescribeFn) {
 	currentContext("describe").describe(optionalName, fn);
 }
@@ -534,6 +541,13 @@ describe.only = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
 	currentContext("describe").describe.only(optionalName, fn);
 };
 
+/**
+ * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
+ * `.skip` to skip this test and `.only` to only run this test.
+ * @param {string} name The name of the test.
+ * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
+ *   skipped.
+ */
 export function it(name: string, fnAsync?: ItFn) {
 	currentContext("it").it(name, fnAsync);
 }
@@ -546,18 +560,38 @@ it.only = function(name: string, fnAsync?: ItFn) {
 	currentContext("it").it.only(name, fnAsync);
 };
 
+/**
+ * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
+ * {@link describe} function.
+ * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
+ */
 export function beforeAll(fnAsync: ItFn) {
 	currentContext("beforeAll").beforeAll(fnAsync);
 }
 
+/**
+ * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
+ * {@link describe} function.
+ * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
+ */
 export function afterAll(fnAsync: ItFn) {
 	currentContext("afterAll").afterAll(fnAsync);
 }
 
+/**
+ * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
+ * {@link describe} function.
+ * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
+ */
 export function beforeEach(fnAsync: ItFn) {
 	currentContext("beforeEach").beforeEach(fnAsync);
 }
 
+/**
+ * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
+ * {@link describe} function.
+ * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
+ */
 export function afterEach(fnAsync: ItFn) {
 	currentContext("afterEach").afterEach(fnAsync);
 }
