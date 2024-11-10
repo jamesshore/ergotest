@@ -19,6 +19,7 @@ In this document **(the bold entries are all you need)**:
   * **[TestRunner.create()](#testrunnercreate)**
   * **[testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync)**
   * [testRunner.runInCurrentProcessAsync()](#testrunnerrunincurrentprocessasync)
+  * [TestOptions](#testoptions) 
 * [TestSuiteResult](#testsuiteresult)
   * [testSuiteResult.filename](#testsuiteresultfilename)
   * [testSuiteResult.name](#testsuiteresultname)
@@ -71,11 +72,9 @@ In this document **(the bold entries are all you need)**:
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
 * [TestSuite](#testsuite)
-  * [TestSuite.create()](#testsuitecreate)
   * [TestSuite.fromModulesAsync()](#testsuitefrommodulesasync)
   * [testSuite.runAsync()](#testsuiterunasync)
-  * [TestOptions](#testoptions)
-
+  
 
 ## Start Here
 
@@ -83,12 +82,12 @@ In this document **(the bold entries are all you need)**:
 
 There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
 
-* **TestRunner** is how you run your tests.
-* **TestSuiteResult** has the results of your test run, and includes a convenient method for rendering the results.
-* **TestCaseResult** has the details of a single test, and it also has convenient rendering methods.
-* **TestRenderer** is how you create customized renderings, if you want to.
-* **TestResult** has factory methods for creating test results, and is the parent to `TestSuiteResult` and `TestCaseResult`.
-* **TestSuite** is used to create tests, and the important parts are described in the [test API documentation](test_api.md).
+* ***TestRunner*** is how you run your tests.
+* ***TestSuiteResult*** has the results of your test run, and includes a convenient method for rendering the results.
+* ***TestCaseResult*** has the details of a single test, and it also has convenient rendering methods.
+* *TestRenderer* is how you create customized renderings, if you want to.
+* *TestResult* has factory methods for creating test results, and is the parent to `TestSuiteResult` and `TestCaseResult`.
+* *TestSuite* is mainly for internal use, and is included only for completeness. To create test suites, use [the test API](test_api.md).
 
 The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it runs in an isolated child process.
 
@@ -206,6 +205,26 @@ Generates test failures if any of the `modulePaths` fail to load, or if they don
 Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
 
 [Back to top](#automation-api)
+
+
+## TestOptions
+
+* import { TestOptions } from "ergotest/test_suite.js"
+
+You can configure test runs with this interface. Provide an object with two optional parameters:
+
+* **config: Record<string, unknown>**
+  * An object with key/value pairs. The values can be anything you want. Retrieve the values in your tests by calling `getConfig` as describe in the [test API](test_api.md).
+  * Defaults to an empty object.
+
+* **notifyFn: (testCaseResult: TestCaseResult) => void**
+  * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
+  * Defaults to a no-op.
+
+[Back to top](#automation-api)
+
+
+---
 
 
 ## TestSuiteResult
@@ -798,19 +817,7 @@ A type for the possible values of [TestMark](#testmark).
 
 * import { TestSuite } from "ergotest/test_suite.js"
 
-You’re very unlikely to use this class outside of your tests, but I’ve included it for completeness. For details about how to use it *in* your tests, see the [test API documentation](test_api.md).
-
-[Back to top](#automation-api)
-
-
-## TestSuite.create()
-
-* TestSuite.create(fn?: DescribeFunction)
-* TestSuite.create(name?: string, fn?: DescribeFunction)
-* TestSuite.create.only(...)
-* TestSuite.create.skip(...)
-
-Create a test suite. Documented in the [test API documentation](test_api.md).
+You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call `test()`. (It’s defined in the [test API documentation](test_api.md)).
 
 [Back to top](#automation-api)
 
@@ -841,22 +848,5 @@ Generates test failures if any of the `modulePaths` fail to load, or if they don
 Run the tests in the test suite. (See the [test API](test_api.md) for details.) Does *not* detect infinite loops or uncaught exceptions.
 
 Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
-
-[Back to top](#automation-api)
-
-
-## TestOptions
-
-* import { TestOptions } from "ergotest/test_suite.js"
-
-You can configure test runs with this interface. Provide an object with two optional parameters:
-
-* **config: Record<string, unknown>**
-  * An object with key/value pairs. The values can be anything you want. Retrieve the values in your tests by calling `getConfig` as describe in the [test API](test_api.md).
-  * Defaults to an empty object.
-
-* **notifyFn: (testCaseResult: TestCaseResult) => void**
-  * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
-  * Defaults to a no-op.
 
 [Back to top](#automation-api)
