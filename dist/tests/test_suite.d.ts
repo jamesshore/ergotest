@@ -7,9 +7,9 @@ export interface TestOptions {
 }
 export type NotifyFn = (testResult: TestCaseResult) => void;
 export interface Describe {
-    (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite;
-    skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite;
-    only: (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction) => TestSuite;
+    (optionalName?: string | DescribeFn, describeFn?: DescribeFn): TestSuite;
+    skip: (optionalName?: string | DescribeFn, descrbeFn?: DescribeFn) => TestSuite;
+    only: (optionalName?: string | DescribeFn, describeFn?: DescribeFn) => TestSuite;
 }
 interface It {
     (name: string, itFn?: ItFn): void;
@@ -29,7 +29,7 @@ export interface SuiteParameters {
 export interface TestParameters {
     getConfig: <T>(key: string) => T;
 }
-export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
+export type DescribeFn = (suiteUtilities: SuiteParameters) => void;
 export type Test = (testUtilities: TestParameters) => Promise<void> | void;
 export type ItFn = Test;
 export type BeforeAfterFn = Test;
@@ -68,6 +68,7 @@ export declare class TestSuite implements Runnable {
      * @returns {TestSuite} The test suite.
      */
     static fromModulesAsync(moduleFilenames: string[]): Promise<TestSuite>;
+    static _create(nameOrSuiteFn: string | DescribeFn | undefined, possibleSuiteFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
     private _name;
     private _mark;
     private _tests;
@@ -106,4 +107,23 @@ export declare class TestSuite implements Runnable {
     /** @private */
     _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: Test[], parentAfterEachFns: Test[], options: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
+export declare function test(optionalName?: string | DescribeFn, fn?: DescribeFn): TestSuite;
+export declare namespace test {
+    var skip: (optionalName?: string | DescribeFn, fn?: DescribeFn) => TestSuite;
+    var only: (optionalName?: string | DescribeFn, fn?: DescribeFn) => TestSuite;
+}
+export declare function describe(optionalName?: string | DescribeFn, fn?: DescribeFn): void;
+export declare namespace describe {
+    var skip: (optionalName?: string | DescribeFn, fn?: DescribeFn) => void;
+    var only: (optionalName?: string | DescribeFn, fn?: DescribeFn) => void;
+}
+export declare function it(name: string, fnAsync?: ItFn): void;
+export declare namespace it {
+    var skip: (name: string, fnAsync?: ItFn) => void;
+    var only: (name: string, fnAsync?: ItFn) => void;
+}
+export declare function beforeAll(fnAsync: Test): void;
+export declare function afterAll(fnAsync: Test): void;
+export declare function beforeEach(fnAsync: Test): void;
+export declare function afterEach(fnAsync: Test): void;
 export {};

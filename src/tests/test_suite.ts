@@ -20,9 +20,9 @@ export interface TestOptions {
 export type NotifyFn = (testResult: TestCaseResult) => void;
 
 export interface Describe {
-	(optionalName?: string | DescribeFunction, describeFn?: DescribeFunction): TestSuite,
-	skip: (optionalName?: string | DescribeFunction, descrbeFn?: DescribeFunction) => TestSuite,
-	only: (optionalName?: string | DescribeFunction, describeFn?: DescribeFunction) => TestSuite,
+	(optionalName?: string | DescribeFn, describeFn?: DescribeFn): TestSuite,
+	skip: (optionalName?: string | DescribeFn, descrbeFn?: DescribeFn) => TestSuite,
+	only: (optionalName?: string | DescribeFn, describeFn?: DescribeFn) => TestSuite,
 }
 
 interface It {
@@ -47,7 +47,7 @@ export interface TestParameters {
 	getConfig: <T>(key: string) => T,
 }
 
-export type DescribeFunction = (suiteUtilities: SuiteParameters) => void;
+export type DescribeFn = (suiteUtilities: SuiteParameters) => void;
 export type Test = (testUtilities: TestParameters) => Promise<void> | void;
 export type ItFn = Test;
 export type BeforeAfterFn = Test;
@@ -66,7 +66,6 @@ interface RecursiveRunOptions {
 	config: TestConfig,
 }
 
-
 interface Runnable {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
@@ -77,6 +76,8 @@ interface Runnable {
 	_isDotOnly: () => boolean,
 	_isSkipped: (mark: TestMarkValue) => boolean,
 }
+
+let testContext: Omit<SuiteParameters, "setTimeout">[] = [];
 
 /**
  * A simple but full-featured test runner. It's notable for not using globals.
@@ -92,9 +93,9 @@ export class TestSuite implements Runnable {
 	 *   result.
 	 */
 	static get create(): Describe {
-		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.none);
-		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.skip);
-		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.only);
+		const result: Describe = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.none);
+		result.skip = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.skip);
+		result.only = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.only);
 
 		return result;
 	}
@@ -143,15 +144,15 @@ export class TestSuite implements Runnable {
 		}
 	}
 
-	static #create(
-		nameOrSuiteFn: string | DescribeFunction | undefined,
-		possibleSuiteFn: DescribeFunction | undefined,
+	static _create(
+		nameOrSuiteFn: string | DescribeFn | undefined,
+		possibleSuiteFn: DescribeFn | undefined,
 		mark: TestMarkValue,
 	): TestSuite {
 		ensure.signature(arguments, [ [ undefined, String, Function ], [ undefined, Function ], String ]);
 
 		let name: string;
-		let suiteFn: DescribeFunction | undefined;
+		let suiteFn: DescribeFn | undefined;
 
 		if (nameOrSuiteFn instanceof Function || (nameOrSuiteFn === undefined && possibleSuiteFn === undefined)) {
 			name = "";
@@ -176,7 +177,7 @@ export class TestSuite implements Runnable {
 	}
 
 	static #runDescribeFunction(
-		describeFn: DescribeFunction,
+		describeFn: DescribeFn,
 		name: string,
 		mark: TestMarkValue,
 	): TestSuite {
@@ -192,27 +193,41 @@ export class TestSuite implements Runnable {
 			return test;
 		};
 
-		const result: Describe = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.none);
-		result.skip = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.skip);
-		result.only = (optionalName, suiteFn) => this.#create(optionalName, suiteFn, TestMark.only);
+		const result: Describe = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.none);
+		result.skip = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.skip);
+		result.only = (optionalName, suiteFn) => this._create(optionalName, suiteFn, TestMark.only);
 
-		const describe: Describe = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.none));
-		describe.skip = (optionalName, describeFn) => pushTest(TestSuite.#create(optionalName, describeFn, TestMark.skip));
-		describe.only = (optionalName, suiteFn) => pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.only));
+		const describe: Describe = (optionalName, suiteFn) => pushTest(TestSuite._create(optionalName, suiteFn, TestMark.none));
+		describe.skip = (optionalName, describeFn) => pushTest(TestSuite._create(optionalName, describeFn, TestMark.skip));
+		describe.only = (optionalName, suiteFn) => pushTest(TestSuite._create(optionalName, suiteFn, TestMark.only));
 
 		const it: It = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.none));
 		it.skip = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.skip));
 		it.only = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.only));
 
-		describeFn({
+		testContext.push({
 			describe,
 			it,
 			beforeAll: (fnAsync) => { beforeAllFns.push(fnAsync); },
 			afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
 			beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
 			afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
-			setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
 		});
+
+		try {
+			describeFn({
+				describe,
+				it,
+				beforeAll: (fnAsync) => { beforeAllFns.push(fnAsync); },
+				afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
+				beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
+				afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
+				setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
+			});
+		}
+		finally {
+			testContext.pop();
+		}
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
 	}
@@ -482,4 +497,79 @@ async function runTestFnAsync(
 
 function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
+}
+
+
+function startTest(
+	nameOrSuiteFn: string | DescribeFn | undefined,
+	possibleSuiteFn: DescribeFn | undefined,
+	mark: TestMarkValue,
+): TestSuite {
+	ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
+	testContext = [];   // delete this line when the above is uncommented
+
+	try {
+		return TestSuite._create(nameOrSuiteFn, possibleSuiteFn, mark);
+	}
+	finally {
+		ensure.that(testContext.length === 0, "test() didn't clear its context; must be an error in ergotest");
+	}
+}
+
+export function test(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	return startTest(optionalName, fn, TestMark.none);
+}
+
+test.skip = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	return startTest(optionalName, fn, TestMark.skip);
+};
+
+test.only = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	return startTest(optionalName, fn, TestMark.only);
+};
+
+export function describe(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	currentContext("describe").describe(optionalName, fn);
+}
+
+describe.skip = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	currentContext("describe").describe.skip(optionalName, fn);
+};
+
+describe.only = function(optionalName?: string | DescribeFn, fn?: DescribeFn) {
+	currentContext("describe").describe.only(optionalName, fn);
+};
+
+export function it(name: string, fnAsync?: ItFn) {
+	currentContext("it").it(name, fnAsync);
+}
+
+it.skip = function(name: string, fnAsync?: ItFn) {
+	currentContext("it").it.skip(name, fnAsync);
+};
+
+it.only = function(name: string, fnAsync?: ItFn) {
+	currentContext("it").it.only(name, fnAsync);
+};
+
+export function beforeAll(fnAsync: Test) {
+	currentContext("beforeAll").beforeAll(fnAsync);
+}
+
+export function afterAll(fnAsync: Test) {
+	currentContext("afterAll").afterAll(fnAsync);
+}
+
+export function beforeEach(fnAsync: Test) {
+	currentContext("beforeEach").beforeEach(fnAsync);
+}
+
+export function afterEach(fnAsync: Test) {
+	currentContext("afterEach").afterEach(fnAsync);
+}
+
+function currentContext(functionName: string) {
+	ensure.that(testContext.length > 0, `${functionName}() must be run inside test()`);
+
+	return testContext[testContext.length - 1];
 }

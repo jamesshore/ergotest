@@ -6,6 +6,7 @@ import path from "node:path";
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
 // more control over test execution, while also shielding me from dependency churn.
 const DEFAULT_TIMEOUT_IN_MS = 2000;
+let testContext = [];
 /**
  * A simple but full-featured test runner. It's notable for not using globals.
  */ export class TestSuite {
@@ -16,9 +17,9 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
 	 * @returns {function} A function for creating a test suite. In your test module, call this function and export the
 	 *   result.
 	 */ static get create() {
-        const result = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.none);
-        result.skip = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.skip);
-        result.only = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.only);
+        const result = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.none);
+        result.skip = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.skip);
+        result.only = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.only);
         return result;
     }
     /**
@@ -64,7 +65,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             });
         }
     }
-    static #create(nameOrSuiteFn, possibleSuiteFn, mark) {
+    static _create(nameOrSuiteFn, possibleSuiteFn, mark) {
         ensure.signature(arguments, [
             [
                 undefined,
@@ -109,16 +110,16 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             tests.push(test);
             return test;
         };
-        const result = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.none);
-        result.skip = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.skip);
-        result.only = (optionalName, suiteFn)=>this.#create(optionalName, suiteFn, TestMark.only);
-        const describe = (optionalName, suiteFn)=>pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.none));
-        describe.skip = (optionalName, describeFn)=>pushTest(TestSuite.#create(optionalName, describeFn, TestMark.skip));
-        describe.only = (optionalName, suiteFn)=>pushTest(TestSuite.#create(optionalName, suiteFn, TestMark.only));
+        const result = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.none);
+        result.skip = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.skip);
+        result.only = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.only);
+        const describe = (optionalName, suiteFn)=>pushTest(TestSuite._create(optionalName, suiteFn, TestMark.none));
+        describe.skip = (optionalName, describeFn)=>pushTest(TestSuite._create(optionalName, describeFn, TestMark.skip));
+        describe.only = (optionalName, suiteFn)=>pushTest(TestSuite._create(optionalName, suiteFn, TestMark.only));
         const it = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.none));
         it.skip = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.skip));
         it.only = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.only));
-        describeFn({
+        testContext.push({
             describe,
             it,
             beforeAll: (fnAsync)=>{
@@ -132,11 +133,31 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             },
             afterEach: (fnAsync)=>{
                 afterEachFns.push(fnAsync);
-            },
-            setTimeout: (newTimeoutInMs)=>{
-                timeout = newTimeoutInMs;
             }
         });
+        try {
+            describeFn({
+                describe,
+                it,
+                beforeAll: (fnAsync)=>{
+                    beforeAllFns.push(fnAsync);
+                },
+                afterAll: (fnAsync)=>{
+                    afterAllFns.push(fnAsync);
+                },
+                beforeEach: (fnAsync)=>{
+                    beforeEachFns.push(fnAsync);
+                },
+                afterEach: (fnAsync)=>{
+                    afterEachFns.push(fnAsync);
+                },
+                setTimeout: (newTimeoutInMs)=>{
+                    timeout = newTimeoutInMs;
+                }
+            });
+        } finally{
+            testContext.pop();
+        }
         return new TestSuite(name, mark, {
             tests,
             beforeAllFns,
@@ -364,6 +385,58 @@ async function runTestFnAsync(name, fn, mark, { clock, filename, timeout, config
 }
 function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
+}
+function startTest(nameOrSuiteFn, possibleSuiteFn, mark) {
+    ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
+    testContext = []; // delete this line when the above is uncommented
+    try {
+        return TestSuite._create(nameOrSuiteFn, possibleSuiteFn, mark);
+    } finally{
+        ensure.that(testContext.length === 0, "test() didn't clear its context; must be an error in ergotest");
+    }
+}
+export function test(optionalName, fn) {
+    return startTest(optionalName, fn, TestMark.none);
+}
+test.skip = function(optionalName, fn) {
+    return startTest(optionalName, fn, TestMark.skip);
+};
+test.only = function(optionalName, fn) {
+    return startTest(optionalName, fn, TestMark.only);
+};
+export function describe(optionalName, fn) {
+    currentContext("describe").describe(optionalName, fn);
+}
+describe.skip = function(optionalName, fn) {
+    currentContext("describe").describe.skip(optionalName, fn);
+};
+describe.only = function(optionalName, fn) {
+    currentContext("describe").describe.only(optionalName, fn);
+};
+export function it(name, fnAsync) {
+    currentContext("it").it(name, fnAsync);
+}
+it.skip = function(name, fnAsync) {
+    currentContext("it").it.skip(name, fnAsync);
+};
+it.only = function(name, fnAsync) {
+    currentContext("it").it.only(name, fnAsync);
+};
+export function beforeAll(fnAsync) {
+    currentContext("beforeAll").beforeAll(fnAsync);
+}
+export function afterAll(fnAsync) {
+    currentContext("afterAll").afterAll(fnAsync);
+}
+export function beforeEach(fnAsync) {
+    currentContext("beforeEach").beforeEach(fnAsync);
+}
+export function afterEach(fnAsync) {
+    currentContext("afterEach").afterEach(fnAsync);
+}
+function currentContext(functionName) {
+    ensure.that(testContext.length > 0, `${functionName}() must be run inside test()`);
+    return testContext[testContext.length - 1];
 }
 
 //# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_suite.js.map

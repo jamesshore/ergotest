@@ -1,2 +1,2 @@
-export * as assert from "./assert.js";
-export declare const test: import("./test_suite.js").Describe;
+export { test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest/test_suite.js";
+export * as assert from "ergotest/assert.js";
