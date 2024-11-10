@@ -11,45 +11,43 @@ import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
+export interface TestConfig {
+	[name: string]: unknown,
+}
+
 export interface TestOptions {
-	config?: Record<string, unknown>,
+	config?: TestConfig,
 	notifyFn?: NotifyFn,
 	clock?: Clock,
 }
 
 export type NotifyFn = (testResult: TestCaseResult) => void;
 
-export interface Describe {
+interface Describe {
 	(optionalName?: string | DescribeFn, describeFn?: DescribeFn): TestSuite,
 	skip: (optionalName?: string | DescribeFn, descrbeFn?: DescribeFn) => TestSuite,
 	only: (optionalName?: string | DescribeFn, describeFn?: DescribeFn) => TestSuite,
 }
+type DescribeFn = (suiteUtilities: SuiteParameters) => void;
 
 interface It {
 	(name: string, itFn?: ItFn): void;
 	skip: (name: string, itFn?: ItFn) => void,
 	only: (name: string, itFn?: ItFn) => void,
 }
+type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
-type BeforeAfter = (fn: Test) => void;
+type BeforeAfter = (fn: ItFn) => void;
 
-export interface SuiteParameters {
+interface SuiteParameters {
 	setTimeout: (newTimeout: Milliseconds) => void,
 }
 
-export interface TestParameters {
+interface TestParameters {
 	getConfig: <T>(key: string) => T,
 }
 
-export type DescribeFn = (suiteUtilities: SuiteParameters) => void;
-export type Test = (testUtilities: TestParameters) => Promise<void> | void;
-export type ItFn = Test;
-export type BeforeAfterFn = Test;
 type Milliseconds = number;
-
-export interface TestConfig {
-	[name: string]: unknown,
-}
 
 interface RecursiveRunOptions {
 	name: string[];
@@ -63,8 +61,8 @@ interface RecursiveRunOptions {
 interface Runnable {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: Test[],
-		parentAfterEachFns: Test[],
+		parentBeforeEachFns: ItFn[],
+		parentAfterEachFns: ItFn[],
 		options: RecursiveRunOptions,
 	) => Promise<TestResult> | TestResult;
 	_isDotOnly: () => boolean,
@@ -185,10 +183,10 @@ export class TestSuite implements Runnable {
 		mark: TestMarkValue,
 	): TestSuite {
 		const tests: Runnable[] = [];
-		const beforeAllFns: Test[] = [];
-		const afterAllFns: Test[] = [];
-		const beforeEachFns: Test[] = [];
-		const afterEachFns: Test[] = [];
+		const beforeAllFns: ItFn[] = [];
+		const afterAllFns: ItFn[] = [];
+		const beforeEachFns: ItFn[] = [];
+		const afterEachFns: ItFn[] = [];
 		let timeout: number | undefined;
 
 		const pushTest = <T extends Runnable>(test: T): T => {
@@ -234,10 +232,10 @@ export class TestSuite implements Runnable {
 	private _tests: Runnable[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
-	private _beforeAllFns: BeforeAfterFn[];
-	private _afterAllFns: BeforeAfterFn[];
-	private _beforeEachFns: BeforeAfterFn[];
-	private _afterEachFns: BeforeAfterFn[];
+	private _beforeAllFns: ItFn[];
+	private _afterAllFns: ItFn[];
+	private _beforeEachFns: ItFn[];
+	private _afterEachFns: ItFn[];
 	private _timeout?: Milliseconds;
 	private _filename?: string;
 
@@ -251,10 +249,10 @@ export class TestSuite implements Runnable {
 		timeout,
 	}: {
 		tests?: Runnable[],
-		beforeAllFns?: BeforeAfterFn[],
-		afterAllFns?: BeforeAfterFn[],
-		beforeEachFns?: BeforeAfterFn[],
-		afterEachFns?: BeforeAfterFn[],
+		beforeAllFns?: ItFn[],
+		afterAllFns?: ItFn[],
+		beforeEachFns?: ItFn[],
+		afterEachFns?: ItFn[],
 		timeout?: Milliseconds,
 	}) {
 
@@ -315,8 +313,8 @@ export class TestSuite implements Runnable {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: Test[],
-		parentAfterEachFns: Test[],
+		parentBeforeEachFns: ItFn[],
+		parentAfterEachFns: ItFn[],
 		options: RecursiveRunOptions,
 	) {
 		const name = [ ...options.name ];
@@ -386,8 +384,8 @@ class TestCase implements Runnable {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: Test[],
-		afterEachFns: Test[],
+		beforeEachFns: ItFn[],
+		afterEachFns: ItFn[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const name = [ ...options.name ];
@@ -443,8 +441,8 @@ class FailureTestCase extends TestCase {
 
 	override async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: Test[],
-		afterEachFns: Test[],
+		beforeEachFns: ItFn[],
+		afterEachFns: ItFn[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const result = TestResult.fail([ this._name ], this._error, this._filename);
@@ -457,7 +455,7 @@ class FailureTestCase extends TestCase {
 
 async function runBeforeOrAfterFnsAsync(
 	name: string[],
-	fns: Test[],
+	fns: ItFn[],
 	mark: TestMarkValue,
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
@@ -470,7 +468,7 @@ async function runBeforeOrAfterFnsAsync(
 
 async function runTestFnAsync(
 	name: string[],
-	fn: Test,
+	fn: ItFn,
 	mark: TestMarkValue,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
@@ -548,19 +546,19 @@ it.only = function(name: string, fnAsync?: ItFn) {
 	currentContext("it").it.only(name, fnAsync);
 };
 
-export function beforeAll(fnAsync: Test) {
+export function beforeAll(fnAsync: ItFn) {
 	currentContext("beforeAll").beforeAll(fnAsync);
 }
 
-export function afterAll(fnAsync: Test) {
+export function afterAll(fnAsync: ItFn) {
 	currentContext("afterAll").afterAll(fnAsync);
 }
 
-export function beforeEach(fnAsync: Test) {
+export function beforeEach(fnAsync: ItFn) {
 	currentContext("beforeEach").beforeEach(fnAsync);
 }
 
-export function afterEach(fnAsync: Test) {
+export function afterEach(fnAsync: ItFn) {
 	currentContext("afterEach").afterEach(fnAsync);
 }
 
