@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it, beforeEach } from "../tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -7,14 +7,14 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
-export default test(({ beforeEach, describe })=>{
+export default test(()=>{
     let TEST_MODULE_PATH;
     beforeEach(async ({ getConfig })=>{
         const testDir = getConfig("scratchDir");
         TEST_MODULE_PATH = `${testDir}/_test_runner_module.js`;
         await deleteTempFilesAsync(testDir);
     });
-    describe("current process", ({ it })=>{
+    describe("current process", ()=>{
         it("runs test modules and passes through config", async ()=>{
             const myConfig = {
                 myConfig: "my_config"
@@ -30,7 +30,7 @@ export default test(({ beforeEach, describe })=>{
         });
     // remaining behaviors not tested because of annoyances from them not being isolated
     });
-    describe("child process", ({ it })=>{
+    describe("child process", ()=>{
         it("runs test modules", async ()=>{
             const { runner } = await createAsync();
             await writeTestModuleAsync(`// passes`);
@@ -128,7 +128,7 @@ export default test(({ beforeEach, describe })=>{
             ]));
         });
     });
-    describe("child process error serialization", ({ it })=>{
+    describe("child process error serialization", ()=>{
         it("supports generic errors", async ()=>{
             await assertErrorSerializationAsync(`throw new Error("my error")`, new Error("my error"));
         });
@@ -157,10 +157,10 @@ export default test(({ beforeEach, describe })=>{
     }
     async function writeTestModuleAsync(bodySourceCode) {
         await fs.writeFile(TEST_MODULE_PATH, `
-			import { TestSuite } from ` + `"${path.resolve(import.meta.dirname, "./test_suite.js")}";
+			import { test, it } from ` + `"${path.resolve(import.meta.dirname, "./test_suite.js")}";
 			import * as assert from ` + `"${path.resolve(import.meta.dirname, "./assert.js")}";
 			
-			export default TestSuite.create(({ it }) => {
+			export default test(() => {
 				it("test", ({ getConfig }) => {
 					${bodySourceCode}
 				});

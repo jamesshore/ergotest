@@ -92,7 +92,7 @@ Write a simple test:
 // example.test.js
 import { assert, test } from "./tests.js";
 
-export default test(({ it }) => {
+export default test(() => {
   
   it("runs tests", () => {
     assert.equal(2 + 2, 4);

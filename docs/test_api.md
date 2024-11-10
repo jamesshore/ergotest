@@ -136,7 +136,7 @@ export default test(({ describe, beforeAll, afterAll }) => {
     // runs after all tests in this module
   });
   
-  describe("scenario 1", ({ it }) => {
+  describe("scenario 1", () => {
     
     it("does something", () => {
       // ...
@@ -149,13 +149,13 @@ export default test(({ describe, beforeAll, afterAll }) => {
   });
   
   
-  describe.skip("skipped scenario", ({ describe, it }) => {
+  describe.skip("skipped scenario", () => {
     
     it("also does something", () => {
       // this test is skipped because its parent suite is marked '.skip'
     });
     
-    describe("nested scenario", ({ it }) => {
+    describe("nested scenario", () => {
       
       it.only("does some more stuff", () => {
         // this test runs because its '.only' overrides the grandparent suite's '.skip`. 
@@ -213,7 +213,7 @@ Use the `.skip` variant to skip this test. Leaving out `fn()` will also skip thi
 ```typescript
 import { assert, test } from "ergotest";
 
-export default test(({ it }) => {
+export default test(() => {
   
   it("has a passing test", () => {
     assert.equal(2 + 2, 4);

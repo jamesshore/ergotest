@@ -11,19 +11,7 @@ export interface Describe {
     skip: (optionalName?: string | DescribeFn, descrbeFn?: DescribeFn) => TestSuite;
     only: (optionalName?: string | DescribeFn, describeFn?: DescribeFn) => TestSuite;
 }
-interface It {
-    (name: string, itFn?: ItFn): void;
-    skip: (name: string, itFn?: ItFn) => void;
-    only: (name: string, itFn?: ItFn) => void;
-}
-type BeforeAfter = (fn: Test) => void;
 export interface SuiteParameters {
-    describe: Describe;
-    it: It;
-    beforeAll: BeforeAfter;
-    afterAll: BeforeAfter;
-    beforeEach: BeforeAfter;
-    afterEach: BeforeAfter;
     setTimeout: (newTimeout: Milliseconds) => void;
 }
 export interface TestParameters {

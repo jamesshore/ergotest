@@ -1,3 +1,2 @@
-import { TestSuite } from "./test_suite.js";
-declare const _default: TestSuite;
+declare const _default: import("./test_suite.js").TestSuite;
 export default _default;

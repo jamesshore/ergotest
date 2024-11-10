@@ -6,7 +6,7 @@ import path from "node:path";
 // A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
 // more control over test execution, while also shielding me from dependency churn.
 const DEFAULT_TIMEOUT_IN_MS = 2000;
-let testContext = [];
+const testContext = [];
 /**
  * A simple but full-featured test runner. It's notable for not using globals.
  */ export class TestSuite {
@@ -137,20 +137,6 @@ let testContext = [];
         });
         try {
             describeFn({
-                describe,
-                it,
-                beforeAll: (fnAsync)=>{
-                    beforeAllFns.push(fnAsync);
-                },
-                afterAll: (fnAsync)=>{
-                    afterAllFns.push(fnAsync);
-                },
-                beforeEach: (fnAsync)=>{
-                    beforeEachFns.push(fnAsync);
-                },
-                afterEach: (fnAsync)=>{
-                    afterEachFns.push(fnAsync);
-                },
                 setTimeout: (newTimeoutInMs)=>{
                     timeout = newTimeoutInMs;
                 }
@@ -388,7 +374,6 @@ function isSuccess(result) {
 }
 function startTest(nameOrSuiteFn, possibleSuiteFn, mark) {
     ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
-    testContext = []; // delete this line when the above is uncommented
     try {
         return TestSuite._create(nameOrSuiteFn, possibleSuiteFn, mark);
     } finally{

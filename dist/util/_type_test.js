@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 /* eslint @typescript-eslint/no-explicit-any: "off" */ // There are a lot of weird JavaScript manipulations in these tests, so we work around the type-checker with "as any"
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import * as type from "./type.js";
-export default test(({ describe, it })=>{
-    describe("checker", ({ describe, it })=>{
+export default test(()=>{
+    describe("checker", ()=>{
         const check = type.check;
         it("checks built-in types", function() {
             assert.isNull(check(false, Boolean), "boolean");
@@ -144,7 +144,7 @@ export default test(({ describe, it })=>{
             }), "custom must be a string, but it was a number");
         });
     });
-    describe("describer", ({ describe, it })=>{
+    describe("describer", ()=>{
         const MyClass = function MyClass() {};
         const forceAnonymity = {};
         const AnonClass = forceAnonymity.whatever = function() {};

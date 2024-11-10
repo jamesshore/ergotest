@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { TestMark, TestResult } from "./test_result.js";
@@ -10,8 +10,8 @@ const failColor = Colors.brightRed;
 const timeoutColor = Colors.purple;
 const skipColor = Colors.cyan;
 const passColor = Colors.green;
-export default test(({ describe })=>{
-    describe("summary", ({ it })=>{
+export default test(()=>{
+    describe("summary", ()=>{
         it("renders summary", ()=>{
             const result = createSuite({
                 children: [
@@ -49,7 +49,7 @@ export default test(({ describe })=>{
             assert.equal(TestRenderer.create().renderSummary(createSuite(), 1000), summaryColor("(") + summaryColor("none ran") + summaryColor(")"));
         });
     });
-    describe("single-character test cases", ({ it })=>{
+    describe("single-character test cases", ()=>{
         it("renders test cases as progress marker", ()=>{
             assert.equal(renderCharacterTest(createPass()), ".", "pass");
             assert.equal(renderCharacterTest(createFail()), Colors.brightRed.inverse("X"), "fail");
@@ -68,7 +68,7 @@ export default test(({ describe })=>{
             assert.equal(renderCharacterTest([]), "");
         });
     });
-    describe("single-line test cases", ({ it })=>{
+    describe("single-line test cases", ()=>{
         it("pass", ()=>{
             const result = createPass({
                 name: "my name"
@@ -105,7 +105,7 @@ export default test(({ describe })=>{
             assert.equal(renderSingleLineTest([]), "");
         });
     });
-    describe("multi-line test cases", ({ it })=>{
+    describe("multi-line test cases", ()=>{
         it("renders multi-line name and status separated by a blank line", ()=>{
             const result = createPass({
                 name: [
@@ -129,7 +129,7 @@ export default test(({ describe })=>{
             assert.equal(renderMultiLineTest([]), "");
         });
     });
-    describe("single-line test marks", ({ it })=>{
+    describe("single-line test marks", ()=>{
         it("renders test case marks", ()=>{
             assert.equal(renderSingleLineMark(createPass({
                 mark: TestMark.none,
@@ -191,7 +191,7 @@ export default test(({ describe })=>{
             })));
         });
     });
-    describe("single-line names", ({ it })=>{
+    describe("single-line names", ()=>{
         it("renders default name when no name provided", ()=>{
             const result = createPass({
                 name: []
@@ -232,7 +232,7 @@ export default test(({ describe })=>{
             return TestRenderer.create().renderNameOnOneLine(result);
         }
     });
-    describe("multi-line names", ({ it })=>{
+    describe("multi-line names", ()=>{
         it("renders default name when no name provided", ()=>{
             const result = createPass({
                 name: []
@@ -273,7 +273,7 @@ export default test(({ describe })=>{
             return TestRenderer.create().renderNameOnMultipleLines(result);
         }
     });
-    describe("single-word statuses", ({ it })=>{
+    describe("single-word statuses", ()=>{
         it("renders all statuses", ()=>{
             assert.equal(render(createPass()), Colors.green("passed"), "pass");
             assert.equal(render(createFail()), Colors.brightRed("failed"), "fail");
@@ -373,7 +373,7 @@ export default test(({ describe })=>{
             return TestRenderer.create().renderDiff(error);
         }
     });
-    describe("single-word marks", ({ it })=>{
+    describe("single-word marks", ()=>{
         it("renders all marks", ()=>{
             assert.equal(render(createPass({
                 mark: TestMark.none
@@ -389,7 +389,7 @@ export default test(({ describe })=>{
             return TestRenderer.create().renderMarkAsSingleWord(result);
         }
     });
-    describe("stack traces", ({ it })=>{
+    describe("stack traces", ()=>{
         const EXAMPLE_STACK = "Error: my error\n" + "    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js:306:11\n" + "    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" + "    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
         const HIGHLIGHTED_STACK = "Error: my error\n" + Colors.brightWhite.bold("--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js:306:11") + "\n" + "    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" + "    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
         it("returns an empty string if there's no stack trace", ()=>{
@@ -424,7 +424,7 @@ export default test(({ describe })=>{
             return TestRenderer.create().renderStack(result);
         }
     });
-    describe("actual / expected diffs", ({ it })=>{
+    describe("actual / expected diffs", ()=>{
         // These tests depends on util.inspect() behavior, which is not guaranteed to remain consistent across
         // Node versions, so it could break after a Node version upgrade.
         it("renders expected and actual values", ()=>{

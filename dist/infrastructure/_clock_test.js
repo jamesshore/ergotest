@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test } from "../tests.js";
+import { assert, test, describe, it } from "../tests.js";
 import { Clock } from "./clock.js";
-export default test(({ describe })=>{
-    describe("information", ({ it })=>{
+export default test(()=>{
+    describe("information", ()=>{
         it("provides current timestamp", ()=>{
             const clock = Clock.create();
             let expected = Date.now();
@@ -26,7 +26,7 @@ export default test(({ describe })=>{
             assert.equal(nullClock.millisecondsUntil(new Date(500)), 400, "should compare to Date");
         });
     });
-    describe("wait", ({ it })=>{
+    describe("wait", ()=>{
         it("waits N milliseconds", async ()=>{
             const clock = Clock.create();
             const start = clock.now();
@@ -35,7 +35,7 @@ export default test(({ describe })=>{
             assert.atLeast(elapsedTime, 9);
         });
     });
-    describe("repeat", ({ it })=>{
+    describe("repeat", ()=>{
         it("calls a function every N milliseconds", async ()=>{
             const clock = await Clock.createNullAsync(); // real clock is too nondeterministic to test directly
             let runCount = 0;
@@ -47,7 +47,7 @@ export default test(({ describe })=>{
             assert.equal(runCount, 3, "should not call repeat function after stop function called");
         });
     });
-    describe("keepalive", ({ it })=>{
+    describe("keepalive", ()=>{
         it("runs a function after N milliseconds", async ()=>{
             const clock = await Clock.createNullAsync();
             let expireTime;
@@ -96,7 +96,7 @@ export default test(({ describe })=>{
             assert.isUndefined(expireTime, "should not have expired");
         });
     });
-    describe("timeouts", ({ it })=>{
+    describe("timeouts", ()=>{
         function createTimeoutFn(result = "default timeout function result") {
             const timeoutFn = ()=>{
                 timeoutFn.ran = true;
@@ -158,7 +158,7 @@ export default test(({ describe })=>{
             assert.equal(await timeoutPromise, "timeout result");
         });
     });
-    describe("nullability", ({ it })=>{
+    describe("nullability", ()=>{
         it("defaults 'now' to zero", async ()=>{
             const clock = await Clock.createNullAsync();
             assert.equal(clock.now(), 0);
