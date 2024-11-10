@@ -34,12 +34,6 @@ interface It {
 type BeforeAfter = (fn: Test) => void;
 
 export interface SuiteParameters {
-	describe?: Describe,
-	it?: It,
-	beforeAll?: BeforeAfter,
-	afterAll?: BeforeAfter,
-	beforeEach?: BeforeAfter,
-	afterEach?: BeforeAfter,
 	setTimeout: (newTimeout: Milliseconds) => void,
 }
 
@@ -225,12 +219,6 @@ export class TestSuite implements Runnable {
 
 		try {
 			describeFn({
-				describe,
-				it,
-				beforeAll: (fnAsync) => { beforeAllFns.push(fnAsync); },
-				afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
-				beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
-				afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
 				setTimeout: (newTimeoutInMs) => { timeout = newTimeoutInMs; },
 			});
 		}

@@ -718,7 +718,7 @@ export default test(() => {
 
 			let beforeTime = null;
 			let afterTime = null;
-			const suite = test_sut(({ it, beforeEach, afterEach }) => {
+			const suite = test_sut(() => {
 				beforeEach_sut(() => {
 					beforeTime = clock.now();
 				});
@@ -748,7 +748,7 @@ export default test(() => {
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = test_sut("my suite", ({ it, beforeAll, afterAll }) => {
+			const suite = test_sut("my suite", () => {
 				beforeAll_sut(async () => {
 					await clock.waitAsync(EXCEED_TIMEOUT);
 				});
@@ -778,7 +778,7 @@ export default test(() => {
 
 			let beforeTime = null;
 			let itTime = null;
-			const suite = test_sut(({ it, beforeAll, afterAll }) => {
+			const suite = test_sut(() => {
 				beforeAll_sut(() => {
 					beforeTime = clock.now();
 				});
@@ -811,7 +811,7 @@ export default test(() => {
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = test_sut(({ it, beforeEach, afterEach }) => {
+			const suite = test_sut(() => {
 				beforeEach_sut(async () => {
 					await clock.waitAsync(EXCEED_TIMEOUT);
 				});
@@ -841,7 +841,7 @@ export default test(() => {
 
 			let beforeTime = null;
 			let itTime = null;
-			const suite = test_sut(({ it, beforeEach, afterEach }) => {
+			const suite = test_sut(() => {
 				beforeEach_sut(() => {
 					beforeTime = clock.now();
 				});
@@ -872,7 +872,7 @@ export default test(() => {
 				await clock.waitAsync(DEFAULT_TIMEOUT - 1);
 			};
 
-			const suite = test_sut(({ it, beforeAll, afterAll, beforeEach, afterEach }) => {
+			const suite = test_sut(() => {
 				beforeAll_sut(notQuiteTimeoutFn);
 				beforeAll_sut(notQuiteTimeoutFn);
 				afterAll_sut(notQuiteTimeoutFn);
@@ -904,9 +904,7 @@ export default test(() => {
 				await clock.waitAsync(NEW_TIMEOUT - 1);
 			};
 
-			const suite = test_sut(({
-				it, setTimeout, beforeAll, afterAll, beforeEach, afterEach
-			}) => {
+			const suite = test_sut(({ setTimeout }) => {
 				setTimeout(NEW_TIMEOUT);
 				beforeAll_sut(notQuiteTimeoutFn);
 				afterAll_sut(notQuiteTimeoutFn);
@@ -1260,7 +1258,7 @@ export default test(() => {
 		});
 
 		it("marks suites even if they fail 'beforeAll'", async () => {
-			const suite = test_sut.only("my suite", ({ beforeAll, it }) => {
+			const suite = test_sut.only("my suite", () => {
 				beforeAll_sut(() => { throw new Error("my error"); });
 				it_sut("my test");
 			});
