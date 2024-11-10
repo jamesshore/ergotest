@@ -284,7 +284,7 @@ export default test(()=>{
             return TestRenderer.create().renderStatusAsSingleWord(result);
         }
     });
-    describe("multi-line statuses", ({ it, describe })=>{
+    describe("multi-line statuses", ()=>{
         it("renders pass", ()=>{
             assert.equal(render(createPass()), Colors.green("passed"));
         });
