@@ -45,24 +45,23 @@ In this document **(the bold entries are the most useful)**:
 
 If you’d like to use Ergotest’s built-in assertion library, this document describes how it works. But you can use any assertion library that throws an exception on failure.
 
-Start by making a `tests.ts` (or `tests.js`) wrapper that re-exports the assertion library of your choice. The [test API documentation](test_api.md) has the details, but here’s how you use Ergotest’s assertion library:
+Start by making a `tests.ts` (or `tests.js`) wrapper that re-exports the assertion library of your choice. The [test API documentation](test_api.md) has more details, but here’s how you use Ergotest’s assertion library:
 
 ```typescript
 // tests.ts
-import { TestSuite } from "ergotest/test_suite.js";
-
-export const test = TestSuite.create;
-export * as assert from "ergotest/assert.js";
+export * from "ergotest"; 
 ```
 
 Use it in your tests like this:
 
 ```typescript
-import { test, assert } from "tests.js";
+import { assert, test, describe, it } from "tests.js";
 
 export default test(() => {
   
-  // tests go here
+  it("my test", () => {
+    assert.equal(2 + 2, 4);
+  });
   
 });
 ```
@@ -76,13 +75,11 @@ export * from "ergotest/assert.js";
 export function myCoolAssertion() {...}
 ```
 
-And modify `tests.ts` to use it:
+And modify `tests.ts` to export it:
 
 ```typescript
 // tests.ts
-import { TestSuite } from "ergotest/test_suite.js";
-
-export const test = TestSuite.create;
+export { test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
 export * as assert from "./assert.js";
 ```
 
@@ -366,7 +363,7 @@ Example:
 
 ```typescript
 assert.notError(
-	() => sut.myMethod(),
+  () => sut.myMethod(),
 );
 ```
 
@@ -407,7 +404,7 @@ Example:
 
 ```typescript
 await assert.notErrorAsync(
-	() => sut.myMethod(),
+  () => sut.myMethod(),
 );
 ```
 
