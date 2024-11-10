@@ -23,7 +23,7 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * `describe()` for test suites, `it()` for tests
 * `beforeAll()`, `afterAll()`, `beforeEach()`, `afterEach()`
 * `.only` and `.skip` to select tests; they work across files and nest cleanly
-* `async / await` for asynchronous code
+* `async/await` for asynchronous code
 * Includes a nice assertion library if you want it; compatible with any assertion library if you don’t
 * Timeouts, infinite loop detection, and uncaught exception detection
 * Test configuration provided to tests (useful for integration tests)
@@ -39,16 +39,20 @@ Ergotest works particularly well with [Automatopia](https://github.com/jamesshor
 Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for mainstream use. Until v1.0 is released, everything is subject to change, so you might want to wait.
 
 
-## Example Test
+## Example Tests
 
 ```javascript
-import { assert, test } from "ergotest";
+import { assert, test, describe, it } from "ergotest";
 import { hello } from "./hello.js";
 
 export default test(() => {
 
   it("runs tests", async () => {
     assert.equal(await hello.world(), "hello world");
+  });
+  
+  describe("sub-suite", async () => {
+    it("placeholder test");
   });
 
 });
@@ -78,10 +82,7 @@ Isolate your tests from Ergotest by creating a `tests.js` file. This allows you 
 
 ```javascript
 // tests.js
-import { TestSuite } from "ergotest/test_suite.js";
-
-export const test = TestSuite.create;
-export * as assert from "ergotest/assert.js";
+export * from "ergotest";
 ```
 
 ### 2. Write a test
@@ -90,7 +91,7 @@ Write a simple test:
 
 ```javascript
 // example.test.js
-import { assert, test } from "./tests.js";
+import { assert, test, it } from "./tests.js";
 
 export default test(() => {
   
