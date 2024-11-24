@@ -15,6 +15,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 
 My goal is for Ergo to reach the point where it’s “fully baked” and not incorporating new features. Here’s what I’d like to finish before declaring it “done:”
 
+* **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
 * **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
 * **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
