@@ -2,7 +2,7 @@
 
 *I think, therefore I test*
 
-Ergotest (pronounced *air-go-test*) is a Node.js library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented automation API. It has all the features you need and none of the complexity you don't.
+Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running tests. It emphasizes speed, functionality, and simplicity. It has a superb, well-documented automation API. It has all the features you need and none of the complexity you don't.
 
 
 ## Why build yet another testing library?
