@@ -16,6 +16,7 @@ export interface TestConfig {
 }
 
 export interface TestOptions {
+	timeout?: number,
 	config?: TestConfig,
 	notifyFn?: NotifyFn,
 	clock?: Clock,
@@ -258,6 +259,7 @@ export class TestSuite implements Runnable {
 
 	/**
 	 * Run the tests in this suite.
+	 * @param {number} [timeout] Default timeout in milliseconds.
 	 * @param {object} [config={}] Configuration data to provide to tests.
 	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
@@ -265,11 +267,13 @@ export class TestSuite implements Runnable {
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
 	 */
 	async runAsync({
+		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
 		notifyFn = () => {},
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
+			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
 			clock: [ undefined, Clock ],
@@ -281,7 +285,7 @@ export class TestSuite implements Runnable {
 			notifyFn,
 			name: [],
 			filename: this._filename,
-			timeout: this._timeout ?? DEFAULT_TIMEOUT_IN_MS,
+			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
 		});
 	}
 
