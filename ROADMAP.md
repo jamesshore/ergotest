@@ -17,7 +17,7 @@ My goal is for Ergo to reach the point where it’s “fully baked” and not in
 
 * **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
 * **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
-* **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
+* ✅ **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
 * **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
 * **Parallel test runs.** This isn’t that high on my list, given that my tests run in a matter of seconds, and [Automatopia’s](https://github.com/jamesshore/automatopia) incremental watch script brings that down to a fraction of a second, but it would be good for bragging rights.
   * Specifically, I want to spawn multiple child processes and have them each process one test module at time off of a shared queue. 
