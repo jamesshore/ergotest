@@ -211,9 +211,13 @@ Use `options` to provide configuration data to the tests or specify a callback f
 
 * import { TestOptions } from "ergotest/test_suite.js"
 
-You can configure test runs with this interface. Provide an object with two optional parameters:
+You can configure test runs with this interface. Provide an object with these optional parameters:
 
-* **config: Record<string, unknown>**
+* **timeout: number = 2000**
+  * The amount of time, in milliseconds, before a test times out. Note that, due to the nature of JavaScript, tests continue running even after they've timed out. However, their results are ignored.
+  * Defaults to two seconds.
+
+* **config: Record<string, unknown> = {}**
   * An object with key/value pairs. The values can be anything you want. Retrieve the values in your tests by calling `getConfig` as describe in the [test API](test_api.md).
   * Defaults to an empty object.
 

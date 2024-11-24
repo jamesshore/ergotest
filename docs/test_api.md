@@ -160,7 +160,7 @@ The remainder of this document describes the functions you’ll use in your test
 * test.only(...)
 * test.skip(...)
 
-Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [#afterEach](#aftereach) to define functions to run before and after your tests.
+Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
 
 If you call `test.skip()`, all the tests in this module will be skipped. If you call `test.only()`, all other tests that aren’t marked `.only` will be skipped. This status is inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
 

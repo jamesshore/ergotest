@@ -86,6 +86,7 @@ export default class Tests {
 	async #runTestsAsync(reporter, description, filesToRun, failOnSkip, config) {
 		await reporter.startAsync(`Running ${description}`, async (report) => {
 			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
+				timeout: 10000,
 				config,
 				notifyFn: testResult => {
 					report.debug("\n  " + testResult.renderAsSingleLine());

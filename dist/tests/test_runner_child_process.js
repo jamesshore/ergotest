@@ -21,9 +21,10 @@ function main() {
         runWorkerAsync(workerData);
     });
 }
-async function runWorkerAsync({ modulePaths, config }) {
+async function runWorkerAsync({ modulePaths, timeout, config }) {
     const suite = await TestSuite.fromModulesAsync(modulePaths);
     const result = await suite.runAsync({
+        timeout,
         config,
         notifyFn: sendProgress
     });

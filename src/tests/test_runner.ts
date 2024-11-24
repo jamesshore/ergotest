@@ -20,6 +20,7 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 /** For internal use only. */
 export interface WorkerInput {
 	modulePaths: string[],
+	timeout?: number,
 	config?: Record<string, unknown>
 }
 
@@ -67,6 +68,7 @@ export class TestRunner {
 	 */
 	async runInCurrentProcessAsync(modulePaths: string[], options?: TestOptions): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, {
+			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
 		}]]);
@@ -85,16 +87,18 @@ export class TestRunner {
 	 * @returns {Promise<TestSuiteResult>}
 	 */
 	async runInChildProcessAsync(modulePaths: string[], {
+		timeout,
 		config,
 		notifyFn = () => {},
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, {
+			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			notifyFn: [ undefined, Function ],
 		}]]);
 
 		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
-		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, config, notifyFn);
+		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, notifyFn);
 		await killChildProcess(child);
 
 		return result;
@@ -106,11 +110,12 @@ async function runTestsInChildProcessAsync(
 	child: ChildProcess,
 	clock: Clock,
 	modulePaths: string[],
+	timeout: number | undefined,
 	config: TestConfig | undefined,
 	notifyFn: NotifyFn,
 ): Promise<TestSuiteResult> {
 	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
-		const workerData = { modulePaths, config };
+		const workerData = { modulePaths, timeout, config };
 		child.send(workerData);
 
 		child.on("error", error => reject(error));
