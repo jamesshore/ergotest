@@ -37,6 +37,10 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
             [
                 undefined,
                 {
+                    timeout: [
+                        undefined,
+                        Number
+                    ],
                     config: [
                         undefined,
                         Object
@@ -59,12 +63,16 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInChildProcessAsync(modulePaths, { config, notifyFn = ()=>{} } = {}) {
+	 */ async runInChildProcessAsync(modulePaths, { timeout, config, notifyFn = ()=>{} } = {}) {
         ensure.signature(arguments, [
             Array,
             [
                 undefined,
                 {
+                    timeout: [
+                        undefined,
+                        Number
+                    ],
                     config: [
                         undefined,
                         Object
@@ -80,15 +88,16 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
             serialization: "advanced",
             detached: false
         });
-        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, config, notifyFn);
+        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, notifyFn);
         await killChildProcess(child);
         return result;
     }
 }
-async function runTestsInChildProcessAsync(child, clock, modulePaths, config, notifyFn) {
+async function runTestsInChildProcessAsync(child, clock, modulePaths, timeout, config, notifyFn) {
     const result = await new Promise((resolve, reject)=>{
         const workerData = {
             modulePaths,
+            timeout,
             config
         };
         child.send(workerData);

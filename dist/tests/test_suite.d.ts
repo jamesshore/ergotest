@@ -4,6 +4,7 @@ export interface TestConfig {
     [name: string]: unknown;
 }
 export interface TestOptions {
+    timeout?: number;
     config?: TestConfig;
     notifyFn?: NotifyFn;
     clock?: Clock;
@@ -68,13 +69,14 @@ export declare class TestSuite implements Runnable {
     });
     /**
      * Run the tests in this suite.
+     * @param {number} [timeout] Default timeout in milliseconds.
      * @param {object} [config={}] Configuration data to provide to tests.
      * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
      *   parameter describes the result of the test—whether it passed, failed, etc.
      * @param {Clock} [clock] The clock to use. Meant for internal use.
      * @returns {Promise<TestSuiteResult>} The results of the test suite.
      */
-    runAsync({ config, notifyFn, clock, }?: TestOptions): Promise<TestSuiteResult>;
+    runAsync({ timeout, config, notifyFn, clock, }?: TestOptions): Promise<TestSuiteResult>;
     /** @private */
     _setFilename(filename: string): void;
     /** @private */

@@ -971,9 +971,9 @@ export default test(() => {
 			);
 		});
 
-		it("allows nested suites to override parent timeout");
-
-		it("allows nested tests to override parent timeout");
+		// it("allows nested suites to override parent timeout");
+		//
+		// it("allows nested tests to override parent timeout");
 
 	});
 

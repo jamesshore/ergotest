@@ -4,6 +4,7 @@ import { Clock } from "../infrastructure/clock.js";
 /** For internal use only. */
 export interface WorkerInput {
     modulePaths: string[];
+    timeout?: number;
     config?: Record<string, unknown>;
 }
 /** For internal use only. */
@@ -49,5 +50,5 @@ export declare class TestRunner {
      *   parameter describes the result of the test—whether it passed, failed, etc.
      * @returns {Promise<TestSuiteResult>}
      */
-    runInChildProcessAsync(modulePaths: string[], { config, notifyFn, }?: TestOptions): Promise<TestSuiteResult>;
+    runInChildProcessAsync(modulePaths: string[], { timeout, config, notifyFn, }?: TestOptions): Promise<TestSuiteResult>;
 }

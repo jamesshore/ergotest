@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it } from "../tests.js";
-import { TestSuite, test as test_sut, describe as describe_sut, it as it_sut, beforeAll as beforeAll_sut, afterAll as afterAll_sut, beforeEach as beforeEach_sut, afterEach as afterEach_sut } from "./test_suite.js";
+import { assert, describe, it, test } from "../tests.js";
+import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut, test as test_sut, TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestStatus, TestResult, TestMark } from "./test_result.js";
+import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -13,7 +13,6 @@ const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.j
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
-const EXCEED_TIMEOUT = DEFAULT_TIMEOUT + 1;
 export default test(()=>{
     describe("test modules", ()=>{
         it("creates test suite from a module (and sets filename on result)", async ()=>{
@@ -232,7 +231,7 @@ export default test(()=>{
                     throw Error("fail");
                 });
                 it_sut("timeout", async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
                 it_sut("test without body");
                 describe_sut("suite without body");
@@ -711,7 +710,7 @@ export default test(()=>{
         });
     });
     describe("timeouts", ()=>{
-        it("times out when test doesn't complete in expected amount of time", async ()=>{
+        it("times out when test doesn't complete before default timeout", async ()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let afterTime = null;
@@ -723,7 +722,7 @@ export default test(()=>{
                     afterTime = clock.now();
                 });
                 it_sut("my test", async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
             });
             const actualPromise = suite.runAsync({
@@ -736,13 +735,13 @@ export default test(()=>{
             assert.equal(beforeTime, 0, "beforeEach() should run immediately");
             assert.equal(afterTime, DEFAULT_TIMEOUT, "afterEach() should run as soon as it() times out");
         });
-        it("times out when beforeAll doesn't complete in expected amount of time", async ()=>{
+        it("times out when beforeAll doesn't complete before default timeout", async ()=>{
             const clock = await Clock.createNullAsync();
             let itTime = null;
             let afterTime = null;
             const suite = test_sut("my suite", ()=>{
                 beforeAll_sut(async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
                 afterAll_sut(()=>{
                     afterTime = clock.now();
@@ -764,7 +763,7 @@ export default test(()=>{
             assert.equal(itTime, null, "it() should not run");
             assert.equal(afterTime, null, "afterAll() should not run");
         });
-        it("times out when afterAll doesn't complete in expected amount of time", async ()=>{
+        it("times out when afterAll doesn't complete before default timeout", async ()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let itTime = null;
@@ -773,7 +772,7 @@ export default test(()=>{
                     beforeTime = clock.now();
                 });
                 afterAll_sut(async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
                 it_sut("test 1", ()=>{
                     itTime = clock.now();
@@ -792,13 +791,13 @@ export default test(()=>{
             assert.equal(beforeTime, 0, "beforeAll() should run immediately");
             assert.equal(itTime, 0, "it() should run immediately");
         });
-        it("times out when beforeEach doesn't complete in expected amount of time", async ()=>{
+        it("times out when beforeEach doesn't complete before default timeout", async ()=>{
             const clock = await Clock.createNullAsync();
             let itTime = null;
             let afterTime = null;
             const suite = test_sut(()=>{
                 beforeEach_sut(async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
                 afterEach_sut(()=>{
                     afterTime = clock.now();
@@ -817,7 +816,7 @@ export default test(()=>{
             assert.equal(itTime, null, "it() should not run");
             assert.equal(afterTime, null, "afterEach() should not run");
         });
-        it("times out when afterEach doesn't complete in expected amount of time", async ()=>{
+        it("times out when afterEach doesn't complete before default timeout", async ()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let itTime = null;
@@ -826,7 +825,7 @@ export default test(()=>{
                     beforeTime = clock.now();
                 });
                 afterEach_sut(async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
                 it_sut("my test", ()=>{
                     itTime = clock.now();
@@ -868,6 +867,27 @@ export default test(()=>{
                 TestResult.pass("test 2")
             ]));
         });
+        it("allows runner to configure default timeout", async ()=>{
+            const NEW_TIMEOUT = DEFAULT_TIMEOUT * 2;
+            const clock = await Clock.createNullAsync();
+            const suite = test_sut(()=>{
+                it_sut("no timeout", async ()=>{
+                    await clock.waitAsync(NEW_TIMEOUT - 1);
+                });
+                it_sut("timeout", async ()=>{
+                    await clock.waitAsync(NEW_TIMEOUT + 1);
+                });
+            });
+            const actualPromise = suite.runAsync({
+                timeout: NEW_TIMEOUT,
+                clock
+            });
+            await clock.tickUntilTimersExpireAsync();
+            assert.dotEquals(await actualPromise, TestResult.suite([], [
+                TestResult.pass("no timeout"),
+                TestResult.timeout("timeout", NEW_TIMEOUT)
+            ]));
+        });
         it("allows suites to configure timeout", async ()=>{
             const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
             const clock = await Clock.createNullAsync();
@@ -890,7 +910,7 @@ export default test(()=>{
                 TestResult.pass("my test")
             ]));
         });
-        it("inherits parent's timeout", async ()=>{
+        it("inherits parent suite's timeout", async ()=>{
             const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
             const clock = await Clock.createNullAsync();
             const suite = test_sut(({ setTimeout })=>{
@@ -911,6 +931,9 @@ export default test(()=>{
                 ])
             ]));
         });
+    // it("allows nested suites to override parent timeout");
+    //
+    // it("allows nested tests to override parent timeout");
     });
     describe(".skip", ()=>{
         it("skips and marks tests that have no function", async ()=>{
@@ -1050,7 +1073,7 @@ export default test(()=>{
                     throw new Error("my error");
                 });
                 it_sut.only("timeout", async ()=>{
-                    await clock.waitAsync(EXCEED_TIMEOUT);
+                    await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
             });
             const resultPromise = suite.runAsync({
