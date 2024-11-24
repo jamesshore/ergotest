@@ -82,6 +82,7 @@ export default test(() => {
 		it("updates version and pushes to origin", async () => {
 			const { stdoutTracker } = await releaseAsync({
 				level: "minor",
+				otp: "my_otp",
 			});
 
 			assert.equal(stdoutTracker.data, [
@@ -90,7 +91,7 @@ export default test(() => {
 
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
-				Colors.cyan("» npm publish\n"),
+				Colors.cyan("» npm publish --otp=my_otp\n"),
 				Colors.cyan("» git push --all\n"),
 				Colors.cyan("» git push --tags\n"),
 
@@ -147,10 +148,12 @@ async function integrateAsync({
 
 async function releaseAsync({
 	level,
+	otp,
 	shellOptions,
 } = {}) {
 	ensure.signature(arguments, [[ undefined, {
 		level: [ String ],
+		otp: [ String ],
 		shellOptions: [ undefined, Object ],
 	}]]);
 
@@ -164,7 +167,7 @@ async function releaseAsync({
 		integrationBranch: INTEGRATION_BRANCH,
 	};
 
-	await repo.releaseAsync({ level, config });
+	await repo.releaseAsync({ level, config, otp });
 
 	return { stdoutTracker };
 }
