@@ -73,7 +73,7 @@ export default class Release {
 			await repo.releaseAsync({
 				level: name,
 				config: repoConfig,
-				otp: options.args.otp,
+				otp: options.args.otp.toString(),
 			});
 		});
 	}
