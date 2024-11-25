@@ -5,7 +5,7 @@
 Although I’ve been using Ergotest for many years, I’m planning to make a few breaking API changes prior to releasing v1.0. Most of these changes are to make Ergotest compatible with a subset of [Vitest](https://vitest.dev/). That makes trying Ergotest lower risk: you can give it a try and switch to Vitest later if it doesn’t do what you want. 
 
 * ✅ **Better test API.** Currently, `describe()`, `it()`, `beforeXxx()`, and `afterXxx()` are passed in as parameters to the test suite function. This is awkward and has some footguns. I’d like to you to be able to just import them like you do in Vitest.  
-* **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
+* ✅ **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
 * **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestComplete()`.
 * **Remove clock.** The test runner takes an undocumented `clock` parameter. This was a hack I used for testing. I’d like to clean it up.
 * **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. I’m not sure if this is an `ergotest` problem or an `automatopia` problem. Either way, it needs to be fixed.
