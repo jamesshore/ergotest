@@ -101,6 +101,36 @@ export default test(() => {
 			]);
 		});
 
+		it("fails gracefully if npm publish fails", async () => {
+			const { releasePromise, stdoutTracker } = release({
+				level: "minor",
+				otp: "my_otp",
+				shellOptions: {
+					"npm publish --otp=my_otp": { code: 127 },
+				},
+			});
+
+			await assert.errorAsync(
+				() => releasePromise,
+				"npm publish failed, but everything else worked; run `npm publish` manually"
+			);
+
+			assert.equal(stdoutTracker.data, [
+				Colors.brightWhite.underline("\nSwitching to integration branch:\n"),
+				Colors.cyan(`» git checkout ${INTEGRATION_BRANCH}\n`),
+
+				Colors.brightWhite.underline("\nReleasing:\n"),
+				Colors.cyan("» npm version minor\n"),
+				Colors.cyan("» npm publish --otp=my_otp\n"),
+				Colors.cyan("» git push --all\n"),
+				Colors.cyan("» git push --tags\n"),
+
+				Colors.brightWhite.underline("\nMerging release into dev branch:\n"),
+				Colors.cyan(`» git checkout ${DEV_BRANCH}\n`),
+				Colors.cyan(`» git merge ${INTEGRATION_BRANCH}\n`),
+			]);
+		});
+
 	});
 
 });
@@ -146,7 +176,14 @@ async function integrateAsync({
 	return { stdoutTracker, build };
 }
 
-async function releaseAsync({
+async function releaseAsync(options) {
+	const { releasePromise, ...others } = release(options);
+
+	await releasePromise;
+	return others;
+}
+
+function release({
 	level,
 	otp,
 	shellOptions,
@@ -167,9 +204,9 @@ async function releaseAsync({
 		integrationBranch: INTEGRATION_BRANCH,
 	};
 
-	await repo.releaseAsync({ level, config, otp });
+	const releasePromise = repo.releaseAsync({ level, config, otp });
 
-	return { stdoutTracker };
+	return { stdoutTracker, releasePromise };
 }
 
 class BuildStub {

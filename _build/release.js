@@ -64,7 +64,7 @@ export default class Release {
 
 	#defineReleaseTask(tasks, repo, name) {
 		tasks.defineTask(name, async (options) => {
-			if (typeof options.args.otp !== "string") {
+			if (typeof options.args.otp !== "number") {
 				throw new TaskError("Need --otp argument with npm authenticator code (be sure to run `npm login` first)");
 			}
 
