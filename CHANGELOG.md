@@ -1,9 +1,10 @@
 # Ergotest Change Log
 
 
-## v0.3.x: Default timeout
+## v0.4.x: Default timeout
 
-* **0.3.0, 24 Nov 2024:** The default timeout can now be configured when running tests.
+* **0.4.1, 24 Nov 2024:** Documentation fix (update changelog to reflect correct version number)
+* **0.4.0, 24 Nov 2024:** The default timeout can now be configured when running tests.
 
 This is an additive, non-breaking change to [TestOptions](docs/automation_api.md#testoptions). The following APIs are affected:
 
@@ -17,6 +18,11 @@ This is an additive, non-breaking change to [TestOptions](docs/automation_api.md
 // set default timeout to five seconds
 const result = await TestRunner.create().runInChildProcessAsync(files, { timeout: 5000 });
 ```
+
+
+## v0.3.x: (skipped)
+
+This version was accidentally skipped.
 
 
 ## v0.2.x: Test definition imports (BREAKING CHANGE)

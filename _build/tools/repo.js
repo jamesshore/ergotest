@@ -52,10 +52,11 @@ export default class Repo {
 		await this.#execAsync("git", "merge", config.integrationBranch, "--ff-only");
 	}
 
-	async releaseAsync({ level, config }) {
+	async releaseAsync({ level, config, otp }) {
 		ensure.signature(arguments, [[ undefined, {
 			level: String,
 			config: CONFIG_TYPE,
+			otp: String,
 		}]]);
 		ensure.that(
 			level === "patch" || level === "minor" || level === "major",
@@ -67,13 +68,20 @@ export default class Repo {
 
 		this.#writeHeadline("Releasing");
 		await this.#execAsync("npm", "version", level);
-		await this.#execAsync("npm", "publish");
-		await this.#execAsync("git", "push", "--all");
-		await this.#execAsync("git", "push", "--tags");
+		try {
+			await this.#execAsync("npm", "publish", `--otp=${otp}`);
+		}
+		catch (err) {
+			throw new TaskError("npm publish failed, but everything else worked; run `npm publish` manually");
+		}
+		finally {
+			await this.#execAsync("git", "push", "--all");
+			await this.#execAsync("git", "push", "--tags");
 
-		this.#writeHeadline(`Merging release into dev branch`);
-		await this.#execAsync("git", "checkout", config.devBranch);
-		await this.#execAsync("git", "merge", config.integrationBranch);
+			this.#writeHeadline(`Merging release into dev branch`);
+			await this.#execAsync("git", "checkout", config.devBranch);
+			await this.#execAsync("git", "merge", config.integrationBranch);
+		}
 	}
 
 	#writeHeadline(message) {
