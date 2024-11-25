@@ -60,6 +60,8 @@ type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
 type BeforeAfter = (fn: ItFn) => void;
 
+type BeforeAfterDefinition = { options: ItOptions, fnAsync: ItFn };
+
 interface TestParameters {
 	getConfig: <T>(key: string) => T,
 }
@@ -78,8 +80,8 @@ interface RecursiveRunOptions {
 interface Runnable {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: ItFn[],
-		parentAfterEachFns: ItFn[],
+		parentBeforeEachFns: BeforeAfterDefinition[],
+		parentAfterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	) => Promise<TestResult> | TestResult;
 	_isDotOnly: () => boolean,
@@ -107,10 +109,10 @@ export class TestSuite implements Runnable {
 	private _tests: Runnable[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
-	private _beforeAllFns: ItFn[];
-	private _afterAllFns: ItFn[];
-	private _beforeEachFns: ItFn[];
-	private _afterEachFns: ItFn[];
+	private _beforeAllFns: BeforeAfterDefinition[];
+	private _afterAllFns: BeforeAfterDefinition[];
+	private _beforeEachFns: BeforeAfterDefinition[];
+	private _afterEachFns: BeforeAfterDefinition[];
 	private _timeout?: Milliseconds;
 	private _filename?: string;
 
@@ -244,10 +246,10 @@ export class TestSuite implements Runnable {
 		timeout?: Milliseconds,
 	): TestSuite {
 		const tests: Runnable[] = [];
-		const beforeAllFns: ItFn[] = [];
-		const afterAllFns: ItFn[] = [];
-		const beforeEachFns: ItFn[] = [];
-		const afterEachFns: ItFn[] = [];
+		const beforeAllFns: BeforeAfterDefinition[] = [];
+		const afterAllFns: BeforeAfterDefinition[] = [];
+		const beforeEachFns: BeforeAfterDefinition[] = [];
+		const afterEachFns: BeforeAfterDefinition[] = [];
 
 		const pushTest = <T extends Runnable>(test: T): T => {
 			tests.push(test);
@@ -269,10 +271,10 @@ export class TestSuite implements Runnable {
 		testContext.push({
 			describe,
 			it,
-			beforeAll: (fnAsync) => { beforeAllFns.push(fnAsync); },
-			afterAll: (fnAsync) => { afterAllFns.push(fnAsync); },
-			beforeEach: (fnAsync) => { beforeEachFns.push(fnAsync); },
-			afterEach: (fnAsync) => { afterEachFns.push(fnAsync); },
+			beforeAll: defineBeforeAfterFn(beforeAllFns),
+			afterAll: defineBeforeAfterFn(afterAllFns),
+			beforeEach: defineBeforeAfterFn(beforeEachFns),
+			afterEach: defineBeforeAfterFn(afterEachFns),
 		});
 		try {
 			describeFn();
@@ -282,6 +284,29 @@ export class TestSuite implements Runnable {
 		}
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
+
+		function defineBeforeAfterFn(beforeAfterArray: BeforeAfterDefinition[]) {
+			return function (optionsOrFnAsync: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+				ensure.signature(arguments, [
+					[ { timeout: Number }, Function ],
+					[ undefined, Function ],
+				]);
+
+				let options: ItOptions;
+				let fnAsync: ItFn;
+
+				if (possibleFnAsync === undefined) {
+					options = {};
+					fnAsync = optionsOrFnAsync as ItFn;
+				}
+				else {
+					options = optionsOrFnAsync as ItOptions;
+					fnAsync = possibleFnAsync;
+				}
+
+				beforeAfterArray.push({ options, fnAsync });
+			};
+		}
 	}
 
 	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
@@ -294,10 +319,10 @@ export class TestSuite implements Runnable {
 		timeout,
 	}: {
 		tests?: Runnable[],
-		beforeAllFns?: ItFn[],
-		afterAllFns?: ItFn[],
-		beforeEachFns?: ItFn[],
-		afterEachFns?: ItFn[],
+		beforeAllFns?: BeforeAfterDefinition[],
+		afterAllFns?: BeforeAfterDefinition[],
+		beforeEachFns?: BeforeAfterDefinition[],
+		afterEachFns?: BeforeAfterDefinition[],
 		timeout?: Milliseconds,
 	}) {
 		this._name = name;
@@ -360,8 +385,8 @@ export class TestSuite implements Runnable {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: ItFn[],
-		parentAfterEachFns: ItFn[],
+		parentBeforeEachFns: BeforeAfterDefinition[],
+		parentAfterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	) {
 		const name = [ ...options.name ];
@@ -459,8 +484,8 @@ class TestCase implements Runnable {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: ItFn[],
-		afterEachFns: ItFn[],
+		beforeEachFns: BeforeAfterDefinition[],
+		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const name = [ ...options.name ];
@@ -516,8 +541,8 @@ class FailureTestCase extends TestCase {
 
 	override async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: ItFn[],
-		afterEachFns: ItFn[],
+		beforeEachFns: BeforeAfterDefinition[],
+		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const result = TestResult.fail([ this._name ], this._error, this._filename);
@@ -530,12 +555,12 @@ class FailureTestCase extends TestCase {
 
 async function runBeforeOrAfterFnsAsync(
 	name: string[],
-	fns: ItFn[],
+	beforeAfterArray: BeforeAfterDefinition[],
 	mark: TestMarkValue,
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
-	for await (const fn of fns) {
-		const result = await runTestFnAsync(name, fn, mark, undefined, options);
+	for await (const beforeAfter of beforeAfterArray) {
+		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, undefined, options);
 		if (!isSuccess(result)) return result;
 	}
 	return TestResult.pass(name, options.filename, mark);

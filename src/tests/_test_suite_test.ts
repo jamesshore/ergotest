@@ -993,10 +993,35 @@ export default test(() => {
 			);
 		});
 
-		it.skip("allows before/after functions to configure custom timeout", async() => {
-			await assert.todo();
-		});
+		it("allows before/after functions to configure custom timeout", async() => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
+			const clock = await Clock.createNullAsync();
+			const notQuiteTimeoutFn = async () => {
+				await clock.waitAsync(NEW_TIMEOUT - 1);
+			};
+
+			const suite = test_sut(() => {
+				beforeAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				it_sut("my test", notQuiteTimeoutFn);
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise,
+				TestResult.suite([], [
+					TestResult.pass("my test"),  // all tests pass because nothing timed out
+				]),
+			);
+		});
 	});
 
 
