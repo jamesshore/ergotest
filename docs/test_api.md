@@ -171,6 +171,8 @@ The remainder of this document describes the functions you’ll use in your test
 
 Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
 
+If `fn` is not provided, the suite will be skipped.
+
 If you call `test.skip()`, all the tests in this module will be skipped. If you call `test.only()`, all other tests that aren’t marked `.only` will be skipped. This status is inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
 
 You may not call `test()` inside of `fn`. If you want to create a sub-suite, call [describe()](#describe) instead.
@@ -240,6 +242,7 @@ Use this `timeout` option to change the timeout for this test. The default value
 
 ## beforeAll()
 
+* beforeAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * beforeAll(fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing. 
@@ -255,6 +258,7 @@ If `fn()` throws an exception or times out, the tests won’t run.
 
 ## afterAll()
 
+* afterAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * afterAll(fn: ({ [getConfig }](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately before running all the tests in this suite and its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
@@ -270,6 +274,7 @@ If no tests in this suite or its sub-suites ran—either because there weren’t
 
 ## beforeEach()
 
+* beforeEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * beforeEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
@@ -285,6 +290,7 @@ If `fn()` throws an exception or times out, the corresponding test will not be r
 
 ## afterEach()
 
+* afterEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * afterEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
