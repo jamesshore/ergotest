@@ -58,7 +58,7 @@ interface It {
 }
 type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
-type BeforeAfter = (fn: ItFn) => void;
+type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 
 type BeforeAfterDefinition = { options: ItOptions, fnAsync: ItFn };
 
@@ -560,7 +560,7 @@ async function runBeforeOrAfterFnsAsync(
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	for await (const beforeAfter of beforeAfterArray) {
-		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, undefined, options);
+		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
 		if (!isSuccess(result)) return result;
 	}
 	return TestResult.pass(name, options.filename, mark);
@@ -695,52 +695,60 @@ describe.only = function(
  * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
  *   skipped.
  */
-export function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+export function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
 	currentContext("it").it(name, optionalOptions, fnAsync);
 }
 
-it.skip = function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+it.skip = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
 	currentContext("it").it.skip(name, optionalOptions, fnAsync);
 };
 
-it.only = function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+it.only = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
 	currentContext("it").it.only(name, optionalOptions, fnAsync);
 };
 
 /**
  * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
+ * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
  */
-export function beforeAll(fnAsync: ItFn) {
-	currentContext("beforeAll").beforeAll(fnAsync);
+export function beforeAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("beforeAll").beforeAll(optionalOptions, fnAsync);
 }
 
 /**
  * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
-export function afterAll(fnAsync: ItFn) {
-	currentContext("afterAll").afterAll(fnAsync);
+export function afterAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("afterAll").afterAll(optionalOptions, fnAsync);
 }
 
 /**
  * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
-export function beforeEach(fnAsync: ItFn) {
-	currentContext("beforeEach").beforeEach(fnAsync);
+export function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("beforeEach").beforeEach(optionalOptions, fnAsync);
 }
 
 /**
  * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
-export function afterEach(fnAsync: ItFn) {
-	currentContext("afterEach").afterEach(fnAsync);
+export function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("afterEach").afterEach(optionalOptions, fnAsync);
 }
 
 function currentContext(functionName: string) {

@@ -1010,7 +1010,7 @@ export default test(() => {
 				beforeEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
 				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
 				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
-				it_sut("my test", notQuiteTimeoutFn);
+				it_sut("my test", () => {});
 			});
 
 			const actualPromise = suite.runAsync({ clock });
