@@ -67,11 +67,20 @@ const testContext = [];
             });
         }
     }
-    /** @private */ static _create(nameOrSuiteFn, possibleSuiteFn, mark) {
+    /** @private */ static _create(nameOrOptionsOrSuiteFn, optionsOrSuiteFn, possibleSuiteFn, mark) {
+        const DescribeOptionsType = {
+            timeout: Number
+        };
         ensure.signature(arguments, [
             [
                 undefined,
+                DescribeOptionsType,
                 String,
+                Function
+            ],
+            [
+                undefined,
+                DescribeOptionsType,
                 Function
             ],
             [
@@ -80,17 +89,9 @@ const testContext = [];
             ],
             String
         ]);
-        let name;
-        let suiteFn;
-        if (nameOrSuiteFn instanceof Function || nameOrSuiteFn === undefined && possibleSuiteFn === undefined) {
-            name = "";
-            suiteFn = nameOrSuiteFn;
-        } else {
-            name = nameOrSuiteFn ?? "";
-            suiteFn = possibleSuiteFn;
-        }
+        const { name, options, suiteFn } = decipherOverloadedParameters();
         if (suiteFn !== undefined) {
-            return this.#runDescribeFunction(suiteFn, name, mark);
+            return this.#runDescribeFunction(suiteFn, name, mark, options.timeout);
         } else if (mark === TestMark.only) {
             return new TestSuite(name, mark, {
                 tests: [
@@ -98,51 +99,85 @@ const testContext = [];
                 ]
             });
         } else {
-            return new TestSuite(name, TestMark.skip, {});
+            return new TestSuite(name, TestMark.skip, {
+                timeout: options.timeout
+            });
+        }
+        function decipherOverloadedParameters() {
+            let name;
+            let options;
+            let suiteFn;
+            switch(typeof nameOrOptionsOrSuiteFn){
+                case "string":
+                    name = nameOrOptionsOrSuiteFn;
+                    break;
+                case "object":
+                    options = nameOrOptionsOrSuiteFn;
+                    break;
+                case "function":
+                    suiteFn = nameOrOptionsOrSuiteFn;
+                    break;
+                case "undefined":
+                    break;
+                default:
+                    ensure.unreachable(`Unknown typeof for nameOrOptionsOrSuiteFn: ${typeof nameOrOptionsOrSuiteFn}`);
+            }
+            switch(typeof optionsOrSuiteFn){
+                case "object":
+                    ensure.that(options === undefined, "Received two options parameters");
+                    options = optionsOrSuiteFn;
+                    break;
+                case "function":
+                    ensure.that(suiteFn === undefined, "Received two suite function parameters");
+                    suiteFn = optionsOrSuiteFn;
+                    break;
+                case "undefined":
+                    break;
+                default:
+                    ensure.unreachable(`Unknown typeof for optionsOrSuiteFn: ${typeof optionsOrSuiteFn}`);
+            }
+            if (possibleSuiteFn !== undefined) {
+                ensure.that(suiteFn === undefined, "Received two suite function parameters");
+                suiteFn = possibleSuiteFn;
+            }
+            name ??= "";
+            options ??= {};
+            return {
+                name,
+                options,
+                suiteFn
+            };
         }
     }
-    static #runDescribeFunction(describeFn, name, mark) {
+    static #runDescribeFunction(describeFn, name, mark, timeout) {
         const tests = [];
         const beforeAllFns = [];
         const afterAllFns = [];
         const beforeEachFns = [];
         const afterEachFns = [];
-        let timeout;
         const pushTest = (test)=>{
             tests.push(test);
             return test;
         };
-        const result = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.none);
-        result.skip = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.skip);
-        result.only = (optionalName, suiteFn)=>this._create(optionalName, suiteFn, TestMark.only);
-        const describe = (optionalName, suiteFn)=>pushTest(TestSuite._create(optionalName, suiteFn, TestMark.none));
-        describe.skip = (optionalName, describeFn)=>pushTest(TestSuite._create(optionalName, describeFn, TestMark.skip));
-        describe.only = (optionalName, suiteFn)=>pushTest(TestSuite._create(optionalName, suiteFn, TestMark.only));
-        const it = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.none));
-        it.skip = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.skip));
-        it.only = (name, testCaseFn)=>pushTest(new TestCase(name, testCaseFn, TestMark.only));
+        const result = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.none);
+        result.skip = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.skip);
+        result.only = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.only);
+        const describe = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.none));
+        describe.skip = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.skip));
+        describe.only = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.only));
+        const it = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.none));
+        it.skip = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.skip));
+        it.only = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.only));
         testContext.push({
             describe,
             it,
-            beforeAll: (fnAsync)=>{
-                beforeAllFns.push(fnAsync);
-            },
-            afterAll: (fnAsync)=>{
-                afterAllFns.push(fnAsync);
-            },
-            beforeEach: (fnAsync)=>{
-                beforeEachFns.push(fnAsync);
-            },
-            afterEach: (fnAsync)=>{
-                afterEachFns.push(fnAsync);
-            }
+            beforeAll: defineBeforeAfterFn(beforeAllFns),
+            afterAll: defineBeforeAfterFn(afterAllFns),
+            beforeEach: defineBeforeAfterFn(beforeEachFns),
+            afterEach: defineBeforeAfterFn(afterEachFns)
         });
         try {
-            describeFn({
-                setTimeout: (newTimeoutInMs)=>{
-                    timeout = newTimeoutInMs;
-                }
-            });
+            describeFn();
         } finally{
             testContext.pop();
         }
@@ -154,6 +189,35 @@ const testContext = [];
             afterEachFns,
             timeout
         });
+        function defineBeforeAfterFn(beforeAfterArray) {
+            return function(optionsOrFnAsync, possibleFnAsync) {
+                ensure.signature(arguments, [
+                    [
+                        {
+                            timeout: Number
+                        },
+                        Function
+                    ],
+                    [
+                        undefined,
+                        Function
+                    ]
+                ]);
+                let options;
+                let fnAsync;
+                if (possibleFnAsync === undefined) {
+                    options = {};
+                    fnAsync = optionsOrFnAsync;
+                } else {
+                    options = optionsOrFnAsync;
+                    fnAsync = possibleFnAsync;
+                }
+                beforeAfterArray.push({
+                    options,
+                    fnAsync
+                });
+            };
+        }
     }
     /** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */ constructor(name, mark, { tests = [], beforeAllFns = [], afterAllFns = [], beforeEachFns = [], afterEachFns = [], timeout }){
         this._name = name;
@@ -266,11 +330,22 @@ const testContext = [];
 }
 class TestCase {
     _name;
+    _timeout;
     _testFn;
     _mark;
-    constructor(name, testFn, mark){
+    constructor(name, optionsOrTestFn, possibleTestFn, mark){
         ensure.signature(arguments, [
             String,
+            [
+                undefined,
+                {
+                    timeout: [
+                        undefined,
+                        Number
+                    ]
+                },
+                Function
+            ],
             [
                 undefined,
                 Function
@@ -278,7 +353,22 @@ class TestCase {
             String
         ]);
         this._name = name;
-        this._testFn = testFn;
+        switch(typeof optionsOrTestFn){
+            case "object":
+                this._timeout = optionsOrTestFn.timeout;
+                break;
+            case "function":
+                this._testFn = optionsOrTestFn;
+                break;
+            case "undefined":
+                break;
+            default:
+                ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
+        }
+        if (possibleTestFn !== undefined) {
+            ensure.that(this._testFn === undefined, "Received two test function parameters");
+            this._testFn = possibleTestFn;
+        }
         this._mark = mark;
     }
     /** @private */ _isDotOnly() {
@@ -317,7 +407,7 @@ class TestCase {
         async function runTestAsync(self) {
             const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
             if (!isSuccess(beforeResult)) return beforeResult;
-            const itResult = await runTestFnAsync(options.name, self._testFn, self._mark, options);
+            const itResult = await runTestFnAsync(options.name, self._testFn, self._mark, self._timeout, options);
             const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
             if (!isSuccess(itResult)) return itResult;
             else return afterResult;
@@ -328,7 +418,7 @@ class FailureTestCase extends TestCase {
     _filename;
     _error;
     constructor(name, error, filename){
-        super(name, undefined, TestMark.none);
+        super(name, undefined, undefined, TestMark.none);
         this._filename = filename;
         this._error = error;
     }
@@ -340,18 +430,19 @@ class FailureTestCase extends TestCase {
         return await result;
     }
 }
-async function runBeforeOrAfterFnsAsync(name, fns, mark, options) {
-    for await (const fn of fns){
-        const result = await runTestFnAsync(name, fn, mark, options);
+async function runBeforeOrAfterFnsAsync(name, beforeAfterArray, mark, options) {
+    for await (const beforeAfter of beforeAfterArray){
+        const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
         if (!isSuccess(result)) return result;
     }
     return TestResult.pass(name, options.filename, mark);
 }
-async function runTestFnAsync(name, fn, mark, { clock, filename, timeout, config }) {
+async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, timeout, config }) {
     const getConfig = (name)=>{
         if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
         return config[name];
     };
+    timeout = testTimeout ?? timeout;
     return await clock.timeoutAsync(timeout, async ()=>{
         try {
             await fn({
@@ -368,10 +459,10 @@ async function runTestFnAsync(name, fn, mark, { clock, filename, timeout, config
 function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
-function startTest(nameOrSuiteFn, possibleSuiteFn, mark) {
+function startTest(optionalName, optionalOptions, fn, mark) {
     ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
     try {
-        return TestSuite._create(nameOrSuiteFn, possibleSuiteFn, mark);
+        return TestSuite._create(optionalName, optionalOptions, fn, mark);
     } finally{
         ensure.that(testContext.length === 0, "test() didn't clear its context; must be an error in ergotest");
     }
@@ -379,80 +470,95 @@ function startTest(nameOrSuiteFn, possibleSuiteFn, mark) {
 /**
  * Creates a top-level test suite. In your test module, call this function and `export default` the result. Add `.skip`
  * to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass {@link fn} instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link beforeAll},
- *   {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If undefined, this
- *   test suite will be skipped.
+ * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
+ *   {@link optionalOptions} or {@link fn} instead.
+ * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
+ *   instead.
+ * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
+ *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
+ *   undefined, this test suite will be skipped.
  * @returns {TestSuite} The test suite. You’ll typically `export default` the return value rather than using it
  *   directly.
- */ export function test(optionalName, fn) {
-    return startTest(optionalName, fn, TestMark.none);
+ */ export function test(optionalName, optionalOptions, fn) {
+    return startTest(optionalName, optionalOptions, fn, TestMark.none);
 }
-test.skip = function(optionalName, fn) {
-    return startTest(optionalName, fn, TestMark.skip);
+test.skip = function(optionalName, optionalOptions, fn) {
+    return startTest(optionalName, optionalOptions, fn, TestMark.skip);
 };
-test.only = function(optionalName, fn) {
-    return startTest(optionalName, fn, TestMark.only);
+test.only = function(optionalName, optionalOptions, fn) {
+    return startTest(optionalName, optionalOptions, fn, TestMark.only);
 };
 /**
  * Adds a nested test suite to the current test suite. Must be run inside of a {@link test} or {@link describe}
  * function. Add `.skip` to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass {@link fn} instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link beforeAll},
- *   {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If undefined, this
- *   test suite will be skipped.
+ * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
+ *   {@link optionalOptions} or {@link fn} instead.
+ * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
+ *   instead.
+ * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
+ *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
+ *   undefined, this test suite will be skipped.
  * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
- */ export function describe(optionalName, fn) {
-    currentContext("describe").describe(optionalName, fn);
+ */ export function describe(optionalName, optionalOptions, fn) {
+    currentContext("describe").describe(optionalName, optionalOptions, fn);
 }
-describe.skip = function(optionalName, fn) {
-    currentContext("describe").describe.skip(optionalName, fn);
+describe.skip = function(optionalName, optionalOptions, fn) {
+    currentContext("describe").describe.skip(optionalName, optionalOptions, fn);
 };
-describe.only = function(optionalName, fn) {
-    currentContext("describe").describe.only(optionalName, fn);
+describe.only = function(optionalName, optionalOptions, fn) {
+    currentContext("describe").describe.only(optionalName, optionalOptions, fn);
 };
 /**
  * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
  * `.skip` to skip this test and `.only` to only run this test.
  * @param {string} name The name of the test.
+ * @param {ItOptions} [optionalOptions] The test options. You can skip this parameter and pass {@link fnAsync} instead.
  * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
  *   skipped.
- */ export function it(name, fnAsync) {
-    currentContext("it").it(name, fnAsync);
+ */ export function it(name, optionalOptions, fnAsync) {
+    currentContext("it").it(name, optionalOptions, fnAsync);
 }
-it.skip = function(name, fnAsync) {
-    currentContext("it").it.skip(name, fnAsync);
+it.skip = function it(name, optionalOptions, fnAsync) {
+    currentContext("it").it.skip(name, optionalOptions, fnAsync);
 };
-it.only = function(name, fnAsync) {
-    currentContext("it").it.only(name, fnAsync);
+it.only = function it(name, optionalOptions, fnAsync) {
+    currentContext("it").it.only(name, optionalOptions, fnAsync);
 };
 /**
  * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function beforeAll(fnAsync) {
-    currentContext("beforeAll").beforeAll(fnAsync);
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
+ * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
+ */ export function beforeAll(optionalOptions, fnAsync) {
+    currentContext("beforeAll").beforeAll(optionalOptions, fnAsync);
 }
 /**
  * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function afterAll(fnAsync) {
-    currentContext("afterAll").afterAll(fnAsync);
+ */ export function afterAll(optionalOptions, fnAsync) {
+    currentContext("afterAll").afterAll(optionalOptions, fnAsync);
 }
 /**
  * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function beforeEach(fnAsync) {
-    currentContext("beforeEach").beforeEach(fnAsync);
+ */ export function beforeEach(optionalOptions, fnAsync) {
+    currentContext("beforeEach").beforeEach(optionalOptions, fnAsync);
 }
 /**
  * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
  * {@link describe} function.
+ * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
+ *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function afterEach(fnAsync) {
-    currentContext("afterEach").afterEach(fnAsync);
+ */ export function afterEach(optionalOptions, fnAsync) {
+    currentContext("afterEach").afterEach(optionalOptions, fnAsync);
 }
 function currentContext(functionName) {
     ensure.that(testContext.length > 0, `${functionName}() must be run inside test()`);

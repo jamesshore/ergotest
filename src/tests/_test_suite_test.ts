@@ -919,43 +919,21 @@ export default test(() => {
 			);
 		});
 
-		it("allows suites to configure timeout", async () => {
-			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
+		it("allows suites to configure custom timeout", async () => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 2;
 
 			const clock = await Clock.createNullAsync();
 			const notQuiteTimeoutFn = async () => {
 				await clock.waitAsync(NEW_TIMEOUT - 1);
 			};
 
-			const suite = test_sut(({ setTimeout }) => {
-				setTimeout(NEW_TIMEOUT);
+			const suite = test_sut({ timeout: NEW_TIMEOUT }, () => {
 				beforeAll_sut(notQuiteTimeoutFn);
 				afterAll_sut(notQuiteTimeoutFn);
 				beforeEach_sut(notQuiteTimeoutFn);
 				afterEach_sut(notQuiteTimeoutFn);
-				it_sut("my test", notQuiteTimeoutFn);
-			});
-
-			const actualPromise = suite.runAsync({ clock });
-			await clock.tickUntilTimersExpireAsync();
-
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("my test"),
-				]),
-			);
-		});
-
-		it("inherits parent suite's timeout", async () => {
-			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
-
-			const clock = await Clock.createNullAsync();
-			const suite = test_sut(({ setTimeout }) => {
-				setTimeout(NEW_TIMEOUT);
 				describe_sut(() => {
-					it_sut("my test", async () => {
-						await clock.waitAsync(NEW_TIMEOUT - 1);
-					});
+					it_sut("my test", notQuiteTimeoutFn);
 				});
 			});
 
@@ -971,10 +949,79 @@ export default test(() => {
 			);
 		});
 
-		// it("allows nested suites to override parent timeout");
-		//
-		// it("allows nested tests to override parent timeout");
+		it("allows nested suites to override parent suite's timeout", async () => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
+			const clock = await Clock.createNullAsync();
+			const suite = test_sut({ timeout: NEW_TIMEOUT / 2 }, () => {
+				describe_sut("my suite", { timeout: NEW_TIMEOUT }, () => {
+					it_sut("my test", async () => {
+						await clock.waitAsync(NEW_TIMEOUT - 1);
+					});
+				});
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise,
+				TestResult.suite([], [
+					TestResult.suite("my suite", [
+						TestResult.pass([ "my suite", "my test" ]),
+					]),
+				]),
+			);
+		});
+
+		it("allows tests to configure custom timeout", async () => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
+
+			const clock = await Clock.createNullAsync();
+			const suite = test_sut(() => {
+				it_sut("my test", { timeout: NEW_TIMEOUT }, async () => {
+					await clock.waitAsync(NEW_TIMEOUT - 1);
+				});
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise,
+				TestResult.suite([], [
+					TestResult.pass("my test"),
+				]),
+			);
+		});
+
+		it("allows before/after functions to configure custom timeout", async() => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
+
+			const clock = await Clock.createNullAsync();
+			const notQuiteTimeoutFn = async () => {
+				await clock.waitAsync(NEW_TIMEOUT - 1);
+			};
+
+			const suite = test_sut(() => {
+				beforeAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterAll_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				beforeEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				afterEach_sut({ timeout: NEW_TIMEOUT }, notQuiteTimeoutFn);
+				it_sut("my test", () => {});
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise,
+				TestResult.suite([], [
+					TestResult.pass("my test"),  // all tests pass because nothing timed out
+				]),
+			);
+		});
 	});
 
 

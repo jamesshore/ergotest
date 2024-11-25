@@ -16,13 +16,13 @@ In this document:
 
 * [Example](#example)
 * [Start Here](#start-here)
-* [TestSuite.create](#testsuitecreate) aka test() or describe()
+* [test()](#test)
+* [describe()](#describe)
 * [it()](#it)
 * [beforeAll()](#beforeall)
 * [afterAll()](#afterall)
 * [beforeEach()](#beforeeach)
 * [afterEach()](#aftereach)
-* [setTimeout()](#settimeout)
 * [getConfig()](#getconfig)
 
 
@@ -64,7 +64,14 @@ export default test(() => {
     
     it("has a test that times out", async () => {
       await new Promise((resolve) => {
-        setTimeout(resolve, 100000);
+        setTimeout(resolve, 10000);
+      });
+    });
+		
+    it("has a test with a configured timeout", { timeout: 20000 }, async () => {
+      // this test passes
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10000);
       });
     });
     
@@ -155,12 +162,16 @@ The remainder of this document describes the functions you’ll use in your test
 
 ## test()
 
-* test(fn?: DescribeFunction)
-* test(name?: string, fn?: DescribeFunction)
+* test(name?: string, options?: DescribeOptions, fn?: () => void)
+* test(name?: string, fn?: () => void)
+* test(options?: DescribeOptions, fn?: () => void)
+* test(fn?: () => void)
 * test.only(...)
 * test.skip(...)
 
 Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
+
+If `fn` is not provided, the suite will be skipped.
 
 If you call `test.skip()`, all the tests in this module will be skipped. If you call `test.only()`, all other tests that aren’t marked `.only` will be skipped. This status is inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
 
@@ -169,11 +180,12 @@ You may not call `test()` inside of `fn`. If you want to create a sub-suite, cal
 This function returns a `TestSuite` instance. You should export it using `export default`, but it is technically possible—but probably not worthwhile—to use the instance yourself. See [the automation API](automation_api.md) for more information about running tests. 
 
 
-### DescribeFunction
+### DescribeOptions
 
-* fn({ setTimeout }) => void
+* { timeout: number }
 
-`fn()` is provided with an object parameter containing the [setTimeout()](#settimeout) function. Use this parameter to change the timeout for tests in this suite and its sub-suites.
+Use the `timeout` option to change the timeout for tests in this suite and its sub-suites. The default value is two seconds, if not configured otherwise by the test automation. 
+
 
 ## describe()
 
@@ -189,11 +201,13 @@ Define a sub-suite. It’s just like [test()](#test), except that you use it ins
 
 ## it()
 
+* it(name: string, options?: ItOptions, fn?: ItFunction)
 * it(name: string, fn?: ItFunction)
+* it(name: string)
 * it.only(...)
 * it.skip(...)
 
-Define an individual test. When the test suite runs, it will run each test’s `fn()` in the order `it()` was called.
+Define an individual test. When the test suite runs, it will run each test’s `fn()` in the order `it()` was called. If `fn` is not provided, the test will be skipped.
 
 > *Note:* In the future, ergotest may support parallel test runs. If the tests are being run in parallel, tests in different modules could run at the same time. The order that modules will run is unpredictable. But all the tests in a single module will run one at a time in the order they were defined.
 
@@ -204,7 +218,7 @@ If you call `it.skip()`, this test will be skipped. If you call `test.only()` al
 After the test runs, it will have one of the following statuses:
 
 * *Fail:* The function threw an exception.
-* *Timeout:* The function took too long to complete. Use [setTimeout()](#settimeout) to change the timeout (defaults to two seconds).
+* *Timeout:* The function took too long to complete. Use [ItOptions](#itoptions) or your automation to change the timeout (defaults to two seconds).
 * *Skip:* The test was skipped.
 * *Pass:* The function ran and exited normally.
 
@@ -216,12 +230,19 @@ You’ll typically make your tests fail by throwing an `AssertionError`. Most as
 
 `fn()` is provided with an object parameter containing the [getConfig()](#getconfig) function. Use this parameter to get configuration data provided to the test from your automation.
 
+### ItOptions
+
+* { timeout: number }
+
+Use this `timeout` option to change the timeout for this test. The default value is two seconds, if not configured otherwise by your automation. 
+
 
 [Back to top](#test-api)
 
 
 ## beforeAll()
 
+* beforeAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * beforeAll(fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing. 
@@ -237,6 +258,7 @@ If `fn()` throws an exception or times out, the tests won’t run.
 
 ## afterAll()
 
+* afterAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * afterAll(fn: ({ [getConfig }](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately before running all the tests in this suite and its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
@@ -252,6 +274,7 @@ If no tests in this suite or its sub-suites ran—either because there weren’t
 
 ## beforeEach()
 
+* beforeEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * beforeEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
@@ -267,6 +290,7 @@ If `fn()` throws an exception or times out, the corresponding test will not be r
 
 ## afterEach()
 
+* afterEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
 * afterEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
@@ -276,15 +300,6 @@ If there are multiple `afterEach()` functions in a suite, they will run in the o
 If any tests throw an exception or time out, `fn()` will still be run for each test.
 
 If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, `fn()` will not be run.
-
-[Back to top](#test-api)
-
-
-## setTimeout()
-
-* setTimeout(newTimeout: number)
-
-Set the timeout, in milliseconds, for each test in this suite and any nested suites.
 
 [Back to top](#test-api)
 

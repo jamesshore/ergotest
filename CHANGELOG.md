@@ -1,6 +1,57 @@
 # Ergotest Change Log
 
 
+## v0.5.x: Timeout option (BREAKING CHANGE)
+
+* **0.5.0, 24 Nov 2024:** Timeouts can now be defined at the test and before/after level, not just the suite level. Timeouts are now configured declaratively rather than with a function call. 
+
+This is a breaking change for these APIs:
+
+* [test()](docs/test_api.md#test)
+* [describe()](docs/test_api.md#describe)
+
+This is an additive, non-breaking change for these APIs:
+
+* [it()](docs/test_api.md#it)
+* [beforeAll()](docs/test_api.md#beforeall)
+* [afterAll()](docs/test_api.md#afterall)
+* [beforeEach()](docs/test_api.md#beforeeach)
+* [afterEach()](docs/test_api.md#aftereach)
+
+**Old way:**
+
+```javascript
+describe(({ setTimeout }) => {
+  setTimeout(10000);
+  
+  it("doesn't time out", async () => {
+    await new Promise(resolve => setTimeout(resolve, 8000));
+  });
+});
+```
+
+**New way:**
+
+```javascript
+describe({ timeout: 10000 }, () => {
+  it("doesn't time out", async () => {
+    await new Promise(resolve => setTimeout(resolve, 8000));
+  });
+});
+```
+
+*(or)*
+
+```javascript
+describe(() => {
+  it("doesn't time out", { timeout: 10000 }, async () => {
+    await new Promise(resolve => setTimeout(resolve, 8000));
+  });
+});
+```
+
+
+
 ## v0.4.x: Default timeout
 
 * **0.4.1, 24 Nov 2024:** Documentation fix (update changelog to reflect correct version number)
