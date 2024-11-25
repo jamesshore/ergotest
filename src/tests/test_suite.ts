@@ -26,6 +26,10 @@ export interface DescribeOptions {
 	timeout?: number,
 }
 
+export interface ItOptions {
+	timeout?: number,
+}
+
 export type NotifyFn = (testResult: TestCaseResult) => void;
 
 interface Describe {
@@ -48,9 +52,9 @@ interface Describe {
 type DescribeFn = () => void;
 
 interface It {
-	(name: string, itFn?: ItFn): void;
-	skip: (name: string, itFn?: ItFn) => void,
-	only: (name: string, itFn?: ItFn) => void,
+	(name: string, optionalOptions?: ItOptions | ItFn, itFn?: ItFn): void;
+	skip: (name: string, optionalOptions?: ItOptions | ItFn, itFn?: ItFn) => void,
+	only: (name: string, optionalOptions?: ItOptions | ItFn, itFn?: ItFn) => void,
 }
 type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
@@ -258,9 +262,9 @@ export class TestSuite implements Runnable {
 		describe.skip = (optionalName, optionalOptions, fn) => pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.skip));
 		describe.only = (optionalName, optionalOptions, fn) => pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.only));
 
-		const it: It = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.none));
-		it.skip = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.skip));
-		it.only = (name, testCaseFn) => pushTest(new TestCase(name, testCaseFn, TestMark.only));
+		const it: It = (name, optionalOptions, testCaseFn) => pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.none));
+		it.skip = (name, optionalOptions, testCaseFn) => pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.skip));
+		it.only = (name, optionalOptions, testCaseFn) => pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.only));
 
 		testContext.push({
 			describe,
@@ -401,14 +405,42 @@ export class TestSuite implements Runnable {
 class TestCase implements Runnable {
 
 	protected _name: string;
+	private _timeout?: Milliseconds;
 	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
 
-	constructor(name: string, testFn: ItFn | undefined, mark: TestMarkValue) {
-		ensure.signature(arguments, [ String, [ undefined, Function ], String ]);
+	constructor(
+		name: string,
+		optionsOrTestFn: TestOptions | ItFn | undefined,
+		possibleTestFn: ItFn | undefined,
+		mark: TestMarkValue
+	) {
+		ensure.signature(arguments, [
+			String,
+			[ undefined, { timeout: [ undefined, Number ]}, Function ],
+			[ undefined, Function ],
+			String
+		]);
 
 		this._name = name;
-		this._testFn = testFn;
+
+		switch (typeof optionsOrTestFn) {
+			case "object":
+				this._timeout = optionsOrTestFn.timeout;
+				break;
+			case "function":
+				this._testFn = optionsOrTestFn;
+				break;
+			case "undefined":
+				break;
+			default:
+				ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
+		}
+		if (possibleTestFn !== undefined) {
+			ensure.that(this._testFn === undefined, "Received two test function parameters");
+			this._testFn = possibleTestFn;
+		}
+
 		this._mark = mark;
 	}
 
@@ -460,7 +492,7 @@ class TestCase implements Runnable {
 			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
 			if (!isSuccess(beforeResult)) return beforeResult;
 
-			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, options);
+			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, options);
 			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
 
 			if (!isSuccess(itResult)) return itResult;
@@ -476,7 +508,7 @@ class FailureTestCase extends TestCase {
 	private _error: unknown;
 
 	constructor(name: string, error: unknown, filename?: string) {
-		super(name, undefined, TestMark.none);
+		super(name, undefined, undefined, TestMark.none);
 
 		this._filename = filename;
 		this._error = error;
@@ -503,7 +535,7 @@ async function runBeforeOrAfterFnsAsync(
 	options: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	for await (const fn of fns) {
-		const result = await runTestFnAsync(name, fn, mark, options);
+		const result = await runTestFnAsync(name, fn, mark, undefined, options);
 		if (!isSuccess(result)) return result;
 	}
 	return TestResult.pass(name, options.filename, mark);
@@ -513,12 +545,15 @@ async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
 	mark: TestMarkValue,
+	testTimeout: Milliseconds | undefined,
 	{ clock, filename, timeout, config }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
 		return config[name] as T;
 	};
+
+	timeout = testTimeout ?? timeout;
 
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
@@ -631,19 +666,20 @@ describe.only = function(
  * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
  * `.skip` to skip this test and `.only` to only run this test.
  * @param {string} name The name of the test.
+ * @param {ItOptions} [optionalOptions] The test options. You can skip this parameter and pass {@link fnAsync} instead.
  * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
  *   skipped.
  */
-export function it(name: string, fnAsync?: ItFn) {
-	currentContext("it").it(name, fnAsync);
+export function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("it").it(name, optionalOptions, fnAsync);
 }
 
-it.skip = function(name: string, fnAsync?: ItFn) {
-	currentContext("it").it.skip(name, fnAsync);
+it.skip = function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("it").it.skip(name, optionalOptions, fnAsync);
 };
 
-it.only = function(name: string, fnAsync?: ItFn) {
-	currentContext("it").it.only(name, fnAsync);
+it.only = function it(name: string, optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
+	currentContext("it").it.only(name, optionalOptions, fnAsync);
 };
 
 /**

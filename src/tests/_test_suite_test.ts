@@ -973,7 +973,29 @@ export default test(() => {
 			);
 		});
 
-		it("allows tests and functions to configure custom timeout");
+		it("allows tests to configure custom timeout", async () => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
+
+			const clock = await Clock.createNullAsync();
+			const suite = test_sut(() => {
+				it_sut("my test", { timeout: NEW_TIMEOUT }, async () => {
+					await clock.waitAsync(NEW_TIMEOUT - 1);
+				});
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise,
+				TestResult.suite([], [
+					TestResult.pass("my test"),
+				]),
+			);
+		});
+
+		it.skip("allows before/after functions to configure custom timeout", async() => {
+			await assert.todo();
+		});
 
 	});
 
