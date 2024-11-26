@@ -1,6 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it } from "../tests.js";
-import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut, TestSuite } from "./test_suite.js";
+import { TestSuite } from "./test_suite.js";
+import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut } from "./test_api.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";

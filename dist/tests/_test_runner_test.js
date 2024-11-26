@@ -157,8 +157,7 @@ export default describe(()=>{
     }
     async function writeTestModuleAsync(bodySourceCode) {
         await fs.writeFile(TEST_MODULE_PATH, `
-			import { describe, it } from ` + `"${path.resolve(import.meta.dirname, "./test_suite.js")}";
-			import * as assert from ` + `"${path.resolve(import.meta.dirname, "./assert.js")}";
+			import { assert, describe, it } from ` + `"${path.resolve(import.meta.dirname, "./index.js")}";
 			
 			export default describe(() => {
 				it("test", ({ getConfig }) => {

@@ -16,8 +16,9 @@ export interface ItOptions {
     timeout?: number;
 }
 export type NotifyFn = (testResult: TestCaseResult) => void;
-type DescribeFn = () => void;
-type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
+export type DescribeFn = () => void;
+export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
+type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 type BeforeAfterDefinition = {
     options: ItOptions;
     fnAsync: ItFn;
@@ -38,6 +39,14 @@ interface Runnable {
     _recursiveRunAsync: (parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions) => Promise<TestResult> | TestResult;
     _isDotOnly: () => boolean;
     _isSkipped: (mark: TestMarkValue) => boolean;
+}
+export interface TestContext {
+    describe(optionalName: string | DescribeOptions | DescribeFn | undefined, optionalOptions: DescribeOptions | DescribeFn | undefined, describeFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
+    it(name: string, optionalOptions: ItOptions | ItFn | undefined, itFn: ItFn | undefined, mark: TestMarkValue): void;
+    beforeAll: BeforeAfter;
+    afterAll: BeforeAfter;
+    beforeEach: BeforeAfter;
+    afterEach: BeforeAfter;
 }
 /**
  * A simple but full-featured test runner.
@@ -63,8 +72,8 @@ export declare class TestSuite implements Runnable {
      * @returns {TestSuite} The test suite.
      */
     static fromModulesAsync(moduleFilenames: string[]): Promise<TestSuite>;
-    /** @private */
-    static _create(nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined, optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined, possibleDescribeFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
+    /** Internal use only. */
+    static create(nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined, optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined, possibleDescribeFn: DescribeFn | undefined, mark: TestMarkValue, testContext: TestContext[]): TestSuite;
     /** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
     constructor(name: string, mark: TestMarkValue, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout, }: {
         tests?: Runnable[];
@@ -93,65 +102,4 @@ export declare class TestSuite implements Runnable {
     /** @private */
     _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
-/**
- * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
- *   {@link optionalOptions} or {@link fn} instead.
- * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
- *   instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
- *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
- *   undefined, this test suite will be skipped.
- * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
- */
-export declare function describe(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): TestSuite;
-export declare namespace describe {
-    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
-    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
-}
-/**
- * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
- * `.skip` to skip this test and `.only` to only run this test.
- * @param {string} name The name of the test.
- * @param {ItOptions} [optionalOptions] The test options. You can skip this parameter and pass {@link fnAsync} instead.
- * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
- *   skipped.
- */
-export declare function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn): void;
-export declare namespace it {
-    var skip: (name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) => void;
-    var only: (name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) => void;
-}
-/**
- * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
- */
-export declare function beforeAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn): void;
-/**
- * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export declare function afterAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn): void;
-/**
- * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export declare function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn): void;
-/**
- * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export declare function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn): void;
 export {};
