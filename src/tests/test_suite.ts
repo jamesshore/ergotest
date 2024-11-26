@@ -94,7 +94,7 @@ interface TestContext {
 const testContext: TestContext[] = [];
 
 /**
- * A simple but full-featured test runner. It's notable for not using globals.
+ * A simple but full-featured test runner.
  */
 export class TestSuite implements Runnable {
 
@@ -584,18 +584,6 @@ function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
 
-
-function startTest(
-	optionalName: string | DescribeOptions | DescribeFn | undefined,
-	optionalOptions: DescribeOptions | DescribeFn | undefined,
-	fn: DescribeFn | undefined,
-	mark: TestMarkValue,
-): TestSuite {
-	return testContext.length === 0 ?
-		TestSuite._create(optionalName, optionalOptions, fn, mark) :
-		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
-}
-
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
@@ -630,6 +618,17 @@ describe.only = function(
 ) {
 	return startTest(optionalName, optionalOptions, fn, TestMark.only);
 };
+
+function startTest(
+	optionalName: string | DescribeOptions | DescribeFn | undefined,
+	optionalOptions: DescribeOptions | DescribeFn | undefined,
+	fn: DescribeFn | undefined,
+	mark: TestMarkValue,
+): TestSuite {
+	return testContext.length === 0 ?
+		TestSuite._create(optionalName, optionalOptions, fn, mark) :
+		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
+}
 
 /**
  * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
@@ -696,7 +695,7 @@ export function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
 }
 
 function currentContext(functionName: string) {
-	ensure.that(testContext.length > 0, `${functionName}() must be run inside test()`);
+	ensure.that(testContext.length > 0, `${functionName}() must be run inside describe()`);
 
 	return testContext[testContext.length - 1];
 }
