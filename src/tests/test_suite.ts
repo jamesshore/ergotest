@@ -5,10 +5,6 @@ import { Clock } from "../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import path from "node:path";
 
-// A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
-// more control over test execution, while also shielding me from dependency churn.
-
-
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
 export interface TestConfig {
@@ -32,25 +28,9 @@ export interface ItOptions {
 
 export type NotifyFn = (testResult: TestCaseResult) => void;
 
-interface Describe {
-	(
-		optionalName: string | DescribeOptions | DescribeFn | undefined,
-		optionalOptions: DescribeOptions | DescribeFn | undefined,
-		describeFn: DescribeFn | undefined,
-		mark: TestMarkValue,
-	): TestSuite,
-}
-type DescribeFn = () => void;
+export type DescribeFn = () => void;
 
-interface It {
-	(
-		name: string,
-		optionalOptions: ItOptions | ItFn | undefined,
-		itFn: ItFn | undefined,
-		mark: TestMarkValue,
-	): void;
-}
-type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
+export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
 type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 
@@ -82,16 +62,24 @@ interface Runnable {
 	_isSkipped: (mark: TestMarkValue) => boolean,
 }
 
-interface TestContext {
-	describe: Describe,
-	it: It,
+export interface TestContext {
+	describe(
+		optionalName: string | DescribeOptions | DescribeFn | undefined,
+		optionalOptions: DescribeOptions | DescribeFn | undefined,
+		describeFn: DescribeFn | undefined,
+		mark: TestMarkValue,
+	): TestSuite,
+	it(
+		name: string,
+		optionalOptions: ItOptions | ItFn | undefined,
+		itFn: ItFn | undefined,
+		mark: TestMarkValue,
+	): void;
 	beforeAll: BeforeAfter,
 	afterAll: BeforeAfter,
 	beforeEach: BeforeAfter,
 	afterEach: BeforeAfter,
 }
-
-const testContext: TestContext[] = [];
 
 /**
  * A simple but full-featured test runner.
@@ -164,19 +152,21 @@ export class TestSuite implements Runnable {
 		optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined,
 		possibleDescribeFn: DescribeFn | undefined,
 		mark: TestMarkValue,
+		testContext: TestContext[],
 	): TestSuite {
 		const DescribeOptionsType = { timeout: Number };
 		ensure.signature(arguments, [
 			[ undefined, DescribeOptionsType, String, Function ],
 			[ undefined, DescribeOptionsType, Function ],
 			[ undefined, Function ],
-			String
+			String,
+			Array,
 		]);
 
 		const { name, options, fn } = decipherOverloadedParameters();
 
 		if (fn !== undefined) {
-			return this.#runDescribeFunction(fn, name, mark, options.timeout);
+			return this.#runDescribeFunction(fn, name, mark, testContext, options.timeout);
 		}
 		else if (mark === TestMark.only) {
 			return new TestSuite(name, mark, {
@@ -237,6 +227,7 @@ export class TestSuite implements Runnable {
 		describeFn: DescribeFn,
 		name: string,
 		mark: TestMarkValue,
+		testContext: TestContext[],
 		timeout?: Milliseconds,
 	): TestSuite {
 		const tests: Runnable[] = [];
@@ -247,7 +238,7 @@ export class TestSuite implements Runnable {
 
 		testContext.push({
 			describe(optionalName, optionalOptions, fn, mark) {
-				return pushTest(TestSuite._create(optionalName, optionalOptions, fn, mark));
+				return pushTest(TestSuite._create(optionalName, optionalOptions, fn, mark, testContext));
 			},
 			it(name, optionalOptions, testCaseFn, mark) {
 				pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
@@ -582,120 +573,4 @@ async function runTestFnAsync(
 
 function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
-}
-
-/**
- * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
- *   {@link optionalOptions} or {@link fn} instead.
- * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
- *   instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
- *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
- *   undefined, this test suite will be skipped.
- * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
- */
-export function describe(
-	optionalName?: string | DescribeOptions | DescribeFn,
-	optionalOptions?: DescribeOptions | DescribeFn,
-	fn?: DescribeFn,
-) {
-	return startTest(optionalName, optionalOptions, fn, TestMark.none);
-}
-
-describe.skip = function(
-	optionalName?: string | DescribeOptions | DescribeFn,
-	optionalOptions?: DescribeOptions | DescribeFn,
-	fn?: DescribeFn,
-) {
-	return startTest(optionalName, optionalOptions, fn, TestMark.skip);
-};
-
-describe.only = function(
-	optionalName?: string | DescribeOptions | DescribeFn,
-	optionalOptions?: DescribeOptions | DescribeFn,
-	fn?: DescribeFn,
-) {
-	return startTest(optionalName, optionalOptions, fn, TestMark.only);
-};
-
-function startTest(
-	optionalName: string | DescribeOptions | DescribeFn | undefined,
-	optionalOptions: DescribeOptions | DescribeFn | undefined,
-	fn: DescribeFn | undefined,
-	mark: TestMarkValue,
-): TestSuite {
-	return testContext.length === 0 ?
-		TestSuite._create(optionalName, optionalOptions, fn, mark) :
-		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
-}
-
-/**
- * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
- * `.skip` to skip this test and `.only` to only run this test.
- * @param {string} name The name of the test.
- * @param {ItOptions} [optionalOptions] The test options. You can skip this parameter and pass {@link fnAsync} instead.
- * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
- *   skipped.
- */
-export function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.none);
-}
-
-it.skip = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.skip);
-};
-
-it.only = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.only);
-};
-
-/**
- * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
- */
-export function beforeAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("beforeAll").beforeAll(optionalOptions, fnAsync);
-}
-
-/**
- * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export function afterAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("afterAll").afterAll(optionalOptions, fnAsync);
-}
-
-/**
- * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("beforeEach").beforeEach(optionalOptions, fnAsync);
-}
-
-/**
- * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */
-export function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("afterEach").afterEach(optionalOptions, fnAsync);
-}
-
-function currentContext(functionName: string) {
-	ensure.that(testContext.length > 0, `${functionName}() must be run inside describe()`);
-
-	return testContext[testContext.length - 1];
 }

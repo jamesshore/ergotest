@@ -7,8 +7,6 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
-import { write } from "node:fs";
-import { create } from "node:domain";
 
 export default describe(() => {
 
@@ -176,8 +174,7 @@ export default describe(() => {
 
 	async function writeTestModuleAsync(bodySourceCode: string) {
 		await fs.writeFile(TEST_MODULE_PATH, `
-			import { describe, it } from ` + `"${(path.resolve(import.meta.dirname, "./test_suite.js"))}";
-			import * as assert from ` + `"${(path.resolve(import.meta.dirname, "./assert.js"))}";
+			import { assert, describe, it } from ` + `"${(path.resolve(import.meta.dirname, "./index.js"))}";
 			
 			export default describe(() => {
 				it("test", ({ getConfig }) => {
