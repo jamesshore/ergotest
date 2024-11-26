@@ -1,5 +1,14 @@
 # Ergotest Roadmap
 
+Links to other documentation:
+
+* [Test API](test_api.md)
+* [Assertion API](assertion_api.md)
+* [Automation API](automation_api.md)
+* [Readme](../README.md)
+* [Changelog](../CHANGELOG.md)
+* **Roadmap**
+
 ## Road to 1.0
 
 Although I’ve been using Ergotest for many years, I’m planning to make a few breaking API changes prior to releasing v1.0. Most of these changes are to make Ergotest compatible with a subset of [Vitest](https://vitest.dev/). That makes trying Ergotest lower risk: you can give it a try and switch to Vitest later if it doesn’t do what you want. 

@@ -5,9 +5,9 @@ Use the assertion API inside your tests.
 Links to other documentation:
 
 * [Test API](test_api.md)
-* Assertion API
+* **Assertion API**
 * [Automation API](automation_api.md)
-* [README](../README.md)
+* [Readme](../README.md)
 * [Changelog](../CHANGELOG.md)
 * [Roadmap](../ROADMAP.md)
 

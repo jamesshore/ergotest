@@ -1,5 +1,13 @@
 # Ergotest Change Log
 
+Links to other documentation:
+
+* [Test API](docs/test_api.md)
+* [Assertion API](assertion_api.md)
+* [Automation API](automation_api.md)
+* [Readme](../README.md)
+* **Changelog**
+* [Roadmap](../ROADMAP.md)
 
 ## v0.5.x: Timeout option (BREAKING CHANGE)
 

@@ -5,7 +5,7 @@ Use the test API to write your tests.
 
 Links to other documentation:
 
-* Test API
+* **Test API**
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
 * [Readme](../README.md)
