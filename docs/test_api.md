@@ -8,7 +8,7 @@ Links to other documentation:
 * Test API
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
-* [README](../README.md)
+* [Readme](../README.md)
 * [Changelog](../CHANGELOG.md)
 * [Roadmap](../ROADMAP.md)
 
@@ -16,7 +16,6 @@ In this document:
 
 * [Example](#example)
 * [Start Here](#start-here)
-* [test()](#test)
 * [describe()](#describe)
 * [it()](#it)
 * [beforeAll()](#beforeall)
@@ -140,7 +139,8 @@ Don’t like `it` and `describe`? Export different names:
 ```typescript
 // tests.ts
 export {
-  test as module, describe as suite, it as test,
+  describe as suite,
+  it as test,
   beforeAll, afterAll, beforeEach, afterEach, assert,
 } from "ergotest";
 ```
@@ -160,24 +160,22 @@ The remainder of this document describes the functions you’ll use in your test
 [Back to top](#test-api)
 
 
-## test()
+## describe()
 
-* test(name?: string, options?: DescribeOptions, fn?: () => void)
-* test(name?: string, fn?: () => void)
-* test(options?: DescribeOptions, fn?: () => void)
-* test(fn?: () => void)
-* test.only(...)
-* test.skip(...)
+* describe(name?: string, options?: [DescribeOptions](#describeoptions) , fn?: () => void)
+* describe(name?: string, fn?: () => void)
+* describe(options?: [DescribeOptions](#describeoptions), fn?: () => void)
+* describe(fn?: () => void)
+* describe.only(...)
+* describe.skip(...)
 
-Use `export default describe(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
+Use `export default describe(() => {...})` to define your test module. Inside the function, call [it()](#it) to define each test, call [describe()](#describe) again to define sub-suites of tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after tests in each suite.
 
 If `fn` is not provided, the suite will be skipped.
 
-If you call `test.skip()`, all the tests in this module will be skipped. If you call `test.only()`, all other tests that aren’t marked `.only` will be skipped. This status is inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
+If you call `describe.skip()`, all the tests in that suite will be skipped. If you call `describe.only()`, all tests and suites that _aren’t_ marked `.only` will be skipped. These statuses are inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
 
-You may not call `test()` inside of `fn`. If you want to create a sub-suite, call [describe()](#describe) instead.
-
-This function returns a `TestSuite` instance. You should export it using `export default`, but it is technically possible—but probably not worthwhile—to use the instance yourself. See [the automation API](automation_api.md) for more information about running tests. 
+This function technically returns a [TestSuite](automation_api.md#testsuite) instance, but you should use [TestRunner](automation_api.md#testrunner) instead.
 
 
 ### DescribeOptions
@@ -185,16 +183,6 @@ This function returns a `TestSuite` instance. You should export it using `export
 * { timeout: number }
 
 Use the `timeout` option to change the timeout for tests in this suite and its sub-suites. The default value is two seconds, if not configured otherwise by the test automation. 
-
-
-## describe()
-
-* describe(fn?: DescribeFunction)
-* describe(name?: string, fn?: DescribeFunction)
-* describe.only(...)
-* describe.skip(...)
-
-Define a sub-suite. It’s just like [test()](#test), except that you use it inside your `test()` module and you can nest it as deeply as you like.
 
 [Back to top](#test-api)
 
@@ -306,13 +294,13 @@ If no tests in this suite or its sub-suites were ran—either because there were
 
 ## getConfig()
 
-* getConfig<T>(key: string): T
+* getConfig\<T\>(key: string): T
 
 Gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
 
 If no configuration object was defined, or if `key` doesn’t exist, `getConfig()` will throw an exception.
 
-See `TestRunner` in the [automation API](automation_api.md) for information about how to define the configuration object.
+See [TestRunner](automation_api.md#testrunner) for information about how to define the configuration object.
 
 ### Example
 
