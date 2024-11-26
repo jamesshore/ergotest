@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC.
-import { test, describe, it } from "../tests.js";
+import { describe, it } from "../tests.js";
 import * as assert from "./assert.js";
-export default test(()=>{
+export default describe(()=>{
     describe("equal()", ()=>{
         it("passes if actual strictly equals expected", ()=>{
             expectPass(()=>{

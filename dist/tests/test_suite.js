@@ -3,12 +3,9 @@ import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
-// A simple but full-featured test runner. It allows me to get away from Mocha's idiosyncracies and have
-// more control over test execution, while also shielding me from dependency churn.
 const DEFAULT_TIMEOUT_IN_MS = 2000;
-const testContext = [];
 /**
- * A simple but full-featured test runner. It's notable for not using globals.
+ * A simple but full-featured test runner.
  */ export class TestSuite {
     _name;
     _mark;
@@ -67,7 +64,7 @@ const testContext = [];
             });
         }
     }
-    /** @private */ static _create(nameOrOptionsOrSuiteFn, optionsOrSuiteFn, possibleSuiteFn, mark) {
+    /** Internal use only. */ static create(nameOrOptionsOrDescribeFn, optionsOrDescribeFn, possibleDescribeFn, mark, testContext) {
         const DescribeOptionsType = {
             timeout: Number
         };
@@ -87,11 +84,12 @@ const testContext = [];
                 undefined,
                 Function
             ],
-            String
+            String,
+            Array
         ]);
-        const { name, options, suiteFn } = decipherOverloadedParameters();
-        if (suiteFn !== undefined) {
-            return this.#runDescribeFunction(suiteFn, name, mark, options.timeout);
+        const { name, options, fn } = decipherOverloadedParameters();
+        if (fn !== undefined) {
+            return this.#runDescribeFunction(fn, name, mark, testContext, options.timeout);
         } else if (mark === TestMark.only) {
             return new TestSuite(name, mark, {
                 tests: [
@@ -106,71 +104,62 @@ const testContext = [];
         function decipherOverloadedParameters() {
             let name;
             let options;
-            let suiteFn;
-            switch(typeof nameOrOptionsOrSuiteFn){
+            let fn;
+            switch(typeof nameOrOptionsOrDescribeFn){
                 case "string":
-                    name = nameOrOptionsOrSuiteFn;
+                    name = nameOrOptionsOrDescribeFn;
                     break;
                 case "object":
-                    options = nameOrOptionsOrSuiteFn;
+                    options = nameOrOptionsOrDescribeFn;
                     break;
                 case "function":
-                    suiteFn = nameOrOptionsOrSuiteFn;
+                    fn = nameOrOptionsOrDescribeFn;
                     break;
                 case "undefined":
                     break;
                 default:
-                    ensure.unreachable(`Unknown typeof for nameOrOptionsOrSuiteFn: ${typeof nameOrOptionsOrSuiteFn}`);
+                    ensure.unreachable(`Unknown typeof for nameOrOptionsOrSuiteFn: ${typeof nameOrOptionsOrDescribeFn}`);
             }
-            switch(typeof optionsOrSuiteFn){
+            switch(typeof optionsOrDescribeFn){
                 case "object":
                     ensure.that(options === undefined, "Received two options parameters");
-                    options = optionsOrSuiteFn;
+                    options = optionsOrDescribeFn;
                     break;
                 case "function":
-                    ensure.that(suiteFn === undefined, "Received two suite function parameters");
-                    suiteFn = optionsOrSuiteFn;
+                    ensure.that(fn === undefined, "Received two suite function parameters");
+                    fn = optionsOrDescribeFn;
                     break;
                 case "undefined":
                     break;
                 default:
-                    ensure.unreachable(`Unknown typeof for optionsOrSuiteFn: ${typeof optionsOrSuiteFn}`);
+                    ensure.unreachable(`Unknown typeof for optionsOrSuiteFn: ${typeof optionsOrDescribeFn}`);
             }
-            if (possibleSuiteFn !== undefined) {
-                ensure.that(suiteFn === undefined, "Received two suite function parameters");
-                suiteFn = possibleSuiteFn;
+            if (possibleDescribeFn !== undefined) {
+                ensure.that(fn === undefined, "Received two suite function parameters");
+                fn = possibleDescribeFn;
             }
             name ??= "";
             options ??= {};
             return {
                 name,
                 options,
-                suiteFn
+                fn
             };
         }
     }
-    static #runDescribeFunction(describeFn, name, mark, timeout) {
+    static #runDescribeFunction(describeFn, name, mark, testContext, timeout) {
         const tests = [];
         const beforeAllFns = [];
         const afterAllFns = [];
         const beforeEachFns = [];
         const afterEachFns = [];
-        const pushTest = (test)=>{
-            tests.push(test);
-            return test;
-        };
-        const result = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.none);
-        result.skip = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.skip);
-        result.only = (optionalName, optionalOptions, fn)=>this._create(optionalName, optionalOptions, fn, TestMark.only);
-        const describe = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.none));
-        describe.skip = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.skip));
-        describe.only = (optionalName, optionalOptions, fn)=>pushTest(TestSuite._create(optionalName, optionalOptions, fn, TestMark.only));
-        const it = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.none));
-        it.skip = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.skip));
-        it.only = (name, optionalOptions, testCaseFn)=>pushTest(new TestCase(name, optionalOptions, testCaseFn, TestMark.only));
         testContext.push({
-            describe,
-            it,
+            describe (optionalName, optionalOptions, fn, mark) {
+                return pushTest(TestSuite.create(optionalName, optionalOptions, fn, mark, testContext));
+            },
+            it (name, optionalOptions, testCaseFn, mark) {
+                pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
+            },
             beforeAll: defineBeforeAfterFn(beforeAllFns),
             afterAll: defineBeforeAfterFn(afterAllFns),
             beforeEach: defineBeforeAfterFn(beforeEachFns),
@@ -189,6 +178,10 @@ const testContext = [];
             afterEachFns,
             timeout
         });
+        function pushTest(test) {
+            tests.push(test);
+            return test;
+        }
         function defineBeforeAfterFn(beforeAfterArray) {
             return function(optionsOrFnAsync, possibleFnAsync) {
                 ensure.signature(arguments, [
@@ -458,111 +451,6 @@ async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, ti
 }
 function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
-}
-function startTest(optionalName, optionalOptions, fn, mark) {
-    ensure.that(testContext.length === 0, "test() is not re-entrant [don't run test() inside of test()]");
-    try {
-        return TestSuite._create(optionalName, optionalOptions, fn, mark);
-    } finally{
-        ensure.that(testContext.length === 0, "test() didn't clear its context; must be an error in ergotest");
-    }
-}
-/**
- * Creates a top-level test suite. In your test module, call this function and `export default` the result. Add `.skip`
- * to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
- *   {@link optionalOptions} or {@link fn} instead.
- * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
- *   instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
- *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
- *   undefined, this test suite will be skipped.
- * @returns {TestSuite} The test suite. You’ll typically `export default` the return value rather than using it
- *   directly.
- */ export function test(optionalName, optionalOptions, fn) {
-    return startTest(optionalName, optionalOptions, fn, TestMark.none);
-}
-test.skip = function(optionalName, optionalOptions, fn) {
-    return startTest(optionalName, optionalOptions, fn, TestMark.skip);
-};
-test.only = function(optionalName, optionalOptions, fn) {
-    return startTest(optionalName, optionalOptions, fn, TestMark.only);
-};
-/**
- * Adds a nested test suite to the current test suite. Must be run inside of a {@link test} or {@link describe}
- * function. Add `.skip` to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
- *   {@link optionalOptions} or {@link fn} instead.
- * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
- *   instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
- *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
- *   undefined, this test suite will be skipped.
- * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
- */ export function describe(optionalName, optionalOptions, fn) {
-    currentContext("describe").describe(optionalName, optionalOptions, fn);
-}
-describe.skip = function(optionalName, optionalOptions, fn) {
-    currentContext("describe").describe.skip(optionalName, optionalOptions, fn);
-};
-describe.only = function(optionalName, optionalOptions, fn) {
-    currentContext("describe").describe.only(optionalName, optionalOptions, fn);
-};
-/**
- * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
- * `.skip` to skip this test and `.only` to only run this test.
- * @param {string} name The name of the test.
- * @param {ItOptions} [optionalOptions] The test options. You can skip this parameter and pass {@link fnAsync} instead.
- * @param {function} [fnAsync] The body of the test. May be synchronous or asynchronous. If undefined, this test will be
- *   skipped.
- */ export function it(name, optionalOptions, fnAsync) {
-    currentContext("it").it(name, optionalOptions, fnAsync);
-}
-it.skip = function it(name, optionalOptions, fnAsync) {
-    currentContext("it").it.skip(name, optionalOptions, fnAsync);
-};
-it.only = function it(name, optionalOptions, fnAsync) {
-    currentContext("it").it.only(name, optionalOptions, fnAsync);
-};
-/**
- * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
- */ export function beforeAll(optionalOptions, fnAsync) {
-    currentContext("beforeAll").beforeAll(optionalOptions, fnAsync);
-}
-/**
- * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function afterAll(optionalOptions, fnAsync) {
-    currentContext("afterAll").afterAll(optionalOptions, fnAsync);
-}
-/**
- * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function beforeEach(optionalOptions, fnAsync) {
-    currentContext("beforeEach").beforeEach(optionalOptions, fnAsync);
-}
-/**
- * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
- * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
- *   instead.
- * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
- */ export function afterEach(optionalOptions, fnAsync) {
-    currentContext("afterEach").afterEach(optionalOptions, fnAsync);
-}
-function currentContext(functionName) {
-    ensure.that(testContext.length > 0, `${functionName}() must be run inside test()`);
-    return testContext[testContext.length - 1];
 }
 
 //# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_suite.js.map

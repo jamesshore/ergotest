@@ -1,6 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, test } from "../tests.js";
-import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut, test as test_sut, TestSuite } from "./test_suite.js";
+import { assert, describe, it } from "../tests.js";
+import { TestSuite } from "./test_suite.js";
+import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut } from "./test_api.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
@@ -13,7 +14,7 @@ const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.j
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
-export default test(()=>{
+export default describe(()=>{
     describe("test modules", ()=>{
         it("creates test suite from a module (and sets filename on result)", async ()=>{
             const suite = await TestSuite.fromModulesAsync([
@@ -83,7 +84,7 @@ export default test(()=>{
         it("executes immediately (but tests don't)", ()=>{
             let suiteRan = false;
             let testRan = false;
-            test_sut(()=>{
+            describe_sut(()=>{
                 suiteRan = true;
                 it_sut(IRRELEVANT_NAME, ()=>{
                     testRan = true;
@@ -93,7 +94,7 @@ export default test(()=>{
             assert.equal(testRan, false, "should not run test");
         });
         it("returns test results when run", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("test 1", ()=>{});
                 it_sut("test 2", ()=>{});
                 it_sut("test 3", ()=>{});
@@ -106,7 +107,7 @@ export default test(()=>{
             ]));
         });
         it("can be nested", async ()=>{
-            const top = test_sut("top", ()=>{
+            const top = describe_sut("top", ()=>{
                 describe_sut("middle", ()=>{
                     describe_sut("bottom", ()=>{
                         it_sut("my test", ()=>{});
@@ -135,7 +136,7 @@ export default test(()=>{
             ]));
         });
         it("retains correct context as nesting expands and contracts", async ()=>{
-            const top = test_sut("top", ()=>{
+            const top = describe_sut("top", ()=>{
                 it_sut("top.1", ()=>{});
                 describe_sut("middle", ()=>{
                     it_sut("middle.1", ()=>{});
@@ -185,7 +186,7 @@ export default test(()=>{
             ]));
         });
         it("retains correct context even if a nested describe block throws an exception", async ()=>{
-            const parent = test_sut("parent", ()=>{
+            const parent = describe_sut("parent", ()=>{
                 it_sut("parent.1", ()=>{});
                 try {
                     describe_sut("child", ()=>{
@@ -208,23 +209,23 @@ export default test(()=>{
             ]));
         });
         it("can be run multiple times", ()=>{
-            test_sut();
-            test_sut();
+            describe_sut();
+            describe_sut();
         });
         it("can be run multiple times even if a previous run results in an exception", ()=>{
             try {
-                test_sut(()=>{
+                describe_sut(()=>{
                     throw new Error("my exception");
                 });
             } catch  {
             // ignored
             }
-            test_sut();
+            describe_sut();
         });
         it("propagates filename into children's test results", async ()=>{
             const clock = await Clock.createNullAsync();
             const filename = "my_filename";
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("pass", ()=>{});
                 it_sut.skip("skip", ()=>{});
                 it_sut("fail", ()=>{
@@ -273,21 +274,11 @@ export default test(()=>{
                 })
             ], filename));
         });
-        it("fails when test() is run within test()", ()=>{
-            test_sut(()=>{
-                assert.error(()=>test_sut(), "test() is not re-entrant [don't run test() inside of test()]");
-            });
-        });
-        it("fails when describe() is run outside of test()", ()=>{
-            assert.error(()=>describe_sut(), "describe() must be run inside test()");
-            assert.error(()=>describe_sut.skip(), "describe() must be run inside test()");
-            assert.error(()=>describe_sut.only(), "describe() must be run inside test()");
-        });
     });
     describe("test cases", ()=>{
         it("runs when its parent suite is run", async ()=>{
             let testRan = false;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut(IRRELEVANT_NAME, ()=>{
                     testRan = true;
                 });
@@ -298,7 +289,7 @@ export default test(()=>{
         });
         it("works with asynchronous code", async ()=>{
             let testRan = false;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut(IRRELEVANT_NAME, async ()=>{
                     await new Promise((resolve)=>{
                         setImmediate(()=>{
@@ -327,7 +318,7 @@ export default test(()=>{
                 myConfig: "my_config"
             };
             let receivedConfig;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut(IRRELEVANT_NAME, ({ getConfig })=>{
                     receivedConfig = getConfig("myConfig");
                 });
@@ -338,7 +329,7 @@ export default test(()=>{
             assert.equal(receivedConfig, "my_config");
         });
         it("fails fast when no config defined", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut(IRRELEVANT_NAME, ({ getConfig })=>{
                     getConfig("no_such_config");
                 });
@@ -349,7 +340,7 @@ export default test(()=>{
             ]));
         });
         it("fails fast when config defined, but config variable not found", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut(IRRELEVANT_NAME, ({ getConfig })=>{
                     getConfig("no_such_config");
                 });
@@ -361,18 +352,18 @@ export default test(()=>{
                 TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'"))
             ]));
         });
-        it("fails when run outside of a test()", ()=>{
-            assert.error(()=>it_sut(IRRELEVANT_NAME), "it() must be run inside test()");
-            assert.error(()=>it_sut.skip(IRRELEVANT_NAME), "it() must be run inside test()");
-            assert.error(()=>it_sut.only(IRRELEVANT_NAME), "it() must be run inside test()");
+        it("fails when run outside of describe()", ()=>{
+            assert.error(()=>it_sut(IRRELEVANT_NAME), "it() must be run inside describe()");
+            assert.error(()=>it_sut.skip(IRRELEVANT_NAME), "it() must be run inside describe()");
+            assert.error(()=>it_sut.only(IRRELEVANT_NAME), "it() must be run inside describe()");
         });
     });
     describe("naming", ()=>{
         it("test suites can be created with and without a name", async ()=>{
-            const name = test_sut("named", ()=>{
+            const name = describe_sut("named", ()=>{
                 it_sut("has a name", ()=>{});
             });
-            const noName = test_sut(()=>{
+            const noName = describe_sut(()=>{
                 it_sut("has no name", ()=>{});
             });
             assert.dotEquals(await name.runAsync(), TestResult.suite("named", [
@@ -386,7 +377,7 @@ export default test(()=>{
             ]));
         });
         it("test cases without names are given a default", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("", ()=>{});
             });
             assert.dotEquals(await suite.runAsync(), TestResult.suite([], [
@@ -394,7 +385,7 @@ export default test(()=>{
             ]));
         });
         it("sets name of test result to include nested suites", async ()=>{
-            const top = test_sut("top", ()=>{
+            const top = describe_sut("top", ()=>{
                 describe_sut("middle", ()=>{
                     describe_sut("bottom", ()=>{
                         it_sut("my test", ()=>{});
@@ -425,7 +416,7 @@ export default test(()=>{
             ]));
         });
         it("collapses unnamed suites when setting test result name", async ()=>{
-            const top = test_sut("top", ()=>{
+            const top = describe_sut("top", ()=>{
                 describe_sut("", ()=>{
                     describe_sut("", ()=>{
                         it_sut("my test", ()=>{});
@@ -451,7 +442,7 @@ export default test(()=>{
             const pushFn = (message)=>{
                 return ()=>ordering.push(message);
             };
-            const suite = test_sut(IRRELEVANT_NAME, ()=>{
+            const suite = describe_sut(IRRELEVANT_NAME, ()=>{
                 beforeAll_sut(pushFn("parent before 1"));
                 beforeAll_sut(pushFn("parent before 2"));
                 afterAll_sut(pushFn("parent after 1"));
@@ -482,7 +473,7 @@ export default test(()=>{
             const pushFn = (message)=>{
                 return ()=>ordering.push(message);
             };
-            const suite = test_sut(IRRELEVANT_NAME, ()=>{
+            const suite = describe_sut(IRRELEVANT_NAME, ()=>{
                 beforeEach_sut(pushFn("parent before 1"));
                 beforeEach_sut(pushFn("parent before 2"));
                 afterEach_sut(pushFn("parent after 1"));
@@ -521,7 +512,7 @@ export default test(()=>{
                 myConfig: "my_config"
             };
             let beforeAllReceived, beforeEachReceived, afterEachReceived, afterAllReceived;
-            const suite = test_sut(IRRELEVANT_NAME, ()=>{
+            const suite = describe_sut(IRRELEVANT_NAME, ()=>{
                 beforeAll_sut(({ getConfig })=>{
                     beforeAllReceived = getConfig("myConfig");
                 });
@@ -547,7 +538,7 @@ export default test(()=>{
         it("doesn't run beforeAll and afterAll when all children are skipped", async ()=>{
             let beforeRan = false;
             let afterRan = false;
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 beforeAll_sut(()=>{
                     beforeRan = true;
                 });
@@ -564,7 +555,7 @@ export default test(()=>{
         it("doesn't run beforeEach and afterEach when the test is skipped", async ()=>{
             let beforeRan = false;
             let afterRan = false;
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 beforeEach_sut(()=>{
                     beforeRan = true;
                 });
@@ -579,7 +570,7 @@ export default test(()=>{
         });
         it("handles exception in beforeAll", async ()=>{
             const error = new Error("my error");
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 beforeAll_sut(()=>{
                     throw error;
                 });
@@ -601,7 +592,7 @@ export default test(()=>{
         });
         it("handles exception in afterAll", async ()=>{
             const error = new Error("my error");
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 afterAll_sut(()=>{
                     throw error;
                 });
@@ -635,7 +626,7 @@ export default test(()=>{
         });
         it("handles exception in beforeEach", async ()=>{
             const error = new Error("my error");
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeEach_sut(()=>{
                     throw error;
                 });
@@ -649,7 +640,7 @@ export default test(()=>{
         });
         it("doesn't run test when beforeEach throws exception", async ()=>{
             let testRan = false;
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 beforeEach_sut(()=>{
                     throw new Error();
                 });
@@ -662,7 +653,7 @@ export default test(()=>{
         });
         it("handles exception in afterEach", async ()=>{
             const error = new Error("my error");
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 afterEach_sut(()=>{
                     throw error;
                 });
@@ -676,7 +667,7 @@ export default test(()=>{
         });
         it("runs afterEach() even when test throws exception", async ()=>{
             let afterEachRan = false;
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 afterEach_sut(()=>{
                     afterEachRan = true;
                 });
@@ -690,7 +681,7 @@ export default test(()=>{
         it("only reports test exception when both test and afterEach throw exceptions", async ()=>{
             const afterEachError = new Error("afterEach error");
             const testError = new Error("test error");
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 afterEach_sut(()=>{
                     throw afterEachError;
                 });
@@ -702,11 +693,11 @@ export default test(()=>{
                 TestResult.fail("my test", testError)
             ]));
         });
-        it("fails when run outside of a test()", ()=>{
-            assert.error(()=>beforeAll_sut(()=>{}), "beforeAll() must be run inside test()");
-            assert.error(()=>beforeEach_sut(()=>{}), "beforeEach() must be run inside test()");
-            assert.error(()=>afterAll_sut(()=>{}), "afterAll() must be run inside test()");
-            assert.error(()=>afterEach_sut(()=>{}), "afterEach() must be run inside test()");
+        it("fails when run outside of describe()", ()=>{
+            assert.error(()=>beforeAll_sut(()=>{}), "beforeAll() must be run inside describe()");
+            assert.error(()=>beforeEach_sut(()=>{}), "beforeEach() must be run inside describe()");
+            assert.error(()=>afterAll_sut(()=>{}), "afterAll() must be run inside describe()");
+            assert.error(()=>afterEach_sut(()=>{}), "afterEach() must be run inside describe()");
         });
     });
     describe("timeouts", ()=>{
@@ -714,7 +705,7 @@ export default test(()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let afterTime = null;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeEach_sut(()=>{
                     beforeTime = clock.now();
                 });
@@ -739,7 +730,7 @@ export default test(()=>{
             const clock = await Clock.createNullAsync();
             let itTime = null;
             let afterTime = null;
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 beforeAll_sut(async ()=>{
                     await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
@@ -767,7 +758,7 @@ export default test(()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let itTime = null;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeAll_sut(()=>{
                     beforeTime = clock.now();
                 });
@@ -795,7 +786,7 @@ export default test(()=>{
             const clock = await Clock.createNullAsync();
             let itTime = null;
             let afterTime = null;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeEach_sut(async ()=>{
                     await clock.waitAsync(DEFAULT_TIMEOUT + 1);
                 });
@@ -820,7 +811,7 @@ export default test(()=>{
             const clock = await Clock.createNullAsync();
             let beforeTime = null;
             let itTime = null;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeEach_sut(()=>{
                     beforeTime = clock.now();
                 });
@@ -846,7 +837,7 @@ export default test(()=>{
             const notQuiteTimeoutFn = async ()=>{
                 await clock.waitAsync(DEFAULT_TIMEOUT - 1);
             };
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeAll_sut(notQuiteTimeoutFn);
                 beforeAll_sut(notQuiteTimeoutFn);
                 afterAll_sut(notQuiteTimeoutFn);
@@ -870,7 +861,7 @@ export default test(()=>{
         it("allows runner to configure default timeout", async ()=>{
             const NEW_TIMEOUT = DEFAULT_TIMEOUT * 2;
             const clock = await Clock.createNullAsync();
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("no timeout", async ()=>{
                     await clock.waitAsync(NEW_TIMEOUT - 1);
                 });
@@ -894,7 +885,7 @@ export default test(()=>{
             const notQuiteTimeoutFn = async ()=>{
                 await clock.waitAsync(NEW_TIMEOUT - 1);
             };
-            const suite = test_sut({
+            const suite = describe_sut({
                 timeout: NEW_TIMEOUT
             }, ()=>{
                 beforeAll_sut(notQuiteTimeoutFn);
@@ -918,7 +909,7 @@ export default test(()=>{
         it("allows nested suites to override parent suite's timeout", async ()=>{
             const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
             const clock = await Clock.createNullAsync();
-            const suite = test_sut({
+            const suite = describe_sut({
                 timeout: NEW_TIMEOUT / 2
             }, ()=>{
                 describe_sut("my suite", {
@@ -945,7 +936,7 @@ export default test(()=>{
         it("allows tests to configure custom timeout", async ()=>{
             const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
             const clock = await Clock.createNullAsync();
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("my test", {
                     timeout: NEW_TIMEOUT
                 }, async ()=>{
@@ -966,7 +957,7 @@ export default test(()=>{
             const notQuiteTimeoutFn = async ()=>{
                 await clock.waitAsync(NEW_TIMEOUT - 1);
             };
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 beforeAll_sut({
                     timeout: NEW_TIMEOUT
                 }, notQuiteTimeoutFn);
@@ -1004,7 +995,7 @@ export default test(()=>{
     });
     describe(".skip", ()=>{
         it("skips and marks tests that have no function", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("my test");
             });
             const result = (await suite.runAsync()).allTests()[0];
@@ -1015,7 +1006,7 @@ export default test(()=>{
         });
         it("skips and marks tests that have '.skip'", async ()=>{
             let testRan = false;
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut.skip("my test", ()=>{
                     testRan = true;
                 });
@@ -1029,8 +1020,8 @@ export default test(()=>{
             assert.equal(result.mark, TestMark.skip, "should be marked");
         });
         it("skips suites that have no function", async ()=>{
-            const suite = await test_sut("my suite").runAsync();
-            const noName = await test_sut().runAsync();
+            const suite = await describe_sut("my suite").runAsync();
+            const noName = await describe_sut().runAsync();
             assert.dotEquals(suite, createSuite({
                 name: "my suite",
                 mark: TestMark.skip
@@ -1041,7 +1032,7 @@ export default test(()=>{
             }));
         });
         it("recursively skips everything within a suite that has '.skip'", async ()=>{
-            const suite = test_sut.skip(()=>{
+            const suite = describe_sut.skip(()=>{
                 it_sut("test 1", ()=>{});
                 it_sut("test 2", ()=>{});
                 describe_sut(()=>{
@@ -1061,7 +1052,7 @@ export default test(()=>{
             }));
         });
         it("doesn't mark skipped tests and suites that aren't explicitly marked '.skip'", async ()=>{
-            const suite = test_sut.skip(()=>{
+            const suite = describe_sut.skip(()=>{
                 it_sut("test", ()=>{});
                 describe_sut("suite", ()=>{});
             });
@@ -1081,7 +1072,7 @@ export default test(()=>{
             }));
         });
         it("generates failure when a suite is marked 'only' but has no body", async ()=>{
-            const suite = test_sut.only("my suite");
+            const suite = describe_sut.only("my suite");
             const result = await suite.runAsync();
             assert.dotEquals(result, createSuite({
                 name: "my suite",
@@ -1095,7 +1086,7 @@ export default test(()=>{
             }));
         });
         it("generates failure when a test is marked 'only' but has no body", async ()=>{
-            const suite = test_sut("my suite", ()=>{
+            const suite = describe_sut("my suite", ()=>{
                 it_sut.only("my test");
             });
             const result = await suite.runAsync();
@@ -1116,7 +1107,7 @@ export default test(()=>{
     });
     describe(".only", ()=>{
         it("if any tests are marked .only, it only runs those tests", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut.only(".only", ()=>{});
                 it_sut("not .only", ()=>{});
             });
@@ -1134,7 +1125,7 @@ export default test(()=>{
         });
         it("marks test results as '.only'", async ()=>{
             const clock = await Clock.createNullAsync();
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut.only("pass", ()=>{});
                 it_sut.only("fail", ()=>{
                     throw new Error("my error");
@@ -1167,7 +1158,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and none of its tests are, runs all of those tests", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 describe_sut("not .only", ()=>{
                     it_sut("test1", ()=>{});
                     it_sut("test2", ()=>{});
@@ -1205,7 +1196,7 @@ export default test(()=>{
             ]));
         });
         it("if a suite is marked .only and none of its children are, run those tests recursively", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 describe_sut(()=>{
                     it_sut("test", ()=>{});
                 });
@@ -1220,7 +1211,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and one of its children is also, only run that test", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 it_sut("not only", ()=>{});
                 it_sut.only("only", ()=>{});
             });
@@ -1238,7 +1229,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and one of its grandchildren is also, only run that test", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 describe_sut(()=>{
                     it_sut("not only", ()=>{});
                     it_sut.only("only", ()=>{});
@@ -1262,7 +1253,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and one of its child suites is also, only run that suite", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 describe_sut("not only", ()=>{
                     it_sut("test1", ()=>{});
                 });
@@ -1293,7 +1284,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and a child is marked .skip, skip the child", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 describe_sut(()=>{
                     it_sut.skip("test1", ()=>{});
                     it_sut("test2", ()=>{});
@@ -1315,7 +1306,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .skip and a child is marked .only, run the child", async ()=>{
-            const suite = test_sut.skip(()=>{
+            const suite = describe_sut.skip(()=>{
                 describe_sut(()=>{
                     it_sut.only("test1", ()=>{});
                     it_sut("test2", ()=>{});
@@ -1339,7 +1330,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .only and a child suite is marked .skip, skip its children", async ()=>{
-            const suite = test_sut.only(()=>{
+            const suite = describe_sut.only(()=>{
                 describe_sut.skip(()=>{
                     it_sut("test1", ()=>{});
                     it_sut("test2", ()=>{});
@@ -1359,7 +1350,7 @@ export default test(()=>{
             }));
         });
         it("if a suite is marked .skip and a child suite is marked .only, run its children", async ()=>{
-            const suite = test_sut.skip(()=>{
+            const suite = describe_sut.skip(()=>{
                 describe_sut.only(()=>{
                     it_sut("test1", ()=>{});
                     it_sut("test2", ()=>{});
@@ -1379,7 +1370,7 @@ export default test(()=>{
             }));
         });
         it("marks suites even if they fail 'beforeAll'", async ()=>{
-            const suite = test_sut.only("my suite", ()=>{
+            const suite = describe_sut.only("my suite", ()=>{
                 beforeAll_sut(()=>{
                     throw new Error("my error");
                 });
@@ -1403,7 +1394,7 @@ export default test(()=>{
     });
     describe("notification", ()=>{
         it("runs notify function when test completes", async ()=>{
-            const suite = test_sut(()=>{
+            const suite = describe_sut(()=>{
                 it_sut("my test", ()=>{});
             });
             let testResult;
@@ -1448,7 +1439,7 @@ export default test(()=>{
     });
 });
 async function runTestAsync(testName, testFn) {
-    const suite = test_sut(()=>{
+    const suite = describe_sut(()=>{
         it_sut(testName, testFn);
     });
     const result = await suite.runAsync();

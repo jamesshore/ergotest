@@ -5,9 +5,9 @@ Use the assertion API inside your tests.
 Links to other documentation:
 
 * [Test API](test_api.md)
-* Assertion API
+* **Assertion API**
 * [Automation API](automation_api.md)
-* [README](../README.md)
+* [Readme](../README.md)
 * [Changelog](../CHANGELOG.md)
 * [Roadmap](../ROADMAP.md)
 
@@ -55,9 +55,9 @@ export * from "ergotest";
 Use it in your tests like this:
 
 ```typescript
-import { assert, test, describe, it } from "tests.js";
+import { assert, describe, it } from "tests.js";
 
-export default test(() => {
+export default describe(() => {
   
   it("my test", () => {
     assert.equal(2 + 2, 4);
@@ -79,7 +79,7 @@ And modify `tests.ts` to export it:
 
 ```typescript
 // tests.ts
-export { test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
+export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
 export * as assert from "./assert.js";
 ```
 

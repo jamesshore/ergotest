@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it } from "tests";
+import { assert, describe, it } from "tests";
 import Repo from "./repo.js";
 import Shell from "infrastructure/shell.js";
 import ConsoleOutput from "infrastructure/console_output.js";
@@ -10,7 +10,7 @@ import * as ensure from "util/ensure.js";
 const DEV_BRANCH = "my_dev_branch";
 const INTEGRATION_BRANCH = "my_integration_branch";
 
-export default test(() => {
+export default describe(() => {
 
 	describe("integrate", () => {
 

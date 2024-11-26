@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it, beforeEach } from "../tests.js";
+import { assert, describe, it, beforeEach } from "../tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -7,10 +7,8 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
-import { write } from "node:fs";
-import { create } from "node:domain";
 
-export default test(() => {
+export default describe(() => {
 
 	let TEST_MODULE_PATH: string;
 
@@ -176,10 +174,9 @@ export default test(() => {
 
 	async function writeTestModuleAsync(bodySourceCode: string) {
 		await fs.writeFile(TEST_MODULE_PATH, `
-			import { test, it } from ` + `"${(path.resolve(import.meta.dirname, "./test_suite.js"))}";
-			import * as assert from ` + `"${(path.resolve(import.meta.dirname, "./assert.js"))}";
+			import { assert, describe, it } from ` + `"${(path.resolve(import.meta.dirname, "./index.js"))}";
 			
-			export default test(() => {
+			export default describe(() => {
 				it("test", ({ getConfig }) => {
 					${bodySourceCode}
 				});

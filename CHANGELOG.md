@@ -1,5 +1,39 @@
 # Ergotest Change Log
 
+Links to other documentation:
+
+* [Test API](docs/test_api.md)
+* [Assertion API](assertion_api.md)
+* [Automation API](automation_api.md)
+* [Readme](../README.md)
+* **Changelog**
+* [Roadmap](../ROADMAP.md)
+
+
+## v0.6.x: Remove test() function (BREAKING CHANGE)
+
+* **0.6.0, 25 Nov 2024:** The `test()` function has been merged with `describe()`. Instead of calling `test()`, call `describe()` instead.
+
+**Old way:**
+
+```javascript
+import { assert, test, describe, it } from "ergotest";
+
+export default test(() => {
+  // tests go here
+});
+```
+
+**New way:**
+
+```javascript
+import { assert, describe, it } from "ergotest";
+
+export default describe(() => {
+  // tests go here
+});
+```
+
 
 ## v0.5.x: Timeout option (BREAKING CHANGE)
 
