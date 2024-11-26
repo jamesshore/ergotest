@@ -9,6 +9,32 @@ Links to other documentation:
 * **Changelog**
 * [Roadmap](../ROADMAP.md)
 
+
+## v0.6.x: Remove test() function (BREAKING CHANGE)
+
+* **0.6.0, 25 Nov 2024:** The `test()` function has been merged with `describe()`. Instead of calling `test()`, call `describe()` instead.
+
+**Old way:**
+
+```javascript
+import { assert, test, describe, it } from "ergotest";
+
+export default test(() => {
+  // tests go here
+});
+```
+
+**New way:**
+
+```javascript
+import { assert, describe, it } from "ergotest";
+
+export default describe(() => {
+  // tests go here
+});
+```
+
+
 ## v0.5.x: Timeout option (BREAKING CHANGE)
 
 * **0.5.0, 24 Nov 2024:** Timeouts can now be defined at the test and before/after level, not just the suite level. Timeouts are now configured declaratively rather than with a function call. 
@@ -93,7 +119,7 @@ This version was accidentally skipped.
 ```javascript
 import { assert, test } from "ergotest";
 
-export default describe(({ describe, it, beforeAll, afterAll, beforeEach, afterEach }) => {
+export default test(({ describe, it, beforeAll, afterAll, beforeEach, afterEach }) => {
   // tests go here
 });
 ```
@@ -101,9 +127,9 @@ export default describe(({ describe, it, beforeAll, afterAll, beforeEach, afterE
 **New way:**
 
 ```javascript
-import { assert, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
+import { assert, test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
 
-export default describe(() => {
+export default test(() => {
   // tests go here
 });
 ```
