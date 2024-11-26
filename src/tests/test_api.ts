@@ -111,7 +111,7 @@ function createSuite(
 	mark: TestMarkValue,
 ): TestSuite {
 	return testContext.length === 0 ?
-		TestSuite._create(optionalName, optionalOptions, fn, mark, testContext) :
+		TestSuite.create(optionalName, optionalOptions, fn, mark, testContext) :
 		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
 }
 

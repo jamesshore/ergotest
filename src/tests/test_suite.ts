@@ -146,8 +146,8 @@ export class TestSuite implements Runnable {
 		}
 	}
 
-	/** @private */
-	static _create(
+	/** Internal use only. */
+	static create(
 		nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined,
 		optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined,
 		possibleDescribeFn: DescribeFn | undefined,
@@ -238,7 +238,7 @@ export class TestSuite implements Runnable {
 
 		testContext.push({
 			describe(optionalName, optionalOptions, fn, mark) {
-				return pushTest(TestSuite._create(optionalName, optionalOptions, fn, mark, testContext));
+				return pushTest(TestSuite.create(optionalName, optionalOptions, fn, mark, testContext));
 			},
 			it(name, optionalOptions, testCaseFn, mark) {
 				pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
