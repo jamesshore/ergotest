@@ -40,7 +40,7 @@ interface Runnable {
     _isSkipped: (mark: TestMarkValue) => boolean;
 }
 /**
- * A simple but full-featured test runner. It's notable for not using globals.
+ * A simple but full-featured test runner.
  */
 export declare class TestSuite implements Runnable {
     #private;
@@ -64,7 +64,7 @@ export declare class TestSuite implements Runnable {
      */
     static fromModulesAsync(moduleFilenames: string[]): Promise<TestSuite>;
     /** @private */
-    static _create(nameOrOptionsOrSuiteFn: string | DescribeOptions | DescribeFn | undefined, optionsOrSuiteFn: DescribeOptions | DescribeFn | undefined, possibleSuiteFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
+    static _create(nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined, optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined, possibleDescribeFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
     /** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
     constructor(name: string, mark: TestMarkValue, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout, }: {
         tests?: Runnable[];
@@ -94,26 +94,7 @@ export declare class TestSuite implements Runnable {
     _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
 /**
- * Creates a top-level test suite. In your test module, call this function and `export default` the result. Add `.skip`
- * to skip this test suite and `.only` to only run this test suite.
- * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
- *   {@link optionalOptions} or {@link fn} instead.
- * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
- *   instead.
- * @param {function} [fn] The body of the test suite. In the body, call {@link describe}, {@link it}, {@link
- *   beforeAll}, {@link afterAll}, {@link beforeEach}, and {@link afterEach} to define the tests in the suite. If
- *   undefined, this test suite will be skipped.
- * @returns {TestSuite} The test suite. You’ll typically `export default` the return value rather than using it
- *   directly.
- */
-export declare function test(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): TestSuite;
-export declare namespace test {
-    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
-    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
-}
-/**
- * Adds a nested test suite to the current test suite. Must be run inside of a {@link test} or {@link describe}
- * function. Add `.skip` to skip this test suite and `.only` to only run this test suite.
+ * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
  *   {@link optionalOptions} or {@link fn} instead.
  * @param {DescribeOptions} [optionalOptions] The test suite options. You can skip this parameter and pass {@link fn}
@@ -123,10 +104,10 @@ export declare namespace test {
  *   undefined, this test suite will be skipped.
  * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
  */
-export declare function describe(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): void;
+export declare function describe(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): TestSuite;
 export declare namespace describe {
-    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => void;
-    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => void;
+    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
+    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
 }
 /**
  * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
