@@ -34,11 +34,19 @@ import { assert, describe, it, beforeAll, afterAll } from "./tests.js";
 export default describe(() => {
   
   beforeAll(() => {
-    // runs before all tests in this module
+    // runs one time before any tests run
   });
   
   afterAll(() => {
-    // runs after all tests in this module
+    // runs one time after all tests run
+  });
+  
+  beforeEach(() => {
+    // runs before each test runs
+  });
+  
+  afterEach(() => {
+    // runs after each test runs
   });
   
   describe("scenario 1", () => {
