@@ -85,7 +85,7 @@ This version was accidentally skipped.
 ```javascript
 import { assert, test } from "ergotest";
 
-export default test(({ describe, it, beforeAll, afterAll, beforeEach, afterEach }) => {
+export default describe(({ describe, it, beforeAll, afterAll, beforeEach, afterEach }) => {
   // tests go here
 });
 ```
@@ -93,9 +93,9 @@ export default test(({ describe, it, beforeAll, afterAll, beforeEach, afterEach 
 **New way:**
 
 ```javascript
-import { assert, test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
+import { assert, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
 
-export default test(() => {
+export default describe(() => {
   // tests go here
 });
 ```

@@ -30,9 +30,9 @@ In this document:
 ## Example
 
 ```typescript
-import { assert, test, describe, it, beforeAll, afterAll } from "./tests.js";
+import { assert, describe, it, beforeAll, afterAll } from "./tests.js";
 
-export default test(() => {
+export default describe(() => {
   
   beforeAll(() => {
     // runs before all tests in this module
@@ -116,9 +116,9 @@ export * from "ergotest";
 Then use it in your tests like this:
 
 ```typescript
-import { assert, test, describe, it } from "./tests.js";
+import { assert, describe, it } from "./tests.js";
 
-export default test(() => {
+export default describe(() => {
   
   it("my test", () => {
     // ...
@@ -149,7 +149,7 @@ Prefer a different assertion library? Like `expect` better than `assert`? Use th
 
 ```typescript
 // tests.ts
-export { test, describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
+export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
 export { expect } from "chai";
 ```
 
@@ -169,7 +169,7 @@ The remainder of this document describes the functions you’ll use in your test
 * test.only(...)
 * test.skip(...)
 
-Use `export default test(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
+Use `export default describe(() => {...})` to define your test module. Inside `fn`, call [describe()](#describe) and [it()](#it) to define your tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after your tests.
 
 If `fn` is not provided, the suite will be skipped.
 
@@ -321,7 +321,7 @@ import { assert, test } from "ergotest";
 import fs from "node:fs/promises";
 import { sut } from "./system_under_test.js";
 
-export default test(({ beforeAll, beforeEach, it }) => {
+export default describe(({ beforeAll, beforeEach, it }) => {
   
   let testDir;
 

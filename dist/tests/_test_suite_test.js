@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, test } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import { afterAll as afterAll_sut, afterEach as afterEach_sut, beforeAll as beforeAll_sut, beforeEach as beforeEach_sut, describe as describe_sut, it as it_sut, TestSuite } from "./test_suite.js";
 import { Clock } from "../infrastructure/clock.js";
 import { TestMark, TestResult, TestStatus } from "./test_result.js";
@@ -13,7 +13,7 @@ const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.j
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
-export default test(()=>{
+export default describe(()=>{
     describe("test modules", ()=>{
         it("creates test suite from a module (and sets filename on result)", async ()=>{
             const suite = await TestSuite.fromModulesAsync([

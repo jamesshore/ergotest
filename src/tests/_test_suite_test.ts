@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, test } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import {
 	afterAll as afterAll_sut,
 	afterEach as afterEach_sut,
@@ -24,7 +24,7 @@ const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_ex
 
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
-export default test(() => {
+export default describe(() => {
 
 	describe("test modules", () => {
 

@@ -42,10 +42,10 @@ Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still re
 ## Example Tests
 
 ```javascript
-import { assert, test, describe, it } from "ergotest";
+import { assert, describe, it } from "ergotest";
 import { hello } from "./hello.js";
 
-export default test(() => {
+export default describe(() => {
 
   it("runs tests", async () => {
     assert.equal(await hello.world(), "hello world");
@@ -91,9 +91,9 @@ Write a simple test:
 
 ```javascript
 // example.test.js
-import { assert, test, it } from "./tests.js";
+import { assert, describe, it } from "./tests.js";
 
-export default test(() => {
+export default describe(() => {
   
   it("runs tests", () => {
     assert.equal(2 + 2, 4);

@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import { Clock } from "./clock.js";
-export default test(()=>{
+export default describe(()=>{
     describe("information", ()=>{
         it("provides current timestamp", ()=>{
             const clock = Clock.create();

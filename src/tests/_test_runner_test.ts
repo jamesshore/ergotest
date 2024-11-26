@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it, beforeEach } from "../tests.js";
+import { assert, describe, it, beforeEach } from "../tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -10,7 +10,7 @@ import { AssertionError } from "node:assert";
 import { write } from "node:fs";
 import { create } from "node:domain";
 
-export default test(() => {
+export default describe(() => {
 
 	let TEST_MODULE_PATH: string;
 

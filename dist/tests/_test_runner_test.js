@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it, beforeEach } from "../tests.js";
+import { assert, describe, it, beforeEach } from "../tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -7,7 +7,7 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
-export default test(()=>{
+export default describe(()=>{
     let TEST_MODULE_PATH;
     beforeEach(async ({ getConfig })=>{
         const testDir = getConfig("scratchDir");

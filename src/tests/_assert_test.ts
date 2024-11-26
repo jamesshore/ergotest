@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC.
-import { test, describe, it } from "../tests.js";
+import { describe, it } from "../tests.js";
 import * as assert from "./assert.js";
 import { AssertionError } from "node:assert";
 
@@ -10,7 +10,7 @@ interface ObjEquals {
 	equals(that: unknown): boolean,
 }
 
-export default test(() => {
+export default describe(() => {
 
 	describe("equal()", () => {
 

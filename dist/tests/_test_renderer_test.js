@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { TestMark, TestResult } from "./test_result.js";
@@ -10,7 +10,7 @@ const failColor = Colors.brightRed;
 const timeoutColor = Colors.purple;
 const skipColor = Colors.cyan;
 const passColor = Colors.green;
-export default test(()=>{
+export default describe(()=>{
     describe("summary", ()=>{
         it("renders summary", ()=>{
             const result = createSuite({

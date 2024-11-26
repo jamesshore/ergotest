@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, test, describe, it } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import * as ensure from "./ensure.js";
-export default test(()=>{
+export default describe(()=>{
     describe("condition checking", ()=>{
         it("checks if condition is true", ()=>{
             const that = wrap(ensure.that);

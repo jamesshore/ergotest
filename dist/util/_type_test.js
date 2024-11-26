@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 /* eslint @typescript-eslint/no-explicit-any: "off" */ // There are a lot of weird JavaScript manipulations in these tests, so we work around the type-checker with "as any"
-import { assert, test, describe, it } from "../tests.js";
+import { assert, describe, it } from "../tests.js";
 import * as type from "./type.js";
-export default test(()=>{
+export default describe(()=>{
     describe("checker", ()=>{
         const check = type.check;
         it("checks built-in types", function() {
