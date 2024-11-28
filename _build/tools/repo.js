@@ -75,12 +75,13 @@ export default class Repo {
 			throw new TaskError("npm publish failed, but everything else worked; run `npm publish` manually");
 		}
 		finally {
-			await this.#execAsync("git", "push", "--all");
-			await this.#execAsync("git", "push", "--tags");
-
 			this.#writeHeadline(`Merging release into dev branch`);
 			await this.#execAsync("git", "checkout", config.devBranch);
 			await this.#execAsync("git", "merge", config.integrationBranch);
+
+			this.#writeHeadline(`Pushing to GitHub`);
+			await this.#execAsync("git", "push", "--all");
+			await this.#execAsync("git", "push", "--tags");
 		}
 	}
 
