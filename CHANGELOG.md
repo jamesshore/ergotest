@@ -12,6 +12,7 @@ Links to other documentation:
 
 ## v0.6.x: Remove test() function (BREAKING CHANGE)
 
+* **0.6.1, 27 Nov 2024:** Documentation fix (fix broken links in changelog and readme, fix outdated API usage in getConfig() example)
 * **0.6.0, 25 Nov 2024:** The `test()` function has been merged with `describe()`. Instead of calling `test()`, call `describe()` instead.
 
 **Old way:**
