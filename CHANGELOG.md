@@ -5,13 +5,14 @@ Links to other documentation:
 * [Test API](docs/test_api.md)
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
-* [Readme](../README.md)
+* [Readme](./README.md)
 * **Changelog**
-* [Roadmap](../ROADMAP.md)
+* [Roadmap](./ROADMAP.md)
 
 
 ## v0.6.x: Remove test() function (BREAKING CHANGE)
 
+* **0.6.1, 27 Nov 2024:** Documentation fix (fix broken links in changelog and readme, fix outdated API usage in getConfig() example)
 * **0.6.0, 25 Nov 2024:** The `test()` function has been merged with `describe()`. Instead of calling `test()`, call `describe()` instead.
 
 **Old way:**
