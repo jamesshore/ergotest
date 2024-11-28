@@ -5,9 +5,9 @@ Links to other documentation:
 * [Test API](docs/test_api.md)
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
-* [Readme](../README.md)
+* [Readme](./README.md)
 * **Changelog**
-* [Roadmap](../ROADMAP.md)
+* [Roadmap](./ROADMAP.md)
 
 
 ## v0.6.x: Remove test() function (BREAKING CHANGE)
