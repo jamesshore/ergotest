@@ -313,11 +313,11 @@ See [TestRunner](automation_api.md#testrunner) for information about how to defi
 ### Example
 
 ```typescript
-import { assert, test } from "ergotest";
+import { assert, describe, it, beforeAll, beforeEach } from "ergotest";
 import fs from "node:fs/promises";
 import { sut } from "./system_under_test.js";
 
-export default describe(({ beforeAll, beforeEach, it }) => {
+export default describe(() => {
   
   let testDir;
 
