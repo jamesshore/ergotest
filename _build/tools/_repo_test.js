@@ -92,12 +92,14 @@ export default describe(() => {
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
 				Colors.cyan("» npm publish --otp=my_otp\n"),
-				Colors.cyan("» git push --all\n"),
-				Colors.cyan("» git push --tags\n"),
 
 				Colors.brightWhite.underline("\nMerging release into dev branch:\n"),
 				Colors.cyan(`» git checkout ${DEV_BRANCH}\n`),
 				Colors.cyan(`» git merge ${INTEGRATION_BRANCH}\n`),
+
+				Colors.brightWhite.underline("\nPushing to GitHub:\n"),
+				Colors.cyan("» git push --all\n"),
+				Colors.cyan("» git push --tags\n"),
 			]);
 		});
 
@@ -122,12 +124,14 @@ export default describe(() => {
 				Colors.brightWhite.underline("\nReleasing:\n"),
 				Colors.cyan("» npm version minor\n"),
 				Colors.cyan("» npm publish --otp=my_otp\n"),
-				Colors.cyan("» git push --all\n"),
-				Colors.cyan("» git push --tags\n"),
 
 				Colors.brightWhite.underline("\nMerging release into dev branch:\n"),
 				Colors.cyan(`» git checkout ${DEV_BRANCH}\n`),
 				Colors.cyan(`» git merge ${INTEGRATION_BRANCH}\n`),
+
+				Colors.brightWhite.underline("\nPushing to GitHub:\n"),
+				Colors.cyan("» git push --all\n"),
+				Colors.cyan("» git push --tags\n"),
 			]);
 		});
 
