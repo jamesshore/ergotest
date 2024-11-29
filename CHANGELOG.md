@@ -10,6 +10,11 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.7.x: Reduce distribution size
+
+* **0.7.0, 29 Nov 2024:** Ergotest's tests have been removed from the npm distribution, cutting its size in half. 
+
+
 ## v0.6.x: Remove test() function (BREAKING CHANGE)
 
 * **0.6.1, 27 Nov 2024:** Documentation fix (fix broken links in changelog and readme, fix outdated API usage in getConfig() example)

@@ -174,10 +174,28 @@ export default class Build {
 
 		tasks.defineTask("dist", async (options) => {
 			await tasks.runTasksAsync([ "compile", "typecheck" ], options);
-			await options.reporter.startAsync("Building distribution", async () => {
+
+			await options.reporter.startAsync("Building distribution", async (report) => {
+				report.debug(`\n  Delete tree ${Paths.typescriptDistDir}`);
 				await this._fileSystem.deleteAsync(Paths.typescriptDistDir);
+				report.progress();
+				report.debug(`\n  Copy tree\n    Source: ${Paths.typescriptTargetDir}\n    Dest: ${Paths.typescriptDistDir}`);
 				await this._fileSystem.copyAsync(Paths.typescriptTargetDir, Paths.typescriptDistDir);
+				report.progress();
+				await deleteDistTestFilesAsync.call(this, report);
 			});
+
+			async function deleteDistTestFilesAsync(report) {
+				report.debug(`\n  Read tree ${Paths.typescriptDistDir}`);
+				const distFiles = await this._fileSystem.readFileTreeAsync(Paths.typescriptDistDir);
+				const filesToDelete = distFiles.matchingFiles(Paths.distGlobsToDelete);
+				report.progress();
+				await Promise.all(filesToDelete.map(async (file) => {
+					report.debug(`\n  Delete ${file}`);
+					await this._fileSystem.deleteAsync(file);
+					report.progress();
+				}));
+			}
 		});
 
 		return tasks;

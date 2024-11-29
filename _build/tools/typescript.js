@@ -85,7 +85,7 @@ export default class TypeScript {
 			});
 			const deletePromises = filesToDelete.map(async ({ source, target }) => {
 				await this._fileSystem.deleteAsync(target);
-				report.debug(`\nDelete: ${target}`);
+				report.debug(`\n  Delete: ${target}`);
 			});
 
 			await Promise.all([ ...copyPromises, ...deletePromises ]);
