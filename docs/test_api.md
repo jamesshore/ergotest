@@ -304,6 +304,8 @@ If no tests in this suite or its sub-suites were ran—either because there were
 
 * getConfig\<T\>(key: string): T
 
+Passed into [it()](#it), [beforeAll()](#beforeAll), [beforeEach()](#beforeEach), [afterAll()](#afterAll), and [afterEach()](#afterEach).
+
 Gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
 
 If no configuration object was defined, or if `key` doesn’t exist, `getConfig()` will throw an exception.
