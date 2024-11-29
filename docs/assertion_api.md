@@ -425,6 +425,8 @@ To specify an object instance, use the name of the class: `Date`, `RegExp`, `MyC
 
 To specify an object with specific fields, use an object literal. Provide the keys you expect and put the key’s expected types as their value, as shown in the example below.
 
+To specify multiple allowed types, use an array with each allowed type. (To specify an optional type, use `undefined` as one of the allowed types.)
+
 There is no built-in way to check the types of an array’s elements. Instead, loop through the array and check the type of each element: `array.forEach(element => assert.type(element, expectedType));`
 
 Examples:
