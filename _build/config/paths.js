@@ -71,6 +71,12 @@ export default class Paths {
 		];
 	}
 
+	static get distGlobsToDelete() {
+		return [
+			`${rootDir}/dist/**/_*`,
+		];
+	}
+
 	lintJavascriptFiles() {
 		return this._files.matchingFiles([
 			"**/*.js",
