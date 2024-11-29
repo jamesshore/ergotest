@@ -46,9 +46,9 @@ export declare class TestRunner {
      *
      * @param {string[]} modulePaths The test files to load and run.
      * @param {object} [config] Configuration data to provide to the tests as they run.
-     * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+     * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
      *   parameter describes the result of the test—whether it passed, failed, etc.
      * @returns {Promise<TestSuiteResult>}
      */
-    runInChildProcessAsync(modulePaths: string[], { timeout, config, notifyFn, }?: TestOptions): Promise<TestSuiteResult>;
+    runInChildProcessAsync(modulePaths: string[], { timeout, config, onTestCaseResult, }?: TestOptions): Promise<TestSuiteResult>;
 }
