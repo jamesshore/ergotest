@@ -127,7 +127,7 @@ const result = await TestRunner.create().runInChildProcessAsync(files, { onTestC
 console.log("\n" + result.render("\n") + "\n");
 
 function reportProgress(testCase) {
-	process.stdout.write(testCase.renderAsCharacter());
+  process.stdout.write(testCase.renderAsCharacter());
 }
 ```
 
