@@ -29,7 +29,7 @@ function main() {
 
 async function runWorkerAsync({ modulePaths, timeout, config }: WorkerInput) {
 	const suite = await TestSuite.fromModulesAsync(modulePaths);
-	const result = await suite.runAsync({ timeout, config, notifyFn: sendProgress });
+	const result = await suite.runAsync({ timeout, config, onTestCaseResult: sendProgress });
 
 	// wait a tick so unhandled promises can be detected
 	setImmediate(() => {

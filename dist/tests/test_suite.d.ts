@@ -6,7 +6,7 @@ export interface TestConfig {
 export interface TestOptions {
     timeout?: Milliseconds;
     config?: TestConfig;
-    notifyFn?: NotifyFn;
+    onTestCaseResult?: (testCaseResult: TestCaseResult) => void;
     clock?: Clock;
 }
 export interface DescribeOptions {
@@ -15,7 +15,6 @@ export interface DescribeOptions {
 export interface ItOptions {
     timeout?: number;
 }
-export type NotifyFn = (testResult: TestCaseResult) => void;
 export type DescribeFn = () => void;
 export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
@@ -31,7 +30,7 @@ interface RecursiveRunOptions {
     name: string[];
     filename?: string;
     clock: Clock;
-    notifyFn: NotifyFn;
+    onTestCaseResult: (testResult: TestCaseResult) => void;
     timeout: Milliseconds;
     config: TestConfig;
 }
@@ -87,12 +86,12 @@ export declare class TestSuite implements Runnable {
      * Run the tests in this suite.
      * @param {number} [timeout] Default timeout in milliseconds.
      * @param {object} [config={}] Configuration data to provide to tests.
-     * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+     * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
      *   parameter describes the result of the test—whether it passed, failed, etc.
      * @param {Clock} [clock] The clock to use. Meant for internal use.
      * @returns {Promise<TestSuiteResult>} The results of the test suite.
      */
-    runAsync({ timeout, config, notifyFn, clock, }?: TestOptions): Promise<TestSuiteResult>;
+    runAsync({ timeout, config, onTestCaseResult, clock, }?: TestOptions): Promise<TestSuiteResult>;
     /** @private */
     _setFilename(filename: string): void;
     /** @private */

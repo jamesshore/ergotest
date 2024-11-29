@@ -1334,11 +1334,11 @@ export default describe(() => {
 			});
 
 			let testResult;
-			function notifyFn(result: TestResult) {
+			function onTestCaseResult(result: TestResult) {
 				testResult = result;
 			}
 
-			await suite.runAsync({ notifyFn });
+			await suite.runAsync({ onTestCaseResult });
 			assert.dotEquals(testResult, TestResult.pass("my test"));
 		});
 
@@ -1346,11 +1346,11 @@ export default describe(() => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
 
 			let testResult: TestCaseResult;
-			function notifyFn(result: TestCaseResult) {
+			function onTestCaseResult(result: TestCaseResult) {
 				testResult = result;
 			}
 
-			await suite.runAsync({ notifyFn });
+			await suite.runAsync({ onTestCaseResult });
 			assert.equal(testResult!.name, [ "error when importing _module_throws.js" ]);
 		});
 
@@ -1359,11 +1359,11 @@ export default describe(() => {
 
 			let testResult: TestCaseResult;
 
-			function notifyFn(result: TestCaseResult) {
+			function onTestCaseResult(result: TestCaseResult) {
 				testResult = result;
 			}
 
-			await suite.runAsync({ notifyFn });
+			await suite.runAsync({ onTestCaseResult });
 			assert.equal(testResult!.name, [ "error when importing _module_no_export.js" ]);
 		});
 

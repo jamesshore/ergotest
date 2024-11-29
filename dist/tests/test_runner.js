@@ -45,7 +45,7 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
                         undefined,
                         Object
                     ],
-                    notifyFn: [
+                    onTestCaseResult: [
                         undefined,
                         Function
                     ]
@@ -60,10 +60,10 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 	 *
 	 * @param {string[]} modulePaths The test files to load and run.
 	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInChildProcessAsync(modulePaths, { timeout, config, notifyFn = ()=>{} } = {}) {
+	 */ async runInChildProcessAsync(modulePaths, { timeout, config, onTestCaseResult = ()=>{} } = {}) {
         ensure.signature(arguments, [
             Array,
             [
@@ -77,7 +77,7 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
                         undefined,
                         Object
                     ],
-                    notifyFn: [
+                    onTestCaseResult: [
                         undefined,
                         Function
                     ]
@@ -88,12 +88,12 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
             serialization: "advanced",
             detached: false
         });
-        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, notifyFn);
+        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, onTestCaseResult);
         await killChildProcess(child);
         return result;
     }
 }
-async function runTestsInChildProcessAsync(child, clock, modulePaths, timeout, config, notifyFn) {
+async function runTestsInChildProcessAsync(child, clock, modulePaths, timeout, config, onTestCaseResult) {
     const result = await new Promise((resolve, reject)=>{
         const workerData = {
             modulePaths,
@@ -106,7 +106,7 @@ async function runTestsInChildProcessAsync(child, clock, modulePaths, timeout, c
             if (code !== 0) reject(new Error(`Test runner exited with non-zero error code: ${code}`));
         });
         const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve);
-        child.on("message", (message)=>handleMessage(message, aliveFn, cancelFn, notifyFn, resolve));
+        child.on("message", (message)=>handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve));
     });
     return result;
 }
@@ -122,13 +122,13 @@ function detectInfiniteLoops(clock, resolve) {
         cancelFn
     };
 }
-function handleMessage(message, aliveFn, cancelFn, notifyFn, resolve) {
+function handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve) {
     switch(message.type){
         case "keepalive":
             aliveFn();
             break;
         case "progress":
-            notifyFn(TestCaseResult.deserialize(message.result));
+            onTestCaseResult(TestCaseResult.deserialize(message.result));
             break;
         case "complete":
             cancelFn();

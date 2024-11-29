@@ -68,10 +68,10 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			const progress: TestResult[] = [];
-			const notifyFn = (result: TestResult) => progress.push(result);
+			const onTestCaseResult = (result: TestResult) => progress.push(result);
 
 			await writeTestModuleAsync(`// passes`);
-			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { notifyFn });
+			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { onTestCaseResult });
 
 			assert.equal(progress, [
 				TestResult.pass("test", TEST_MODULE_PATH),

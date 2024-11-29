@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { NotifyFn, TestConfig, TestOptions, TestSuite } from "./test_suite.js";
+import { TestConfig, TestOptions, TestSuite } from "./test_suite.js";
 import {
 	SerializedTestCaseResult,
 	SerializedTestSuiteResult,
@@ -70,7 +70,7 @@ export class TestRunner {
 		ensure.signature(arguments, [ Array, [ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
-			notifyFn: [ undefined, Function ],
+			onTestCaseResult: [ undefined, Function ],
 		}]]);
 
 		const suite = await TestSuite.fromModulesAsync(modulePaths);
@@ -82,23 +82,23 @@ export class TestRunner {
 	 *
 	 * @param {string[]} modulePaths The test files to load and run.
 	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
 	 */
 	async runInChildProcessAsync(modulePaths: string[], {
 		timeout,
 		config,
-		notifyFn = () => {},
+		onTestCaseResult = () => {},
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
-			notifyFn: [ undefined, Function ],
+			onTestCaseResult: [ undefined, Function ],
 		}]]);
 
 		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
-		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, notifyFn);
+		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, onTestCaseResult);
 		await killChildProcess(child);
 
 		return result;
@@ -112,7 +112,7 @@ async function runTestsInChildProcessAsync(
 	modulePaths: string[],
 	timeout: number | undefined,
 	config: TestConfig | undefined,
-	notifyFn: NotifyFn,
+	onTestCaseResult: (testResult: TestCaseResult) => void,
 ): Promise<TestSuiteResult> {
 	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
 		const workerData = { modulePaths, timeout, config };
@@ -124,7 +124,7 @@ async function runTestsInChildProcessAsync(
 		});
 
 		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve);
-		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, notifyFn, resolve));
+		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve));
 	});
 	return result;
 }
@@ -143,7 +143,7 @@ function handleMessage(
 	message: WorkerOutput,
 	aliveFn: () => void,
 	cancelFn: () => void,
-	notifyFn: NotifyFn,
+	onTestCaseResult: (testResult: TestCaseResult) => void,
 	resolve: (result: TestSuiteResult) => void,
 ) {
 	switch (message.type) {
@@ -151,7 +151,7 @@ function handleMessage(
 			aliveFn();
 			break;
 		case "progress":
-			notifyFn(TestCaseResult.deserialize(message.result));
+			onTestCaseResult(TestCaseResult.deserialize(message.result));
 			break;
 		case "complete":
 			cancelFn();

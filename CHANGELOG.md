@@ -10,6 +10,32 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.8.x: Rename notifyFn (BREAKING CHANGE)
+
+* **0.8.0, 29 Nov 2024:** The `notifyFn` parameter in the automation API has been renamed to `onTestCaseResult`.
+
+This is a breaking change for [TestOptions](docs/automation_api.md#testoptions), which is used in these APIs:
+
+* [testRunner.runInChildProcessAsync()](docs/automation_api.md#testrunnerruninchildprocessasync)
+* [testRunner.runInCurrentProcessAsync()](docs/automation_api.md#testrunnerrunincurrentprocessasync)
+* [testSuite.runAsync()](docs/automation_api.md#testsuiterunasync)
+
+**Old way:**
+
+```javascript
+const result = await testRunner.runInChildProcessAsync(files, { 
+  notifyFn: reportProgress, 
+});
+```
+
+**New way:**
+
+```javascript
+const result = await testRunner.runInChildProcessAsync(files, { 
+  onTestCaseResult: reportProgress, 
+});
+```
+
 ## v0.7.x: Reduce distribution size
 
 * **0.7.0, 29 Nov 2024:** Ergotest's tests have been removed from the npm distribution, cutting its size in half. 

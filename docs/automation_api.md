@@ -95,7 +95,7 @@ The `runInChildProcessAsync()` method returns the results of the test run as a `
 
 If you want more fine-grained control, you can use the methods and properties on `TestSuiteResult` and `TestCaseResult`. Create a `TestRenderer` instance for more rendering options.
 
-To see the results of the tests as they’re running, pass `notifyFn` to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will be called with a `TestCaseResult`, which you can then render with the [testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines) methods.
+To see the results of the tests as they’re running, pass `onTestCaseResult` to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will be called with a `TestCaseResult`, which you can then render with the [testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines) methods.
 
 Bringing it all together, here's an annotated version of a simple command-line interface for running tests:
 
@@ -117,7 +117,9 @@ const testRunner = TestRunner.create();
 process.stdout.write("Running tests: ");
 
 // Run the tests, calling the reportProgress() function after each test completes
-const result = await testRunner.runInChildProcessAsync(files, { notifyFn: reportProgress });
+const result = await testRunner.runInChildProcessAsync(files, { 
+  onTestCaseResult: reportProgress, 
+});
 
 // Display the test results, with some blank lines to make it look nice
 console.log("\n" + result.render("\n") + "\n");
@@ -131,6 +133,9 @@ if (count.fail + count.timeout > 0) {
 }
 else if (count.total - count.skip === 0) {
   console.log("No tests ran :-O\n");
+}
+else if (count.skip > 0) {
+  console.log("Tests passed, but some were skipped :-/");
 }
 else {
   console.log("Tests passed :-)\n");
@@ -213,15 +218,16 @@ Use `options` to provide configuration data to the tests or specify a callback f
 
 You can configure test runs with this interface. Provide an object with these optional parameters:
 
+* **config: Record<string, unknown> = {}**
+  * Configuration information accesible to your tests at run time. Retrieve the values in your tests by calling [getConfig()](test_api.md#getconfig) as described in the test API.
+  * An object with key/value pairs. The values should be bare objects, arrays, or primitive data, not class instances, because the configuration will be serialized if you run the tests in a child process, which is the recommended approach.
+  * Defaults to an empty object.
+
 * **timeout: number = 2000**
   * The amount of time, in milliseconds, before a test times out. Note that, due to the nature of JavaScript, tests continue running even after they've timed out. However, their results are ignored.
   * Defaults to two seconds.
 
-* **config: Record<string, unknown> = {}**
-  * An object with key/value pairs. The values can be anything you want. Retrieve the values in your tests by calling `getConfig` as describe in the [test API](test_api.md).
-  * Defaults to an empty object.
-
-* **notifyFn: (testCaseResult: TestCaseResult) => void**
+* **onTestCaseResult: (testCaseResult: TestCaseResult) => void**
   * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
   * Defaults to a no-op.
 

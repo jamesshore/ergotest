@@ -88,7 +88,7 @@ export default class Tests {
 			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
 				timeout: 10000,
 				config,
-				notifyFn: testResult => {
+				onTestCaseResult: testResult => {
 					report.debug("\n  " + testResult.renderAsSingleLine());
 					report.progress(testResult.renderAsCharacter());
 				},

@@ -228,11 +228,11 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
 	 * Run the tests in this suite.
 	 * @param {number} [timeout] Default timeout in milliseconds.
 	 * @param {object} [config={}] Configuration data to provide to tests.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @param {Clock} [clock] The clock to use. Meant for internal use.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
-	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, notifyFn = ()=>{}, clock = Clock.create() } = {}) {
+	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, clock = Clock.create() } = {}) {
         ensure.signature(arguments, [
             [
                 undefined,
@@ -245,7 +245,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
                         undefined,
                         Object
                     ],
-                    notifyFn: [
+                    onTestCaseResult: [
                         undefined,
                         Function
                     ],
@@ -259,7 +259,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         return await this._recursiveRunAsync(TestMark.only, [], [], {
             clock,
             config,
-            notifyFn,
+            onTestCaseResult,
             name: [],
             filename: this._filename,
             timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS
@@ -395,7 +395,7 @@ class TestCase {
                 result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
             }
         }
-        options.notifyFn(result);
+        options.onTestCaseResult(result);
         return result;
         async function runTestAsync(self) {
             const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
@@ -419,7 +419,7 @@ class FailureTestCase extends TestCase {
         const result = TestResult.fail([
             this._name
         ], this._error, this._filename);
-        options.notifyFn(result);
+        options.onTestCaseResult(result);
         return await result;
     }
 }

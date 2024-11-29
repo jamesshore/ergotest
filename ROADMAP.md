@@ -15,8 +15,10 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 
 * ✅ **Better test API.** Currently, `describe()`, `it()`, `beforeXxx()`, and `afterXxx()` are passed in as parameters to the test suite function. This is awkward and has some footguns. I’d like to you to be able to just import them like you do in Vitest.  
 * ✅ **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
-* **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestComplete()`.
-* **Remove clock.** The test runner takes an undocumented `clock` parameter. This was a hack I used for testing. I’d like to clean it up.
+* ✅ **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestCaseResult()`.
+* **Remove clock.** The test runner takes an undocumented `clock` parameter. This was a hack I used for testing. I’d like to clean it up, if possible.
+* **Perform error rendering in child process.** Failed test results currently include the error that caused the test to fail. The expected and actual results are rendered by the caller, not in the test worker, which typically runs in a child process. Unfortunately, some objects don't serialize properly, resulting in a diff that's missing data. I'll need to move the rendering into the child process to fix the problem.
+* **Detect non-exit.** Detect if a test puts something on the event loop that would prevent the process from exiting when using TestRunner.runInChildProcessAsync(). 
 * **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. I’m not sure if this is an `ergotest` problem or an `automatopia` problem. Either way, it needs to be fixed.
 
 
