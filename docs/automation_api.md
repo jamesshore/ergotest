@@ -134,6 +134,9 @@ if (count.fail + count.timeout > 0) {
 else if (count.total - count.skip === 0) {
   console.log("No tests ran :-O\n");
 }
+else if (count.skip > 0) {
+  console.log("Tests passed, but some were skipped :-/");
+}
 else {
   console.log("Tests passed :-)\n");
 }
