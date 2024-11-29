@@ -14,7 +14,7 @@ export interface TestConfig {
 export interface TestOptions {
 	timeout?: Milliseconds,
 	config?: TestConfig,
-	notifyFn?: NotifyFn,
+	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
 	clock?: Clock,
 }
 
@@ -25,8 +25,6 @@ export interface DescribeOptions {
 export interface ItOptions {
 	timeout?: number,
 }
-
-export type NotifyFn = (testResult: TestCaseResult) => void;
 
 export type DescribeFn = () => void;
 
@@ -46,7 +44,7 @@ interface RecursiveRunOptions {
 	name: string[];
 	filename?: string;
 	clock: Clock,
-	notifyFn: NotifyFn,
+	onTestCaseResult: (testResult: TestCaseResult) => void,
 	timeout: Milliseconds,
 	config: TestConfig,
 }
@@ -319,7 +317,7 @@ export class TestSuite implements Runnable {
 	 * Run the tests in this suite.
 	 * @param {number} [timeout] Default timeout in milliseconds.
 	 * @param {object} [config={}] Configuration data to provide to tests.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @param {Clock} [clock] The clock to use. Meant for internal use.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
@@ -327,20 +325,20 @@ export class TestSuite implements Runnable {
 	async runAsync({
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
-		notifyFn = () => {},
+		onTestCaseResult = () => {},
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
-			notifyFn: [ undefined, Function ],
+			onTestCaseResult: [ undefined, Function ],
 			clock: [ undefined, Clock ],
 		}]]);
 
 		return await this._recursiveRunAsync(TestMark.only, [], [], {
 			clock,
 			config,
-			notifyFn,
+			onTestCaseResult,
 			name: [],
 			filename: this._filename,
 			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
@@ -488,7 +486,7 @@ class TestCase implements Runnable {
 			}
 		}
 
-		options.notifyFn(result);
+		options.onTestCaseResult(result);
 		return result;
 
 		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
@@ -524,7 +522,7 @@ class FailureTestCase extends TestCase {
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const result = TestResult.fail([ this._name ], this._error, this._filename);
-		options.notifyFn(result);
+		options.onTestCaseResult(result);
 		return await result;
 	}
 
