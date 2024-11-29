@@ -17,7 +17,8 @@ Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running
 
 I built Ergotest because I wanted a tool I could automate easily. Compared to other testing tools, Ergotest is:
 
-* Simple to understand with a great automation API and thorough documentation
+* Simple to understand, with thorough documentation
+* Designed for automation, with an easy-to-use automation API
 * Small and easy to audit, with no dependencies
 * Very fast
 
@@ -28,9 +29,9 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * `beforeAll()`, `afterAll()`, `beforeEach()`, `afterEach()`
 * `.only` and `.skip` to select tests; they work across files and nest cleanly
 * `async/await` for asynchronous code
+* `getConfig()` makes custom configuration available within tests
 * Includes a nice assertion library if you want it; compatible with any assertion library if you don’t
 * Timeouts, infinite loop detection, and uncaught exception detection
-* `getConfig()` makes custom configuration available within tests
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
 * TypeScript types and JSDoc documentation
@@ -141,8 +142,6 @@ node --enable-source-maps build.js *.test.js
 ```
 
 (The `--enable-source-maps` option causes Node to render TypeScript stack traces correctly.)
-
-For more information, see the documentation below.
 
 
 ## License
