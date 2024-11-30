@@ -7,6 +7,7 @@ import { TestResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
+import util from "node:util";
 
 export default describe(() => {
 
@@ -153,32 +154,63 @@ export default describe(() => {
 			);
 		});
 
+		it("supports custom objects", async () => {
+			class MyString extends String {
+				constructor(private readonly _customField: string) {
+					super();
+				}
+			}
+
+			const { runner } = await createAsync();
+			await writeTestModuleAsync(
+				`
+					assert.equal(new MyString("actual"), new MyString("expected"));
+				`,
+				`
+					class MyString extends String {
+						constructor(customField) {
+							super();
+							this._customField = customField;
+						}
+					}
+				`
+			);
+			const result = getTestResult(await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]));
+
+			// This error is a bit hard to understand. The issue is that, when the error object is serialized from
+			// the child to the parent, the custom field is lost. But the same thing is happening when this test is
+			// run, so you can't actually see why it's failing.
+			assert.equal(result.error.expected, new MyString("expected"));
+		});
+
 		async function assertErrorSerializationAsync(testCode: string, expectedError: unknown) {
 			const { runner } = await createAsync();
 			await writeTestModuleAsync(testCode);
 			const result = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
-			assert.equal(getErrorResult(result), expectedError);
+			assert.equal(getTestResult(result).error, expectedError);
 		}
 
 	});
 
 
-	function getErrorResult(result: TestResult) {
+	function getTestResult(result: TestResult) {
 		// @ts-expect-error This line is pretty janky, but that's okay because the tests will fail if stops working
-		return result.children[0].children[0].error;
+		return result.children[0].children[0];
 	}
 
 	function assertFailureMessage(results: TestResult, expectedFailure: string) {
-		assert.equal(getErrorResult(results).message, expectedFailure);
+		assert.equal(getTestResult(results).error.message, expectedFailure);
 	}
 
-	async function writeTestModuleAsync(bodySourceCode: string) {
+	async function writeTestModuleAsync(testSourceCode: string, variableDefinition = "") {
 		await fs.writeFile(TEST_MODULE_PATH, `
 			import { assert, describe, it } from ` + `"${(path.resolve(import.meta.dirname, "./index.js"))}";
 			
+			${variableDefinition}
+			
 			export default describe(() => {
 				it("test", ({ getConfig }) => {
-					${bodySourceCode}
+					${testSourceCode}
 				});
 			});
 		`);
