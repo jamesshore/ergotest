@@ -50,7 +50,7 @@ export class TestRunner {
 
 	private readonly _clock: Clock;
 
-	/** Only for use by TestRunner's tests. (Use a factory method instead.) */
+	/** For internal use only. (Use a factory method instead.) */
 	constructor(clock: Clock) {
 		this._clock = clock;
 	}

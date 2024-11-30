@@ -27,7 +27,7 @@ export declare class TestRunner {
      */
     static create(): TestRunner;
     private readonly _clock;
-    /** Only for use by TestRunner's tests. (Use a factory method instead.) */
+    /** For internal use only. (Use a factory method instead.) */
     constructor(clock: Clock);
     /**
      * Load and run a set of test modules in the current process. Note that, because Node.js caches modules, this means
