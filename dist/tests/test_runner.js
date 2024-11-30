@@ -18,7 +18,7 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
         return new TestRunner(Clock.create());
     }
     _clock;
-    /** Only for use by TestRunner's tests. (Use a factory method instead.) */ constructor(clock){
+    /** For internal use only. (Use a factory method instead.) */ constructor(clock){
         this._clock = clock;
     }
     /**

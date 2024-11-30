@@ -230,7 +230,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
 	 * @param {object} [config={}] Configuration data to provide to tests.
 	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
-	 * @param {Clock} [clock] The clock to use. Meant for internal use.
+	 * @param {Clock} [clock] Internal use only.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
 	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, clock = Clock.create() } = {}) {
         ensure.signature(arguments, [

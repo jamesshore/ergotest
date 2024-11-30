@@ -10,10 +10,10 @@ export interface TestOptions {
     clock?: Clock;
 }
 export interface DescribeOptions {
-    timeout?: number;
+    timeout?: Milliseconds;
 }
 export interface ItOptions {
-    timeout?: number;
+    timeout?: Milliseconds;
 }
 export type DescribeFn = () => void;
 export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
@@ -88,7 +88,7 @@ export declare class TestSuite implements Runnable {
      * @param {object} [config={}] Configuration data to provide to tests.
      * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
      *   parameter describes the result of the test—whether it passed, failed, etc.
-     * @param {Clock} [clock] The clock to use. Meant for internal use.
+     * @param {Clock} [clock] Internal use only.
      * @returns {Promise<TestSuiteResult>} The results of the test suite.
      */
     runAsync({ timeout, config, onTestCaseResult, clock, }?: TestOptions): Promise<TestSuiteResult>;
