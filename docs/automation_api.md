@@ -373,7 +373,7 @@ This is useful for incremental builds. It allows you to ignore test files that h
 
 * testSuiteResult.equals(that: [TestResult](#testresult)): boolean
 
-Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, and marks.
+Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, marks, error messages, and timeouts. However, error renders are ignored, which means that stack traces and other error details other than the error message are ignored. 
 
 [Back to top](#automation-api)
 
@@ -839,7 +839,7 @@ A type for the possible values of [TestMark](#testmark).
 
 * import { TestSuite } from "ergotest/test_suite.js"
 
-You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call `test()`. (It’s defined in the [test API documentation](test_api.md)).
+You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call [describe()](test_api.md#describe).
 
 [Back to top](#automation-api)
 

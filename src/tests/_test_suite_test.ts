@@ -24,6 +24,8 @@ const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_ex
 
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
+
+
 export default describe(() => {
 
 	describe("test modules", () => {
@@ -80,6 +82,17 @@ export default describe(() => {
 			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
 		});
 
+		it("uses custom error renderer to render test failures", async () => {
+			const options = {
+				renderError: () => "my renderer",
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ "/no_such_module.js" ]);
+			const result = (await suite.runAsync(options)).allTests()[0];
+
+			await assert.equal(result.errorRender, "my renderer");
+		});
+
 	});
 
 
@@ -114,6 +127,20 @@ export default describe(() => {
 					TestResult.pass("test 3"),
 				]),
 			);
+		});
+
+		it("uses custom error renderer to render test failures", async () => {
+			const suite = describe_sut(() => {
+				it_sut("test", () => {
+					throw new Error("my error");
+				});
+			});
+
+			const result = await suite.runAsync({
+				renderError: () => "my custom renderer",
+			});
+
+			assert.equal(result.allTests()[0].errorRender, "my custom renderer");
 		});
 
 		it("can be nested", async () => {
@@ -1071,22 +1098,31 @@ export default describe(() => {
 		});
 
 		it("generates failure when a suite is marked 'only' but has no body", async () => {
-			const suite = describe_sut.only("my suite");
+			const options = {
+				renderError: () => "my renderer",
+			};
 
-			const result = await suite.runAsync();
+			const suite = describe_sut.only("my suite");
+			const result = await suite.runAsync(options);
+
 			assert.dotEquals(result,
 				createSuite({ name: "my suite", mark: TestMark.only, children: [
 					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
 				]}),
 			);
+			assert.equal(result.allTests()[0].errorRender, "my renderer", "should use custom renderer");
 		});
 
 		it("generates failure when a test is marked 'only' but has no body", async () => {
+			const options = {
+				renderError: () => "my renderer",
+			};
+
 			const suite = describe_sut("my suite", () => {
 				it_sut.only("my test");
 			});
+			const result = await suite.runAsync(options);
 
-			const result = await suite.runAsync();
 			assert.dotEquals(result,
 				createSuite({ name: "my suite", children: [
 					createFail({
@@ -1096,6 +1132,7 @@ export default describe(() => {
 					}),
 				]}),
 			);
+			assert.equal(result.allTests()[0].errorRender, "my renderer", "should use custom renderer");
 		});
 
 	});

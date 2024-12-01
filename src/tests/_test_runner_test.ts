@@ -79,6 +79,19 @@ export default describe(() => {
 			]);
 		});
 
+		it.skip("supports custom error rendering", async () => {
+			const { runner } = await createAsync();
+
+			await writeTestModuleAsync(`throw new Error();`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], {
+				renderError: () => "my custom renderer",
+			});
+
+			assert.equal(getTestResult(results).errorRender, "my custom renderer");
+		});
+
+		it("uses custom error renderer to render watchdog failures");
+
 		it("does not cache test modules from run to run", async () => {
 			const { runner } = await createAsync();
 
@@ -138,12 +151,15 @@ export default describe(() => {
 				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 			]));
 		});
-	});
+
+		it.skip("renders custom objects", async () => {
+			// This test is a bit obscure. The issue is that the code previously serialized objects from the worker process
+			// back to the test runner. That caused information about 'expected' and 'actual' results to be lost. The
+			// problem was fixed by having the worker process perform error rendering. This test mostly exists to stop
+			// future maintainers from trying to reverse that decision, because it's non-obvious and makes the design
+			// a bit clunky.
 
 
-	describe("child process error serialization", () => {
-
-		it.skip("supports custom objects", async () => {
 			class MyString extends String {
 				constructor(private readonly _customField: string) {
 					super();
@@ -166,18 +182,8 @@ export default describe(() => {
 			);
 			const result = getTestResult(await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]));
 
-			// This error is a bit hard to understand. The issue is that, when the error object is serialized from
-			// the child to the parent, the custom field is lost. But the same thing is happening when this test is
-			// run, so you can't actually see why it's failing.
-			assert.equal(result.error.expected, new MyString("expected"));
+			assert.equal(result.errorRender, "tbd");
 		});
-
-		async function assertErrorSerializationAsync(testCode: string, expectedError: unknown) {
-			const { runner } = await createAsync();
-			await writeTestModuleAsync(testCode);
-			const result = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
-			assert.equal(getTestResult(result).error, expectedError);
-		}
 
 	});
 

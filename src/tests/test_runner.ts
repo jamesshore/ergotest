@@ -90,11 +90,13 @@ export class TestRunner {
 		timeout,
 		config,
 		onTestCaseResult = () => {},
+		renderError,
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			onTestCaseResult: [ undefined, Function ],
+			renderError: [ undefined, Function ],
 		}]]);
 
 		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });

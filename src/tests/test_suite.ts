@@ -2,7 +2,15 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import {
+	RenderErrorFn,
+	TestCaseResult,
+	TestMark,
+	TestMarkValue,
+	TestResult,
+	TestStatus,
+	TestSuiteResult,
+} from "./test_result.js";
 import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
@@ -15,6 +23,7 @@ export interface TestOptions {
 	timeout?: Milliseconds,
 	config?: TestConfig,
 	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
+	renderError?: RenderErrorFn,
 	clock?: Clock,
 }
 
@@ -47,6 +56,7 @@ interface RecursiveRunOptions {
 	onTestCaseResult: (testResult: TestCaseResult) => void,
 	timeout: Milliseconds,
 	config: TestConfig,
+	renderError?: RenderErrorFn,
 }
 
 interface Runnable {
@@ -168,7 +178,7 @@ export class TestSuite implements Runnable {
 		}
 		else if (mark === TestMark.only) {
 			return new TestSuite(name, mark, {
-				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but has no body") ],
+				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but it has no body") ],
 			});
 		}
 		else {
@@ -326,12 +336,14 @@ export class TestSuite implements Runnable {
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
 		onTestCaseResult = () => {},
+		renderError,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			onTestCaseResult: [ undefined, Function ],
+			renderError: [ undefined, Function ],
 			clock: [ undefined, Clock ],
 		}]]);
 
@@ -342,6 +354,7 @@ export class TestSuite implements Runnable {
 			name: [],
 			filename: this._filename,
 			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
+			renderError,
 		});
 	}
 
@@ -482,7 +495,9 @@ class TestCase implements Runnable {
 				result = TestResult.skip(name, options.filename, TestMark.skip);
 			}
 			else {
-				result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+				result = TestResult.fail(
+					name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError
+				);
 			}
 		}
 
@@ -521,7 +536,7 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, this._filename);
+		const result = TestResult.fail([ this._name ], this._error, this._filename, TestMark.none, options.renderError);
 		options.onTestCaseResult(result);
 		return await result;
 	}
@@ -547,7 +562,7 @@ async function runTestFnAsync(
 	fn: ItFn,
 	mark: TestMarkValue,
 	testTimeout: Milliseconds | undefined,
-	{ clock, filename, timeout, config }: RecursiveRunOptions,
+	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
@@ -562,7 +577,7 @@ async function runTestFnAsync(
 			return TestResult.pass(name, filename, mark);
 		}
 		catch (err) {
-			return TestResult.fail(name, err, filename, mark);
+			return TestResult.fail(name, err, filename, mark, renderError);
 		}
 	}, async () => {
 		return await TestResult.timeout(name, timeout, filename, mark);
