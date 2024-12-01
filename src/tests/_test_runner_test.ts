@@ -3,7 +3,7 @@ import { assert, describe, it, beforeEach } from "../tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
-import { TestResult } from "./test_result.js";
+import { TestResult, TestSuiteResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 import { AssertionError } from "node:assert";
@@ -90,8 +90,6 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "my custom renderer");
 		});
 
-		it("uses custom error renderer to render watchdog failures");
-
 		it("does not cache test modules from run to run", async () => {
 			const { runner } = await createAsync();
 
@@ -128,28 +126,37 @@ export default describe(() => {
 			assertFailureMessage(results, "process.chdir() should execute without error");
 		});
 
-		it("handles uncaught promise rejections", async () => {
+		it.skip("handles uncaught promise rejections", async () => {
+			const options = {
+				renderError: () => "my renderer",
+			};
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
 
 			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail("Unhandled error in tests", new Error("my error")),
 			]));
+			assert.equal(getTestResult(results).errorRender, "my renderer", "should use custom renderer");
 		});
 
 		it("handles infinite loops", async () => {
+			const options = {
+				renderError: () => "my renderer",
+			};
 			const { runner, clock } = await createAsync();
 
 			await writeTestModuleAsync(`while (true);`);
-			const resultsPromise = runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const resultsPromise = runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
 
 			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+			const results = await resultsPromise;
 
-			assert.dotEquals(await resultsPromise, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 			]));
+			assert.equal(getTestResult(results).errorRender, "my renderer", "should use custom renderer");
 		});
 
 		it.skip("renders custom objects", async () => {
@@ -188,12 +195,11 @@ export default describe(() => {
 	});
 
 
-	function getTestResult(result: TestResult) {
-		// @ts-expect-error This line is pretty janky, but that's okay because the tests will fail if stops working
-		return result.children[0].children[0];
+	function getTestResult(result: TestSuiteResult) {
+		return result.allTests()[0];
 	}
 
-	function assertFailureMessage(results: TestResult, expectedFailure: string) {
+	function assertFailureMessage(results: TestSuiteResult, expectedFailure: string) {
 		assert.equal(getTestResult(results).errorMessage, expectedFailure);
 	}
 

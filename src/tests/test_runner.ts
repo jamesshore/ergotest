@@ -3,9 +3,10 @@
 import * as ensure from "../util/ensure.js";
 import { TestConfig, TestOptions, TestSuite } from "./test_suite.js";
 import {
+	RenderErrorFn,
 	SerializedTestCaseResult,
 	SerializedTestSuiteResult,
-	TestCaseResult,
+	TestCaseResult, TestMark,
 	TestResult,
 	TestSuiteResult,
 } from "./test_result.js";
@@ -16,6 +17,13 @@ import { Clock } from "../infrastructure/clock.js";
 
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_child_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
+
+const TEST_OPTIONS_TYPE = {
+	timeout: [ undefined, Number ],
+	config: [ undefined, Object ],
+	onTestCaseResult: [ undefined, Function ],
+	renderError: [ undefined, Function ],
+};
 
 /** For internal use only. */
 export interface WorkerInput {
@@ -67,11 +75,7 @@ export class TestRunner {
 	 * @returns {Promise<TestSuiteResult>}
 	 */
 	async runInCurrentProcessAsync(modulePaths: string[], options?: TestOptions): Promise<TestSuiteResult> {
-		ensure.signature(arguments, [ Array, [ undefined, {
-			timeout: [ undefined, Number ],
-			config: [ undefined, Object ],
-			onTestCaseResult: [ undefined, Function ],
-		}]]);
+		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE]]);
 
 		const suite = await TestSuite.fromModulesAsync(modulePaths);
 		return await suite.runAsync(options);
@@ -81,26 +85,16 @@ export class TestRunner {
 	 * Load and run a set of test modules in an isolated child process.
 	 *
 	 * @param {string[]} modulePaths The test files to load and run.
-	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
-	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {object} [options.config] Configuration data to provide to the tests as they run.
+	 * @param {(result: TestCaseResult) => ()} [options.onTestCaseResult] A function to call each time a test completes.
+	 *   The `result` parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
 	 */
-	async runInChildProcessAsync(modulePaths: string[], {
-		timeout,
-		config,
-		onTestCaseResult = () => {},
-		renderError,
-	}: TestOptions = {}): Promise<TestSuiteResult> {
-		ensure.signature(arguments, [ Array, [ undefined, {
-			timeout: [ undefined, Number ],
-			config: [ undefined, Object ],
-			onTestCaseResult: [ undefined, Function ],
-			renderError: [ undefined, Function ],
-		}]]);
+	async runInChildProcessAsync(modulePaths: string[], options: TestOptions = {}): Promise<TestSuiteResult> {
+		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE ]]);
 
 		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
-		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, onTestCaseResult);
+		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, options);
 		await killChildProcess(child);
 
 		return result;
@@ -112,9 +106,12 @@ async function runTestsInChildProcessAsync(
 	child: ChildProcess,
 	clock: Clock,
 	modulePaths: string[],
-	timeout: number | undefined,
-	config: TestConfig | undefined,
-	onTestCaseResult: (testResult: TestCaseResult) => void,
+	{
+		timeout,
+		config,
+		onTestCaseResult = () => {},
+		renderError,
+	}: TestOptions,
 ): Promise<TestSuiteResult> {
 	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
 		const workerData = { modulePaths, timeout, config };
@@ -125,16 +122,16 @@ async function runTestsInChildProcessAsync(
 			if (code !== 0) reject(new Error(`Test runner exited with non-zero error code: ${code}`));
 		});
 
-		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve);
+		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
 		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve));
 	});
 	return result;
 }
 
-function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) => void) {
+function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) => void, renderError?: RenderErrorFn) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
 		const errorResult = TestResult.suite([], [
-			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
+			TestResult.fail("Test runner watchdog", "Detected infinite loop in tests", undefined, TestMark.none, renderError),
 		]);
 		resolve(errorResult);
 	});
