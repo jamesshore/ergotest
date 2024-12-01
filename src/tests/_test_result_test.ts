@@ -248,7 +248,7 @@ export default describe(() => {
 			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal(result.errorMessage, "my error", "error message");
-			assert.equal(result.errorRender, TestRenderer.renderError(result), "rendered error");
+			assert.equal(result.errorRender, TestRenderer.renderError([ "my name" ], undefined, TestMark.none, error), "rendered error");
 
 			assert.equal(result.mark, TestMark.none, "mark");
 			assert.equal(noneMark.mark, TestMark.none, "mark");

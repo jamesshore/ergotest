@@ -503,7 +503,7 @@ export class TestCaseResult extends TestResult {
 			else if (typeof error === "string") this._errorMessage = error;
 			else this._errorMessage = util.inspect(error, { depth: Infinity });
 
-			this._errorRender = TestRenderer.renderError(this);
+			this._errorRender = TestRenderer.renderError(this._name, this._filename, this._mark, error);
 		}
 	}
 
