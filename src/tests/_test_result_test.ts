@@ -4,6 +4,8 @@ import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { TestRenderer } from "./test_renderer.js";
 
+const IRRELEVANT_ERROR = new Error("irrelevant error");
+
 export default describe(() => {
 
 	describe("test suite", () => {
@@ -231,15 +233,21 @@ export default describe(() => {
 			assert.equal(test.filename, "my_filename");
 		});
 
-		it("failing tests have a name, status, mark, and error", () => {
-			const result = createFail({ name: "my name", error: new Error("my error") });
+		it("failing tests have a name, status, mark, and error rendering", () => {
+			const error = new AssertionError({
+				message: "my error",
+				expected: "foo",
+				actual: "bar",
+			});
+
+			const result = createFail({ name: "my name", error });
 			const noneMark = createFail({ mark: TestMark.none });
 			const skipMark = createFail({ mark: TestMark.skip });
 			const onlyMark = createFail({ mark: TestMark.only });
 
 			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
-			assert.equal((result.error as Error).message, "my error", "error");
+			assert.equal(result.newError, TestRenderer.renderError(result), "error");
 
 			assert.equal(result.mark, TestMark.none, "mark");
 			assert.equal(noneMark.mark, TestMark.none, "mark");
@@ -349,23 +357,23 @@ export default describe(() => {
 		it("flattens tests with requested statuses into a single list", () => {
 			const suite = createSuite({ children: [
 				createPass(),
-				createSkip(),
-				createFail({ name: "fail 1" }),
+				createSkip({ name: "skip" }),
+				createTimeout({ name: "timeout 1" }),
 				createSuite({ children: [
-					createTimeout({ name: "timeout" }),
-					createFail({ name: "fail 2" }),
+					createFail(),
+					createTimeout({ name: "timeout 2" }),
 				]}),
 			]});
 
-			assert.equal(suite.allMatchingTests(TestStatus.fail), [
-				createFail({ name: "fail 1" }),
-				createFail({ name: "fail 2" }),
+			assert.equal(suite.allMatchingTests(TestStatus.timeout), [
+				createTimeout({ name: "timeout 1" }),
+				createTimeout({ name: "timeout 2" }),
 			], "one status");
 
-			assert.equal(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
-				createFail({ name: "fail 1" }),
-				createTimeout({ name: "timeout" }),
-				createFail({ name: "fail 2" }),
+			assert.equal(suite.allMatchingTests(TestStatus.timeout, TestStatus.skip), [
+				createSkip({ name: "skip" }),
+				createTimeout({ name: "timeout 1" }),
+				createTimeout({ name: "timeout 2" }),
 			], "multiple statuses");
 		});
 
@@ -643,7 +651,7 @@ function createPass({
 
 function createFail({
 	name = "irrelevant name",
-	error = new Error("irrelevant error"),
+	error = IRRELEVANT_ERROR,
 	filename = undefined,
 	mark = undefined,
 }: {

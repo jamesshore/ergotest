@@ -22,6 +22,10 @@ export class TestRenderer {
 		return new TestRenderer();
 	}
 
+	static renderError(testCaseResult: TestCaseResult) {
+		return this.create().#renderFailure(testCaseResult);
+	}
+
 	// can't use a normal constant due to a circular dependency between TestResult and TestRenderer
 	static get #PROGRESS_RENDERING() {
 		return {
@@ -145,7 +149,7 @@ export class TestRenderer {
 		const filename = testCaseResult.filename === undefined
 			? ""
 			: headerColor(path.basename(testCaseResult.filename)) + " » ";
-		const name = this.#normalizedName(testCaseResult).join(" » ");
+		const name = normalizeName(testCaseResult).join(" » ");
 
 		return `${filename}${name}`;
 	}
@@ -157,7 +161,7 @@ export class TestRenderer {
 	renderNameOnMultipleLines(testResult: TestResult): string {
 		ensure.signature(arguments, [ TestResult ]);
 
-		const name = this.#normalizedName(testResult);
+		const name = normalizeName(testResult);
 
 		const suites = name.slice(0, name.length - 1);
 		const test = name[name.length - 1];
@@ -165,10 +169,6 @@ export class TestRenderer {
 
 		const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
 		return headerColor(suitesName + test);
-	}
-
-	#normalizedName(testResult: TestResult) {
-		return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 	}
 
 	/**
@@ -205,7 +205,7 @@ export class TestRenderer {
 	}
 
 	#renderFailure(testCaseResult: TestCaseResult): string {
-		const name = this.#normalizedName(testCaseResult).pop();
+		const name = normalizeName(testCaseResult).pop();
 		const resultError = testCaseResult.error as { stack: unknown, message: unknown };
 
 		let error;
@@ -290,4 +290,8 @@ export class TestRenderer {
 		return testResults.map(result => renderFn(result)).join(separator);
 	}
 
+}
+
+function normalizeName(testResult: TestResult) {
+	return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 }

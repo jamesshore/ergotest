@@ -496,6 +496,7 @@ export class TestCaseResult extends TestResult {
 		this._mark = mark ?? TestMark.none;
 		this._error = error;
 		this._timeout = timeout;
+		if (status === TestStatus.fail) this._newError = TestRenderer.renderError(this);
 	}
 
 	get filename(): string | undefined {
@@ -527,6 +528,16 @@ export class TestCaseResult extends TestResult {
 	get error(): unknown {
 		ensure.that(this.isFail(), "Attempted to retrieve error from a test that didn't fail");
 		return this._error!;
+	}
+
+	/**
+	 * @returns {unknown} The reason this test failed. Specifics depend on how `renderError()` is defined, but it
+	 *   defaults to a human-readable string.
+	 * @throws {Error} Throws an error if this test didn't fail.
+	 */
+	get newError(): unknown {
+		ensure.that(this.isFail(), "Attempted to retrieve error from a test that didn't fail");
+		return this._newError!;
 	}
 
 	/**

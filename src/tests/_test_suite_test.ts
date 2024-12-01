@@ -222,7 +222,7 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.equal(await actualPromise, TestResult.suite([], [
+			assert.dotEquals(await actualPromise, TestResult.suite([], [
 				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				createFail({ name: "fail", error: new Error("fail"), filename }),
@@ -302,7 +302,7 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({});
-			assert.equal(results, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -315,7 +315,7 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({ config: {} });
-			assert.equal(results, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -1109,7 +1109,7 @@ export default describe(() => {
 				it_sut("not .only", () => {});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ children: [
 					createPass({ name: ".only", mark: TestMark.only }),
 					createSkip({ name: "not .only" }),
@@ -1129,7 +1129,7 @@ export default describe(() => {
 			const resultPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.equal(await resultPromise,
+			assert.dotEquals(await resultPromise,
 				createSuite({ children: [
 					createPass({ name: "pass", mark: TestMark.only }),
 					createFail({ name: "fail", error: new Error("my error"), mark: TestMark.only }),
@@ -1150,7 +1150,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
 					TestResult.suite("not .only", [
 						TestResult.skip([ "not .only", "test1" ]),
@@ -1171,7 +1171,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite([], [
 						TestResult.pass("test"),
@@ -1186,7 +1186,7 @@ export default describe(() => {
 				it_sut.only("only", () => {});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSkip({ name: "not only" }),
 					createPass({ name: "only", mark: TestMark.only }),
@@ -1202,7 +1202,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "not only" }),
@@ -1222,7 +1222,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite("not only", [
 						TestResult.skip([ "not only", "test1" ]),
@@ -1242,7 +1242,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
@@ -1260,7 +1260,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ children: [
 						createPass({ name: "test1", mark: TestMark.only }),
@@ -1278,7 +1278,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ mark: TestMark.skip, children: [
 						TestResult.skip("test1"),
@@ -1296,7 +1296,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ mark: TestMark.only, children: [
 						TestResult.pass("test1"),

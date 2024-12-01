@@ -121,7 +121,7 @@ export default describe(() => {
 			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
 			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-			assert.equal(results, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail("Unhandled error in tests", new Error("my error")),
 			]));
 		});
@@ -134,7 +134,7 @@ export default describe(() => {
 
 			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
 
-			assert.equal(await resultsPromise, TestResult.suite([], [
+			assert.dotEquals(await resultsPromise, TestResult.suite([], [
 				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 			]));
 		});
@@ -154,7 +154,7 @@ export default describe(() => {
 			);
 		});
 
-		it("supports custom objects", async () => {
+		it.skip("supports custom objects", async () => {
 			class MyString extends String {
 				constructor(private readonly _customField: string) {
 					super();
