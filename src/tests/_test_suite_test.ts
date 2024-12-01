@@ -1,6 +1,7 @@
+
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it } from "../tests.js";
-import { TestSuite } from "./test_suite.js";
+import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,
 	afterEach as afterEach_sut,
@@ -15,6 +16,10 @@ import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
 // dependency: ./_module_no_export.js
+// dependency: ./_renderer_custom.js
+// dependency: ./_renderer_no_export.js
+// dependency: ./_renderer_not_function.js
+// dependency: _test_renderer/_renderer_in_node_modules.js
 
 // Tests for my test library. (How meta.)
 
@@ -22,8 +27,15 @@ const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 
+const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_custom.js");
+const NO_EXPORT_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_no_export.js");
+const NOT_FUNCTION_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_not_function.js");
+const NODE_MODULES_RENDERER_NAME = "_test_renderer/_renderer_in_node_modules.js";
+
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
+
+
 export default describe(() => {
 
 	describe("test modules", () => {
@@ -47,7 +59,7 @@ export default describe(() => {
 			assert.equal(result.name, [ "error when importing _module_passes.js" ]);
 			assert.isUndefined(result.filename);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.error, "Test module filenames must use absolute paths: ./_module_passes.js");
+			assert.equal(result.errorMessage, "Test module filenames must use absolute paths: ./_module_passes.js");
 		});
 
 		it("fails gracefully if module doesn't exist", async () => {
@@ -57,7 +69,7 @@ export default describe(() => {
 			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
 			assert.equal(result.filename, "/no_such_module.js");
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.error, `Test module not found: /no_such_module.js`);
+			assert.equal(result.errorMessage, `Test module not found: /no_such_module.js`);
 		});
 
 		it("fails gracefully if module fails to require()", async () => {
@@ -67,7 +79,7 @@ export default describe(() => {
 			assert.equal(result.name, [ "error when importing _module_throws.js" ]);
 			assert.equal(result.filename, THROWS_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
-			assert.match((result.error as { message: string }).message, /my require error/);
+			assert.equal(result.errorMessage, "my require error");
 		});
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
@@ -77,7 +89,60 @@ export default describe(() => {
 			assert.equal(result.name, [ "error when importing _module_no_export.js" ]);
 			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.error, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
+			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
+		});
+
+	});
+
+
+	describe("custom rendering", () => {
+
+		it("uses custom error renderer to render test failures", async () => {
+			const options = {
+				renderer: CUSTOM_RENDERER_PATH,
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const result = (await suite.runAsync(options)).allTests()[0];
+
+			await assert.equal(result.errorRender, "custom rendering");
+		});
+
+		it("support error renderers that are defined in node_modules", async () => {
+			const options = {
+				renderer: NODE_MODULES_RENDERER_NAME,
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const result = (await suite.runAsync(options)).allTests()[0];
+
+			await assert.equal(result.errorRender, "node_modules rendering");
+		});
+
+		it("exports custom renderer import function", async () => {
+			const renderError = await importRendererAsync(CUSTOM_RENDERER_PATH);
+			await assert.equal(renderError(), "custom rendering");
+		});
+
+		it("fails fast if error renderer doesn't exist", async () => {
+			await assert.errorAsync(
+				() => importRendererAsync("./no_such_renderer.js"),
+				"Renderer module not found (did you forget to use an absolute path?): ./no_such_renderer.js",
+			);
+		});
+
+		it("fails fast if error renderer doesn't export correct function", async () => {
+			await assert.errorAsync(
+				() => importRendererAsync(NO_EXPORT_RENDERER_PATH),
+				`Renderer module doesn't export a renderError() function: ${NO_EXPORT_RENDERER_PATH}`,
+			);
+		});
+
+		it("fails fast if error renderer exports something other than a function", async () => {
+			await assert.errorAsync(
+				() => importRendererAsync(NOT_FUNCTION_RENDERER_PATH),
+				`Renderer module's 'renderError' export must be a function, but it was a string: ${NOT_FUNCTION_RENDERER_PATH}`,
+			);
 		});
 
 	});
@@ -114,6 +179,20 @@ export default describe(() => {
 					TestResult.pass("test 3"),
 				]),
 			);
+		});
+
+		it("uses custom renderer for test failures", async () => {
+			const suite = describe_sut(() => {
+				it_sut("test", () => {
+					throw new Error("my error");
+				});
+			});
+
+			const result = await suite.runAsync({
+				renderer: CUSTOM_RENDERER_PATH,
+			});
+
+			assert.equal(result.allTests()[0].errorRender, "custom rendering");
 		});
 
 		it("can be nested", async () => {
@@ -222,7 +301,7 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.equal(await actualPromise, TestResult.suite([], [
+			assert.dotEquals(await actualPromise, TestResult.suite([], [
 				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				createFail({ name: "fail", error: new Error("fail"), filename }),
@@ -302,7 +381,7 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({});
-			assert.equal(results, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -315,7 +394,7 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({ config: {} });
-			assert.equal(results, TestResult.suite([], [
+			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
 			]));
 		});
@@ -1071,22 +1150,31 @@ export default describe(() => {
 		});
 
 		it("generates failure when a suite is marked 'only' but has no body", async () => {
-			const suite = describe_sut.only("my suite");
+			const options = {
+				renderer: CUSTOM_RENDERER_PATH,
+			};
 
-			const result = await suite.runAsync();
+			const suite = describe_sut.only("my suite");
+			const result = await suite.runAsync(options);
+
 			assert.dotEquals(result,
 				createSuite({ name: "my suite", mark: TestMark.only, children: [
 					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
 				]}),
 			);
+			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
 		});
 
 		it("generates failure when a test is marked 'only' but has no body", async () => {
+			const options = {
+				renderer: CUSTOM_RENDERER_PATH,
+			};
+
 			const suite = describe_sut("my suite", () => {
 				it_sut.only("my test");
 			});
+			const result = await suite.runAsync(options);
 
-			const result = await suite.runAsync();
 			assert.dotEquals(result,
 				createSuite({ name: "my suite", children: [
 					createFail({
@@ -1096,6 +1184,7 @@ export default describe(() => {
 					}),
 				]}),
 			);
+			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
 		});
 
 	});
@@ -1109,7 +1198,7 @@ export default describe(() => {
 				it_sut("not .only", () => {});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ children: [
 					createPass({ name: ".only", mark: TestMark.only }),
 					createSkip({ name: "not .only" }),
@@ -1129,7 +1218,7 @@ export default describe(() => {
 			const resultPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.equal(await resultPromise,
+			assert.dotEquals(await resultPromise,
 				createSuite({ children: [
 					createPass({ name: "pass", mark: TestMark.only }),
 					createFail({ name: "fail", error: new Error("my error"), mark: TestMark.only }),
@@ -1150,7 +1239,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
 					TestResult.suite("not .only", [
 						TestResult.skip([ "not .only", "test1" ]),
@@ -1171,7 +1260,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite([], [
 						TestResult.pass("test"),
@@ -1186,7 +1275,7 @@ export default describe(() => {
 				it_sut.only("only", () => {});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSkip({ name: "not only" }),
 					createPass({ name: "only", mark: TestMark.only }),
@@ -1202,7 +1291,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "not only" }),
@@ -1222,7 +1311,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					TestResult.suite("not only", [
 						TestResult.skip([ "not only", "test1" ]),
@@ -1242,7 +1331,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ children: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
@@ -1260,7 +1349,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ children: [
 						createPass({ name: "test1", mark: TestMark.only }),
@@ -1278,7 +1367,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, children: [
 					createSuite({ mark: TestMark.skip, children: [
 						TestResult.skip("test1"),
@@ -1296,7 +1385,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(await suite.runAsync(),
+			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, children: [
 					createSuite({ mark: TestMark.only, children: [
 						TestResult.pass("test1"),

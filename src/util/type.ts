@@ -18,7 +18,7 @@ interface StructDescriptor extends Record<string, TypeDescriptor> {}  // require
 
 export type TypeDescriptor = SingleDescriptor | TypeDescriptor[] | StructDescriptor;
 
-export const ANY_TYPE = [ undefined, null, Boolean, Number, NaN, String, Object ];
+export const ANY_TYPE = [ undefined, null, Boolean, Number, NaN, String, Array, Object ];
 
 export function check(arg: unknown, expectedTypes: TypeDescriptor, options?: TypeOptions): string | null {
 	const argType = getType(arg);

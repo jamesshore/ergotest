@@ -2,7 +2,15 @@
 
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import {
+	RenderErrorFn,
+	TestCaseResult,
+	TestMark,
+	TestMarkValue,
+	TestResult,
+	TestStatus,
+	TestSuiteResult,
+} from "./test_result.js";
 import path from "node:path";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
@@ -15,6 +23,7 @@ export interface TestOptions {
 	timeout?: Milliseconds,
 	config?: TestConfig,
 	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
+	renderer?: string,
 	clock?: Clock,
 }
 
@@ -47,6 +56,7 @@ interface RecursiveRunOptions {
 	onTestCaseResult: (testResult: TestCaseResult) => void,
 	timeout: Milliseconds,
 	config: TestConfig,
+	renderError?: RenderErrorFn,
 }
 
 interface Runnable {
@@ -168,7 +178,7 @@ export class TestSuite implements Runnable {
 		}
 		else if (mark === TestMark.only) {
 			return new TestSuite(name, mark, {
-				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but has no body") ],
+				tests: [ new FailureTestCase(name, "Test suite is marked '.only', but it has no body") ],
 			});
 		}
 		else {
@@ -319,6 +329,10 @@ export class TestSuite implements Runnable {
 	 * @param {object} [config={}] Configuration data to provide to tests.
 	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
+	 *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
+	 *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
+	 *   return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @param {Clock} [clock] Internal use only.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
 	 */
@@ -326,12 +340,14 @@ export class TestSuite implements Runnable {
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
 		onTestCaseResult = () => {},
+		renderer,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			onTestCaseResult: [ undefined, Function ],
+			renderer: [ undefined, String ],
 			clock: [ undefined, Clock ],
 		}]]);
 
@@ -342,6 +358,7 @@ export class TestSuite implements Runnable {
 			name: [],
 			filename: this._filename,
 			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
+			renderError: await importRendererAsync(renderer),
 		});
 	}
 
@@ -482,7 +499,9 @@ class TestCase implements Runnable {
 				result = TestResult.skip(name, options.filename, TestMark.skip);
 			}
 			else {
-				result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+				result = TestResult.fail(
+					name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError
+				);
 			}
 		}
 
@@ -521,7 +540,7 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, this._filename);
+		const result = TestResult.fail([ this._name ], this._error, this._filename, TestMark.none, options.renderError);
 		options.onTestCaseResult(result);
 		return await result;
 	}
@@ -547,7 +566,7 @@ async function runTestFnAsync(
 	fn: ItFn,
 	mark: TestMarkValue,
 	testTimeout: Milliseconds | undefined,
-	{ clock, filename, timeout, config }: RecursiveRunOptions,
+	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
@@ -562,7 +581,7 @@ async function runTestFnAsync(
 			return TestResult.pass(name, filename, mark);
 		}
 		catch (err) {
-			return TestResult.fail(name, err, filename, mark);
+			return TestResult.fail(name, err, filename, mark, renderError);
 		}
 	}, async () => {
 		return await TestResult.timeout(name, timeout, filename, mark);
@@ -571,4 +590,27 @@ async function runTestFnAsync(
 
 function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
+}
+
+
+/** Internal use only. */
+export async function importRendererAsync(renderer?: string) {
+	if (renderer === undefined) return undefined;
+
+	try {
+		const { renderError } = await import(renderer);
+		if (renderError === undefined) {
+			throw new Error(`Renderer module doesn't export a renderError() function: ${renderer}`);
+		}
+		if (typeof renderError !== "function") {
+			throw new Error(
+				`Renderer module's 'renderError' export must be a function, but it was a ${typeof renderError}: ${renderer}`
+			);
+		}
+		return renderError;
+	}
+	catch(err) {
+		if (typeof err !== "object" || (err as { code: string })?.code !== "ERR_MODULE_NOT_FOUND") throw err;
+		throw new Error(`Renderer module not found (did you forget to use an absolute path?): ${renderer}`);
+	}
 }

@@ -373,7 +373,7 @@ This is useful for incremental builds. It allows you to ignore test files that h
 
 * testSuiteResult.equals(that: [TestResult](#testresult)): boolean
 
-Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, and marks.
+Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, marks, error messages, and timeouts. However, error renders are ignored, which means that stack traces and other error details other than the error message are ignored. 
 
 [Back to top](#automation-api)
 
@@ -436,6 +436,8 @@ See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFai
 * testCaseResult.error?: unknown
 
 If this test failed, contains the error that was thrown. Otherwise, it’s undefined.
+
+TODO Replace with errorMessage and errorRender
 
 [Back to top](#automation-api)
 
@@ -732,7 +734,7 @@ In the future, I’d like to implement a more sophisticated mechanism for highli
 
 ## TestResult.suite()
 
-* TestResult.suite(names: string | string[], children: [TestResult](#testresult)[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestSuiteResult](#testsuiteresult)
+* TestResult.suite(name: string | string[], children: [TestResult](#testresult)[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestSuiteResult](#testsuiteresult)
 
 Create a test result for a suite of tests.
 
@@ -741,7 +743,7 @@ Create a test result for a suite of tests.
 
 ## TestResult.pass()
 
-* TestResult.pass(names: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+* TestResult.pass(name: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 
 Create a passing test result.
 
@@ -750,16 +752,26 @@ Create a passing test result.
 
 ## TestResult.fail()
 
-* TestResult.fail(names: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+* TestResult.fail(name: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
 Create a failing test result, where `error` is the reason for the failure. If it’s an `Error`, the failure will be rendered with a stack trace. If it’s an `AssertionError`, it will also be rendered with expected and actual values.
+
+TODO
 
 [Back to top](#automation-api)
 
 
+### RenderErrorFn
+
+* import { RenderErrorFn } from "ergotest/test_result.js"
+* (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+
+TODO
+
+
 ## TestResult.skip()
 
-* TestResult.skip(names: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+* TestResult.skip(name: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 
 Create a skipped test result.
 
@@ -768,7 +780,7 @@ Create a skipped test result.
 
 ## TestResult.timeout()
 
-* TestResult.pass(names: string | string[], timeout: number, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+* TestResult.pass(name: string | string[], timeout: number, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 
 Create a timed out test result, where `timeout` is the length of the timeout (*not* the time the test actually took to run).
 
@@ -827,7 +839,7 @@ A type for the possible values of [TestMark](#testmark).
 
 * import { TestSuite } from "ergotest/test_suite.js"
 
-You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call `test()`. (It’s defined in the [test API documentation](test_api.md)).
+You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call [describe()](test_api.md#describe).
 
 [Back to top](#automation-api)
 

@@ -1,5 +1,5 @@
 import { TypeDescriptor } from "./type.js";
-export declare const ANY_TYPE: (number | ObjectConstructor | StringConstructor | BooleanConstructor | NumberConstructor | null | undefined)[];
+export declare const ANY_TYPE: (number | ObjectConstructor | StringConstructor | BooleanConstructor | NumberConstructor | ArrayConstructor | null | undefined)[];
 /**
  * General-purpose runtime assertion. Throws an exception if the expression isn't true.
  * @param {boolean} expression the expression to check

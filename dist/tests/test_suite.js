@@ -93,7 +93,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         } else if (mark === TestMark.only) {
             return new TestSuite(name, mark, {
                 tests: [
-                    new FailureTestCase(name, "Test suite is marked '.only', but has no body")
+                    new FailureTestCase(name, "Test suite is marked '.only', but it has no body")
                 ]
             });
         } else {
@@ -230,9 +230,13 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
 	 * @param {object} [config={}] Configuration data to provide to tests.
 	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
+	 *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
+	 *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
+	 *   return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @param {Clock} [clock] Internal use only.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
-	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, clock = Clock.create() } = {}) {
+	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, renderer, clock = Clock.create() } = {}) {
         ensure.signature(arguments, [
             [
                 undefined,
@@ -249,6 +253,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
                         undefined,
                         Function
                     ],
+                    renderer: [
+                        undefined,
+                        String
+                    ],
                     clock: [
                         undefined,
                         Clock
@@ -262,7 +270,8 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             onTestCaseResult,
             name: [],
             filename: this._filename,
-            timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS
+            timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
+            renderError: await importRendererAsync(renderer)
         });
     }
     /** @private */ _setFilename(filename) {
@@ -392,7 +401,7 @@ class TestCase {
             if (this._mark !== TestMark.only) {
                 result = TestResult.skip(name, options.filename, TestMark.skip);
             } else {
-                result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark);
+                result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError);
             }
         }
         options.onTestCaseResult(result);
@@ -418,7 +427,7 @@ class FailureTestCase extends TestCase {
     async _recursiveRunAsync(parentMark, beforeEachFns, afterEachFns, options) {
         const result = TestResult.fail([
             this._name
-        ], this._error, this._filename);
+        ], this._error, this._filename, TestMark.none, options.renderError);
         options.onTestCaseResult(result);
         return await result;
     }
@@ -430,7 +439,7 @@ async function runBeforeOrAfterFnsAsync(name, beforeAfterArray, mark, options) {
     }
     return TestResult.pass(name, options.filename, mark);
 }
-async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, timeout, config }) {
+async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, timeout, config, renderError }) {
     const getConfig = (name)=>{
         if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
         return config[name];
@@ -443,7 +452,7 @@ async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, ti
             });
             return TestResult.pass(name, filename, mark);
         } catch (err) {
-            return TestResult.fail(name, err, filename, mark);
+            return TestResult.fail(name, err, filename, mark, renderError);
         }
     }, async ()=>{
         return await TestResult.timeout(name, timeout, filename, mark);
@@ -451,6 +460,22 @@ async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, ti
 }
 function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
+}
+/** Internal use only. */ export async function importRendererAsync(renderer) {
+    if (renderer === undefined) return undefined;
+    try {
+        const { renderError } = await import(renderer);
+        if (renderError === undefined) {
+            throw new Error(`Renderer module doesn't export a renderError() function: ${renderer}`);
+        }
+        if (typeof renderError !== "function") {
+            throw new Error(`Renderer module's 'renderError' export must be a function, but it was a ${typeof renderError}: ${renderer}`);
+        }
+        return renderError;
+    } catch (err) {
+        if (typeof err !== "object" || err?.code !== "ERR_MODULE_NOT_FOUND") throw err;
+        throw new Error(`Renderer module not found (did you forget to use an absolute path?): ${renderer}`);
+    }
 }
 
 //# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_suite.js.map

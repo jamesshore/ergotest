@@ -2,7 +2,9 @@
 import { assert, describe, it } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
-import { TestRenderer } from "./test_renderer.js";
+import { renderError, TestRenderer } from "./test_renderer.js";
+
+const IRRELEVANT_ERROR = new Error("irrelevant error");
 
 export default describe(() => {
 
@@ -231,15 +233,26 @@ export default describe(() => {
 			assert.equal(test.filename, "my_filename");
 		});
 
-		it("failing tests have a name, status, mark, and error", () => {
-			const result = createFail({ name: "my name", error: new Error("my error") });
+		it("failing tests have a name, status, mark, error message, and error rendering", () => {
+			const error = new AssertionError({
+				message: "my error",
+				expected: "foo",
+				actual: "bar",
+			});
+
+			const result = createFail({
+				name: "my name",
+				error,
+				renderError: () => "my custom renderer",
+			});
 			const noneMark = createFail({ mark: TestMark.none });
 			const skipMark = createFail({ mark: TestMark.skip });
 			const onlyMark = createFail({ mark: TestMark.only });
 
 			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
-			assert.equal((result.error as Error).message, "my error", "error");
+			assert.equal(result.errorMessage, "my error", "error message");
+			assert.equal(result.errorRender, "my custom renderer", "rendered error");
 
 			assert.equal(result.mark, TestMark.none, "mark");
 			assert.equal(noneMark.mark, TestMark.none, "mark");
@@ -247,9 +260,31 @@ export default describe(() => {
 			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
-		it("failing tests can have a string for the error", () => {
-			const result = createFail({ name: "irrelevant name", error: "my error" });
-			assert.equal(result.error, "my error");
+		it("failing tests can have any error type", () => {
+			const degenerateError = new Error();
+			// @ts-expect-error We're deliberately breaking type rules to test an edge case
+			degenerateError.message = undefined;
+
+			check(degenerateError, "");
+			check("my error", "my error");
+			check(123, "123");
+			check(undefined, "undefined");
+			check(null, "null");
+			check(NaN, "NaN");
+			check([ 1, 2, 3 ], "[ 1, 2, 3 ]");
+			check({ a: 1, b: 2 }, "{ a: 1, b: 2 }");
+			check({ message: "my message" }, "{ message: 'my message' }");
+
+			function check(error: unknown, expected: string) {
+				const result = TestResult.fail([], error);
+				assert.equal(result.errorMessage, expected);
+			}
+		});
+
+		it("failing tests have default error renderer", () => {
+			const result = createFail({ name: "my name", error: "my error" });
+
+			assert.equal(result.errorRender, renderError([ "my name" ], "my error", TestMark.none));
 		});
 
 		it("skipped tests have a name, status, and mark", () => {
@@ -287,10 +322,14 @@ export default describe(() => {
 			assert.dotEquals(createPass({ name: "my name" }), createPass({ name: "my name" }));
 			assert.dotEquals(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "child" ] }));
 
-			// disregard stack when comparing errors: if name is equal, error is equal
+			// disregard rendering when comparing errors: if message is equal, error is equal
 			assert.dotEquals(
 				createFail({ name: "my name", error: new Error("my error") }),
 				createFail({ name: "my name", error: new Error("my error") }),
+			);
+			assert.notDotEquals(
+				createFail({ name: "my name", error: new Error("my error") }),
+				createFail({ name: "my name", error: new Error("different error") }),
 			);
 
 			assert.notDotEquals(createPass({ name: "my name" }), createPass({ name: "different" }));
@@ -349,23 +388,23 @@ export default describe(() => {
 		it("flattens tests with requested statuses into a single list", () => {
 			const suite = createSuite({ children: [
 				createPass(),
-				createSkip(),
-				createFail({ name: "fail 1" }),
+				createSkip({ name: "skip" }),
+				createTimeout({ name: "timeout 1" }),
 				createSuite({ children: [
-					createTimeout({ name: "timeout" }),
-					createFail({ name: "fail 2" }),
+					createFail(),
+					createTimeout({ name: "timeout 2" }),
 				]}),
 			]});
 
-			assert.equal(suite.allMatchingTests(TestStatus.fail), [
-				createFail({ name: "fail 1" }),
-				createFail({ name: "fail 2" }),
+			assert.equal(suite.allMatchingTests(TestStatus.timeout), [
+				createTimeout({ name: "timeout 1" }),
+				createTimeout({ name: "timeout 2" }),
 			], "one status");
 
-			assert.equal(suite.allMatchingTests(TestStatus.fail, TestStatus.timeout), [
-				createFail({ name: "fail 1" }),
-				createTimeout({ name: "timeout" }),
-				createFail({ name: "fail 2" }),
+			assert.equal(suite.allMatchingTests(TestStatus.timeout, TestStatus.skip), [
+				createSkip({ name: "skip" }),
+				createTimeout({ name: "timeout 1" }),
+				createTimeout({ name: "timeout 2" }),
 			], "multiple statuses");
 		});
 
@@ -567,50 +606,6 @@ export default describe(() => {
 			assert.dotEquals(deserialized, suite);
 		});
 
-		it("handles string errors", () => {
-			assertErrorWorks("my error");
-		});
-
-		it("handles assertion errors", () => {
-			assertErrorWorks(new AssertionError({
-				message: "my message",
-				actual: "my actual",
-				expected: "my expected",
-				operator: "my operator",
-			}));
-		});
-
-		it("handles other errors", () => {
-			assertErrorWorks(new Error("my message"));
-		});
-
-		it("propagates custom error fields", () => {
-			assertErrorWorks(createCustomError("custom1", "custom2"));
-		});
-
-		function assertErrorWorks(error: string | Error) {
-			const test = createFail({ error });
-			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
-
-			assert.equal(deserialized.error, error);
-			if (error instanceof Error && error.stack !== undefined) {
-				assert.equal((deserialized.error as Error).stack, error.stack);
-			}
-		}
-
-		function createCustomError(custom1: unknown, custom2: unknown) {
-			interface CustomError extends Error {
-				custom1: unknown,
-				custom2: unknown,
-			}
-
-			const error = new Error("my message") as CustomError;
-			error.custom1 = custom1;
-			error.custom2 = custom2;
-
-			return error;
-		}
 	});
 
 });
@@ -643,16 +638,18 @@ function createPass({
 
 function createFail({
 	name = "irrelevant name",
-	error = new Error("irrelevant error"),
+	error = IRRELEVANT_ERROR,
+	renderError = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
+	renderError?: () => string,
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, filename, mark, renderError);
 }
 
 function createSkip({
