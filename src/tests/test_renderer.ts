@@ -35,27 +35,29 @@ export class TestRenderer {
 		ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
 
 		const nameFoo = normalizeName(name).pop();
-		const resultError = error as { stack: unknown, message: unknown };
 
-		let errorFoo;
-		if (resultError?.stack !== undefined) {
-			errorFoo = `${TestRenderer.renderStack(error, filename)}`;
-			if (resultError?.message !== undefined) {
-				errorFoo +=
+		let renderedError;
+		if (error instanceof Error && error?.stack !== undefined) {
+			renderedError = `${TestRenderer.renderStack(error, filename)}`;
+			if (error.message !== undefined && error.message !== "") {
+				renderedError +=
 					"\n\n" +
 					highlightColor(`${nameFoo} »\n`) +
-					errorMessageColor(`${resultError.message}`);
+					errorMessageColor(`${error.message}`);
 			}
 		}
+		else if (typeof error === "string") {
+			renderedError = errorMessageColor(error);
+		}
 		else {
-			errorFoo = errorMessageColor(`${error}`);
+			renderedError = errorMessageColor(util.inspect(error));
 		}
 
 		const diff = (error instanceof AssertionError) ?
 			"\n\n" + TestRenderer.renderDiff(error) :
 			"";
 
-		return `${errorFoo}${diff}`;
+		return `${renderedError}${diff}`;
 	}
 
 	/**
@@ -65,14 +67,12 @@ export class TestRenderer {
 	 * @param {string} [filename] The filename to highlight
 	 * @returns {string} The stack trace for the test, or "" if there wasn't one.
 	 */
-	static renderStack(error: unknown, filename?: string): string {
+	static renderStack(error: Error, filename?: string): string {
 		ensure.signature(arguments, [ ensure.ANY_TYPE, [ undefined, String ] ]);
 
-		const typedError = error as undefined | { stack: unknown };
-		if (typedError?.stack === undefined) return "";
-
-		const stack = typedError.stack;
-		if (typeof stack !== "string") return String(stack);
+		const stack = error instanceof AssertionError ?
+			error.stack ?? "" :
+			util.inspect(error);
 
 		if (filename === undefined) return stack;
 

@@ -4,6 +4,7 @@ import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
+import util from "node:util";
 
 const headerColor = Colors.brightWhite.bold;
 const summaryColor = Colors.brightWhite.dim;
@@ -367,9 +368,10 @@ export default describe(() => {
 
 		it("handles unusual errors", () => {
 			assert.equal(render({ error: 123 }), Colors.brightRed("123"));
+			assert.equal(render({ error: { myObject: "my_field" } }), Colors.brightRed("{ myObject: 'my_field' }"));
 		});
 
-		it("renders diff for assertion errors", () => {
+		it("renders diff for assertion errors without a stack trace", () => {
 			const error = new AssertionError({
 				message: "my error",
 				expected: "my expected",
@@ -379,7 +381,7 @@ export default describe(() => {
 
 			assert.equal(
 				render({ error }),
-				Colors.brightRed(error.toString()) + "\n\n" + TestRenderer.renderDiff(error)
+				Colors.brightRed(util.inspect(error)) + "\n\n" + TestRenderer.renderDiff(error)
 			);
 		});
 
@@ -388,7 +390,7 @@ export default describe(() => {
 			error.stack = "my stack";
 
 			assert.equal(render({ name: "my name", error }),
-				"my stack\n" +
+				"[my stack]\n" +
 				"\n" +
 				Colors.brightWhite("my name »\n") +
 				Colors.brightRed("my error")
@@ -396,9 +398,10 @@ export default describe(() => {
 		});
 
 		it("doesn't repeat name and error message if error doesn't have a message", () => {
-			const error = { stack: "my stack" };
+			const error = new Error("");
+			error.stack = "my stack";
 
-			assert.equal(render({ error }), "my stack");
+			assert.equal(render({ error }), "[my stack]");
 		});
 
 		it("repeats name properly when test has no name", () => {
@@ -406,7 +409,7 @@ export default describe(() => {
 			error.stack = "my stack";
 
 			assert.equal(render({ name: [], error }),
-				"my stack\n" +
+				"[my stack]\n" +
 				"\n" +
 				Colors.brightWhite("(no name) »\n") +
 				Colors.brightRed("my error")
@@ -460,27 +463,59 @@ export default describe(() => {
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
 
-		it("returns an empty string if there's no stack trace", () => {
-			assert.equal(render({ stack: undefined }), "");
+		it("inspects the error object", () => {
+			class MyError extends Error {
+				constructor(message: string, public readonly custom: string) {
+					super(message);
+					this.custom = custom;
+				}
+			}
+			const error = new MyError("my error", "custom field");
+			error.stack = "my stack";
+
+			assert.equal(TestRenderer.renderStack(error), "[my stack] { custom: 'custom field' }");
 		});
 
-		it("converts non strings to strings", () => {
-			assert.equal(render({ stack: EXAMPLE_STACK, filename: undefined }), EXAMPLE_STACK);
+		it("doesn't inspect assertion errors; just returns the stack trace", () => {
+			const error = new AssertionError({});
+			error.stack = "my stack";
+
+			assert.equal(TestRenderer.renderStack(error), "my stack");
+		});
+
+		it("handles assertion errors without a stack trace", () => {
+			const error = new AssertionError({});
+			error.stack = undefined;
+
+			assert.equal(TestRenderer.renderStack(error), "");
+		});
+
+		it("handles nested errors", () => {
+			const grandchild = new Error("grandchild");
+			grandchild.stack = "grandchild stack";
+			const child = new Error("child", { cause: grandchild });
+			child.stack = "child stack";
+			const parent = new Error("parent", { cause: child });
+			parent.stack = "parent stack";
+
+			assert.equal(TestRenderer.renderStack(parent),
+				"[parent stack] {\n" +
+				"  [cause]: [child stack] { [cause]: [grandchild stack] }\n" +
+				"}");
 		});
 
 		it("highlights stack trace lines that include test file", () => {
+			const error = new Error("my error");
+			error.stack = EXAMPLE_STACK;
+
 			assert.equal(
-				render({
-					stack: EXAMPLE_STACK,
-					filename: "/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js",
-				}),
-				HIGHLIGHTED_STACK
+				TestRenderer.renderStack(
+					error,
+					"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js",
+				),
+				HIGHLIGHTED_STACK,
 			);
 		});
-
-		function render({ stack, filename }: { stack: unknown, filename?: string }) {
-			return TestRenderer.renderStack({ stack }, filename);
-		}
 	});
 
 
