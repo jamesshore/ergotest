@@ -360,27 +360,6 @@ export class TestSuite implements Runnable {
 			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
 			renderError: await importRendererAsync(renderer),
 		});
-
-		async function importRendererAsync(renderer?: string) {
-			if (renderer === undefined) return undefined;
-
-			try {
-				const { renderError } = await import(renderer);
-				if (renderError === undefined) {
-					throw new Error(`Renderer module doesn't export a renderError() function: ${renderer}`);
-				}
-				if (typeof renderError !== "function") {
-					throw new Error(
-						`Renderer module's 'renderError' export must be a function, but it was a ${typeof renderError}: ${renderer}`
-					);
-				}
-				return renderError;
-			}
-			catch(err) {
-				if (typeof err !== "object" || (err as { code: string })?.code !== "ERR_MODULE_NOT_FOUND") throw err;
-				throw new Error(`Renderer module not found (did you forget to use an absolute path?): ${renderer}`);
-			}
-		}
 	}
 
 	/** @private */
@@ -611,4 +590,27 @@ async function runTestFnAsync(
 
 function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
+}
+
+
+/** Internal use only. */
+export async function importRendererAsync(renderer?: string) {
+	if (renderer === undefined) return undefined;
+
+	try {
+		const { renderError } = await import(renderer);
+		if (renderError === undefined) {
+			throw new Error(`Renderer module doesn't export a renderError() function: ${renderer}`);
+		}
+		if (typeof renderError !== "function") {
+			throw new Error(
+				`Renderer module's 'renderError' export must be a function, but it was a ${typeof renderError}: ${renderer}`
+			);
+		}
+		return renderError;
+	}
+	catch(err) {
+		if (typeof err !== "object" || (err as { code: string })?.code !== "ERR_MODULE_NOT_FOUND") throw err;
+		throw new Error(`Renderer module not found (did you forget to use an absolute path?): ${renderer}`);
+	}
 }

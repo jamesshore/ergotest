@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it } from "../tests.js";
-import { TestSuite } from "./test_suite.js";
+import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,
 	afterEach as afterEach_sut,
@@ -87,6 +87,11 @@ export default describe(() => {
 			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
 		});
 
+	});
+
+
+	describe("custom rendering", () => {
+
 		it("uses custom error renderer to render test failures", async () => {
 			const options = {
 				renderer: CUSTOM_RENDERER_PATH,
@@ -109,38 +114,29 @@ export default describe(() => {
 			await assert.equal(result.errorRender, "node_modules rendering");
 		});
 
-		it("fails fast if error renderer doesn't exist", async () => {
-			const options = {
-				renderer: "./no_such_renderer.js",
-			};
+		it("exports custom renderer import function", async () => {
+			const renderError = await importRendererAsync(CUSTOM_RENDERER_PATH);
+			await assert.equal(renderError(), "custom rendering");
 
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+		});
+
+		it("fails fast if error renderer doesn't exist", async () => {
 			await assert.errorAsync(
-				() => suite.runAsync(options),
+				() => importRendererAsync("./no_such_renderer.js"),
 				"Renderer module not found (did you forget to use an absolute path?): ./no_such_renderer.js",
 			);
 		});
 
 		it("fails fast if error renderer doesn't export correct function", async () => {
-			const options = {
-				renderer: NO_EXPORT_RENDERER_PATH,
-			};
-
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
 			await assert.errorAsync(
-				() => suite.runAsync(options),
+				() => importRendererAsync(NO_EXPORT_RENDERER_PATH),
 				`Renderer module doesn't export a renderError() function: ${NO_EXPORT_RENDERER_PATH}`,
 			);
 		});
 
 		it("fails fast if error renderer exports something other than a function", async () => {
-			const options = {
-				renderer: NOT_FUNCTION_RENDERER_PATH,
-			};
-
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
 			await assert.errorAsync(
-				() => suite.runAsync(options),
+				() => importRendererAsync(NOT_FUNCTION_RENDERER_PATH),
 				`Renderer module's 'renderError' export must be a function, but it was a string: ${NOT_FUNCTION_RENDERER_PATH}`,
 			);
 		});

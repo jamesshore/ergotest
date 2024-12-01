@@ -128,7 +128,7 @@ export default describe(() => {
 
 		it.skip("handles uncaught promise rejections", async () => {
 			const options = {
-				renderError: () => "my renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			};
 			const { runner } = await createAsync();
 
@@ -138,7 +138,7 @@ export default describe(() => {
 			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail("Unhandled error in tests", new Error("my error")),
 			]));
-			assert.equal(getTestResult(results).errorRender, "my renderer", "should use custom renderer");
+			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
 		it.skip("handles infinite loops", async () => {
@@ -156,7 +156,7 @@ export default describe(() => {
 			assert.dotEquals(results, TestResult.suite([], [
 				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
 			]));
-			assert.equal(getTestResult(results).errorRender, "my renderer", "should use custom renderer");
+			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
 		it.skip("renders custom objects", async () => {
