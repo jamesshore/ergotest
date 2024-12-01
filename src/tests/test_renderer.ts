@@ -22,6 +22,15 @@ export class TestRenderer {
 		return new TestRenderer();
 	}
 
+	/**
+	 * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
+	 * rather than called directly.
+	 * @param {string[]} name The names of the test
+	 * @param {unknown} error The error that occurred
+	 * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
+	 * @param {string} [filename] The file that contained the test, if known
+	 * @return The description
+	 */
 	static renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
 		ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
 
@@ -51,14 +60,20 @@ export class TestRenderer {
 
 
 	/**
+	 * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
+	 * correspond to the filename will be highlighted.
+	 * @param {unknown} error The error
+	 * @param {string} [filename] The filename to highlight
 	 * @returns {string} The stack trace for the test, or "" if there wasn't one.
 	 */
 	static renderStack(error: unknown, filename?: string): string {
-		const testCaseError = error as undefined | { stack: unknown };
-		if (testCaseError?.stack === undefined) return "";
+		ensure.signature(arguments, [ ensure.ANY_TYPE, [ undefined, String ] ]);
 
-		const stack = testCaseError.stack;
-		if (typeof stack !== "string") return `${stack}`;
+		const typedError = error as undefined | { stack: unknown };
+		if (typedError?.stack === undefined) return "";
+
+		const stack = typedError.stack;
+		if (typeof stack !== "string") return String(stack);
 
 		if (filename === undefined) return stack;
 
@@ -73,9 +88,12 @@ export class TestRenderer {
 	}
 
 	/**
+	 *
 	 * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
 	 */
 	static renderDiff(error: AssertionError): string {
+		ensure.signature(arguments, [ AssertionError ]);
+
 		if (error.expected === undefined && error.actual === undefined) return "";
 		if (error.expected === null && error.actual === null) return "";
 
