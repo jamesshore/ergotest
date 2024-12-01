@@ -379,7 +379,7 @@ export default describe(() => {
 
 			assert.equal(
 				render({ error }),
-				Colors.brightRed(error.toString()) + "\n\n" + renderDiff(error)
+				Colors.brightRed(error.toString()) + "\n\n" + TestRenderer.renderDiff(error)
 			);
 		});
 
@@ -427,7 +427,7 @@ export default describe(() => {
 				Colors.brightWhite("my name »\n") +
 				Colors.brightRed("my error") + "\n" +
 				"\n" +
-				renderDiff(error)
+				TestRenderer.renderDiff(error)
 			);
 		});
 
@@ -443,9 +443,6 @@ export default describe(() => {
 			return TestRenderer.renderError(name, error, TestMark.none, "irrelevant filename");
 		}
 
-		function renderDiff(error: AssertionError): string {
-			return TestRenderer.create().renderDiff(error);
-		}
 	});
 
 
@@ -554,7 +551,7 @@ export default describe(() => {
 
 		function render(expected: unknown, actual: unknown): string {
 			const error = new AssertionError({ expected, actual });
-			return TestRenderer.create().renderDiff(error);
+			return TestRenderer.renderDiff(error);
 		}
 
 	});

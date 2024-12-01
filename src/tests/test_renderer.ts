@@ -278,32 +278,6 @@ export class TestRenderer {
 		}
 	}
 
-	/**
-	 * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
-	 */
-	renderDiff(error: AssertionError): string {
-		if (error.expected === undefined && error.actual === undefined) return "";
-		if (error.expected === null && error.actual === null) return "";
-
-		const expected = util.inspect(error.expected, { depth: Infinity }).split("\n");
-		const actual = util.inspect(error.actual, { depth: Infinity }).split("\n");
-		if (expected.length > 1 || actual.length > 1) {
-			for (let i = 0; i < Math.max(expected.length, actual.length); i++) {
-				const expectedLine = expected[i];
-				const actualLine = actual[i];
-
-				if (expectedLine !== actualLine) {
-					if (expected[i] !== undefined) expected[i] = diffColor(expected[i]!);
-					if (actual[i] !== undefined) actual[i] = diffColor(actual[i]!);
-				}
-			}
-		}
-
-		return "" +
-			expectedColor("expected: ") + expected.join("\n") + "\n" +
-			actualColor("actual:   ") + actual.join("\n");
-	}
-
 	#renderMultipleResults<T>(
 		testResults: T | T[],
 		separator: string,
