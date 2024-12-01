@@ -172,19 +172,24 @@ export default describe(() => {
 			);
 		});
 
-		it.skip("renders custom objects", async () => {
-			// This test is a bit obscure. The issue is that the code previously serialized objects from the worker process
-			// back to the test runner. That caused information about 'expected' and 'actual' results to be lost. The
-			// problem was fixed by having the worker process perform error rendering. This test mostly exists to stop
-			// future maintainers from trying to reverse that decision, because it's non-obvious and makes the design
-			// a bit clunky.
+		it("renders custom objects", async () => {
+			// This test is a bit obscure. The issue is the test result object for failed tests previously stored the error
+			// object that caused the test failure in the test result. That caused information to be lost because the test
+			// result was being serialized from worker process to parent process, particularly in the 'expected' and 'actual'
+			// objects.
+			//
+			// The problem was fixed architecturally by having failed test results store an "error render", which
+			// is a serialized version of the error object--typically the human-readable string that will be displayed to the
+			// user.
+			//
+			// This test exists to prevent future maintainers from reversing that architectural decision. Storing the
+			// error object in the test result is cleaner from a design perspective, so it might be tempting to go back to
+			// that approach. Unfortunately, it doesn't work when you're serializing test results from worker process to
+			// parent process.
 
-
-			class MyString extends String {
-				constructor(private readonly _customField: string) {
-					super();
-				}
-			}
+			const options = {
+				renderer: CUSTOM_RENDERER_PATH,
+			};
 
 			const { runner } = await createAsync();
 			await writeTestModuleAsync(
@@ -200,9 +205,13 @@ export default describe(() => {
 					}
 				`
 			);
-			const result = getTestResult(await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]));
+			const result = getTestResult(await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options));
 
-			assert.equal(result.errorRender, "tbd");
+			// This assertion is vulnerable to changes in util.inspect()'s rendering algorithm
+			assert.equal(result.errorRender,
+				"custom rendering:\n" +
+				"expected: [String (MyString): ''] { _customField: 'expected' }\n" +
+				"actual: [String (MyString): ''] { _customField: 'actual' }\n");
 		});
 
 	});
