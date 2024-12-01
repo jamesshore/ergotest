@@ -126,7 +126,7 @@ export default describe(() => {
 			assertFailureMessage(results, "process.chdir() should execute without error");
 		});
 
-		it.skip("handles uncaught promise rejections", async () => {
+		it("handles uncaught promise rejections", async () => {
 			const options = {
 				renderer: CUSTOM_RENDERER_PATH,
 			};

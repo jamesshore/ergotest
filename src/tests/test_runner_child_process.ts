@@ -1,11 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import { TestSuite } from "./test_suite.js";
-import { RenderErrorFn, TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
+import { importRendererAsync, TestSuite } from "./test_suite.js";
+import { RenderErrorFn, TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
-import util from "node:util";
 
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 
@@ -13,7 +12,6 @@ main();
 
 function main() {
 	const cancelKeepAliveFn = Clock.create().repeat(KEEPALIVE_INTERVAL_IN_MS, () => {
-		console.log("KEEPALIVE");
 		process.send!({ type: "keepalive" });
 	});
 
@@ -38,14 +36,16 @@ async function runWorkerAsync(
 	cancelKeepAliveFn: () => void,
 	{ modulePaths, timeout, config, renderer }: WorkerInput
 ) {
-	process.on("uncaughtException", (err) => {
-		const errorResult = TestResult.suite([], [
-			TestResult.fail("Unhandled error in tests", err),
-		]);
-		sendFinalResult(errorResult, cancelKeepAliveFn);
-	});
-
 	try {
+		const renderError = await importRendererAsync(renderer);
+
+		process.on("uncaughtException", (err) => {
+			const errorResult = TestResult.suite([], [
+				TestResult.fail("Unhandled error in tests", err, undefined, TestMark.none, renderError),
+			]);
+			sendFinalResult(errorResult, cancelKeepAliveFn);
+		});
+
 		const suite = await TestSuite.fromModulesAsync(modulePaths);
 		const result = await suite.runAsync({ timeout, config, renderer, onTestCaseResult: sendProgress });
 
@@ -55,7 +55,7 @@ async function runWorkerAsync(
 		});
 	}
 	catch (err) {
-		sendFatalError("Ergotest worker process encountered exception while running tests", err, cancelKeepAliveFn);
+		sendFatalError("Ergotest worker process encountered exception", err, cancelKeepAliveFn);
 	}
 }
 
