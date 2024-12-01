@@ -46,18 +46,9 @@ export interface SerializedTestCaseResult {
 	mark: TestMarkValue;
 	filename?: string;
 	status: TestStatusValue;
-	error?: unknown;
+	errorMessage?: string;
+	errorRender?: unknown;
 	timeout?: number;
-}
-
-export interface SerializedError {
-	type: "Error" | "AssertionError";
-	message: string;
-	stack?: string;
-	customFields: Record<string, unknown>;
-	actual?: unknown;
-	expected?: unknown;
-	operator?: string;
 }
 
 export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
@@ -112,7 +103,7 @@ export abstract class TestResult {
 		error: unknown,
 		filename?: string,
 		mark?: TestMarkValue,
-		renderError?: RenderErrorFn,
+		renderError = TestRenderer.renderError,
 	): TestCaseResult {
 		ensure.signature(arguments, [
 			[ String, Array ],
@@ -122,7 +113,16 @@ export abstract class TestResult {
 			[ undefined, Function ],
 		]);
 
-		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark, renderError });
+		if (!Array.isArray(names)) names = [ names ];
+
+		let errorMessage: string;
+		if (error instanceof Error) errorMessage = error.message ?? "";
+		else if (typeof error === "string") errorMessage = error;
+		else errorMessage = util.inspect(error, { depth: Infinity });
+
+		const errorRender = renderError(names, error, mark ?? TestMark.none, filename);
+
+		return new TestCaseResult(names, TestStatus.fail, { errorMessage, errorRender, filename, mark });
 	}
 
 	/**
@@ -458,43 +458,19 @@ export class TestCaseResult extends TestResult {
 			mark: String,
 			filename: [ undefined, String ],
 			status: String,
-			error: [ undefined, String, Object ],
+			errorMessage: [ undefined, String ],
+			errorRender: ensure.ANY_TYPE,
 			timeout: [ undefined, Number ],
 		}], [ "serialized TestCaseResult" ]);
 
-		const { name, filename, mark, status, error, timeout } = serializedResult;
-		return new TestCaseResult(name, status, { error: deserializeError(error), timeout, filename, mark });
-
-		function deserializeError(serializedError?: unknown) {
-			if (serializedError === undefined || typeof serializedError === "string") return serializedError;
-
-			const { type, message, actual, expected, operator, stack, customFields } = serializedError as SerializedError;
-
-			let error;
-			switch (type) {
-				case "AssertionError":
-					error = new AssertionError({ message, actual, expected, operator });
-					break;
-				case "Error":
-					error = new Error(message);
-					break;
-				default:
-					ensure.unreachable(`Unrecognized error type '${type} when deserializing TestCaseResult: ${serializedResult}`);
-			}
-			error.stack = stack;
-			Object.entries(customFields).forEach(([ key, value ]) => {
-				// @ts-expect-error - don't know how to get TypeScript to stop complaining about this
-				error[key] = value;
-			});
-			return error;
-		}
+		const { name, filename, mark, status, errorMessage, errorRender, timeout } = serializedResult;
+		return new TestCaseResult(name, status, { errorMessage, errorRender, timeout, filename, mark });
 	}
 
 	private _name: string[];
 	private _filename?: string;
 	private _status: TestStatusValue;
 	private _mark: TestMarkValue;
-	private _error?: unknown;
 	private _errorMessage?: string;
 	private _errorRender?: unknown;
 	private _timeout?: number;
@@ -504,17 +480,17 @@ export class TestCaseResult extends TestResult {
 		names: string | string[],
 		status: TestStatusValue,
 		{
-			error,
+			errorMessage,
+			errorRender,
 			timeout,
 			filename,
 			mark,
-			renderError = TestRenderer.renderError,
 		}: {
-			error?: unknown,
+			errorMessage?: string,
+			errorRender?: unknown,
 			timeout?: number,
 			filename?: string,
 			mark?: TestMarkValue
-			renderError?: RenderErrorFn,
 		} = {}
 	) {
 		super();
@@ -522,15 +498,9 @@ export class TestCaseResult extends TestResult {
 		this._filename = filename;
 		this._status = status;
 		this._mark = mark ?? TestMark.none;
-		this._error = error;
+		this._errorMessage = errorMessage;
+		this._errorRender = errorRender;
 		this._timeout = timeout;
-		if (status === TestStatus.fail) {
-			if (error instanceof Error) this._errorMessage = error.message ?? "";
-			else if (typeof error === "string") this._errorMessage = error;
-			else this._errorMessage = util.inspect(error, { depth: Infinity });
-
-			this._errorRender = renderError(this._name, error, this._mark, this._filename);
-		}
 	}
 
 	get filename(): string | undefined {
@@ -688,25 +658,10 @@ export class TestCaseResult extends TestResult {
 			mark: this._mark,
 			filename: this._filename,
 			status: this._status,
-			error: serializeError(this._error),
+			errorMessage: this._errorMessage,
+			errorRender: this._errorRender,
 			timeout: this._timeout,
 		};
-
-		function serializeError(error?: unknown) {
-			if (!(error instanceof Error)) return error;
-
-			const serialized: SerializedError = {
-				type: "Error",
-				message: error.message,
-				stack: error.stack,
-				customFields: { ...error },
-			};
-			if (error instanceof AssertionError) {
-				serialized.type = "AssertionError";
-			}
-
-			return serialized;
-		}
 	}
 
 	equals(that: TestResult): boolean {
