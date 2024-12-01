@@ -6,6 +6,7 @@ export interface WorkerInput {
     modulePaths: string[];
     timeout?: number;
     config?: Record<string, unknown>;
+    renderer?: string;
 }
 /** For internal use only. */
 export type WorkerOutput = {
@@ -16,6 +17,10 @@ export type WorkerOutput = {
 } | {
     type: "complete";
     result: SerializedTestSuiteResult;
+} | {
+    type: "fatal";
+    message: string;
+    err: unknown;
 };
 /**
  * Loads and runs tests in an isolated process.
@@ -45,10 +50,10 @@ export declare class TestRunner {
      * Load and run a set of test modules in an isolated child process.
      *
      * @param {string[]} modulePaths The test files to load and run.
-     * @param {object} [config] Configuration data to provide to the tests as they run.
-     * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
-     *   parameter describes the result of the test—whether it passed, failed, etc.
+     * @param {object} [options.config] Configuration data to provide to the tests as they run.
+     * @param {(result: TestCaseResult) => ()} [options.onTestCaseResult] A function to call each time a test completes.
+     *   The `result` parameter describes the result of the test—whether it passed, failed, etc.
      * @returns {Promise<TestSuiteResult>}
      */
-    runInChildProcessAsync(modulePaths: string[], { timeout, config, onTestCaseResult, }?: TestOptions): Promise<TestSuiteResult>;
+    runInChildProcessAsync(modulePaths: string[], options?: TestOptions): Promise<TestSuiteResult>;
 }

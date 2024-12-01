@@ -6,6 +6,7 @@ export const ANY_TYPE = [
     Number,
     NaN,
     String,
+    Array,
     Object
 ];
 export function check(arg, expectedTypes, options) {

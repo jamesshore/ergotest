@@ -32,65 +32,60 @@ export interface SerializedTestCaseResult {
     mark: TestMarkValue;
     filename?: string;
     status: TestStatusValue;
-    error?: unknown;
+    errorMessage?: string;
+    errorRender?: unknown;
     timeout?: number;
 }
-export interface SerializedError {
-    type: "Error" | "AssertionError";
-    message: string;
-    stack?: string;
-    customFields: Record<string, unknown>;
-    actual?: unknown;
-    expected?: unknown;
-    operator?: string;
-}
+export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
 export declare abstract class TestResult {
     /**
      * Create a TestResult for a suite of tests.
-     * @param {string|string[]} names The name of the test. Can be a list of names.
+     * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {TestResult[]} children The nested results of this suite.
      * @param {string} [filename] The file that contained this suite (optional).
      * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
      * @returns {TestSuiteResult} The result.
      */
-    static suite(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue): TestSuiteResult;
+    static suite(name: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue): TestSuiteResult;
     /**
      * Create a TestResult for a test that passed.
-     * @param {string|string[]} names The name of the test. Can be a list of names.
+     * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {string} [filename] The file that contained this test (optional).
      * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static pass(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult;
+    static pass(name: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult;
     /**
      * Create a TestResult for a test that failed.
-     * @param {string|string[]} names The name of the test. Can be a list of names.
+     * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {unknown} error The error that occurred.
      * @param {string} [filename] The file that contained this test (optional).
      * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+     * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
+     *   function will be called and the results put into {@link errorRender}.
      * @returns {TestCaseResult} The result.
      */
-    static fail(names: string | string[], error: unknown, filename?: string, mark?: TestMarkValue): TestCaseResult;
+    static fail(name: string | string[], error: unknown, filename?: string, mark?: TestMarkValue, renderError?: RenderErrorFn): TestCaseResult;
     /**
      * Create a TestResult for a test that was skipped.
-     * @param {string|string[]} names The name of the test. Can be a list of names.
+     * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {string} [filename] The file that contained this test (optional).
      * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static skip(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult;
+    static skip(name: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult;
     /**
      * Create a TestResult for a test that timed out.
-     * @param {string|string[]} names The name of the test. Can be a list of names.
+     * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {number} timeout The length of the timeout.
      * @param {string} [filename] The file that contained this test (optional).
      * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static timeout(names: string | string[], timeout: number, filename?: string, mark?: TestMarkValue): TestCaseResult;
+    static timeout(name: string | string[], timeout: number, filename?: string, mark?: TestMarkValue): TestCaseResult;
     /**
      * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
      * @param {objects} serializedTestResult The serialized test result.
@@ -149,10 +144,10 @@ export declare class TestSuiteResult extends TestResult {
     static deserialize({ name, filename, suite, mark }: SerializedTestSuiteResult): TestSuiteResult;
     private readonly _name;
     private readonly _children;
-    private readonly _filename?;
     private readonly _mark;
+    private readonly _filename?;
     /** Internal use only. (Use {@link TestResult.suite} instead.) */
-    constructor(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue);
+    constructor(name: string[], children: TestResult[], mark: TestMarkValue, filename?: string);
     get name(): string[];
     /**
      * @returns {string | undefined} The file that contained the suite, if any.
@@ -230,11 +225,15 @@ export declare class TestCaseResult extends TestResult {
     private _filename?;
     private _status;
     private _mark;
-    private _error?;
+    private _errorMessage?;
+    private _errorRender?;
     private _timeout?;
     /** Internal use only. (Use {@link TestResult} factory methods instead.) */
-    constructor(names: string | string[], status: TestStatusValue, { error, timeout, filename, mark }?: {
-        error?: unknown;
+    constructor({ name, status, errorMessage, errorRender, timeout, filename, mark, }: {
+        name: string[];
+        status: TestStatusValue;
+        errorMessage?: string;
+        errorRender?: unknown;
         timeout?: number;
         filename?: string;
         mark?: TestMarkValue;
@@ -250,10 +249,17 @@ export declare class TestCaseResult extends TestResult {
      */
     get mark(): TestMarkValue;
     /**
-     * @returns {Error | string} The error that caused this test to fail.
+     * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
+     *   equal to the error's `message` property. Otherwise, the error is converted to a string using `util.inspect()`.
      * @throws {Error} Throws an error if this test didn't fail.
      */
-    get error(): unknown;
+    get errorMessage(): string;
+    /**
+     * @returns {unknown} The complete rendering of the reason this test failed. May be of any type, depending on how
+     *   `renderError()` in TestOptions is defined, but it defaults to a string.
+     * @throws {Error} Throws an error if this test didn't fail.
+     */
+    get errorRender(): unknown;
     /**
      * @returns {number} The timeout that this test didn't satisfy. Note that this is not the actual amount of run time
      *   of the test.

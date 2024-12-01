@@ -1,5 +1,5 @@
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import { RenderErrorFn, TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 export interface TestConfig {
     [name: string]: unknown;
 }
@@ -7,6 +7,7 @@ export interface TestOptions {
     timeout?: Milliseconds;
     config?: TestConfig;
     onTestCaseResult?: (testCaseResult: TestCaseResult) => void;
+    renderer?: string;
     clock?: Clock;
 }
 export interface DescribeOptions {
@@ -33,6 +34,7 @@ interface RecursiveRunOptions {
     onTestCaseResult: (testResult: TestCaseResult) => void;
     timeout: Milliseconds;
     config: TestConfig;
+    renderError?: RenderErrorFn;
 }
 interface Runnable {
     _recursiveRunAsync: (parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions) => Promise<TestResult> | TestResult;
@@ -88,10 +90,14 @@ export declare class TestSuite implements Runnable {
      * @param {object} [config={}] Configuration data to provide to tests.
      * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
      *   parameter describes the result of the test—whether it passed, failed, etc.
+     * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
+     *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
+     *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
+     *   return value will be placed into the test result as {@link TestResult.errorRender}.
      * @param {Clock} [clock] Internal use only.
      * @returns {Promise<TestSuiteResult>} The results of the test suite.
      */
-    runAsync({ timeout, config, onTestCaseResult, clock, }?: TestOptions): Promise<TestSuiteResult>;
+    runAsync({ timeout, config, onTestCaseResult, renderer, clock, }?: TestOptions): Promise<TestSuiteResult>;
     /** @private */
     _setFilename(filename: string): void;
     /** @private */
@@ -101,4 +107,6 @@ export declare class TestSuite implements Runnable {
     /** @private */
     _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
+/** Internal use only. */
+export declare function importRendererAsync(renderer?: string): Promise<any>;
 export {};

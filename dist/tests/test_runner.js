@@ -1,13 +1,31 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
-import { TestSuite } from "./test_suite.js";
-import { TestCaseResult, TestResult, TestSuiteResult } from "./test_result.js";
+import { importRendererAsync, TestSuite } from "./test_suite.js";
+import { TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
 import child_process from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
 // dependency: ./test_runner_child_process.js
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_child_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
+const TEST_OPTIONS_TYPE = {
+    timeout: [
+        undefined,
+        Number
+    ],
+    config: [
+        undefined,
+        Object
+    ],
+    onTestCaseResult: [
+        undefined,
+        Function
+    ],
+    renderer: [
+        undefined,
+        String
+    ]
+};
 /**
  * Loads and runs tests in an isolated process.
  */ export class TestRunner {
@@ -36,20 +54,7 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
             Array,
             [
                 undefined,
-                {
-                    timeout: [
-                        undefined,
-                        Number
-                    ],
-                    config: [
-                        undefined,
-                        Object
-                    ],
-                    onTestCaseResult: [
-                        undefined,
-                        Function
-                    ]
-                }
+                TEST_OPTIONS_TYPE
             ]
         ]);
         const suite = await TestSuite.fromModulesAsync(modulePaths);
@@ -59,61 +64,55 @@ const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 	 * Load and run a set of test modules in an isolated child process.
 	 *
 	 * @param {string[]} modulePaths The test files to load and run.
-	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestCaseResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
-	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {object} [options.config] Configuration data to provide to the tests as they run.
+	 * @param {(result: TestCaseResult) => ()} [options.onTestCaseResult] A function to call each time a test completes.
+	 *   The `result` parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInChildProcessAsync(modulePaths, { timeout, config, onTestCaseResult = ()=>{} } = {}) {
+	 */ async runInChildProcessAsync(modulePaths, options = {}) {
         ensure.signature(arguments, [
             Array,
             [
                 undefined,
-                {
-                    timeout: [
-                        undefined,
-                        Number
-                    ],
-                    config: [
-                        undefined,
-                        Object
-                    ],
-                    onTestCaseResult: [
-                        undefined,
-                        Function
-                    ]
-                }
+                TEST_OPTIONS_TYPE
             ]
         ]);
         const child = child_process.fork(WORKER_FILENAME, {
             serialization: "advanced",
             detached: false
         });
-        const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, timeout, config, onTestCaseResult);
-        await killChildProcess(child);
-        return result;
+        try {
+            return await runTestsInChildProcessAsync(child, this._clock, modulePaths, options);
+        } finally{
+            await killChildProcess(child);
+        }
     }
 }
-async function runTestsInChildProcessAsync(child, clock, modulePaths, timeout, config, onTestCaseResult) {
+async function runTestsInChildProcessAsync(child, clock, modulePaths, { timeout, config, onTestCaseResult = ()=>{}, renderer }) {
     const result = await new Promise((resolve, reject)=>{
         const workerData = {
             modulePaths,
             timeout,
-            config
+            config,
+            renderer
         };
         child.send(workerData);
         child.on("error", (error)=>reject(error));
         child.on("close", (code)=>{
-            if (code !== 0) reject(new Error(`Test runner exited with non-zero error code: ${code}`));
+            if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
         });
-        const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve);
-        child.on("message", (message)=>handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve));
+        importRendererAsync(renderer).then((renderError)=>{
+            const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
+            child.on("message", (message)=>{
+                handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
+            });
+        }).catch(reject);
     });
     return result;
 }
-function detectInfiniteLoops(clock, resolve) {
+function detectInfiniteLoops(clock, resolve, renderError) {
     const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, ()=>{
         const errorResult = TestResult.suite([], [
-            TestResult.fail("Test runner watchdog", "Detected infinite loop in tests")
+            TestResult.fail("Test runner watchdog", "Detected infinite loop in tests", undefined, TestMark.none, renderError)
         ]);
         resolve(errorResult);
     });
@@ -122,7 +121,7 @@ function detectInfiniteLoops(clock, resolve) {
         cancelFn
     };
 }
-function handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve) {
+function handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve, reject) {
     switch(message.type){
         case "keepalive":
             aliveFn();
@@ -130,12 +129,18 @@ function handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve) {
         case "progress":
             onTestCaseResult(TestCaseResult.deserialize(message.result));
             break;
+        case "fatal":
+            cancelFn();
+            reject(new Error(message.message, {
+                cause: message.err
+            }));
+            break;
         case "complete":
             cancelFn();
             resolve(TestSuiteResult.deserialize(message.result));
             break;
         default:
-            // @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime
+            // @ts-expect-error TypeScript thinks this is unreachable, but we check it just in case
             ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
     }
 }
