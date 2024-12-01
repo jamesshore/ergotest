@@ -141,7 +141,7 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
-		it.skip("handles infinite loops", async () => {
+		it("handles infinite loops", async () => {
 			const options = {
 				renderer: CUSTOM_RENDERER_PATH,
 			};

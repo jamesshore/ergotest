@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestConfig, TestOptions, TestSuite } from "./test_suite.js";
+import { importRendererAsync, TestConfig, TestOptions, TestSuite } from "./test_suite.js";
 import {
 	RenderErrorFn,
 	SerializedTestCaseResult,
@@ -123,8 +123,14 @@ async function runTestsInChildProcessAsync(
 			if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
 		});
 
-		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderer);
-		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve));
+		importRendererAsync(renderer)
+			.then((renderError) => {
+				const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
+				child.on("message", message => {
+					handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve);
+				});
+			})
+			.catch(reject);
 	});
 	return result;
 }
