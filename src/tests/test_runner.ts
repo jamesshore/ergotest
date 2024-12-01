@@ -13,9 +13,9 @@ import {
 import child_process, { ChildProcess } from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
-// dependency: ./test_runner_child_process.js
+// dependency: ./test_runner_worker_process.js
 
-const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_child_process.js");
+const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
 const TEST_OPTIONS_TYPE = {
@@ -98,19 +98,19 @@ export class TestRunner {
 	async runInChildProcessAsync(modulePaths: string[], options: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE ]]);
 
-		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
+		const worker = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
 		try {
-			return await runTestsInChildProcessAsync(child, this._clock, modulePaths, options);
+			return await runTestsInWorkerProcessAsync(worker, this._clock, modulePaths, options);
 		}
 		finally {
-			await killChildProcess(child);
+			await killWorkerProcess(worker);
 		}
 	}
 
 }
 
-async function runTestsInChildProcessAsync(
-	child: ChildProcess,
+async function runTestsInWorkerProcessAsync(
+	worker: ChildProcess,
 	clock: Clock,
 	modulePaths: string[],
 	{
@@ -122,17 +122,17 @@ async function runTestsInChildProcessAsync(
 ): Promise<TestSuiteResult> {
 	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
 		const workerData = { modulePaths, timeout, config, renderer };
-		child.send(workerData);
+		worker.send(workerData);
 
-		child.on("error", error => reject(error));
-		child.on("close", code => {
+		worker.on("error", error => reject(error));
+		worker.on("close", code => {
 			if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
 		});
 
 		importRendererAsync(renderer)
 			.then((renderError) => {
 				const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
-				child.on("message", message => {
+				worker.on("message", message => {
 					handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
 				});
 			})
@@ -180,10 +180,10 @@ function handleMessage(
 	}
 }
 
-async function killChildProcess(child: ChildProcess): Promise<void> {
+async function killWorkerProcess(worker: ChildProcess): Promise<void> {
 	await new Promise((resolve, reject) => {
-		child.kill("SIGKILL");    // specific signal not tested
-		child.on("close", resolve);
-		child.on("error", reject);
+		worker.kill("SIGKILL");    // specific signal not tested
+		worker.on("close", resolve);
+		worker.on("error", reject);
 	});
 }

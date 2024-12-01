@@ -1,7 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-
 import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { RenderErrorFn, TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
+import { TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
