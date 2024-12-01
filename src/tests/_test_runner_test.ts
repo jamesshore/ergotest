@@ -80,6 +80,8 @@ export default describe(() => {
 		});
 
 		it.skip("supports custom error rendering", async () => {
+			assert.todo("We can't pass a function to the worker process, so we need to pass a module name instead");
+
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`throw new Error();`);

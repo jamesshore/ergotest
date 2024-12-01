@@ -98,6 +98,8 @@ export abstract class TestResult {
 	 * @param {unknown} error The error that occurred.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
+	 *   function will be called and the results put into {@link errorRender}.
 	 * @returns {TestCaseResult} The result.
 	 */
 	static fail(

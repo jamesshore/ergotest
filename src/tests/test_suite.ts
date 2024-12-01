@@ -23,7 +23,7 @@ export interface TestOptions {
 	timeout?: Milliseconds,
 	config?: TestConfig,
 	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
-	renderError?: RenderErrorFn,
+	renderer?: string,
 	clock?: Clock,
 }
 
@@ -329,6 +329,10 @@ export class TestSuite implements Runnable {
 	 * @param {object} [config={}] Configuration data to provide to tests.
 	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
+	 *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
+	 *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
+	 *   return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @param {Clock} [clock] Internal use only.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
 	 */
@@ -336,14 +340,14 @@ export class TestSuite implements Runnable {
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
 		onTestCaseResult = () => {},
-		renderError,
+		renderer,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {
 			timeout: [ undefined, Number ],
 			config: [ undefined, Object ],
 			onTestCaseResult: [ undefined, Function ],
-			renderError: [ undefined, Function ],
+			renderer: [ undefined, String ],
 			clock: [ undefined, Clock ],
 		}]]);
 
@@ -354,8 +358,29 @@ export class TestSuite implements Runnable {
 			name: [],
 			filename: this._filename,
 			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
-			renderError,
+			renderError: await importRendererAsync(renderer),
 		});
+
+		async function importRendererAsync(renderer?: string) {
+			if (renderer === undefined) return undefined;
+
+			try {
+				const { renderError } = await import(renderer);
+				if (renderError === undefined) {
+					throw new Error(`Renderer module doesn't export a renderError() function: ${renderer}`);
+				}
+				if (typeof renderError !== "function") {
+					throw new Error(
+						`Renderer module's 'renderError' export must be a function, but it was a ${typeof renderError}: ${renderer}`
+					);
+				}
+				return renderError;
+			}
+			catch(err) {
+				if (typeof err !== "object" || (err as { code: string })?.code !== "ERR_MODULE_NOT_FOUND") throw err;
+				throw new Error(`Renderer module not found (did you forget to use an absolute path?): ${renderer}`);
+			}
+		}
 	}
 
 	/** @private */

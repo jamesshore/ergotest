@@ -119,7 +119,7 @@ async function runTestsInChildProcessAsync(
 
 		child.on("error", error => reject(error));
 		child.on("close", code => {
-			if (code !== 0) reject(new Error(`Test runner exited with non-zero error code: ${code}`));
+			if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
 		});
 
 		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);

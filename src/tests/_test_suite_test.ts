@@ -22,6 +22,11 @@ const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 
+const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_custom.js");
+const NO_EXPORT_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_no_export.js");
+const NOT_FUNCTION_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_not_function.js");
+const NODE_MODULES_RENDERER_NAME = "_test_renderer/_renderer_in_node_modules.js";
+
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
@@ -84,13 +89,60 @@ export default describe(() => {
 
 		it("uses custom error renderer to render test failures", async () => {
 			const options = {
-				renderError: () => "my renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			};
 
-			const suite = await TestSuite.fromModulesAsync([ "/no_such_module.js" ]);
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync(options)).allTests()[0];
 
-			await assert.equal(result.errorRender, "my renderer");
+			await assert.equal(result.errorRender, "custom rendering");
+		});
+
+		it("support error renderers that are defined in node_modules", async () => {
+			const options = {
+				renderer: NODE_MODULES_RENDERER_NAME,
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const result = (await suite.runAsync(options)).allTests()[0];
+
+			await assert.equal(result.errorRender, "node_modules rendering");
+		});
+
+		it("fails fast if error renderer doesn't exist", async () => {
+			const options = {
+				renderer: "./no_such_renderer.js",
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			await assert.errorAsync(
+				() => suite.runAsync(options),
+				"Renderer module not found (did you forget to use an absolute path?): ./no_such_renderer.js",
+			);
+		});
+
+		it("fails fast if error renderer doesn't export correct function", async () => {
+			const options = {
+				renderer: NO_EXPORT_RENDERER_PATH,
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			await assert.errorAsync(
+				() => suite.runAsync(options),
+				`Renderer module doesn't export a renderError() function: ${NO_EXPORT_RENDERER_PATH}`,
+			);
+		});
+
+		it("fails fast if error renderer exports something other than a function", async () => {
+			const options = {
+				renderer: NOT_FUNCTION_RENDERER_PATH,
+			};
+
+			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			await assert.errorAsync(
+				() => suite.runAsync(options),
+				`Renderer module's 'renderError' export must be a function, but it was a string: ${NOT_FUNCTION_RENDERER_PATH}`,
+			);
 		});
 
 	});
@@ -129,7 +181,7 @@ export default describe(() => {
 			);
 		});
 
-		it("uses custom error renderer to render test failures", async () => {
+		it("uses custom renderer for test failures", async () => {
 			const suite = describe_sut(() => {
 				it_sut("test", () => {
 					throw new Error("my error");
@@ -137,10 +189,10 @@ export default describe(() => {
 			});
 
 			const result = await suite.runAsync({
-				renderError: () => "my custom renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			});
 
-			assert.equal(result.allTests()[0].errorRender, "my custom renderer");
+			assert.equal(result.allTests()[0].errorRender, "custom rendering");
 		});
 
 		it("can be nested", async () => {
@@ -1099,7 +1151,7 @@ export default describe(() => {
 
 		it("generates failure when a suite is marked 'only' but has no body", async () => {
 			const options = {
-				renderError: () => "my renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			};
 
 			const suite = describe_sut.only("my suite");
@@ -1110,12 +1162,12 @@ export default describe(() => {
 					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
 				]}),
 			);
-			assert.equal(result.allTests()[0].errorRender, "my renderer", "should use custom renderer");
+			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
 		});
 
 		it("generates failure when a test is marked 'only' but has no body", async () => {
 			const options = {
-				renderError: () => "my renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			};
 
 			const suite = describe_sut("my suite", () => {
@@ -1132,7 +1184,7 @@ export default describe(() => {
 					}),
 				]}),
 			);
-			assert.equal(result.allTests()[0].errorRender, "my renderer", "should use custom renderer");
+			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
 		});
 
 	});
