@@ -42,6 +42,10 @@ export type WorkerOutput = {
 } | {
 	type: "complete",
 	result: SerializedTestSuiteResult,
+} | {
+	type: "fatal",
+	message: string,
+	err: unknown,
 }
 
 /**
@@ -95,10 +99,12 @@ export class TestRunner {
 		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE ]]);
 
 		const child = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
-		const result = await runTestsInChildProcessAsync(child, this._clock, modulePaths, options);
-		await killChildProcess(child);
-
-		return result;
+		try {
+			return await runTestsInChildProcessAsync(child, this._clock, modulePaths, options);
+		}
+		finally {
+			await killChildProcess(child);
+		}
 	}
 
 }
@@ -127,7 +133,7 @@ async function runTestsInChildProcessAsync(
 			.then((renderError) => {
 				const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
 				child.on("message", message => {
-					handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve);
+					handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
 				});
 			})
 			.catch(reject);
@@ -151,6 +157,7 @@ function handleMessage(
 	cancelFn: () => void,
 	onTestCaseResult: (testResult: TestCaseResult) => void,
 	resolve: (result: TestSuiteResult) => void,
+	reject: (err: Error) => void,
 ) {
 	switch (message.type) {
 		case "keepalive":
@@ -159,12 +166,16 @@ function handleMessage(
 		case "progress":
 			onTestCaseResult(TestCaseResult.deserialize(message.result));
 			break;
+		case "fatal":
+			cancelFn();
+			reject(new Error(message.message, { cause: message.err }));
+			break;
 		case "complete":
 			cancelFn();
 			resolve(TestSuiteResult.deserialize(message.result));
 			break;
 		default:
-			// @ts-expect-error - TypeScript thinks this is unreachable, and so do I, but we still check it at runtime
+			// @ts-expect-error TypeScript thinks this is unreachable, but we check it just in case
 			ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
 	}
 }

@@ -18,7 +18,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * ✅ **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestCaseResult()`.
 * **Perform error rendering in child process.** Failed test results currently include the error that caused the test to fail. The expected and actual results are rendered by the caller, not in the test worker, which typically runs in a child process. Unfortunately, some objects don't serialize properly, resulting in a diff that's missing data. I'll need to move the rendering into the child process to fix the problem.
 * **Detect non-exit.** Detect if a test puts something on the event loop that would prevent the process from exiting when using TestRunner.runInChildProcessAsync(). (Remember to support renderError() option.) 
-* **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. It can be made to occur by triggering the 'uncaught exception' watchdog. There may be other cases as well.
+* **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. It can be made to occur by triggering the 'uncaught exception' watchdog, which was due to an endless loop as a result of an IPC_CHANNEL_CLOSED error. There may be other cases as well (timeouts)?.
 
 
 ## Road to “fully baked”

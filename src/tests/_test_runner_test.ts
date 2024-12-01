@@ -159,6 +159,19 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
+		it("fails fast if custom renderer doesn't load", async () => {
+			const options = {
+				renderer: "./no_such_renderer.js",
+			};
+			const { runner } = await createAsync();
+			await writeTestModuleAsync(`// passes`);
+
+			await assert.errorAsync(
+				() => runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options),
+				/Renderer module not found/,
+			);
+		});
+
 		it.skip("renders custom objects", async () => {
 			// This test is a bit obscure. The issue is that the code previously serialized objects from the worker process
 			// back to the test runner. That caused information about 'expected' and 'actual' results to be lost. The
