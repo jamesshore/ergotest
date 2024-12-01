@@ -2,8 +2,7 @@
 
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
-import { AssertionError } from "node:assert";
-import { TestRenderer } from "./test_renderer.js";
+import { renderError as renderErrorFn, TestRenderer } from "./test_renderer.js";
 
 export const TestStatus = {
 	pass: "pass",
@@ -107,7 +106,7 @@ export abstract class TestResult {
 		error: unknown,
 		filename?: string,
 		mark?: TestMarkValue,
-		renderError: RenderErrorFn = TestRenderer.renderError,
+		renderError: RenderErrorFn = renderErrorFn,
 	): TestCaseResult {
 		ensure.signature(arguments, [
 			[ String, Array ],

@@ -1,3 +1,4 @@
+
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it } from "../tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
@@ -15,6 +16,10 @@ import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
 // dependency: ./_module_no_export.js
+// dependency: ./_renderer_custom.js
+// dependency: ./_renderer_no_export.js
+// dependency: ./_renderer_not_function.js
+// dependency: _test_renderer/_renderer_in_node_modules.js
 
 // Tests for my test library. (How meta.)
 
@@ -117,7 +122,6 @@ export default describe(() => {
 		it("exports custom renderer import function", async () => {
 			const renderError = await importRendererAsync(CUSTOM_RENDERER_PATH);
 			await assert.equal(renderError(), "custom rendering");
-
 		});
 
 		it("fails fast if error renderer doesn't exist", async () => {

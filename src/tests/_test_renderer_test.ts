@@ -1,10 +1,12 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it } from "../tests.js";
-import { TestRenderer } from "./test_renderer.js";
+import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import util from "node:util";
+import { describe as describe_sut, it as it_sut } from "./test_api.js";
+import path from "node:path";
 
 const headerColor = Colors.brightWhite.bold;
 const summaryColor = Colors.brightWhite.dim;
@@ -12,6 +14,8 @@ const failColor = Colors.brightRed;
 const timeoutColor = Colors.purple;
 const skipColor = Colors.cyan;
 const passColor = Colors.green;
+
+const TEST_RENDERER_PATH = path.resolve(import.meta.dirname, "./test_renderer.js");
 
 export default describe(() => {
 
@@ -327,7 +331,7 @@ export default describe(() => {
 		it("renders fail", () => {
 			assert.equal(
 				render(createFail({ error: "my error" })),
-				TestRenderer.renderError([ "irrelevant name" ], "my error", TestMark.none, "irrelevant filename"),
+				renderError([ "irrelevant name" ], "my error", TestMark.none, "irrelevant filename"),
 			);
 		});
 
@@ -362,6 +366,22 @@ export default describe(() => {
 
 	describe("error rendering", () => {
 
+		it("works as a custom renderer", async () => {
+			const options = {
+				renderer: TEST_RENDERER_PATH,
+			};
+
+			const suite = describe_sut(() => {
+				it_sut("my test", () => {
+					// eslint-disable-next-line no-throw-literal
+					throw "my error";
+				});
+			});
+			const result = (await suite.runAsync(options)).allTests()[0];
+
+			await assert.equal(result.errorRender, renderError([ "my test" ], "my error", TestMark.none));
+		});
+
 		it("renders error message", () => {
 			assert.equal(render({ error: "my error" }), Colors.brightRed("my error"));
 		});
@@ -381,7 +401,7 @@ export default describe(() => {
 
 			assert.equal(
 				render({ error }),
-				Colors.brightRed(util.inspect(error)) + "\n\n" + TestRenderer.renderDiff(error)
+				Colors.brightRed(util.inspect(error)) + "\n\n" + renderDiff(error)
 			);
 		});
 
@@ -430,7 +450,7 @@ export default describe(() => {
 				Colors.brightWhite("my name »\n") +
 				Colors.brightRed("my error") + "\n" +
 				"\n" +
-				TestRenderer.renderDiff(error)
+				renderDiff(error)
 			);
 		});
 
@@ -443,7 +463,7 @@ export default describe(() => {
 		}): string {
 			if (!Array.isArray(name)) name = [ name ];
 
-			return TestRenderer.renderError(name, error, TestMark.none, "irrelevant filename");
+			return renderError(name, error, TestMark.none, "irrelevant filename");
 		}
 
 	});
@@ -473,21 +493,21 @@ export default describe(() => {
 			const error = new MyError("my error", "custom field");
 			error.stack = "my stack";
 
-			assert.equal(TestRenderer.renderStack(error), "[my stack] { custom: 'custom field' }");
+			assert.equal(renderStack(error), "[my stack] { custom: 'custom field' }");
 		});
 
 		it("doesn't inspect assertion errors; just returns the stack trace", () => {
 			const error = new AssertionError({});
 			error.stack = "my stack";
 
-			assert.equal(TestRenderer.renderStack(error), "my stack");
+			assert.equal(renderStack(error), "my stack");
 		});
 
 		it("handles assertion errors without a stack trace", () => {
 			const error = new AssertionError({});
 			error.stack = undefined;
 
-			assert.equal(TestRenderer.renderStack(error), "");
+			assert.equal(renderStack(error), "");
 		});
 
 		it("handles nested errors", () => {
@@ -498,7 +518,7 @@ export default describe(() => {
 			const parent = new Error("parent", { cause: child });
 			parent.stack = "parent stack";
 
-			assert.equal(TestRenderer.renderStack(parent),
+			assert.equal(renderStack(parent),
 				"[parent stack] {\n" +
 				"  [cause]: [child stack] { [cause]: [grandchild stack] }\n" +
 				"}");
@@ -509,7 +529,7 @@ export default describe(() => {
 			error.stack = EXAMPLE_STACK;
 
 			assert.equal(
-				TestRenderer.renderStack(
+				renderStack(
 					error,
 					"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js",
 				),
@@ -586,7 +606,7 @@ export default describe(() => {
 
 		function render(expected: unknown, actual: unknown): string {
 			const error = new AssertionError({ expected, actual });
-			return TestRenderer.renderDiff(error);
+			return renderDiff(error);
 		}
 
 	});

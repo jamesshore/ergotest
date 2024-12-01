@@ -2,7 +2,7 @@
 import { assert, describe, it } from "../tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
-import { TestRenderer } from "./test_renderer.js";
+import { renderError, TestRenderer } from "./test_renderer.js";
 
 const IRRELEVANT_ERROR = new Error("irrelevant error");
 
@@ -284,7 +284,7 @@ export default describe(() => {
 		it("failing tests have default error renderer", () => {
 			const result = createFail({ name: "my name", error: "my error" });
 
-			assert.equal(result.errorRender, TestRenderer.renderError([ "my name" ], "my error", TestMark.none));
+			assert.equal(result.errorRender, renderError([ "my name" ], "my error", TestMark.none));
 		});
 
 		it("skipped tests have a name, status, and mark", () => {
