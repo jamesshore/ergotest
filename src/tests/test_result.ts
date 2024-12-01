@@ -481,6 +481,8 @@ export class TestCaseResult extends TestResult {
 	private _status: TestStatusValue;
 	private _mark: TestMarkValue;
 	private _error?: unknown;
+	private _errorMessage?: string;
+	private _errorRender?: unknown;
 	private _timeout?: number;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
@@ -496,7 +498,13 @@ export class TestCaseResult extends TestResult {
 		this._mark = mark ?? TestMark.none;
 		this._error = error;
 		this._timeout = timeout;
-		if (status === TestStatus.fail) this._newError = TestRenderer.renderError(this);
+		if (status === TestStatus.fail) {
+			if (error instanceof Error) this._errorMessage = error.message ?? "";
+			else if (typeof error === "string") this._errorMessage = error;
+			else this._errorMessage = util.inspect(error, { depth: Infinity });
+
+			this._errorRender = TestRenderer.renderError(this);
+		}
 	}
 
 	get filename(): string | undefined {
@@ -530,14 +538,25 @@ export class TestCaseResult extends TestResult {
 		return this._error!;
 	}
 
+
 	/**
-	 * @returns {unknown} The reason this test failed. Specifics depend on how `renderError()` is defined, but it
-	 *   defaults to a human-readable string.
+	 * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
+	 *   equal to the error's `message` property. Otherwise, the error is converted to a string using `util.inspect()`.
 	 * @throws {Error} Throws an error if this test didn't fail.
 	 */
-	get newError(): unknown {
-		ensure.that(this.isFail(), "Attempted to retrieve error from a test that didn't fail");
-		return this._newError!;
+	get errorMessage(): string {
+		ensure.that(this.isFail(), "Attempted to retrieve error message from a test that didn't fail");
+		return this._errorMessage!;
+	}
+
+	/**
+	 * @returns {unknown} The complete rendering of the reason this test failed. May be of any type, depending on how
+	 *   `renderError()` in TestOptions is defined, but it defaults to a string.
+	 * @throws {Error} Throws an error if this test didn't fail.
+	 */
+	get errorRender(): unknown {
+		ensure.that(this.isFail(), "Attempted to retrieve error render from a test that didn't fail");
+		return this._errorRender!;
 	}
 
 	/**

@@ -233,7 +233,7 @@ export default describe(() => {
 			assert.equal(test.filename, "my_filename");
 		});
 
-		it("failing tests have a name, status, mark, and error rendering", () => {
+		it("failing tests have a name, status, mark, error message, and error rendering", () => {
 			const error = new AssertionError({
 				message: "my error",
 				expected: "foo",
@@ -247,7 +247,8 @@ export default describe(() => {
 
 			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
-			assert.equal(result.newError, TestRenderer.renderError(result), "error");
+			assert.equal(result.errorMessage, "my error", "error message");
+			assert.equal(result.errorRender, TestRenderer.renderError(result), "rendered error");
 
 			assert.equal(result.mark, TestMark.none, "mark");
 			assert.equal(noneMark.mark, TestMark.none, "mark");
@@ -255,9 +256,25 @@ export default describe(() => {
 			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
-		it("failing tests can have a string for the error", () => {
-			const result = createFail({ name: "irrelevant name", error: "my error" });
-			assert.equal(result.error, "my error");
+		it("failing tests can have any error type", () => {
+			const degenerateError = new Error();
+			// @ts-expect-error We're deliberately breaking type rules to test an edge case
+			degenerateError.message = undefined;
+
+			check(degenerateError, "");
+			check("my error", "my error");
+			check(123, "123");
+			check(undefined, "undefined");
+			check(null, "null");
+			check(NaN, "NaN");
+			check([ 1, 2, 3 ], "[ 1, 2, 3 ]");
+			check({ a: 1, b: 2 }, "{ a: 1, b: 2 }");
+			check({ message: "my message" }, "{ message: 'my message' }");
+
+			function check(error: unknown, expected: string) {
+				const result = TestResult.fail([], error);
+				assert.equal(result.errorMessage, expected);
+			}
 		});
 
 		it("skipped tests have a name, status, and mark", () => {
