@@ -464,35 +464,25 @@ export default describe(() => {
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
 
 		it("returns an empty string if there's no stack trace", () => {
-			const result = createResult({ stack: undefined });
-			assert.equal(render(result), "");
+			assert.equal(render({ stack: undefined }), "");
 		});
 
 		it("converts non strings to strings", () => {
-			const result = createResult({ stack: EXAMPLE_STACK, filename: undefined });
-			assert.equal(render(result), EXAMPLE_STACK);
+			assert.equal(render({ stack: EXAMPLE_STACK, filename: undefined }), EXAMPLE_STACK);
 		});
 
 		it("highlights stack trace lines that include test file", () => {
-			const result = createResult({
-				stack: EXAMPLE_STACK,
-				filename: "/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js",
-			});
-			assert.equal(render(result), HIGHLIGHTED_STACK);
+			assert.equal(
+				render({
+					stack: EXAMPLE_STACK,
+					filename: "/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js",
+				}),
+				HIGHLIGHTED_STACK
+			);
 		});
 
-		function createResult({
-			stack,
-			filename,
-		}: {
-			stack: unknown,
-			filename?: string,
-		}) {
-			return createFail({ error: { stack }, filename });
-		}
-
-		function render(result: TestCaseResult) {
-			return TestRenderer.create().renderStack(result);
+		function render({ stack, filename }: { stack: unknown, filename?: string }) {
+			return TestRenderer.renderStack({ stack }, filename);
 		}
 	});
 

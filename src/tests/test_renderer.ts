@@ -277,28 +277,6 @@ export class TestRenderer {
 			default: ensure.unreachable(`Unrecognized test mark: ${testResult.mark}`);
 		}
 	}
-	/**
-	 * @returns {string} The stack trace for the test, or "" if there wasn't one.
-	 */
-	renderStack(testCaseResult: TestCaseResult): string {
-		const testCaseError = testCaseResult.error as undefined | { stack: unknown };
-		if (testCaseError?.stack === undefined) return "";
-
-		const stack = testCaseError.stack;
-		if (typeof stack !== "string") return `${stack}`;
-
-		const filename = testCaseResult.filename;
-		if (filename === undefined) return stack;
-
-		const lines = stack.split("\n");
-		const highlightedLines = lines.map(line => {
-			if (!line.includes(filename)) return line;
-
-			line = line.replace(/    at/, "--> at");	// this code is vulnerable to changes in Node.js rendering
-			return headerColor(line);
-		});
-		return highlightedLines.join("\n");
-	}
 
 	/**
 	 * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
