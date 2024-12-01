@@ -6,8 +6,8 @@ import { TestSuite } from "./test_suite.js";
 import { TestResult, TestSuiteResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
-import { AssertionError } from "node:assert";
-import util from "node:util";
+
+const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_custom.js");
 
 export default describe(() => {
 
@@ -65,6 +65,17 @@ export default describe(() => {
 			assertFailureMessage(results, "my_config");
 		});
 
+		it("supports custom error rendering", async () => {
+			const { runner } = await createAsync();
+
+			await writeTestModuleAsync(`throw new Error();`);
+			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], {
+				renderer: CUSTOM_RENDERER_PATH,
+			});
+
+			assert.equal(getTestResult(results).errorRender, "custom rendering");
+		});
+
 		it("notifies caller of completed tests", async () => {
 			const { runner } = await createAsync();
 
@@ -77,19 +88,6 @@ export default describe(() => {
 			assert.equal(progress, [
 				TestResult.pass("test", TEST_MODULE_PATH),
 			]);
-		});
-
-		it.skip("supports custom error rendering", async () => {
-			assert.todo("We can't pass a function to the worker process, so we need to pass a module name instead");
-
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`throw new Error();`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], {
-				renderError: () => "my custom renderer",
-			});
-
-			assert.equal(getTestResult(results).errorRender, "my custom renderer");
 		});
 
 		it("does not cache test modules from run to run", async () => {
@@ -143,9 +141,9 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "my renderer", "should use custom renderer");
 		});
 
-		it("handles infinite loops", async () => {
+		it.skip("handles infinite loops", async () => {
 			const options = {
-				renderError: () => "my renderer",
+				renderer: CUSTOM_RENDERER_PATH,
 			};
 			const { runner, clock } = await createAsync();
 

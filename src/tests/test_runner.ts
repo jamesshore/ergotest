@@ -22,7 +22,7 @@ const TEST_OPTIONS_TYPE = {
 	timeout: [ undefined, Number ],
 	config: [ undefined, Object ],
 	onTestCaseResult: [ undefined, Function ],
-	renderError: [ undefined, Function ],
+	renderer: [ undefined, String ],
 };
 
 /** For internal use only. */
@@ -30,6 +30,7 @@ export interface WorkerInput {
 	modulePaths: string[],
 	timeout?: number,
 	config?: Record<string, unknown>
+	renderer?: string,
 }
 
 /** For internal use only. */
@@ -110,11 +111,11 @@ async function runTestsInChildProcessAsync(
 		timeout,
 		config,
 		onTestCaseResult = () => {},
-		renderError,
+		renderer,
 	}: TestOptions,
 ): Promise<TestSuiteResult> {
 	const result = await new Promise<TestSuiteResult>((resolve, reject) => {
-		const workerData = { modulePaths, timeout, config };
+		const workerData = { modulePaths, timeout, config, renderer };
 		child.send(workerData);
 
 		child.on("error", error => reject(error));
@@ -122,7 +123,7 @@ async function runTestsInChildProcessAsync(
 			if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
 		});
 
-		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
+		const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderer);
 		child.on("message", message => handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve));
 	});
 	return result;
