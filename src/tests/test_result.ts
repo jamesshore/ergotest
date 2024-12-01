@@ -60,46 +60,48 @@ export abstract class TestResult {
 
 	/**
 	 * Create a TestResult for a suite of tests.
-	 * @param {string|string[]} names The name of the test. Can be a list of names.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {TestResult[]} children The nested results of this suite.
 	 * @param {string} [filename] The file that contained this suite (optional).
 	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
 	 */
 	static suite(
-		names: string | string[],
+		name: string | string[],
 		children: TestResult[],
 		filename?: string,
-		mark?: TestMarkValue,
+		mark: TestMarkValue = TestMark.none,
 	): TestSuiteResult {
 		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ], [ undefined, String ]]);
 
-		return new TestSuiteResult(names, children, filename, mark);
+		if (!Array.isArray(name)) name = [ name ];
+		return new TestSuiteResult(name, children, mark, filename);
 	}
 
 	/**
 	 * Create a TestResult for a test that passed.
-	 * @param {string|string[]} names The name of the test. Can be a list of names.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+	static pass(name: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ]]);
 
-		return new TestCaseResult(names, TestStatus.pass, { filename, mark });
+		if (!Array.isArray(name)) name = [ name ];
+		return new TestCaseResult({ name, status: TestStatus.pass, filename, mark });
 	}
 
 	/**
 	 * Create a TestResult for a test that failed.
-	 * @param {string|string[]} names The name of the test. Can be a list of names.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
 	static fail(
-		names: string | string[],
+		name: string | string[],
 		error: unknown,
 		filename?: string,
 		mark?: TestMarkValue,
@@ -113,43 +115,54 @@ export abstract class TestResult {
 			[ undefined, Function ],
 		]);
 
-		if (!Array.isArray(names)) names = [ names ];
+		if (!Array.isArray(name)) name = [ name ];
 
 		let errorMessage: string;
 		if (error instanceof Error) errorMessage = error.message ?? "";
 		else if (typeof error === "string") errorMessage = error;
 		else errorMessage = util.inspect(error, { depth: Infinity });
 
-		const errorRender = renderError(names, error, mark ?? TestMark.none, filename);
+		const errorRender = renderError(name, error, mark ?? TestMark.none, filename);
 
-		return new TestCaseResult(names, TestStatus.fail, { errorMessage, errorRender, filename, mark });
+		return new TestCaseResult({ name, status: TestStatus.fail, errorMessage, errorRender, filename, mark });
 	}
 
 	/**
 	 * Create a TestResult for a test that was skipped.
-	 * @param {string|string[]} names The name of the test. Can be a list of names.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static skip(names: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
+	static skip(
+		name: string | string[],
+		filename?: string,
+		mark: TestMarkValue = TestMark.none,
+	): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.skip, { filename, mark });
+		if (!Array.isArray(name)) name = [ name ];
+		return new TestCaseResult({ name, status: TestStatus.skip, filename, mark });
 	}
 
 	/**
 	 * Create a TestResult for a test that timed out.
-	 * @param {string|string[]} names The name of the test. Can be a list of names.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static timeout(names: string | string[], timeout: number, filename?: string, mark?: TestMarkValue): TestCaseResult {
+	static timeout(
+		name: string | string[],
+		timeout: number,
+		filename?: string,
+		mark: TestMarkValue = TestMark.none,
+	): TestCaseResult {
 		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ], [ undefined, String ] ]);
 
-		return new TestCaseResult(names, TestStatus.timeout, { timeout, filename, mark });
+		if (!Array.isArray(name)) name = [ name ];
+		return new TestCaseResult({ name, status: TestStatus.timeout, timeout, filename, mark });
 	}
 
 	/**
@@ -235,21 +248,21 @@ export class TestSuiteResult extends TestResult {
 		}], [ "serialized TestSuiteResult" ]);
 
 		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
-		return new TestSuiteResult(name, deserializedSuite, filename, mark);
+		return new TestSuiteResult(name, deserializedSuite, mark, filename);
 	}
 
 	private readonly _name: string[];
 	private readonly _children: TestResult[];
-	private readonly _filename?: string;
 	private readonly _mark: TestMarkValue;
+	private readonly _filename?: string;
 
 	/** Internal use only. (Use {@link TestResult.suite} instead.) */
-	constructor(names: string | string[], children: TestResult[], filename?: string, mark?: TestMarkValue) {
+	constructor(name: string[], children: TestResult[], mark: TestMarkValue, filename?: string) {
 		super();
-		this._name = Array.isArray(names) ? names : [ names ];
-		this._filename = filename;
+		this._name = name;
 		this._children = children;
-		this._mark = mark ?? TestMark.none;
+		this._mark = mark;
+		this._filename = filename;
 	}
 
 	get name(): string[] {
@@ -463,8 +476,7 @@ export class TestCaseResult extends TestResult {
 			timeout: [ undefined, Number ],
 		}], [ "serialized TestCaseResult" ]);
 
-		const { name, filename, mark, status, errorMessage, errorRender, timeout } = serializedResult;
-		return new TestCaseResult(name, status, { errorMessage, errorRender, timeout, filename, mark });
+		return new TestCaseResult(serializedResult);
 	}
 
 	private _name: string[];
@@ -477,24 +489,26 @@ export class TestCaseResult extends TestResult {
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
-		names: string | string[],
-		status: TestStatusValue,
 		{
+			name,
+			status,
 			errorMessage,
 			errorRender,
 			timeout,
 			filename,
 			mark,
 		}: {
+			name: string[],
+			status: TestStatusValue,
 			errorMessage?: string,
 			errorRender?: unknown,
 			timeout?: number,
 			filename?: string,
 			mark?: TestMarkValue
-		} = {}
+		},
 	) {
 		super();
-		this._name = Array.isArray(names) ? names : [ names ];
+		this._name = name;
 		this._filename = filename;
 		this._status = status;
 		this._mark = mark ?? TestMark.none;
