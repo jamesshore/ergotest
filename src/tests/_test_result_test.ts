@@ -602,50 +602,6 @@ export default describe(() => {
 			assert.dotEquals(deserialized, suite);
 		});
 
-		it("handles string errors", () => {
-			assertErrorWorks("my error");
-		});
-
-		it("handles assertion errors", () => {
-			assertErrorWorks(new AssertionError({
-				message: "my message",
-				actual: "my actual",
-				expected: "my expected",
-				operator: "my operator",
-			}));
-		});
-
-		it("handles other errors", () => {
-			assertErrorWorks(new Error("my message"));
-		});
-
-		it("propagates custom error fields", () => {
-			assertErrorWorks(createCustomError("custom1", "custom2"));
-		});
-
-		function assertErrorWorks(error: string | Error) {
-			const test = createFail({ error });
-			const serialized = test.serialize();
-			const deserialized = TestResult.deserialize(serialized) as TestCaseResult;
-
-			assert.equal(deserialized.error, error);
-			if (error instanceof Error && error.stack !== undefined) {
-				assert.equal((deserialized.error as Error).stack, error.stack);
-			}
-		}
-
-		function createCustomError(custom1: unknown, custom2: unknown) {
-			interface CustomError extends Error {
-				custom1: unknown,
-				custom2: unknown,
-			}
-
-			const error = new Error("my message") as CustomError;
-			error.custom1 = custom1;
-			error.custom2 = custom2;
-
-			return error;
-		}
 	});
 
 });

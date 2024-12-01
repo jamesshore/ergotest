@@ -556,16 +556,6 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {Error | string} The error that caused this test to fail.
-	 * @throws {Error} Throws an error if this test didn't fail.
-	 */
-	get error(): unknown {
-		ensure.that(this.isFail(), "Attempted to retrieve error from a test that didn't fail");
-		return this._error!;
-	}
-
-
-	/**
 	 * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
 	 *   equal to the error's `message` property. Otherwise, the error is converted to a string using `util.inspect()`.
 	 * @throws {Error} Throws an error if this test didn't fail.

@@ -437,6 +437,8 @@ See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFai
 
 If this test failed, contains the error that was thrown. Otherwise, it’s undefined.
 
+TODO Replace with errorMessage and errorRender
+
 [Back to top](#automation-api)
 
 

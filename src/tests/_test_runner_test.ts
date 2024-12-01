@@ -143,17 +143,6 @@ export default describe(() => {
 
 	describe("child process error serialization", () => {
 
-		it("supports generic errors", async () => {
-			await assertErrorSerializationAsync(`throw new Error("my error")`, new Error("my error"));
-		});
-
-		it("supports regexes and similar types", async () => {
-			await assertErrorSerializationAsync(
-				`assert.match("abc", /xyz/)`,
-				new AssertionError({ message: "should match regex", actual: "abc", expected: /xyz/}),
-			);
-		});
-
 		it.skip("supports custom objects", async () => {
 			class MyString extends String {
 				constructor(private readonly _customField: string) {
@@ -199,7 +188,7 @@ export default describe(() => {
 	}
 
 	function assertFailureMessage(results: TestResult, expectedFailure: string) {
-		assert.equal(getTestResult(results).error.message, expectedFailure);
+		assert.equal(getTestResult(results).errorMessage, expectedFailure);
 	}
 
 	async function writeTestModuleAsync(testSourceCode: string, variableDefinition = "") {
