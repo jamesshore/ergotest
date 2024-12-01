@@ -13,95 +13,93 @@ const expectedColor = Colors.green;
 const actualColor = Colors.brightRed;
 const diffColor = Colors.brightYellow.bold;
 const summaryColor = Colors.brightWhite.dim;
+/**
+ * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
+ * rather than called directly.
+ * @param {string[]} name The names of the test
+ * @param {unknown} error The error that occurred
+ * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
+ * @param {string} [filename] The file that contained the test, if known
+ * @return The description
+ */ export function renderError(name, error, mark, filename) {
+    ensure.signature(arguments, [
+        Array,
+        ensure.ANY_TYPE,
+        String,
+        [
+            undefined,
+            String
+        ]
+    ]);
+    const nameFoo = normalizeName(name).pop();
+    let renderedError;
+    if (error instanceof Error && error?.stack !== undefined) {
+        renderedError = renderStack(error, filename);
+        if (error.message !== undefined && error.message !== "") {
+            renderedError += "\n\n" + highlightColor(`${nameFoo} »\n`) + errorMessageColor(`${error.message}`);
+        }
+    } else if (typeof error === "string") {
+        renderedError = errorMessageColor(error);
+    } else {
+        renderedError = errorMessageColor(util.inspect(error));
+    }
+    const diff = error instanceof AssertionError ? "\n\n" + renderDiff(error) : "";
+    return `${renderedError}${diff}`;
+}
+/**
+ * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
+ * correspond to the filename will be highlighted.
+ * @param {unknown} error The error
+ * @param {string} [filename] The filename to highlight
+ * @returns {string} The stack trace for the test, or "" if there wasn't one.
+ */ export function renderStack(error, filename) {
+    ensure.signature(arguments, [
+        ensure.ANY_TYPE,
+        [
+            undefined,
+            String
+        ]
+    ]);
+    const stack = error instanceof AssertionError ? error.stack ?? "" : util.inspect(error);
+    if (filename === undefined) return stack;
+    const lines = stack.split("\n");
+    const highlightedLines = lines.map((line)=>{
+        if (!line.includes(filename)) return line;
+        line = line.replace(/    at/, "--> at"); // this code is vulnerable to changes in Node.js rendering
+        return headerColor(line);
+    });
+    return highlightedLines.join("\n");
+}
+/**
+ *
+ * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
+ */ export function renderDiff(error) {
+    ensure.signature(arguments, [
+        AssertionError
+    ]);
+    if (error.expected === undefined && error.actual === undefined) return "";
+    if (error.expected === null && error.actual === null) return "";
+    const expected = util.inspect(error.expected, {
+        depth: Infinity
+    }).split("\n");
+    const actual = util.inspect(error.actual, {
+        depth: Infinity
+    }).split("\n");
+    if (expected.length > 1 || actual.length > 1) {
+        for(let i = 0; i < Math.max(expected.length, actual.length); i++){
+            const expectedLine = expected[i];
+            const actualLine = actual[i];
+            if (expectedLine !== actualLine) {
+                if (expected[i] !== undefined) expected[i] = diffColor(expected[i]);
+                if (actual[i] !== undefined) actual[i] = diffColor(actual[i]);
+            }
+        }
+    }
+    return "" + expectedColor("expected: ") + expected.join("\n") + "\n" + actualColor("actual:   ") + actual.join("\n");
+}
 export class TestRenderer {
     static create() {
         return new TestRenderer();
-    }
-    /**
-	 * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
-	 * rather than called directly.
-	 * @param {string[]} name The names of the test
-	 * @param {unknown} error The error that occurred
-	 * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
-	 * @param {string} [filename] The file that contained the test, if known
-	 * @return The description
-	 */ static renderError(name, error, mark, filename) {
-        ensure.signature(arguments, [
-            Array,
-            ensure.ANY_TYPE,
-            String,
-            [
-                undefined,
-                String
-            ]
-        ]);
-        const nameFoo = normalizeName(name).pop();
-        const resultError = error;
-        let errorFoo;
-        if (resultError?.stack !== undefined) {
-            errorFoo = `${TestRenderer.renderStack(error, filename)}`;
-            if (resultError?.message !== undefined) {
-                errorFoo += "\n\n" + highlightColor(`${nameFoo} »\n`) + errorMessageColor(`${resultError.message}`);
-            }
-        } else {
-            errorFoo = errorMessageColor(`${error}`);
-        }
-        const diff = error instanceof AssertionError ? "\n\n" + TestRenderer.renderDiff(error) : "";
-        return `${errorFoo}${diff}`;
-    }
-    /**
-	 * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
-	 * correspond to the filename will be highlighted.
-	 * @param {unknown} error The error
-	 * @param {string} [filename] The filename to highlight
-	 * @returns {string} The stack trace for the test, or "" if there wasn't one.
-	 */ static renderStack(error, filename) {
-        ensure.signature(arguments, [
-            ensure.ANY_TYPE,
-            [
-                undefined,
-                String
-            ]
-        ]);
-        const typedError = error;
-        if (typedError?.stack === undefined) return "";
-        const stack = typedError.stack;
-        if (typeof stack !== "string") return String(stack);
-        if (filename === undefined) return stack;
-        const lines = stack.split("\n");
-        const highlightedLines = lines.map((line)=>{
-            if (!line.includes(filename)) return line;
-            line = line.replace(/    at/, "--> at"); // this code is vulnerable to changes in Node.js rendering
-            return headerColor(line);
-        });
-        return highlightedLines.join("\n");
-    }
-    /**
-	 *
-	 * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
-	 */ static renderDiff(error) {
-        ensure.signature(arguments, [
-            AssertionError
-        ]);
-        if (error.expected === undefined && error.actual === undefined) return "";
-        if (error.expected === null && error.actual === null) return "";
-        const expected = util.inspect(error.expected, {
-            depth: Infinity
-        }).split("\n");
-        const actual = util.inspect(error.actual, {
-            depth: Infinity
-        }).split("\n");
-        if (expected.length > 1 || actual.length > 1) {
-            for(let i = 0; i < Math.max(expected.length, actual.length); i++){
-                const expectedLine = expected[i];
-                const actualLine = actual[i];
-                if (expectedLine !== actualLine) {
-                    if (expected[i] !== undefined) expected[i] = diffColor(expected[i]);
-                    if (actual[i] !== undefined) actual[i] = diffColor(actual[i]);
-                }
-            }
-        }
-        return "" + expectedColor("expected: ") + expected.join("\n") + "\n" + actualColor("actual:   ") + actual.join("\n");
     }
     // can't use a normal constant due to a circular dependency between TestResult and TestRenderer
     static get #PROGRESS_RENDERING() {

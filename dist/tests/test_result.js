@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
 import util from "node:util";
-import { TestRenderer } from "./test_renderer.js";
+import { renderError as renderErrorFn, TestRenderer } from "./test_renderer.js";
 export const TestStatus = {
     pass: "pass",
     fail: "fail",
@@ -84,7 +84,7 @@ export const TestMark = {
 	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
 	 *   function will be called and the results put into {@link errorRender}.
 	 * @returns {TestCaseResult} The result.
-	 */ static fail(name, error, filename, mark, renderError = TestRenderer.renderError) {
+	 */ static fail(name, error, filename, mark, renderError = renderErrorFn) {
         ensure.signature(arguments, [
             [
                 String,

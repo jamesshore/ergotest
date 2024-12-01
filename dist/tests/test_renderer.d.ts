@@ -1,31 +1,31 @@
 import { TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import { AssertionError } from "node:assert";
+/**
+ * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
+ * rather than called directly.
+ * @param {string[]} name The names of the test
+ * @param {unknown} error The error that occurred
+ * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
+ * @param {string} [filename] The file that contained the test, if known
+ * @return The description
+ */
+export declare function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string): string;
+/**
+ * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
+ * correspond to the filename will be highlighted.
+ * @param {unknown} error The error
+ * @param {string} [filename] The filename to highlight
+ * @returns {string} The stack trace for the test, or "" if there wasn't one.
+ */
+export declare function renderStack(error: Error, filename?: string): string;
+/**
+ *
+ * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
+ */
+export declare function renderDiff(error: AssertionError): string;
 export declare class TestRenderer {
     #private;
     static create(): TestRenderer;
-    /**
-     * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
-     * rather than called directly.
-     * @param {string[]} name The names of the test
-     * @param {unknown} error The error that occurred
-     * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
-     * @param {string} [filename] The file that contained the test, if known
-     * @return The description
-     */
-    static renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string): string;
-    /**
-     * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
-     * correspond to the filename will be highlighted.
-     * @param {unknown} error The error
-     * @param {string} [filename] The filename to highlight
-     * @returns {string} The stack trace for the test, or "" if there wasn't one.
-     */
-    static renderStack(error: unknown, filename?: string): string;
-    /**
-     *
-     * @returns {string} A comparison of expected and actual values, or "" if there weren't any.
-     */
-    static renderDiff(error: AssertionError): string;
     /**
      * @param {TestSuiteResult} testSuiteResult The test suite to render.
      * @param {number} [elapsedMs] The total time required to run the test suite, in milliseconds.
