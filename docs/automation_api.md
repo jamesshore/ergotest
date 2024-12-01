@@ -750,11 +750,21 @@ Create a passing test result.
 
 ## TestResult.fail()
 
-* TestResult.fail(names: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
+* TestResult.fail(names: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
 Create a failing test result, where `error` is the reason for the failure. If it’s an `Error`, the failure will be rendered with a stack trace. If it’s an `AssertionError`, it will also be rendered with expected and actual values.
 
+TODO
+
 [Back to top](#automation-api)
+
+
+### RenderErrorFn
+
+* import { RenderErrorFn } from "ergotest/test_result.js"
+* (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+
+TODO
 
 
 ## TestResult.skip()

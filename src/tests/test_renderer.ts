@@ -58,7 +58,6 @@ export class TestRenderer {
 		return `${errorFoo}${diff}`;
 	}
 
-
 	/**
 	 * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
 	 * correspond to the filename will be highlighted.
