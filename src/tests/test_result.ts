@@ -60,6 +60,8 @@ export interface SerializedError {
 	operator?: string;
 }
 
+export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+
 /**
  * The result of a test run. Can be a single test case or a suite of nested test results.
  */
@@ -105,10 +107,22 @@ export abstract class TestResult {
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static fail(names: string | string[], error: unknown, filename?: string, mark?: TestMarkValue): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], ensure.ANY_TYPE, [ undefined, String ], [ undefined, String ]]);
+	static fail(
+		names: string | string[],
+		error: unknown,
+		filename?: string,
+		mark?: TestMarkValue,
+		renderError?: RenderErrorFn,
+	): TestCaseResult {
+		ensure.signature(arguments, [
+			[ String, Array ],
+			ensure.ANY_TYPE,
+			[ undefined, String ],
+			[ undefined, String ],
+			[ undefined, Function ],
+		]);
 
-		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark });
+		return new TestCaseResult(names, TestStatus.fail, { error, filename, mark, renderError });
 	}
 
 	/**
@@ -489,7 +503,19 @@ export class TestCaseResult extends TestResult {
 	constructor(
 		names: string | string[],
 		status: TestStatusValue,
-		{ error, timeout, filename, mark }: { error?: unknown, timeout?: number, filename?: string, mark?: TestMarkValue } = {}
+		{
+			error,
+			timeout,
+			filename,
+			mark,
+			renderError = TestRenderer.renderError,
+		}: {
+			error?: unknown,
+			timeout?: number,
+			filename?: string,
+			mark?: TestMarkValue
+			renderError?: RenderErrorFn,
+		} = {}
 	) {
 		super();
 		this._name = Array.isArray(names) ? names : [ names ];
@@ -503,7 +529,7 @@ export class TestCaseResult extends TestResult {
 			else if (typeof error === "string") this._errorMessage = error;
 			else this._errorMessage = util.inspect(error, { depth: Infinity });
 
-			this._errorRender = TestRenderer.renderError(this._name, this._filename, this._mark, error);
+			this._errorRender = renderError(this._name, error, this._mark, this._filename);
 		}
 	}
 

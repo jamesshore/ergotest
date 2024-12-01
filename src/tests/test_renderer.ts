@@ -22,15 +22,15 @@ export class TestRenderer {
 		return new TestRenderer();
 	}
 
-	static renderError(name: string[], filename: string | undefined, mark: TestMarkValue, error: unknown) {
-		ensure.signature(arguments, [ Array, [ undefined, String ], String, ensure.ANY_TYPE ]);
+	static renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
+		ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
 
 		const nameFoo = normalizeName(name).pop();
 		const resultError = error as { stack: unknown, message: unknown };
 
 		let errorFoo;
 		if (resultError?.stack !== undefined) {
-			errorFoo = `${this.renderStack(error, filename)}`;
+			errorFoo = `${TestRenderer.renderStack(error, filename)}`;
 			if (resultError?.message !== undefined) {
 				errorFoo +=
 					"\n\n" +
@@ -43,7 +43,7 @@ export class TestRenderer {
 		}
 
 		const diff = (error instanceof AssertionError) ?
-			"\n\n" + this.renderDiff(error) :
+			"\n\n" + TestRenderer.renderDiff(error) :
 			"";
 
 		return `${errorFoo}${diff}`;

@@ -2,7 +2,7 @@
 import { assert, describe, it } from "../tests.js";
 import { TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 
 const headerColor = Colors.brightWhite.bold;
@@ -326,13 +326,14 @@ export default describe(() => {
 		it("renders fail", () => {
 			assert.equal(
 				render(createFail({ error: "my error" })),
-				TestRenderer.renderError([ "irrelevant name" ], "irrelevant filename", TestMark.none, "my error"),
+				TestRenderer.renderError([ "irrelevant name" ], "my error", TestMark.none, "irrelevant filename"),
 			);
 		});
 
 		it("renders fail when errorRender isn't a string", () => {
-			const fail = createFail({ error: "my error" });
-			fail._errorRender = [ 1, 2, 3 ];
+			const fail = createFail({
+				renderError: () => [ 1, 2, 3 ],
+			});
 			assert.equal(render(fail), "[ 1, 2, 3 ]");
 		});
 
@@ -439,7 +440,7 @@ export default describe(() => {
 		}): string {
 			if (!Array.isArray(name)) name = [ name ];
 
-			return TestRenderer.renderError(name, "irrelevant filename", TestMark.none, error);
+			return TestRenderer.renderError(name, error, TestMark.none, "irrelevant filename");
 		}
 
 		function renderDiff(error: AssertionError): string {
@@ -617,13 +618,15 @@ function createFail({
 	error = new Error("irrelevant error"),
 	filename = undefined,
 	mark = TestMark.none,
+	renderError = undefined,
 }: {
 	name?: string | string[],
 	error?: unknown,
 	filename?: string,
 	mark?: TestMarkValue,
+	renderError?: RenderErrorFn,
 } = {}): TestCaseResult {
-	return TestResult.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, filename, mark, renderError);
 }
 
 function createSkip({

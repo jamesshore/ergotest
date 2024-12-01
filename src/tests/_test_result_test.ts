@@ -240,7 +240,11 @@ export default describe(() => {
 				actual: "bar",
 			});
 
-			const result = createFail({ name: "my name", error });
+			const result = createFail({
+				name: "my name",
+				error,
+				renderError: () => "my custom renderer",
+			});
 			const noneMark = createFail({ mark: TestMark.none });
 			const skipMark = createFail({ mark: TestMark.skip });
 			const onlyMark = createFail({ mark: TestMark.only });
@@ -248,7 +252,7 @@ export default describe(() => {
 			assert.equal(result.name, [ "my name" ], "name");
 			assert.equal(result.status, TestStatus.fail, "status");
 			assert.equal(result.errorMessage, "my error", "error message");
-			assert.equal(result.errorRender, TestRenderer.renderError([ "my name" ], undefined, TestMark.none, error), "rendered error");
+			assert.equal(result.errorRender, "my custom renderer", "rendered error");
 
 			assert.equal(result.mark, TestMark.none, "mark");
 			assert.equal(noneMark.mark, TestMark.none, "mark");
@@ -275,6 +279,12 @@ export default describe(() => {
 				const result = TestResult.fail([], error);
 				assert.equal(result.errorMessage, expected);
 			}
+		});
+
+		it("failing tests have default error renderer", () => {
+			const result = createFail({ name: "my name", error: "my error" });
+
+			assert.equal(result.errorRender, TestRenderer.renderError([ "my name" ], "my error", TestMark.none));
 		});
 
 		it("skipped tests have a name, status, and mark", () => {
@@ -669,15 +679,17 @@ function createPass({
 function createFail({
 	name = "irrelevant name",
 	error = IRRELEVANT_ERROR,
+	renderError = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
+	renderError?: () => string,
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, filename, mark, renderError);
 }
 
 function createSkip({
