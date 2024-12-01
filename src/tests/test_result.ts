@@ -105,7 +105,7 @@ export abstract class TestResult {
 		error: unknown,
 		filename?: string,
 		mark?: TestMarkValue,
-		renderError = TestRenderer.renderError,
+		renderError: RenderErrorFn = TestRenderer.renderError,
 	): TestCaseResult {
 		ensure.signature(arguments, [
 			[ String, Array ],
@@ -680,15 +680,14 @@ export class TestCaseResult extends TestResult {
 
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
-		if (this._status !== that._status) return false;
-		if (this._mark !== that._mark) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
-		// @ts-expect-error - strings are objects, so this._error.message is legit on strings
-		const sameError = this._error === undefined || this._error.message === that._error.message;
+		const sameError = this._errorMessage === that._errorMessage;
 
 		return sameName &&
 			sameError &&
+			this._status === that._status &&
+			this._mark === that._mark &&
 			this._timeout === that._timeout &&
 			this.filename === that.filename;
 	}

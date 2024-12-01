@@ -322,10 +322,14 @@ export default describe(() => {
 			assert.dotEquals(createPass({ name: "my name" }), createPass({ name: "my name" }));
 			assert.dotEquals(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "child" ] }));
 
-			// disregard stack when comparing errors: if name is equal, error is equal
+			// disregard rendering when comparing errors: if message is equal, error is equal
 			assert.dotEquals(
 				createFail({ name: "my name", error: new Error("my error") }),
 				createFail({ name: "my name", error: new Error("my error") }),
+			);
+			assert.notDotEquals(
+				createFail({ name: "my name", error: new Error("my error") }),
+				createFail({ name: "my name", error: new Error("different error") }),
 			);
 
 			assert.notDotEquals(createPass({ name: "my name" }), createPass({ name: "different" }));
