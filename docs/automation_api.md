@@ -39,7 +39,8 @@ In this document **(the bold entries are all you need)**:
   * [testCaseResult.name](#testcaseresultname)
   * [testCaseResult.status](#testcaseresultstatus)
   * [testCaseResult.mark](#testcaseresultmark)
-  * [testCaseResult.error](#testcaseresulterror)
+  * [testCaseResult.errorMessage](#testcaseresulterrormessage)
+  * [testCaseResult.errorRender](#testcaseresulterrorrender)
   * [testCaseResult.timeout](#testcaseresulttimeout)
   * **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter)**
   * **[testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline)**
@@ -58,6 +59,7 @@ In this document **(the bold entries are all you need)**:
   * [TestStatusValue](#teststatusvalue)
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
+  * [RenderErrorFn](#rendererrorfn)
 * [TestSuite](#testsuite)
   * [TestSuite.fromModulesAsync()](#testsuitefrommodulesasync)
   * [testSuite.runAsync()](#testsuiterunasync)
@@ -420,13 +422,30 @@ See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFai
 [Back to top](#automation-api)
 
 
-## testCaseResult.error
+## testCaseResult.errorMessage
 
-* testCaseResult.error?: unknown
+* testCaseResult.errorMessage?: string
 
-If this test failed, contains the error that was thrown. Otherwise, it’s undefined.
+If this test failed, contains the error message. Throws an exception if the test didn't fail.
 
-TODO Replace with errorMessage and errorRender
+The specific error message depends on the error that caused the test failure. If the error was an instance of `Error`, as is usually the case, then this contains `error.message`.
+
+If the error was an instance of `Error`, but `error.message` was undefined, then this contains `""`. 
+
+If the error was a string, then this contains that string.
+
+In all other cases, this contains the results of calling `util.inspect()` with infinite depth on the error. 
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.errorRender
+
+* testCaseResult.errorRender?: unknown
+
+If this test failed, contains the error rendering. Throws an exception if the test didn't fail.
+
+The error rendering depends on the renderer provided to the test runner in [TestOptions](#testoptions). If no renderer is provided, it defaults to [renderError()](reporting_api.md#rendererror), which returns a human-readable string with the error message, stack trace, and a comparison of actual and expected values (when applicable).
 
 [Back to top](#automation-api)
 
@@ -434,6 +453,8 @@ TODO Replace with errorMessage and errorRender
 ## testCaseResult.timeout
 
 * testCaseResult.timeout?: number
+
+If this test timed out, contains the timeout value in milliseconds. Throws an exception if the test didn't time out.
 
 If this test timed out, contains the timeout value in milliseconds. Otherwise, it’s undefined.
 
@@ -569,19 +590,9 @@ Create a passing test result.
 
 * TestResult.fail(name: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
-Create a failing test result, where `error` is the reason for the failure. If it’s an `Error`, the failure will be rendered with a stack trace. If it’s an `AssertionError`, it will also be rendered with expected and actual values.
-
-TODO
+Create a failing test result, where `error` is the reason for the failure. The `error` will not be stores; instead, it will be used to set the [errorMessage](#testcaseresulterrormessage) and [errorRender](#testcaseresulterrorrender) properties. If `renderError` is provided, its return value will be used to set the [errorRender](#testcaseresulterrorrender) property; otherwise, [renderError()](reporting_api.md#rendererror) in `test_renderer.js` will be used. 
 
 [Back to top](#automation-api)
-
-
-### RenderErrorFn
-
-* import { RenderErrorFn } from "ergotest/test_result.js"
-* (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
-
-TODO
 
 
 ## TestResult.skip()
@@ -643,6 +654,23 @@ An “enum” object with the following options:
 * import { TestStatus } from "ergotest/test_result.js"
 
 A type for the possible values of [TestMark](#testmark).
+
+[Back to top](#automation-api)
+
+
+## RenderErrorFn
+
+* import { RenderErrorFn } from "ergotest/test_result.js"
+* (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+
+A type for custom error rendering. It takes the following parameters: 
+
+* _names:_ Same as [testCaseResult.name](#testcaseresultname).
+* _error:_ The error that caused the test to fail. Although it's usually an `Error` instance, it could be any data type, including a string.
+* _mark:_ Same as [testCaseResult.mark](#testcaseresultmark).
+* _filename:_ Same as [testCaseResult.filename](#testcaseresultfilename).
+
+See the [Reporting API](reporting_api.md) for more about custom error rendering.
 
 [Back to top](#automation-api)
 

@@ -118,11 +118,11 @@ See the [TestRenderer](#testrenderer) documentation for details about which meth
 
 ### Customizing error rendering
 
-Test result rendering, including `TestCaseResult` and `TestRenderer`, have a big limitation: they don't allow you to customize how assertion failures and other errors are displayed. You can call [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) to render a failed test result, or call [TestCaseResult.errorRender](automation_api.md#testcaseresulterrorrender) for the low-level error rendering, but both of them are limited to giving you a pre-rendered result. They don't give you access to the error object itself.
+Test result rendering, including `TestCaseResult` and `TestRenderer`, have a big limitation: they don't allow you to customize how assertion failures and other errors are displayed. You can call [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) or [TestCaseResult.errorRender](automation_api.md#testcaseresulterrorrender), but both of them are limited to giving you a pre-rendered result. They don't give you access to the error object itself.
 
-That's because Ergotest runs its tests in a worker process, by default, and serializing errors across the process boundary results in data loss in certain edge case situations. As a result, errors have to be handled inside the worker process.
+That's because Ergotest runs its tests in a worker process, by default, and serializing errors across the process boundary can result in data loss. As a result, errors have to be handled inside the worker process.
 
-To do so, create a module that exports a `renderError()` function. It needs to have the following signature:
+To do so, create a module that exports a `renderError()` function. It needs to have a signature matching the [RenderErrorFn](automation_api.md#rendererrorfn) type:
 
 * `renderError(names: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown;`
 * _names:_ Same as [testCaseResult.name](automation_api.md#testcaseresultname).
@@ -383,11 +383,11 @@ Renders the status of the test with all its details, as follows:
 
 Renders an error into a color-coded, human-readable explanation.  
  
-If `testCaseResult.error.stack` is defined, it renders the stack trace by calling [renderStack()](#renderstack). Then, if `testCaseResult.error.message` is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
+If `error.stack` is defined, it renders the stack trace by calling [renderStack()](#renderstack). Then, if `error.message` is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
 
-If `testCaseResult.error.stack` isn’t defined, it just converts `testCaseResult.error` to a string and renders it in red.
+If `error.stack` isn’t defined, it just converts `error` to a string and renders it in red.
 
-Finally, if `testCaseResult.error` is an `AssertionError`, it adds a blank line and renders the expected and actual results by calling [renderDiff()](#renderdiff).
+Finally, if `error` is an `AssertionError`, it adds a blank line and renders the expected and actual results by calling [renderDiff()](#renderdiff).
 
 [Back to top](#automation-api)
 
