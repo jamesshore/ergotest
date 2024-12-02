@@ -35,7 +35,7 @@ In this document:
 
 ## Start Here
 
-> **The Golden Rule:** Instantiate Ergotest classes by calling the `TheClass.create()` factory method, *not* the `new TheClass()` constructor! Constructors are reserved for internal use only in this codebase.
+> **The Golden Rule:** Instantiate Ergotest classes by calling `TheClass.create()`, *not* `new TheClass()`! Constructors are reserved for internal use only in this codebase.
 
 Most people can ignore the reporting API. The getters and renderXxx() methods described in the [automation API](automation_api.md) are enough for most uses. But if you want even more customization, this document has what you need.
 
