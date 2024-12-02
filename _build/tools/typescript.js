@@ -79,13 +79,15 @@ export default class TypeScript {
 					typescriptToCompile.add(source);
 				}
 				else {
+					report.debug(`\n  Copy: ${source} --> ${target}`);
 					await this._fileSystem.copyAsync(source, target);
-					report.debug(`\nCopy: ${source} --> ${target}`);
+					report.progress();
 				}
 			});
 			const deletePromises = filesToDelete.map(async ({ source, target }) => {
-				await this._fileSystem.deleteAsync(target);
 				report.debug(`\n  Delete: ${target}`);
+				await this._fileSystem.deleteAsync(target);
+				report.progress();
 			});
 
 			await Promise.all([ ...copyPromises, ...deletePromises ]);
@@ -102,22 +104,22 @@ export default class TypeScript {
 
 				try {
 					report.started();
+					report.debug(`\n  Compile: ${sourceFile}`);
+					report.debug(`\n    Target: ${compiledFile}`);
+					report.debug(`\n    Source Map: ${sourceMapFile}`);
+
 					const { code, map } = await swc.transformFile(sourceFile, config);
 					const sourceMapLink = `\n//# sourceMappingURL=${sourceMapFile}\n`;
 
 					await this._fileSystem.writeTextFileAsync(compiledFile, code + sourceMapLink);
 					await this._fileSystem.writeTextFileAsync(sourceMapFile, map);
 
-					report.debug(`\n  Compile: ${sourceFile}`);
-					report.debug(`\n    Target: ${compiledFile}`);
-					report.debug(`\n    Source Map: ${sourceMapFile}`);
+					report.progress();
 					return true;
 				}
 				catch(err) {
 					const filename = Colors.brightRed(`${this._fileSystem.renderFilename(sourceFile)} failed:\n`);
-					report.failure(`\n${filename}${err.message}\n\n`, {
-						debug: `\nCompile (FAILED): ${sourceFile} --> ${compiledFile} -+- ${sourceMapFile}`
-					});
+					report.failure(`\n${filename}${err.message}\n\n`);
 					return false;
 				}
 			}));
