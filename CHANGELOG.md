@@ -5,9 +5,43 @@ Links to other documentation:
 * [Test API](docs/test_api.md)
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
+* [Reporting API](docs/reporting_api.md)
 * [Readme](./README.md)
 * **Changelog**
 * [Roadmap](./ROADMAP.md)
+
+
+## v0.9.x: Improve error rendering (minor breaking change)
+
+* **0.9.0, 1 Dec 2024:** Test failures render with more information in various edge cases, particularly for custom errors and some 'expected' and 'actual' results. This was done by rendering errors inside of Ergotest's worker process, rather than serializing errors across the worker process boundary, which resulted in some data being lost. 
+
+This is technically a breaking change, but it's unlikely to affect most users. If you created a custom test renderer, you will need to update it. The new [Reporting  API](docs/reporting_api.md) document describes how to build a custom renderer.
+
+The following property on [TestCaseResult](docs/automation_api.md#testcaseresult) has been removed:
+
+* testCaseResult.error
+
+It has been replaced with the following properties:
+
+* [testCaseResult.errorMessage](docs/automation_api.md#testcaseresulterrormessage)
+* [testCaseResult.errorRender](docs/automation_api.md#testcaseresulterrorrender)
+
+A `renderer` option has been added to [TestOptions](docs/automation_api.md#testoptions). It allows you to customize the rendering of errors. This is an additive, non-breaking change for these APIs:
+
+* [testRunner.runInChildProcessAsync()](docs/automation_api.md#testrunnerruninchildprocessasync)
+* [testRunner.runInCurrentProcessAsync()](docs/automation_api.md#testrunnerrunincurrentprocessasync)
+* [testSuite.runAsync()](docs/automation_api.md#testsuiterunasync)
+
+The following function export has been added to `ergotest/test_renderer.js`:
+
+* [renderError()](docs/reporting_api.md#rendererror)
+
+The following methods have been converted to function exports on `ergotest/test_renderer.js`:
+
+* testRenderer.renderStack() → [renderStack()](docs/reporting_api.md#renderstack)
+* testRenderer.renderDiff() → [renderDiff()](docs/reporting_api.md#renderdiff)
+
+
 
 
 ## v0.8.x: Rename notifyFn (BREAKING CHANGE)

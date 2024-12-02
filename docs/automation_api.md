@@ -8,6 +8,7 @@ Links to other documentation:
 * [Test API](test_api.md)
 * [Assertion API](assertion_api.md)
 * **Automation API**
+* [Reporting API](reporting_api.md)
 * [Readme](../README.md)
 * [Changelog](../CHANGELOG.md)
 * [Roadmap](../ROADMAP.md)
@@ -38,7 +39,8 @@ In this document **(the bold entries are all you need)**:
   * [testCaseResult.name](#testcaseresultname)
   * [testCaseResult.status](#testcaseresultstatus)
   * [testCaseResult.mark](#testcaseresultmark)
-  * [testCaseResult.error](#testcaseresulterror)
+  * [testCaseResult.errorMessage](#testcaseresulterrormessage)
+  * [testCaseResult.errorRender](#testcaseresulterrorrender)
   * [testCaseResult.timeout](#testcaseresulttimeout)
   * **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter)**
   * **[testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline)**
@@ -47,20 +49,6 @@ In this document **(the bold entries are all you need)**:
   * [testCaseResult.isFail()](#testcaseresultisfail)
   * [testCaseResult.isSkip()](#testcaseresultisskip)
   * [testCaseResult.isTimeout()](#testcaseresultistimeout)
-* [TestRenderer](#testrenderer)
-  * [TestRenderer.create()](#testrunnercreate)
-  * [testRenderer.renderSummary()](#testrendererrendersummary)
-  * [testRenderer.renderAsCharacters()](#testrendererrenderascharacters)
-  * [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines)
-  * [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines)
-  * [testRenderer.renderMarksAsLines()](#testrendererrendermarksaslines)
-  * [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline)
-  * [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines)
-  * [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword)
-  * [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword)
-  * [testRenderer.renderStatusWithMultilineDetails()](#testrendererrenderstatuswithmultilinedetails)
-  * [testRenderer.renderStack()](#testrendererrenderstack)
-  * [testRenderer.renderDiff()](#testrendererrenderdiff)
 * [TestResult](#testresult)
   * [TestResult.suite()](#testresultsuite)
   * [TestResult.pass()](#testresultpass)
@@ -71,6 +59,7 @@ In this document **(the bold entries are all you need)**:
   * [TestStatusValue](#teststatusvalue)
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
+  * [RenderErrorFn](#rendererrorfn)
 * [TestSuite](#testsuite)
   * [TestSuite.fromModulesAsync()](#testsuitefrommodulesasync)
   * [testSuite.runAsync()](#testsuiterunasync)
@@ -78,22 +67,22 @@ In this document **(the bold entries are all you need)**:
 
 ## Start Here
 
-> **The Golden Rule:** Instantiate all classes by calling the `TheClass.create()` factory method, *not* the `new TheClass()` constructor! Constructors are reserved for internal use only in this codebase.
+> **The Golden Rule:** Instantiate Ergotest classes by calling `TheClass.create()`, *not* `new TheClass()`! Constructors are reserved for internal use only in this codebase.
 
 There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
 
 * ***TestRunner*** is how you run your tests.
 * ***TestSuiteResult*** has the results of your test run, and includes a convenient method for rendering the results.
 * ***TestCaseResult*** has the details of a single test, and it also has convenient rendering methods.
-* *TestRenderer* is how you create customized renderings, if you want to.
-* *TestResult* has factory methods for creating test results, and is the parent to `TestSuiteResult` and `TestCaseResult`.
+* *TestRenderer* is how you create customized renderings, if you want to. See the [Reporting API](reporting_api.md) for details.
+* *TestResult* is the parent to `TestSuiteResult` and `TestCaseResult`, and  has factory methods for creating test results. You're not likely to need them. It's included only for completeness. 
 * *TestSuite* is mainly for internal use, and is included only for completeness. To create test suites, use [the test API](test_api.md).
 
-The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it runs in an isolated child process.
+The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it runs in a child process.
 
 The `runInChildProcessAsync()` method returns the results of the test run as a `TestSuiteResult` instance. You can render those results to a string by calling [TestSuiteResult.render()](#testsuiteresultrender). To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount)
 
-If you want more fine-grained control, you can use the methods and properties on `TestSuiteResult` and `TestCaseResult`. Create a `TestRenderer` instance for more rendering options.
+If you want more fine-grained control, you can use the methods and properties on `TestSuiteResult` and `TestCaseResult`. See the [Reporting API](reporting_api.md) for more rendering options.
 
 To see the results of the tests as they’re running, pass `onTestCaseResult` to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will be called with a `TestCaseResult`, which you can then render with the [testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines) methods.
 
@@ -148,6 +137,8 @@ function reportProgress(testCase) {
 }
 ```
 
+[Back to top](#automation-api)
+
 
 ---
 
@@ -176,15 +167,17 @@ Instantiate `TestRunner`.
 
 Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
 
-The modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
+> **Note:** Although the child process is isolated from your test automation script, the tests all run in the same process. They run sequentially, not in parallel, and are not isolated from each other.
+
+The test modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
 
 If the tests enter an infinite loop or throw an uncaught exception, a test watchdog will kill the tests and generate a corresponding test failure.
 
-Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
 
 > **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
-Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+Use `options` to provide configuration data to the tests and otherwise customize your test run.
 
 > **Warning:** Because the tests run in a child process, any configuration information you provide will be serialized. Only bare objects, arrays, and primitive data can be provided; class instances will not work.
 
@@ -203,11 +196,11 @@ The modules will *not* be reloaded if they have been loaded before, even if they
 
 Does *not* detect infinite loops or uncaught exceptions.
 
-Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite, but continues to run any modules that do load.
+If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
 
 > **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
-Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+Use `options` to provide configuration data to the tests and otherwise customize your test run.
 
 [Back to top](#automation-api)
 
@@ -218,18 +211,24 @@ Use `options` to provide configuration data to the tests or specify a callback f
 
 You can configure test runs with this interface. Provide an object with these optional parameters:
 
-* **config: Record<string, unknown> = {}**
-  * Configuration information accesible to your tests at run time. Retrieve the values in your tests by calling [getConfig()](test_api.md#getconfig) as described in the test API.
-  * An object with key/value pairs. The values should be bare objects, arrays, or primitive data, not class instances, because the configuration will be serialized if you run the tests in a child process, which is the recommended approach.
+* **config?: Record<string, unknown>**
+  * Configuration information accessible to your tests at run time. Retrieve the values by calling [getConfig()](test_api.md#getconfig) in your tests.
+  * An object with key/value pairs. The values should be bare objects, arrays, or primitive data, not class instances, because the configuration will be serialized in most cases.
   * Defaults to an empty object.
 
-* **timeout: number = 2000**
-  * The amount of time, in milliseconds, before a test times out. Note that, due to the nature of JavaScript, tests continue running even after they've timed out. However, their results are ignored.
+* **timeout?: number**
+  * The amount of time, in milliseconds, before a test or before/after function times out. Note that, due to the nature of JavaScript, functions continue running even after they've timed out. However, their results are ignored.
   * Defaults to two seconds.
 
-* **onTestCaseResult: (testCaseResult: TestCaseResult) => void**
+* **onTestCaseResult?: (testCaseResult: TestCaseResult) => void**
   * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
   * Defaults to a no-op.
+
+* **renderer?: string**
+  * The path to a module for custom error rendering. Must be an absolute path or a path to `node_modules`.
+  * The module must export a function named `renderError()` of the type [RenderErrorFn](#rendererrorfn).
+  * See the [Reporting API](reporting_api.md) for details.
+  * Defaults to the [built-in error renderer](reporting_api.md#rendererror).
 
 [Back to top](#automation-api)
 
@@ -242,7 +241,7 @@ You can configure test runs with this interface. Provide an object with these op
 * import { TestSuiteResult } from "ergotest/test_result.js"
 * extends [TestResult](#testresult)
 
-`TestSuiteResult` instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s (which is the result of `test()` and `describe()` blocks) and [TestCaseResult](#testcaseresult)s (which is the result of `it()` blocks). See the [test API documentation](test_api.md) for more about writing tests with `test()`, `describe()`, and `it()`. 
+`TestSuiteResult` instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s, which correspond to [describe()](test_api.md#describe)), and [TestCaseResult](#testcaseresult)s, which correspond to [it()](test_api.md#it)). See the [test API documentation](test_api.md) for more about writing tests with `describe()` and `it()`. 
 
 [Back to top](#automation-api)
 
@@ -251,7 +250,7 @@ You can configure test runs with this interface. Provide an object with these op
 
 * testSuiteResult.filename?: string
 
-If this test suite was loaded from a module (and they typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
+If this test suite was loaded from a module, which most will be, this property contains the absolute path of the module. Otherwise, it’s undefined. 
 
 [Back to top](#automation-api)
 
@@ -269,9 +268,7 @@ The name of the suite and all its parent suites, with the outermost suite first.
 
 * testSuiteResult.mark: [TestMarkValue](#testmarkvalue)
 
-Indicates whether the suite was marked with `.skip`, `.only` (or not marked at all). Only suites that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, the tests in a suite can be skipped but without the suite being *marked* `.skip`.
-
-Suites with no function body are considered to be marked `.skip`.
+Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suites with no function body are considered to be marked `.skip`.
 
 
 [Back to top](#automation-api)
@@ -292,13 +289,15 @@ This suite’s direct children, which can either be [TestSuiteResult](#testsuite
 
 * testSuiteResult.render(preamble?: string = "", elapsedMs?: number): string
 
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
 Render this suite as a nicely formatted string. The rendering consists of three parts:
 
 * A summary list of marked suites and tests, for ease of finding `.only` and `.skip` marks
 * A detailed list of test failures and timeouts
 * A summary of the test results
 
-This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+This is a convenience method. For more control over rendering, use the [Reporting API](reporting_api.md) instead.
 
 If `preamble` is defined, it will be added to the beginning of the rendered string, but only if there’s more to show than the summary of results. This is convenient for adding blank lines when there’s details to show, but keeping the rendering compact when there’s not.
 
@@ -318,7 +317,7 @@ A summary of this suite’s results. Includes a count of each type of test case 
 
 * testSuiteResult.allTests(): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results in this suite and all it’s sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
+Find all the test results in this suite and its sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
 If you only want test results with a particular status (pass, fail, etc.), use [testSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests) instead.
 
@@ -329,9 +328,9 @@ If you only want test results with a particular status (pass, fail, etc.), use [
 
 * testSuiteResult.allMatchingTests(...statuses: [TestStatusValue](#teststatusvalue)[]): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results, in this suite and all its sub-suites, that match any of the `statuses` and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
+Find all the test results, in this suite and its sub-suites, that match any of the `statuses` and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
-If you want all test results from this suite and its sub-suites, use [testSuiteResult.allTests](#testsuiteresultalltests) instead.
+If you want all test results from this suite and its sub-suites, use [testSuiteResult.allTests()](#testsuiteresultalltests) instead.
 
 [Back to top](#automation-api)
 
@@ -340,9 +339,9 @@ If you want all test results from this suite and its sub-suites, use [testSuiteR
 
 * testSuiteResult.allMarkedResults(): [TestResult](#testresult)[]
 
-Find all the test case *and* test suite results, in this suite and all its sub-suites, that were marked with `.only`, or `.skip`, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
+Find all the test case *and* test suite results, in this suite and its sub-suites, that were marked with `.only`, or `.skip`, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
 
-Only includes marked results. To get results without marks, or specific marks (only `.skip` marks, for example), use [testSuiteResult.allMatchingMarks()](#testsuiteresultallmatchingmarks) instead. 
+Only includes marked results. To get results without marks, or specific marks, use [testSuiteResult.allMatchingMarks()](#testsuiteresultallmatchingmarks) instead. 
 
 [Back to top](#automation-api)
 
@@ -351,7 +350,7 @@ Only includes marked results. To get results without marks, or specific marks (o
 
 * testSuiteResult.allMatchingMarks(...marks: [TestMarkValue](#testmarkvalue)[]): [TestResult](#testresult)[]
 
-Find all the test case *and* test suite results, in this suite and all its sub-suites, that match any of the `marks`, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
+Find all the test case *and* test suite results, in this suite and its sub-suites, that match any of the `marks`, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
 
 If you want all the test results that were marked, use [testSuiteResult.allMarkedResults()](#testsuiteresultallmarkedresults) instead. 
 
@@ -362,9 +361,9 @@ If you want all the test results that were marked, use [testSuiteResult.allMarke
 
 * testSuiteResult.allPassingFiles(): string[]
 
-Find all the files, in this suite and all its sub-suites, that only had passing tests. Files with failed, timed out, or skipped tests are not included.
+Find all the files, in this suite and its sub-suites, that only had passing tests. Files with failed, timed out, or skipped tests are not included.
 
-This is useful for incremental builds. It allows you to ignore test files that have passed while re-testing files that had failures, timeouts, or skips.
+This is useful for incremental builds. You can mark files that had passing tests as not needing to be re-run (until they change). 
 
 [Back to top](#automation-api)
 
@@ -373,7 +372,7 @@ This is useful for incremental builds. It allows you to ignore test files that h
 
 * testSuiteResult.equals(that: [TestResult](#testresult)): boolean
 
-Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, marks, error messages, and timeouts. However, error renders are ignored, which means that stack traces and other error details other than the error message are ignored. 
+Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, marks, error messages, and timeouts. However, error renders are ignored, which means that stack traces and other error details are ignored. 
 
 [Back to top](#automation-api)
 
@@ -395,7 +394,7 @@ Determine if this suite’s result is equal to another test result. To be equal,
 
 * testCaseResult.filename?: string
 
-If this test was loaded from a module (and it typically will be), this property contains the absolute path of the module. Otherwise, it’s undefined. 
+If this test was loaded from a module, which most will be, this property contains the absolute path of the module. Otherwise, it’s undefined. 
 
 [Back to top](#automation-api)
 
@@ -415,9 +414,7 @@ All normal tests have a name, so there should be at least one name element, but 
 
 * testCaseResult.mark: [TestMarkValue](#testmarkvalue)
 
-Indicates whether the test was marked with `.skip` or `.only` (or not marked at all). Only tests that called `.skip` or `.only` are considered to be marked; this value isn’t inherited. As a result, tests can be skipped but not be *marked* `.skip`.
-
-Tests with no function body are considered to be marked `.skip`.
+Indicates whether the test was defined using `.skip`, `.only`, or neither. Tests with no function body are considered to be marked `.skip`.
 
 
 ## testCaseResult.status
@@ -426,18 +423,38 @@ Tests with no function body are considered to be marked `.skip`.
 
 Whether this test passed, failed, etc. 
 
-See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFail](#testcaseresultisfail), [testCaseResult.isSkip](#testcaseresultisskip), and [testCaseResult.isTimeout()](#testcaseresultistimeout) .
+See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFail()](#testcaseresultisfail), [testCaseResult.isSkip()](#testcaseresultisskip), and [testCaseResult.isTimeout()](#testcaseresultistimeout) .
 
 [Back to top](#automation-api)
 
 
-## testCaseResult.error
+## testCaseResult.errorMessage
 
-* testCaseResult.error?: unknown
+* testCaseResult.errorMessage?: string
 
-If this test failed, contains the error that was thrown. Otherwise, it’s undefined.
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-TODO Replace with errorMessage and errorRender
+If this test failed, contains the error message. Throws an exception if the test didn't fail.
+
+The nature of the error message depends on the type of the error.
+
+* If the error was an instance of `Error`, as is usually the case, this contains `error.message`.
+* If the error was an instance of `Error`, but `error.message` was undefined, this contains `""`. 
+* If the error was a string, this contains that string.
+* In all other cases, this contains the results of calling `util.inspect()` with infinite depth on the error. 
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.errorRender
+
+* testCaseResult.errorRender?: unknown
+
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
+If this test failed, contains the error rendering. Throws an exception if the test didn't fail.
+
+The error rendering depends on the renderer provided to the test runner in [TestOptions](#testoptions). If no renderer is provided, it defaults to [renderError()](reporting_api.md#rendererror), which returns a human-readable string with the error message, stack trace, and a comparison of actual and expected values (when applicable).
 
 [Back to top](#automation-api)
 
@@ -446,7 +463,7 @@ TODO Replace with errorMessage and errorRender
 
 * testCaseResult.timeout?: number
 
-If this test timed out, contains the timeout value in milliseconds. Otherwise, it’s undefined.
+If this test timed out, contains the timeout value in milliseconds. Throws an exception if the test didn't time out.
 
 Please note that this value is the timeout value the test was expected to meet, *not* the actual run time of the test. Due to the nature of JavaScript, the actual run time could be shorter or longer than the timeout value.
 
@@ -457,6 +474,8 @@ Please note that this value is the timeout value the test was expected to meet, 
 
 * testCaseResult.renderAsCharacter(): string
 
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
 Render this test as a single color-coded character representing its status:
 
 * *pass:* normal-colored `.`
@@ -464,7 +483,7 @@ Render this test as a single color-coded character representing its status:
 * *skip:* light cyan `_`
 * *timeout:* purple inverse `!`
 
-This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+This is a convenience method. For more control over rendering, use the [Reporting API](reporting_api.md) instead.
 
 
 [Back to top](#automation-api)
@@ -474,9 +493,11 @@ This is a convenience method. For more control over rendering, use [TestRenderer
 
 * testCaseResult.renderAsSingleLine(): string
 
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
 Render this test as a single color-coded line containing its status and name.
 
-This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+This is a convenience method. For more control over rendering, use the [Reporting API](reporting_api.md) instead.
 
 [Back to top](#automation-api)
 
@@ -485,13 +506,15 @@ This is a convenience method. For more control over rendering, use [TestRenderer
 
 * testCaseResult.renderAsMultipleLines(): string
 
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
 Render this test with all its color-coded detail. The rendering includes:
 
 * The filename, suites, and name of the test on two lines
 * The status of the test, if it didn’t fail
 * The error, stack trace, and expected/actual results, if it did fail
 
-This is a convenience method. For more control over rendering, use [TestRenderer](#testrenderer) instead.
+This is a convenience method. For more control over rendering, use the [Reporting API](reporting_api.md) instead.
 
 [Back to top](#automation-api)
 
@@ -543,191 +566,11 @@ See also [testCaseResult.status](#testcaseresultstatus).
 ---
 
 
-## TestRenderer
-
-* import { TestRenderer } from "ergotest/test_renderer.js"
-
-`TestRenderer` is a utility class for converting test results into strings. For most people, the `renderXxx()` convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class.
-
-> *Note:* Although some rendered strings include line feeds, for added flexibility, none of them have a line feed at the end.
-
-Of course, for the maximum control possible, you can ignore `TestRenderer` entirely and write your own rendering using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
-
-But for a happy middle ground between control and reuse, consider subclassing `TestRenderer` and overriding specific methods. For example, if you like how [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) works, but you want it to display emojis for status, override [testRenderer.renderStatusAsSingleWord](#testrendererrenderstatusassingleword) Or you can override [testRenderer.renderDiff](#testrendererrenderdiff) to change the way [testRenderer.renderAsMultipleLines()](#testrendererrenderasmultiplelines) displays errors.
-
-[Back to top](#automation-api)
-
-
-## TestRenderer.create()
-
-* TestRenderer.create(): TestRenderer
-
-Create a `TestRenderer` instance.
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderSummary()
-
-* testRenderer.renderSummary(testSuiteResult: [TestSuiteResult](#testsuiteresult), elapsedMs?: number): string
-
-Convert a `testSuiteResult` into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded and rendered in the following order:
-
-* *failed:* bright red
-* *timed out:* purple
-* *skipped:* cyan
-* *passed:* green
-
-If `elapsedMs` is defined, the summary will include the average amount of time required for each test in grey. This is a simple division operation; it’s up to you to determine the elapsed time correctly.
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderAsCharacters()
-
-* testRenderer.renderAsCharacters(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
-
-Render `testCaseResults` as a series of color-coded characters representing the tests’ statuses, as follows:
-
-* *pass:* normal-colored `.`
-* *fail:* red inverse `X`
-* *skip:* light cyan `_`
-* *timeout:* purple inverse `!`
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderAsSingleLines()
-
-* testRenderer.renderAsSingleLines(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
-
-Render `testCaseResults` as a series of consecutive lines containing the test status and name. Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline). 
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderAsMultipleLines()
-
-* testRenderer.renderAsMultipleLines(testCaseResults: [TestCaseResult](#testcaseresult) | [TestCaseResult](#testcaseresult)[]): string
-
-Render `testCaseResults` as detailed explanations of each result, each separated by two blank lines. Under the covers, this calls [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines) and [testRenderer.renderStatusWithMultiLineDetails()](#testrendererrenderstatuswithmultilinedetails).
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderMarksAsLines()
-
-* testRenderer.renderMarksAsLines(testResults: [TestResult](#testresult) | [TestResult](#testresult)[]): string
-
-Render `testResults` as a series of consecutive lines containing the test mark and name. Under the covers, this calls [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline).
-
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderNameOnOneLine()
-
-* testRenderer.renderNameOnOneLine(testResult: [TestResult](#testresult)): string
-
-If the test or suite has a filename, that’s rendered first in bold bright white. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons (` » `). 
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderNameOnMultipleLines()
-
-* testRenderer.renderNameOnMultipleLines(testResult: [TestResult](#testresult)): string
-
-If the test or suite has a filename, that’s rendered first. Next comes the name of the outermost suites down to the parent suite, from left to right, separated by chevrons (` » `). Finally, the name of test result is rendered on the following line.
-
-The whole string is rendered in bold bright white.
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderMarkAsSingleWord()
-
-* testRenderer.renderMarkAsSingleWord(testResult: [TestResult](#testresult)): string
-
-Renders the mark of the test or suite as a color-coded string, as follows:
-
-* *no mark:* `(no mark)` in default color
-* *.only:* `.only` in bright cyan
-* *.skip:* `.skip` in bright cyan
-* *no body:* same as .skip
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderStatusAsSingleWord()
-
-* testRenderer.renderMarkAsSingleWord(testCaseResult: [TestCaseResult](#testcaseresult)): string
-
-Renders the status of the test as a color-coded string, as follows:
-
-* *pass:* `passed` in green
-* *fail:* `failed` in bright red
-* *skip:* `skipped` in bright cyan
-* *timeout:* `timeout` in bright purple 
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderStatusWithMultilineDetails()
-
-* testRenderer.renderMarkWithMultilineDetails(testCaseResult: [TestCaseResult](#testcaseresult)): string
-
-Renders the status of the test with all its details, as follows:
-
-* *pass:* `passed` in green
-* *skip:* `skipped` in bright cyan
-* *timeout:* `Timed out after ###ms` in purple
-
-Failed tests are more complicated.
-
-* If `testCaseResult.error.stack` is defined, it renders the stack trace by calling [testRenderer.renderStack()](#testrendererrenderstack). Then, if `testCaseResult.error.message` is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
-* If `testCaseResult.error.stack` isn’t defined, it just converts `testCaseResult.error` to a string and renders it in red.
-* Finally, if `testCaseResult.error` is an `AssertionError`, it adds a blank line and renders the expected and actual results by calling [testRenderer.renderDiff()](#testrendererrenderdiff).
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderStack()
-
-* testRenderer.renderStack(testCaseResult: [TestCaseResult](#testcaseresult)): string
-
-Pulls out a failed test’s stack trace and highlights the lines that reference the test’s filename by adding an arrow (`-->`) and coloring them bold bright white.
-
-If the stack trace isn’t a string, converts it to a string and returns it without attempting to perform any highlighting. If the test doesn’t have an error, or it doesn’t have a stack trace, returns an empty string.
-
-[Back to top](#automation-api)
-
-
-## testRenderer.renderDiff()
-
-* testRenderer.renderDiff(error: AssertionError): string
-
-Renders the `expected` and `actual` values of `error` as consecutive lines, with highlighting to make comparing the results easier. If `error` doesn’t have `expected` and `actual` values, returns an empty string.
-
-Renders `expected:` first in green, followed by the expected value in the default color. It’s converted to a string by calling `util.inspect()` with infinite depth.
-
-Then it renders `actual:  ` in red on the following line, with padding after the colon to make the results line up, followed by the actual value in the default color. This is also converted to a string by calling `util.inspect()`.
-
-If the rendered values are more than one line, the strings are compared line by line. Any lines that are different are highlighted by coloring them bold bright yellow.
-
-In the future, I’d like to implement a more sophisticated mechanism for highlighting differences, but this works surprisingly well for such a cheap trick.
-
-[Back to top](#automation-api)
-
-
----
-
-
 ## TestResult
 
 * import { TestResult } from "ergotest/test_result.js"
 
-`TestResult` is the parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult). It doesn’t have any methods of its own, but it does have several static factory methods. You’re not likely to need them.
+The parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult). It doesn’t have any methods of its own, but it does have several static factory methods. They're only included for completeness; you’re not likely to need them.
 
 [Back to top](#automation-api)
 
@@ -754,19 +597,9 @@ Create a passing test result.
 
 * TestResult.fail(name: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
-Create a failing test result, where `error` is the reason for the failure. If it’s an `Error`, the failure will be rendered with a stack trace. If it’s an `AssertionError`, it will also be rendered with expected and actual values.
-
-TODO
+Create a failing test result, where `error` is the reason for the failure. The `error` will not be stored; instead, it will be used to set the [errorMessage](#testcaseresulterrormessage) and [errorRender](#testcaseresulterrorrender) properties. If `renderError` is provided, its return value will be used to set the [errorRender](#testcaseresulterrorrender) property; otherwise, Ergotest's built-in [renderError()](reporting_api.md#rendererror) will be used. 
 
 [Back to top](#automation-api)
-
-
-### RenderErrorFn
-
-* import { RenderErrorFn } from "ergotest/test_result.js"
-* (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
-
-TODO
 
 
 ## TestResult.skip()
@@ -832,6 +665,23 @@ A type for the possible values of [TestMark](#testmark).
 [Back to top](#automation-api)
 
 
+## RenderErrorFn
+
+* import { RenderErrorFn } from "ergotest/test_result.js"
+* (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+
+A type for custom error rendering. It takes the following parameters: 
+
+* _names:_ Same as [testCaseResult.name](#testcaseresultname).
+* _error:_ The error that caused the test to fail. Although it's usually an `Error` instance, it could be any data type, including a string.
+* _mark:_ Same as [testCaseResult.mark](#testcaseresultmark).
+* _filename:_ Same as [testCaseResult.filename](#testcaseresultfilename).
+
+See the [Reporting API](reporting_api.md) for more about custom error rendering.
+
+[Back to top](#automation-api)
+
+
 ---
 
 
@@ -854,7 +704,7 @@ Import the modules in `modulePaths` in the current process and groups them into 
 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed.
 
-Generates test failures if any of the `modulePaths` fail to load, or if they don’t export a test suite.
+If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
 
 > **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
@@ -869,6 +719,6 @@ Generates test failures if any of the `modulePaths` fail to load, or if they don
 
 Run the tests in the test suite. (See the [test API](test_api.md) for details.) Does *not* detect infinite loops or uncaught exceptions.
 
-Use `options` to provide configuration data to the tests or specify a callback for reporting test progress.
+Use `options` to provide configuration data to the tests and otherwise customize your test run.
 
 [Back to top](#automation-api)

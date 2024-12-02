@@ -5,6 +5,7 @@ Links to other documentation:
 * [Test API](test_api.md)
 * [Assertion API](assertion_api.md)
 * [Automation API](automation_api.md)
+* [Reporting API](docs/reporting_api.md)
 * [Readme](./README.md)
 * [Changelog](./CHANGELOG.md)
 * **Roadmap**
@@ -16,19 +17,19 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * ✅ **Better test API.** Currently, `describe()`, `it()`, `beforeXxx()`, and `afterXxx()` are passed in as parameters to the test suite function. This is awkward and has some footguns. I’d like to you to be able to just import them like you do in Vitest.  
 * ✅ **Better timeout handling.** Currently, timeouts are set by a `setTimeout()` method provided to the test suite function. Vitest takes a `{ timeout }` parameter instead. That’s cleaner and more flexible. I’d like to do the same.
 * ✅ **Rename notifyFn.** The test runner takes a `notifyFn()` parameter. I should probably rename that to something like `onTestCaseResult()`.
-* **Perform error rendering in child process.** Failed test results currently include the error that caused the test to fail. The expected and actual results are rendered by the caller, not in the test worker, which typically runs in a child process. Unfortunately, some objects don't serialize properly, resulting in a diff that's missing data. I'll need to move the rendering into the child process to fix the problem.
+* ✅ **Perform error rendering in child process.** Failed test results currently include the error that caused the test to fail. The expected and actual results are rendered by the caller, not in the test worker, which typically runs in a child process. Unfortunately, some objects don't serialize properly, resulting in a diff that's missing data. I'll need to move the rendering into the child process to fix the problem.
 * **Detect non-exit.** Detect if a test puts something on the event loop that would prevent the process from exiting when using TestRunner.runInChildProcessAsync(). (Remember to support renderError() option.) 
-* **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. It can be made to occur by triggering the 'uncaught exception' watchdog, which was due to an endless loop as a result of an IPC_CHANNEL_CLOSED error. There may be other cases as well (timeouts)?.
+* **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. One cause of this has been fixed, but there may be other cases as well (timeouts)?.
+* **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
+* **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
+* **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
 
 
 ## Road to “fully baked”
 
 My goal is for Ergo to reach the point where it’s “fully baked” and not incorporating new features. Here’s what I’d like to finish before declaring it “done:”
 
-* **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
-* **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * ✅ **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
-* **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
 * **Parallel test runs.** This isn’t that high on my list, given that my tests run in a matter of seconds, and [Automatopia’s](https://github.com/jamesshore/automatopia) incremental watch script brings that down to a fraction of a second, but it would be good for bragging rights.
   * Specifically, I want to spawn multiple child processes and have them each process one test module at time off of a shared queue. 
   * This isn't that hard, given that we already use a child process to run the tests. The main challenge is that we need to ensure that `.only` still works across files.
