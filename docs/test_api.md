@@ -159,7 +159,7 @@ Prefer a different assertion library? Like `expect` better than `assert`? Use th
 ```typescript
 // tests.ts
 export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "ergotest";
-export { expect } from "chai";
+export { expect } from "chai";    // Chai is a third-party module
 ```
 
 You can also export custom assertion methods that are purpose-built for the needs of your project. See the [Assertion API documentation](assertion_api.md) for details. 
@@ -171,20 +171,20 @@ The remainder of this document describes the functions you’ll use in your test
 
 ## describe()
 
-* describe(name?: string, options?: [DescribeOptions](#describeoptions) , fn?: () => void)
-* describe(name?: string, fn?: () => void)
-* describe(options?: [DescribeOptions](#describeoptions), fn?: () => void)
-* describe(fn?: () => void)
-* describe.only(...)
-* describe.skip(...)
+* describe(name?: string, options?: [DescribeOptions](#describeoptions) , fn?: () => void): [TestSuite](automation_api.md#testsuite)
+* describe(name?: string, fn?: () => void): [TestSuite](automation_api.md#testsuite)
+* describe(options?: [DescribeOptions](#describeoptions), fn?: () => void): [TestSuite](automation_api.md#testsuite)
+* describe(fn?: () => void): [TestSuite](automation_api.md#testsuite)
+* describe.only(...): [TestSuite](automation_api.md#testsuite)
+* describe.skip(...): [TestSuite](automation_api.md#testsuite)
 
 Use `export default describe(() => {...})` to define your test module. Inside the function, call [it()](#it) to define each test, call [describe()](#describe) again to define sub-suites of tests, and call [beforeAll()](#beforeall), [afterAll()](#afterall), [beforeEach()](#beforeeach), and [afterEach()](#aftereach) to define functions to run before and after tests in each suite.
 
-If `fn` is not provided, the suite will be skipped.
+All parameters are optional, and later parameters (such as `fn`) can be included even if earlier parameters (such as `name` or `options`) are left out. If `fn` is left out, the suite will be skipped.
 
-If you call `describe.skip()`, all the tests in that suite will be skipped. If you call `describe.only()`, all tests and suites that _aren’t_ marked `.only` will be skipped. These statuses are inherited by all tests and sub-suites within this suite, but it can be overridden by using `.skip` or `.only` on a test or sub-suite.
+If you call `describe.skip()`, all the tests in that suite will be skipped. If you call `describe.only()`, all tests and suites that _aren’t_ marked `.only` will be skipped. These statuses can be overridden by using `.skip` or `.only` on a test or sub-suite.
 
-This function technically returns a [TestSuite](automation_api.md#testsuite) instance, but you should use [TestRunner](automation_api.md#testrunner) instead.
+This function technically returns a [TestSuite](automation_api.md#testsuite) instance, but you won't need it.
 
 
 ### DescribeOptions
@@ -198,13 +198,13 @@ Use the `timeout` option to change the timeout for tests in this suite and its s
 
 ## it()
 
-* it(name: string, options?: ItOptions, fn?: ItFunction)
-* it(name: string, fn?: ItFunction)
+* it(name: string, options?: [ItOptions](#itoptions), fn?: [ItFunction](#itfunction))
+* it(name: string, fn?: [ItFunction](#itfunction))
 * it(name: string)
 * it.only(...)
 * it.skip(...)
 
-Define an individual test. When the test suite runs, it will run each test’s `fn()` in the order `it()` was called. If `fn` is not provided, the test will be skipped.
+Define an individual test. When the test suite runs, it will run each test’s `fn()` in the order `it()` was called. If `fn` is left out, the test will be skipped.
 
 > *Note:* In the future, ergotest may support parallel test runs. If the tests are being run in parallel, tests in different modules could run at the same time. The order that modules will run is unpredictable. But all the tests in a single module will run one at a time in the order they were defined.
 
@@ -214,12 +214,12 @@ If you call `it.skip()`, this test will be skipped. If you call `test.only()` al
 
 After the test runs, it will have one of the following statuses:
 
-* *Fail:* The function threw an exception.
-* *Timeout:* The function took too long to complete. Use [ItOptions](#itoptions) or your automation to change the timeout (defaults to two seconds).
-* *Skip:* The test was skipped.
 * *Pass:* The function ran and exited normally.
+* *Skip:* The test was skipped.
+* *Fail:* The function threw an exception.
+* *Timeout:* The function took too long to complete. Use [ItOptions](#itoptions), [DescribeOptions](#describeoptions), or [TestOptions](automation_api.md#testoptions) to change the timeout. The default is two seconds.
 
-You’ll typically make your tests fail by throwing an `AssertionError`. Most assertion libraries will do this for you. For details about Ergotest’s built-in assertion library, see the [assertion API documentation](assertion_api.md).
+You’ll typically make your tests fail by using an assertion library that throws `AssertionError`. You can use any library you like. For details about Ergotest’s built-in assertion library, see the [assertion API documentation](assertion_api.md).
 
 ### ItFunction
 
@@ -239,8 +239,8 @@ Use this `timeout` option to change the timeout for this test. The default value
 
 ## beforeAll()
 
-* beforeAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
-* beforeAll(fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
+* beforeAll(options: [ItOptions](#itoptions), fn: [ItFunction](#itfunction))
+* beforeAll(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing. 
 
@@ -255,8 +255,8 @@ If `fn()` throws an exception or times out, the tests won’t run.
 
 ## afterAll()
 
-* afterAll(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
-* afterAll(fn: ({ [getConfig }](#getconfig} )) => void | Promise\<void>)
+* afterAll(options: [ItOptions](#itoptions), fn: [ItFunction](#itfunction))
+* afterAll(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately before running all the tests in this suite and its sub-suites. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 
@@ -271,8 +271,8 @@ If no tests in this suite or its sub-suites ran—either because there weren’t
 
 ## beforeEach()
 
-* beforeEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
-* beforeEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
+* beforeEach(options: [ItOptions](#itoptions), fn: [ItFunction](#itfunction))
+* beforeEach(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 
@@ -287,8 +287,8 @@ If `fn()` throws an exception or times out, the corresponding test will not be r
 
 ## afterEach()
 
-* afterEach(options: [ItOptions](#itoptions), fn: ({ [getConfig](#getconfig) }) => void | Promise\<void>)
-* afterEach(fn: ({ [getConfig](#getconfig} )) => void | Promise\<void>)
+* afterEach(options: [ItOptions](#itoptions), fn: [ItFunction](#itfunction))
+* afterEach(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If `fn()` returns a promise, the test runner will `await` that promise before continuing.
 

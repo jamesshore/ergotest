@@ -10,7 +10,7 @@ Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running
 * [Test API](docs/test_api.md) - How to write your tests
 * [Assertion API](docs/assertion_api.md) - How to make assertions
 * [Automation API](docs/automation_api.md) - How to run your tests
-* [Reporting API](docs/reporting_api.md) - How to customize test output
+* [Reporting API](docs/reporting_api.md) - How to customize your test output
 * [Changelog](CHANGELOG.md)
 * [Roadmap](ROADMAP.md)
 
@@ -80,11 +80,13 @@ Other than that, Ergotest is designed for experienced practitioners using test-d
 Ergotest also doesn't include a command-line tool. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
 
 
-## Quick Start
+## Installation
 
 ```shell
 npm install --save-dev ergotest 
 ```
+
+## Quick Start
 
 ### 1. Isolate Ergotest
 
