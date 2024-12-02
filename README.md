@@ -10,6 +10,7 @@ Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running
 * [Test API](docs/test_api.md) - How to write your tests
 * [Assertion API](docs/assertion_api.md) - How to make assertions
 * [Automation API](docs/automation_api.md) - How to run your tests
+* [Reporting API](docs/reporting_api.md) - How to customize test output
 * [Changelog](CHANGELOG.md)
 * [Roadmap](ROADMAP.md)
 

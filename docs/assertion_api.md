@@ -7,6 +7,7 @@ Links to other documentation:
 * [Test API](test_api.md)
 * **Assertion API**
 * [Automation API](automation_api.md)
+* [Reporting API](reporting_api.md)
 * [Readme](../README.md)
 * [Changelog](../CHANGELOG.md)
 * [Roadmap](../ROADMAP.md)
