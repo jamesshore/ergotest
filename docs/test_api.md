@@ -75,7 +75,7 @@ export default describe(() => {
         setTimeout(resolve, 10000);
       });
     });
-		
+    
     it("has a test with a configured timeout", { timeout: 20000 }, async () => {
       // this test passes
       await new Promise((resolve) => {
@@ -107,7 +107,7 @@ export default describe(() => {
     });
     
   });
-	
+  
 });
 ```
 
