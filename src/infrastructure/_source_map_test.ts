@@ -6,28 +6,29 @@ import * as module from "node:module";
 
 export default describe(() => {
 
+	let sourceFilePath: string;
+	let sourceMapPath: string;
+	let importCacheBuster = 0;
+
+	beforeEach(async ({ getConfig }) => {
+		const testDir = getConfig<string>("scratchDir");
+
+		sourceFilePath = `${testDir}/my_file_${importCacheBuster}.js`;
+		sourceMapPath = `${testDir}/my_file_${importCacheBuster}.map.js`;
+		importCacheBuster++;
+		await deleteTempFilesAsync(testDir);
+	});
+
 	describe("real behavior", () => {
-		let nonce = 0;
-		let SOURCE_FILE_PATH: string;
-		let SOURCE_MAP_PATH: string;
-
-		beforeEach(async ({ getConfig }) => {
-			const testDir = getConfig<string>("scratchDir");
-
-			SOURCE_FILE_PATH = `${testDir}/my_file_${nonce}.js`;
-			SOURCE_MAP_PATH = `${testDir}/my_file_${nonce}.map.js`;
-			nonce++;
-			await deleteTempFilesAsync(testDir);
-		});
 
 		it("gets original filename from source map", async () => {
-			const sourceFile = `//# sourceMappingURL=${SOURCE_MAP_PATH}`;
+			const sourceFile = `//# sourceMappingURL=${sourceMapPath}`;
 			const sourceMapFile = `{"version":3,"sources":["/my_original_file.ts"],"sourcesContent":[],"names":[],"mappings":""}`;
 
 			await writeFilesAsync(sourceFile, sourceMapFile);
 			const sourceMap = SourceMap.create();
 
-			assert.equal(sourceMap.getOriginalFilenames(SOURCE_FILE_PATH), [ "/my_original_file.ts" ]);
+			assert.equal(sourceMap.getOriginalFilenames(sourceFilePath), [ "/my_original_file.ts" ]);
 		});
 
 		it("returns an empty array if there is no source map", async () => {
@@ -36,34 +37,57 @@ export default describe(() => {
 			await writeFilesAsync(sourceFile, "");
 			const sourceMap = SourceMap.create();
 
-			assert.equal(sourceMap.getOriginalFilenames(SOURCE_FILE_PATH), []);
+			assert.equal(sourceMap.getOriginalFilenames(sourceFilePath), []);
 		});
 
 		it("supports multiple original files", async () => {
-			const sourceFile = `//# sourceMappingURL=${SOURCE_MAP_PATH}`;
+			const sourceFile = `//# sourceMappingURL=${sourceMapPath}`;
 			const sourceMapFile = `{"version":3,"sources":["/my_original_file.ts","/my_second_original.ts"],"sourcesContent":[],"names":[],"mappings":""}`;
 
 			await writeFilesAsync(sourceFile, sourceMapFile);
 			const sourceMap = SourceMap.create();
 
 			assert.equal(
-				sourceMap.getOriginalFilenames(SOURCE_FILE_PATH),
-				[ "/my_original_file.ts", "/my_second_original.ts" ]
+				sourceMap.getOriginalFilenames(sourceFilePath),
+				[ "/my_original_file.ts", "/my_second_original.ts" ],
 			);
 		});
 
-		async function writeFilesAsync(sourceFile: string, sourceMapFile: string) {
-			await fs.writeFile(SOURCE_FILE_PATH, sourceFile);
-			await fs.writeFile(SOURCE_MAP_PATH, sourceMapFile);
-			await import(SOURCE_FILE_PATH);
-		}
-
 	});
 
 
-	describe.skip("nulled behavior", () => {
+	describe("nulled behavior", () => {
+
+		it("doesn't look at actual module", async () => {
+			const sourceFile = `//# sourceMappingURL=${sourceMapPath}`;
+			const sourceMapFile = `{"version":3,"sources":["/my_original_file.ts"],"sourcesContent":[],"names":[],"mappings":""}`;
+
+			await writeFilesAsync(sourceFile, sourceMapFile);
+			const realSourceMap = SourceMap.create();
+			const nulledSourceMap = SourceMap.createNull();
+
+			assert.equal(realSourceMap.getOriginalFilenames(sourceFilePath), [ "/my_original_file.ts" ]);
+			assert.equal(nulledSourceMap.getOriginalFilenames(sourceFilePath), []);
+		});
+
+		it("can be configured", () => {
+			const sourceMap = SourceMap.createNull({
+				"/file1.js": [ "original1.ts" ],
+				"/file2.js": [ "original2a.ts", "original2b.ts" ],
+			});
+
+			assert.equal(sourceMap.getOriginalFilenames("/file1.js"), [ "original1.ts" ]);
+			assert.equal(sourceMap.getOriginalFilenames("/file2.js"), [ "original2a.ts", "original2b.ts" ]);
+			assert.equal(sourceMap.getOriginalFilenames("not_configured"), []);
+		});
 
 	});
+
+	async function writeFilesAsync(sourceFile: string, sourceMapFile: string) {
+		await fs.writeFile(sourceFilePath, sourceFile);
+		await fs.writeFile(sourceMapPath, sourceMapFile);
+		await import(sourceFilePath);
+	}
 
 });
 
