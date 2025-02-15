@@ -41,13 +41,13 @@ Most people can ignore the reporting API. The [automation API](automation_api.md
 
 Reporting is split into two parts in Ergotest:
 
-* _Result rendering_, which converts a test result into a string. It happens in your build. 
-* _Error rendering_, which sets the [testCaseResult.errorRender](automation_api.md#testcaseresulterrorrender) property. It happens when a failed [TestCaseResult](automation_api.md#testcaseresult) is created.
+* _Result rendering_, which converts a test result into a string. Your build makes this happen. 
+* _Error rendering_, which converts an error object into a string and sets the [testCaseResult.errorRender](automation_api.md#testcaseresulterrorrender) property. Ergotest makes this happen when a test fails.
 
 
 ### Customizing result rendering
 
-Most people only use result rendering. For example, the example in the [Automation API documentation](automation_api.md#start-here) `result.render()` to output the overall test results and `testCase.renderAsCharacter()` to output progress:
+Most people only use result rendering. For example, the example in the [Automation API documentation](automation_api.md#start-here) uses `result.render()` to output the overall test results and `testCase.renderAsCharacter()` to output progress:
 
 ```javascript
 import { TestRunner } from "ergotest/test_runner.js";
@@ -144,7 +144,7 @@ const result = await testRunner.runInChildProcessAsync(files, options);
 // ...
 ```
 
-The worker process will import your custom module and call `renderError()` every time a test fails. The result of your `renderError()` function will be found in [TestCaseResult.errorRender](automation_api.md#testcaseresulterrorrender). Ergotest's built-in rendering functions, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender) and [TestRenderer](#testrenderer), will use it automatically.
+The worker process will import your custom module and call its `renderError()` function every time a test fails. It stores the result of that call in [TestCaseResult.errorRender](automation_api.md#testcaseresulterrorrender). Ergotest's built-in rendering functions, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender) and [TestRenderer](#testrenderer), will use the result automatically.
 
 
 ### Total customization
