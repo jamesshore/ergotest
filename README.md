@@ -40,9 +40,9 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my TypeScript code in about 0.2 seconds. 
 
 
-## Wait for v1.0
+## Wait for v1.0?
 
-Although Ergotest is battle-tested, it’s got some idiosyncracies. I'm still refining the API to make it more suitable for mainstream use. Until v1.0 is released, everything is subject to change, so you might want to wait.
+Although Ergotest is battle-tested, I'm still refining the API. It’s possible there will be some breaking API changes, although they shouldn't be significant. Until v1.0 is released, everything is subject to change, so you might want to wait.
 
 
 ## Example Tests

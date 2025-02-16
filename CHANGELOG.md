@@ -11,6 +11,11 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.10.x: Better stack trace highlighting, including TypeScript support
+
+* **0.10.0, 15 Feb 2024:** When a test fails, the error message previously highlighted the test's stack frames in bright white. Now they're highlighted in bright yellow for better visibility. In addition, the highlighting supports source maps, which means they now work with TypeScript code.
+
+
 ## v0.9.x: Improve error rendering (minor breaking change)
 
 * **0.9.0, 1 Dec 2024:** Test failures render with more information in various edge cases, particularly for custom errors and some 'expected' and 'actual' results. This was done by rendering errors inside of Ergotest's worker process, rather than serializing errors across the worker process boundary, which resulted in some data being lost. 
