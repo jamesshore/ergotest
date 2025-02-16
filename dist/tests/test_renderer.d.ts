@@ -1,5 +1,6 @@
 import { TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import { AssertionError } from "node:assert";
+import { SourceMap } from "../infrastructure/source_map.js";
 /**
  * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
  * rather than called directly.
@@ -15,9 +16,10 @@ export declare function renderError(name: string[], error: unknown, mark: TestMa
  * correspond to the filename will be highlighted.
  * @param {unknown} error The error
  * @param {string} [filename] The filename to highlight
+ * @param [sourceMap] Internal use only
  * @returns {string} The stack trace for the test, or "" if there wasn't one.
  */
-export declare function renderStack(error: Error, filename?: string): string;
+export declare function renderStack(error: Error, filename?: string, sourceMap?: SourceMap): string;
 /**
  *
  * @returns {string} A comparison of expected and actual values, or "" if there weren't any.

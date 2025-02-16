@@ -5,8 +5,10 @@ import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
 import util from "node:util";
+import { SourceMap } from "../infrastructure/source_map.js";
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
+const stackHighlightColor = Colors.brightYellow.bold;
 const errorMessageColor = Colors.brightRed;
 const timeoutMessageColor = Colors.purple;
 const expectedColor = Colors.green;
@@ -51,22 +53,32 @@ const summaryColor = Colors.brightWhite.dim;
  * correspond to the filename will be highlighted.
  * @param {unknown} error The error
  * @param {string} [filename] The filename to highlight
+ * @param [sourceMap] Internal use only
  * @returns {string} The stack trace for the test, or "" if there wasn't one.
- */ export function renderStack(error, filename) {
+ */ export function renderStack(error, filename, sourceMap = SourceMap.create()) {
     ensure.signature(arguments, [
         ensure.ANY_TYPE,
         [
             undefined,
             String
+        ],
+        [
+            undefined,
+            SourceMap
         ]
     ]);
     const stack = error instanceof AssertionError ? error.stack ?? "" : util.inspect(error);
     if (filename === undefined) return stack;
+    let filenamesToHighlight = sourceMap.getOriginalFilenames(filename);
+    if (filenamesToHighlight.length === 0) filenamesToHighlight = [
+        filename
+    ];
     const lines = stack.split("\n");
     const highlightedLines = lines.map((line)=>{
-        if (!line.includes(filename)) return line;
+        const shouldHighlight = filenamesToHighlight.some((filename)=>line.includes(filename));
+        if (!shouldHighlight) return line;
         line = line.replace(/    at/, "--> at"); // this code is vulnerable to changes in Node.js rendering
-        return headerColor(line);
+        return stackHighlightColor(line);
     });
     return highlightedLines.join("\n");
 }
