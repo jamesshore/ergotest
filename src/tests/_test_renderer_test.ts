@@ -7,6 +7,7 @@ import { Colors } from "../infrastructure/colors.js";
 import util from "node:util";
 import { describe as describe_sut, it as it_sut } from "./test_api.js";
 import path from "node:path";
+import { SourceMap } from "../infrastructure/source_map.js";
 
 const headerColor = Colors.brightWhite.bold;
 const summaryColor = Colors.brightWhite.dim;
@@ -476,12 +477,33 @@ export default describe(() => {
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
 
+		const EXAMPLE_SOURCE_MAP_STACK = "Error: my error\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts:306:11\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.ts:222:10\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26\n";
+
 		const HIGHLIGHTED_STACK = "Error: my error\n" +
 			Colors.brightWhite.bold(
 				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js:306:11"
 			) + "\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
+
+		const HIGHLIGHTED_SOURCE_MAP_STACK = "Error: my error\n" +
+			Colors.brightWhite.bold(
+				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts:306:11"
+			) + "\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.ts:222:10\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26\n";
+
+		const HIGHLIGHTED_MULTIPLE_SOURCE_MAP_STACK = "Error: my error\n" +
+			Colors.brightWhite.bold(
+				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts:306:11"
+			) + "\n" +
+			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.ts:222:10\n" +
+			Colors.brightWhite.bold(
+				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26"
+			) + "\n";
 
 		it("inspects the error object", () => {
 			class MyError extends Error {
@@ -536,6 +558,40 @@ export default describe(() => {
 				HIGHLIGHTED_STACK,
 			);
 		});
+
+		it("highlights stack trace lines even when test file has a source map", () => {
+			const error = new Error("my error");
+			error.stack = EXAMPLE_SOURCE_MAP_STACK;
+
+			const sourceMap = SourceMap.createNull({
+				"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js": [
+					"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts",
+				],
+			});
+
+			assert.equal(
+				renderStack(error, "/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js", sourceMap),
+				HIGHLIGHTED_SOURCE_MAP_STACK,
+			);
+		});
+
+		it("highlights stack trace lines when source map has multiple sources", () => {
+			const error = new Error("my error");
+			error.stack = EXAMPLE_SOURCE_MAP_STACK;
+
+			const sourceMap = SourceMap.createNull({
+				"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js": [
+					"/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts",
+					"/Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts",
+				],
+			});
+
+			assert.equal(
+				renderStack(error, "/Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js", sourceMap),
+				HIGHLIGHTED_MULTIPLE_SOURCE_MAP_STACK,
+			);
+		});
+
 	});
 
 
