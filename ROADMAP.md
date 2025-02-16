@@ -21,7 +21,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * **Detect non-exit.** Detect if a test puts something on the event loop that would prevent the process from exiting when using TestRunner.runInChildProcessAsync(). (Remember to support renderError() option.) 
 * **Fix orphaned processes.** The watch script appears to leave orphaned Node processes running in some situations, even after the script exits. One cause of this has been fixed, but there may be other cases as well (timeouts)?.
 * **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
-* **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
+* ✅ **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
 
 
