@@ -10,6 +10,7 @@ import { SourceMap } from "../infrastructure/source_map.js";
 
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
+const stackHighlightColor = Colors.brightYellow.bold;
 const errorMessageColor = Colors.brightRed;
 const timeoutMessageColor = Colors.purple;
 const expectedColor = Colors.green;
@@ -82,7 +83,7 @@ export function renderStack(error: Error, filename?: string, sourceMap = SourceM
 		if (!shouldHighlight) return line;
 
 		line = line.replace(/    at/, "--> at");	// this code is vulnerable to changes in Node.js rendering
-		return headerColor(line);
+		return stackHighlightColor(line);
 	});
 	return highlightedLines.join("\n");
 }

@@ -483,25 +483,25 @@ export default describe(() => {
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26\n";
 
 		const HIGHLIGHTED_STACK = "Error: my error\n" +
-			Colors.brightWhite.bold(
+			Colors.brightYellow.bold(
 				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.js:306:11"
 			) + "\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.js:222:10\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.js:68:26\n";
 
 		const HIGHLIGHTED_SOURCE_MAP_STACK = "Error: my error\n" +
-			Colors.brightWhite.bold(
+			Colors.brightYellow.bold(
 				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts:306:11"
 			) + "\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.ts:222:10\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26\n";
 
 		const HIGHLIGHTED_MULTIPLE_SOURCE_MAP_STACK = "Error: my error\n" +
-			Colors.brightWhite.bold(
+			Colors.brightYellow.bold(
 				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_result.test.ts:306:11"
 			) + "\n" +
 			"    at file:///Users/jshore/Documents/Projects/ergotest/_build/util/tests/test_suite.ts:222:10\n" +
-			Colors.brightWhite.bold(
+			Colors.brightYellow.bold(
 				"--> at file:///Users/jshore/Documents/Projects/ergotest/_build/util/infrastructure/clock.ts:68:26"
 			) + "\n";
 
