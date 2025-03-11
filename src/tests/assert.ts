@@ -21,8 +21,8 @@ interface Includes {
 
 export type TypeDescriptor = TypeLibDescriptor;
 
-export function fail(message: string): never {
-	throw new AssertionError({ message });
+export function fail(message: string, actual?: unknown, expected?: unknown): never {
+	throw new AssertionError({ message, actual, expected });
 }
 
 export function todo(message?: string): never {

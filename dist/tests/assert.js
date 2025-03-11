@@ -6,9 +6,11 @@
 import util from "node:util";
 import { check as typeCheck, describe as describeType } from "../util/type.js";
 import { AssertionError } from "node:assert";
-export function fail(message) {
+export function fail(message, actual, expected) {
     throw new AssertionError({
-        message
+        message,
+        actual,
+        expected
     });
 }
 export function todo(message) {

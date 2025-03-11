@@ -6,7 +6,7 @@ interface Includes {
     includes(any: unknown): boolean;
 }
 export type TypeDescriptor = TypeLibDescriptor;
-export declare function fail(message: string): never;
+export declare function fail(message: string, actual?: unknown, expected?: unknown): never;
 export declare function todo(message?: string): never;
 export declare function identity(actual: unknown, expected: unknown, message?: string): void;
 export declare function notIdentity(actual: unknown, expected: unknown, message?: string): void;
