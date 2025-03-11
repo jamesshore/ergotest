@@ -11,6 +11,11 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
+
+* **0.11.0, 10 Mar 2024:** The [assert.fail()](docs/assertion_api.md#assertfail) assertion now takes optional `actual` and `expected` parameters. If present, they will be included in the error rendering.
+
+
 ## v0.10.x: Better stack trace highlighting, including TypeScript support
 
 * **0.10.0, 15 Feb 2024:** When a test fails, the error message previously highlighted the test's stack frames in bright white. Now they're highlighted in bright yellow for better visibility. In addition, the highlighting supports source maps, which means they now work with TypeScript code.
