@@ -91,9 +91,9 @@ The remainder of this document describes the assertions in `ergotest/assert.js`.
 
 ## assert.fail()
 
-* assert.fail(message: string): never
+* assert.fail(message: string, actual?: unknown, expected?: unknown): never
 
-Fails with the provided message.
+Fails with the provided message. If `actual` and `expected` are defined, then they will be included in the error rendering.  
 
 [Back to top](#assertion-api)
 
