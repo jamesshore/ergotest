@@ -12,6 +12,23 @@ interface ObjEquals {
 
 export default describe(() => {
 
+	describe("fail()", () => {
+
+		it("always fails", () => {
+			expectFail(() => {
+				assert.fail("my message");
+			}, "my message");
+		});
+
+		it("accepts optional 'expected' and 'actual' values", () => {
+			expectFail(() => {
+				assert.fail("my message", "actual", "expected");
+			}, "my message", "actual", "expected");
+		});
+
+	});
+
+
 	describe("equal()", () => {
 
 		it("passes if actual strictly equals expected", () => {
@@ -501,7 +518,7 @@ function checkError(err: unknown, actual: unknown, expected: unknown, expectedFa
 	check(typedErr.actual, actual, "actual");
 
 	function check(actual: unknown, expected: unknown, message: string) {
-		if (actual === undefined) assert.isUndefined(actual, message);
+		if (expected === undefined) assert.isUndefined(actual, message);
 		else assert.equal(actual, expected, message);
 	}
 }
