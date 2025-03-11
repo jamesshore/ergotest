@@ -23,11 +23,12 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * **Detect early exit.** Detect if a test calls process.exit() when using TestRunner.runInChildProcessAsync(). Current behavior is to hang.
 * ✅ **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
+* **Add timers and performance analysis.** The test runner doesn't currently keep track of performance. I'd like to track how module loading, before/after blocks, tests, spawning child processes, and anything else that takes time. I'd also like to add APIs to get actions that take longer than N milliseconds, and optionally display them as part of the convenience renderings.  
 
 
 ## Road to “fully baked”
 
-My goal is for Ergo to reach the point where it’s “fully baked” and not incorporating new features. Here’s what I’d like to finish before declaring it “done:”
+My goal is for Ergotest to reach the point where it’s “fully baked” and not incorporating new features. Here’s what I’d like to finish before declaring it “done:”
 
 * ✅ **Configurable default timeout.** The default timeout is hardcoded to two seconds. I’d like that to be configurable.
 * **Parallel test runs.** This isn’t that high on my list, given that my tests run in a matter of seconds, and [Automatopia’s](https://github.com/jamesshore/automatopia) incremental watch script brings that down to a fraction of a second, but it would be good for bragging rights.
