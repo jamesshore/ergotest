@@ -1466,7 +1466,7 @@ async function runTestAsync(testName: string, testFn: () => void) {
 		it_sut(testName, testFn);
 	});
 	const result = await suite.runAsync();
-	return result.children[0];
+	return result.tests[0];
 }
 
 function createSuite({

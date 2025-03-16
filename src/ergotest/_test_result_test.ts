@@ -15,7 +15,7 @@ export default describe(() => {
 			const result = TestResult.suite([ "my name" ], list);
 
 			assert.equal(result.name, [ "my name" ]);
-			assert.equal(result.children, list);
+			assert.equal(result.tests, list);
 		});
 
 		it("name can include parent suites", () => {
