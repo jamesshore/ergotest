@@ -697,7 +697,7 @@ function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestSuiteResult {
-	return TestResult.suite(name, children, filename, mark);
+	return TestResult.suite(name, children, { filename, mark });
 }
 
 function createPass({

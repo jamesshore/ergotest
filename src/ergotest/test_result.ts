@@ -61,17 +61,29 @@ export abstract class TestResult {
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {TestResult[]} children The nested results of this suite.
-	 * @param {string} [filename] The file that contained this suite (optional).
-	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
 	 */
 	static suite(
 		name: string | string[],
 		children: TestResult[],
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		{
+			filename,
+			mark = TestMark.none
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestSuiteResult {
-		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ], [ undefined, String ]]);
+		ensure.signature(arguments, [
+			[ String, Array ],
+			Array,
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}]
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestSuiteResult(name, children, mark, filename);

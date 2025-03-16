@@ -396,7 +396,12 @@ export class TestSuite implements Test {
 			const beforeResult = await runBeforeOrAfterFnsAsync(
 				[ ...options.name, "beforeAll()" ], this._beforeAllFns, TestMark.none, options,
 			);
-			if (!isSuccess(beforeResult)) return TestResult.suite(options.name, [ beforeResult ], options.filename, this._mark);
+			if (!isSuccess(beforeResult)) {
+				return TestResult.suite(options.name, [ beforeResult ], {
+					filename: options.filename,
+					mark: this._mark,
+				});
+			}
 		}
 
 		const results = [];
@@ -411,7 +416,10 @@ export class TestSuite implements Test {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResult.suite(options.name, results, options.filename, this._mark);
+		return TestResult.suite(options.name, results, {
+			filename: options.filename,
+			mark: this._mark,
+		});
 	}
 
 }
