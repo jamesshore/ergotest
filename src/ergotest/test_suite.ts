@@ -59,7 +59,7 @@ interface RecursiveRunOptions {
 	renderError?: RenderErrorFn,
 }
 
-interface Runnable {
+interface Test {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
 		parentBeforeEachFns: BeforeAfterDefinition[],
@@ -92,11 +92,11 @@ export interface TestContext {
 /**
  * A simple but full-featured test runner.
  */
-export class TestSuite implements Runnable {
+export class TestSuite implements Test {
 
 	private _name: string;
 	private _mark: TestMarkValue;
-	private _tests: Runnable[];
+	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
 	private _beforeAllFns: BeforeAfterDefinition[];
@@ -238,7 +238,7 @@ export class TestSuite implements Runnable {
 		testContext: TestContext[],
 		timeout?: Milliseconds,
 	): TestSuite {
-		const tests: Runnable[] = [];
+		const tests: Test[] = [];
 		const beforeAllFns: BeforeAfterDefinition[] = [];
 		const afterAllFns: BeforeAfterDefinition[] = [];
 		const beforeEachFns: BeforeAfterDefinition[] = [];
@@ -246,10 +246,12 @@ export class TestSuite implements Runnable {
 
 		testContext.push({
 			describe(optionalName, optionalOptions, fn, mark) {
-				return pushTest(TestSuite.create(optionalName, optionalOptions, fn, mark, testContext));
+				const suite = TestSuite.create(optionalName, optionalOptions, fn, mark, testContext);
+				tests.push(suite);
+				return suite;
 			},
 			it(name, optionalOptions, testCaseFn, mark) {
-				pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
+				tests.push(TestCase.create(name, optionalOptions, testCaseFn, mark));
 			},
 			beforeAll: defineBeforeAfterFn(beforeAllFns),
 			afterAll: defineBeforeAfterFn(afterAllFns),
@@ -265,11 +267,6 @@ export class TestSuite implements Runnable {
 		}
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
-
-		function pushTest<T extends Runnable>(test: T): T {
-			tests.push(test);
-			return test;
-		}
 
 		function defineBeforeAfterFn(beforeAfterArray: BeforeAfterDefinition[]) {
 			return function (optionsOrFnAsync: ItOptions | ItFn, possibleFnAsync?: ItFn) {
@@ -304,7 +301,7 @@ export class TestSuite implements Runnable {
 		afterEachFns = [],
 		timeout,
 	}: {
-		tests?: Runnable[],
+		tests?: Test[],
 		beforeAllFns?: BeforeAfterDefinition[],
 		afterAllFns?: BeforeAfterDefinition[],
 		beforeEachFns?: BeforeAfterDefinition[],
@@ -420,18 +417,18 @@ export class TestSuite implements Runnable {
 }
 
 
-class TestCase implements Runnable {
+class TestCase implements Test {
 
 	protected _name: string;
 	private _timeout?: Milliseconds;
 	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
 
-	constructor(
+	static create(
 		name: string,
 		optionsOrTestFn: TestOptions | ItFn | undefined,
 		possibleTestFn: ItFn | undefined,
-		mark: TestMarkValue
+		mark: TestMarkValue,
 	) {
 		ensure.signature(arguments, [
 			String,
@@ -440,14 +437,15 @@ class TestCase implements Runnable {
 			String
 		]);
 
-		this._name = name;
+		let timeout;
+		let testFn;
 
 		switch (typeof optionsOrTestFn) {
 			case "object":
-				this._timeout = optionsOrTestFn.timeout;
+				timeout = optionsOrTestFn.timeout;
 				break;
 			case "function":
-				this._testFn = optionsOrTestFn;
+				testFn = optionsOrTestFn;
 				break;
 			case "undefined":
 				break;
@@ -455,10 +453,22 @@ class TestCase implements Runnable {
 				ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
 		}
 		if (possibleTestFn !== undefined) {
-			ensure.that(this._testFn === undefined, "Received two test function parameters");
-			this._testFn = possibleTestFn;
+			ensure.that(testFn === undefined, "Received two test function parameters");
+			testFn = possibleTestFn;
 		}
 
+		return new TestCase(name, timeout, testFn, mark);
+	}
+
+	constructor(
+		name: string,
+		timeout: Milliseconds,
+		testFn: ItFn,
+		mark: TestMarkValue
+	) {
+		this._name = name;
+		this._timeout = timeout;
+		this._testFn = testFn;
 		this._mark = mark;
 	}
 
