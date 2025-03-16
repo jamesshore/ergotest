@@ -37,14 +37,12 @@
     "url": "git+https://github.com/jamesshore/ergotest.git"
   },
   "devDependencies": {
-    "@eslint/js": "=9.22.0",
     "@sinonjs/fake-timers": "=14.0.0",
     "@swc/core": "=1.11.9",
     "@types/eslint__js": "=8.42.3",
     "@types/node": "=22.13.10",
     "@types/sinonjs__fake-timers": "=8.1.5",
     "ergotest": "file:",
-    "eslint": "=9.22.0",
     "globals": "=16.0.0",
     "minimatch": "=10.0.1",
     "minimist": "=1.2.8",
