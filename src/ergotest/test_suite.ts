@@ -295,7 +295,7 @@ export class TestSuite implements Runnable {
 		}
 	}
 
-	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
+	/** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
 	constructor(name: string, mark: TestMarkValue, {
 		tests = [],
 		beforeAllFns = [],
