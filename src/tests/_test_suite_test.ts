@@ -1,6 +1,6 @@
 
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../tests.js";
+import { assert, describe, it } from "../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,

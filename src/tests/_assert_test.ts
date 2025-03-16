@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC.
-import { describe, it } from "../tests.js";
+import { describe, it } from "../util/tests.js";
 import * as assert from "./assert.js";
 import { AssertionError } from "node:assert";
 

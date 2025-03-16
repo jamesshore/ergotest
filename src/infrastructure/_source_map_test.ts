@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, beforeEach, describe, it } from "../tests.js";
+import { assert, beforeEach, describe, it } from "../util/tests.js";
 import fs from "node:fs/promises";
 import { SourceMap } from "./source_map.js";
 import * as module from "node:module";
