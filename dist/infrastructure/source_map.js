@@ -8,8 +8,8 @@ export class SourceMap {
     static createNull(config) {
         return new SourceMap(new ModuleStub(config));
     }
-    constructor(_module){
-        this._module = _module;
+    constructor(module){
+        this._module = module;
     }
     getOriginalFilenames(pathToPreviouslyImportedModule) {
         const sourceMap = this._module.findSourceMap(pathToPreviouslyImportedModule);
@@ -22,8 +22,8 @@ export class SourceMap {
 }
 class ModuleStub {
     _config;
-    constructor(_config = {}){
-        this._config = _config;
+    constructor(config = {}){
+        this._config = config;
     }
     findSourceMap(path) {
         const sources = this._config[path] ?? [];

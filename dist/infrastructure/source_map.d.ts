@@ -5,7 +5,7 @@ export declare class SourceMap {
     private readonly _module;
     static create(): SourceMap;
     static createNull(config?: NulledSourceMapConfiguration): SourceMap;
-    constructor(_module: Module);
+    constructor(module: Module);
     getOriginalFilenames(pathToPreviouslyImportedModule: string): string[];
 }
 interface Module {
