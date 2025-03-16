@@ -576,7 +576,7 @@ async function runBeforeOrAfterFnsAsync(
 		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
 		if (!isSuccess(result)) return result;
 	}
-	return TestResult.pass(name, options.filename, mark);
+	return TestResult.pass(name, { filename: options.filename, mark });
 }
 
 async function runTestFnAsync(
@@ -596,7 +596,7 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, filename, mark);
+			return TestResult.pass(name, { filename, mark });
 		}
 		catch (err) {
 			return TestResult.fail(name, err, filename, mark, renderError);

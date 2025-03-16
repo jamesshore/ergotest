@@ -48,7 +48,7 @@ export default describe(() => {
 
 			const expectedResult = createSuite({ children: [
 				createSuite({ filename: TEST_MODULE_PATH, children: [
-					TestResult.pass("test", TEST_MODULE_PATH)
+					createPass({ name: "test", filename: TEST_MODULE_PATH })
 				]}),
 			]});
 
@@ -86,7 +86,7 @@ export default describe(() => {
 			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { onTestCaseResult });
 
 			assert.equal(progress, [
-				TestResult.pass("test", TEST_MODULE_PATH),
+				createPass({ name: "test", filename: TEST_MODULE_PATH }),
 			]);
 		});
 
@@ -268,4 +268,16 @@ function createSuite({
 	mark?: TestMarkValue,
 } = {}) {
 	return TestResult.suite(name, children, { filename, mark });
+}
+
+function createPass({
+	name = "irrelevant name",
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResult.pass(name, { filename, mark });
 }

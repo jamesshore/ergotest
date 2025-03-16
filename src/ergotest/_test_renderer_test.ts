@@ -709,7 +709,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.pass(name, filename, mark);
+	return TestResult.pass(name, { filename, mark });
 }
 
 function createFail({

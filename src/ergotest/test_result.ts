@@ -82,7 +82,7 @@ export abstract class TestResult {
 			[ undefined, {
 				filename: [ undefined, String ],
 				mark: [ undefined, String ]
-			}]
+			}],
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
@@ -92,12 +92,27 @@ export abstract class TestResult {
 	/**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(name: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ]]);
+	static pass(
+		name: string | string[],
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {}
+	): TestCaseResult {
+		ensure.signature(arguments, [
+			[ String, Array ],
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}]
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.pass, filename, mark });

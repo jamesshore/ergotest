@@ -43,7 +43,7 @@ export default describe(() => {
 		it("creates test suite from a module (and sets filename on result)", async () => {
 			const suite = await TestSuite.fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
 
-			const testCaseResult = TestResult.pass("passes", SUCCESS_MODULE_PATH);
+			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
 			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
 					createSuite({ children: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
@@ -1428,7 +1428,7 @@ export default describe(() => {
 			}
 
 			await suite.runAsync({ onTestCaseResult });
-			assert.dotEquals(testResult, TestResult.pass("my test"));
+			assert.dotEquals(testResult, createPass({ name: "my test" }));
 		});
 
 		it("runs notify function if module fails to require()", async () => {
@@ -1492,7 +1492,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, filename, mark);
+	return TestResult.pass(name, { filename, mark });
 }
 
 function createFail({

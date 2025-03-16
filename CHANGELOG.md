@@ -15,7 +15,8 @@ Links to other documentation:
 
 To Document:
 * TestResult.suite signature change
-* TestResult.children --> TestResult.tests rename
+* TestResult.pass signature change
+* TestSuiteResult.children --> TestSuiteResult.tests rename
 
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
