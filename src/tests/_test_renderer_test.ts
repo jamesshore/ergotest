@@ -507,7 +507,8 @@ export default describe(() => {
 
 		it("inspects the error object", () => {
 			class MyError extends Error {
-				constructor(message: string, public readonly custom: string) {
+				public readonly custom: string;
+				constructor(message: string, custom: string) {
 					super(message);
 					this.custom = custom;
 				}

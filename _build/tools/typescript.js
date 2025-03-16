@@ -152,6 +152,7 @@ export default class TypeScript {
 				"--outDir", outputDir,
 				"--noEmit", "false",
 				"--declaration", "--emitDeclarationOnly",
+				"--erasableSyntaxOnly",
 				"--pretty",
 			];
 			report.debug(`\n  Run '${command.join(" ")}'`);
