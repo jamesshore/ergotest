@@ -44,7 +44,7 @@
     "@types/node": "=22.13.4",
     "@types/sinonjs__fake-timers": "=8.1.5",
     "ergotest": "file:",
-    "eslint": "=9.20.1",
+    "eslint": "=9.22.0",
     "globals": "=16.0.0",
     "minimatch": "=10.0.1",
     "minimist": "=1.2.8",
