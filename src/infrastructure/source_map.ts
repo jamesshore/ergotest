@@ -7,6 +7,8 @@ export interface NulledSourceMapConfiguration {
 
 export class SourceMap {
 
+	private readonly _module: Module;
+
 	static create() {
 		return new SourceMap(module);
 	}
@@ -15,7 +17,8 @@ export class SourceMap {
 		return new SourceMap(new ModuleStub(config));
 	}
 
-	constructor(private readonly _module: Module) {
+	constructor(module: Module) {
+		this._module = module;
 	}
 
 	getOriginalFilenames(pathToPreviouslyImportedModule: string): string[] {
@@ -42,7 +45,10 @@ interface Payload {
 
 class ModuleStub implements Module {
 
-	constructor(private readonly _config: NulledSourceMapConfiguration = {}) {
+	private readonly _config: NulledSourceMapConfiguration;
+
+	constructor(config: NulledSourceMapConfiguration = {}) {
+		this._config = config;
 	}
 
 	findSourceMap(path: string): Payload {
