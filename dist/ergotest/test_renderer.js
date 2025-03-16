@@ -309,4 +309,4 @@ function normalizeName(name) {
     ];
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_renderer.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_renderer.js.map

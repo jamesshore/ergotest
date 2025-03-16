@@ -478,4 +478,4 @@ function isSuccess(result) {
     }
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_suite.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_suite.js.map

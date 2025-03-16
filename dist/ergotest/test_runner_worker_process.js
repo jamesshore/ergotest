@@ -72,4 +72,4 @@ function send(message) {
     process.send(message);
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_runner_worker_process.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_runner_worker_process.js.map
