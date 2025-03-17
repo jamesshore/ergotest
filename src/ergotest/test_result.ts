@@ -122,9 +122,10 @@ export abstract class TestResult {
 	 * Create a TestResult for a test that failed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
-	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
+	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
+	 *   The function to use to render the error into a string (defaults to {@link renderError})
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 *   function will be called and the results put into {@link errorRender}.
 	 * @returns {TestCaseResult} The result.
 	 */
@@ -166,8 +167,8 @@ export abstract class TestResult {
 	/**
 	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
 	static skip(
@@ -196,8 +197,8 @@ export abstract class TestResult {
 	 * Create a TestResult for a test that timed out.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
 	static timeout(
