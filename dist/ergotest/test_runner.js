@@ -112,7 +112,10 @@ async function runTestsInWorkerProcessAsync(worker, clock, modulePaths, { timeou
 function detectInfiniteLoops(clock, resolve, renderError) {
     const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, ()=>{
         const errorResult = TestResult.suite([], [
-            TestResult.fail("Test runner watchdog", "Detected infinite loop in tests", undefined, TestMark.none, renderError)
+            TestResult.fail("Test runner watchdog", "Detected infinite loop in tests", {
+                mark: TestMark.none,
+                renderError
+            })
         ]);
         resolve(errorResult);
     });

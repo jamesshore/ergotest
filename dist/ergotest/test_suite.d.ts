@@ -36,7 +36,7 @@ interface RecursiveRunOptions {
     config: TestConfig;
     renderError?: RenderErrorFn;
 }
-interface Runnable {
+interface Test {
     _recursiveRunAsync: (parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions) => Promise<TestResult> | TestResult;
     _isDotOnly: () => boolean;
     _isSkipped: (mark: TestMarkValue) => boolean;
@@ -52,7 +52,7 @@ export interface TestContext {
 /**
  * A simple but full-featured test runner.
  */
-export declare class TestSuite implements Runnable {
+export declare class TestSuite implements Test {
     #private;
     private _name;
     private _mark;
@@ -75,9 +75,9 @@ export declare class TestSuite implements Runnable {
     static fromModulesAsync(moduleFilenames: string[]): Promise<TestSuite>;
     /** Internal use only. */
     static create(nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined, optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined, possibleDescribeFn: DescribeFn | undefined, mark: TestMarkValue, testContext: TestContext[]): TestSuite;
-    /** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
+    /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
     constructor(name: string, mark: TestMarkValue, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout, }: {
-        tests?: Runnable[];
+        tests?: Test[];
         beforeAllFns?: BeforeAfterDefinition[];
         afterAllFns?: BeforeAfterDefinition[];
         beforeEachFns?: BeforeAfterDefinition[];

@@ -19,11 +19,11 @@ export const TestMark = {
     /**
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {TestResult[]} children The nested results of this suite.
-	 * @param {string} [filename] The file that contained this suite (optional).
-	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
+	 * @param {TestResult[]} tests The nested tests in this suite (can be test suites or individual test cases).
+	 * @param {string} [options.filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
-	 */ static suite(name, children, filename, mark = TestMark.none) {
+	 */ static suite(name, tests, { filename, mark = TestMark.none } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -32,25 +32,30 @@ export const TestMark = {
             Array,
             [
                 undefined,
-                String
-            ],
-            [
-                undefined,
-                String
+                {
+                    filename: [
+                        undefined,
+                        String
+                    ],
+                    mark: [
+                        undefined,
+                        String
+                    ]
+                }
             ]
         ]);
         if (!Array.isArray(name)) name = [
             name
         ];
-        return new TestSuiteResult(name, children, mark, filename);
+        return new TestSuiteResult(name, tests, mark, filename);
     }
     /**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static pass(name, filename, mark) {
+	 */ static pass(name, { filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -58,11 +63,16 @@ export const TestMark = {
             ],
             [
                 undefined,
-                String
-            ],
-            [
-                undefined,
-                String
+                {
+                    filename: [
+                        undefined,
+                        String
+                    ],
+                    mark: [
+                        undefined,
+                        String
+                    ]
+                }
             ]
         ]);
         if (!Array.isArray(name)) name = [
@@ -84,7 +94,7 @@ export const TestMark = {
 	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
 	 *   function will be called and the results put into {@link errorRender}.
 	 * @returns {TestCaseResult} The result.
-	 */ static fail(name, error, filename, mark, renderError = renderErrorFn) {
+	 */ static fail(name, error, { renderError = renderErrorFn, filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -93,15 +103,20 @@ export const TestMark = {
             ensure.ANY_TYPE,
             [
                 undefined,
-                String
-            ],
-            [
-                undefined,
-                String
-            ],
-            [
-                undefined,
-                Function
+                {
+                    renderError: [
+                        undefined,
+                        Function
+                    ],
+                    filename: [
+                        undefined,
+                        String
+                    ],
+                    mark: [
+                        undefined,
+                        String
+                    ]
+                }
             ]
         ]);
         if (!Array.isArray(name)) name = [
@@ -129,7 +144,7 @@ export const TestMark = {
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static skip(name, filename, mark = TestMark.none) {
+	 */ static skip(name, { filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -137,11 +152,16 @@ export const TestMark = {
             ],
             [
                 undefined,
-                String
-            ],
-            [
-                undefined,
-                String
+                {
+                    filename: [
+                        undefined,
+                        String
+                    ],
+                    mark: [
+                        undefined,
+                        String
+                    ]
+                }
             ]
         ]);
         if (!Array.isArray(name)) name = [
@@ -161,7 +181,7 @@ export const TestMark = {
 	 * @param {string} [filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static timeout(name, timeout, filename, mark = TestMark.none) {
+	 */ static timeout(name, timeout, { filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -170,11 +190,16 @@ export const TestMark = {
             Number,
             [
                 undefined,
-                String
-            ],
-            [
-                undefined,
-                String
+                {
+                    filename: [
+                        undefined,
+                        String
+                    ],
+                    mark: [
+                        undefined,
+                        String
+                    ]
+                }
             ]
         ]);
         if (!Array.isArray(name)) name = [
@@ -238,13 +263,13 @@ export const TestMark = {
         return new TestSuiteResult(name, deserializedSuite, mark, filename);
     }
     _name;
-    _children;
+    _tests;
     _mark;
     _filename;
-    /** Internal use only. (Use {@link TestResult.suite} instead.) */ constructor(name, children, mark, filename){
+    /** Internal use only. (Use {@link TestResult.suite} instead.) */ constructor(name, tests, mark, filename){
         super();
         this._name = name;
-        this._children = children;
+        this._tests = tests;
         this._mark = mark;
         this._filename = filename;
     }
@@ -262,10 +287,9 @@ export const TestMark = {
         return this._mark;
     }
     /**
-	 * @returns { TestResult[] } This suite's direct children, which can either be test case results or test suite
-	 *   results.
-	 */ get children() {
-        return this._children;
+	 * @returns { TestResult[] } The tests in this suite, which can either be test case results or test suite results.
+	 */ get tests() {
+        return this._tests;
     }
     /**
 	 * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
@@ -311,7 +335,7 @@ export const TestMark = {
 	 */ allTests() {
         ensure.signature(arguments, []);
         const tests = [];
-        this._children.forEach((result)=>{
+        this._tests.forEach((result)=>{
             result.allTests().forEach((subTest)=>tests.push(subTest));
         });
         return tests;
@@ -324,9 +348,9 @@ export const TestMark = {
         return this.allTests().filter((test)=>statuses.includes(test.status));
     }
     /**
-	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), not including results without marks, but
-	 *   including suites, flattened into a single list. Although the test results are all in a single list, any suites
-	 *   in the list still have all their children.
+	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
 	 */ allMarkedResults() {
         ensure.signature(arguments, []);
         const allMarks = new Set(Object.values(TestMark));
@@ -339,7 +363,7 @@ export const TestMark = {
         ensureValidMarks(marks);
         const results = new Set();
         if (marks.includes(this.mark)) results.add(this);
-        this._children.forEach((result)=>{
+        this._tests.forEach((result)=>{
             if (marks.includes(result.mark)) results.add(result);
             result.allMatchingMarks.apply(result, marks).forEach((subResult)=>results.add(subResult));
         });
@@ -394,16 +418,16 @@ export const TestMark = {
             name: this._name,
             mark: this._mark,
             filename: this._filename,
-            suite: this._children.map((test)=>test.serialize())
+            suite: this._tests.map((test)=>test.serialize())
         };
     }
     equals(that) {
         if (!(that instanceof TestSuiteResult)) return false;
         if (this._mark !== that._mark) return false;
-        if (this._children.length !== that._children.length) return false;
-        for(let i = 0; i < this._children.length; i++){
-            const thisResult = this._children[i];
-            const thatResult = that._children[i];
+        if (this._tests.length !== that._tests.length) return false;
+        for(let i = 0; i < this._tests.length; i++){
+            const thisResult = this._tests[i];
+            const thatResult = that._tests[i];
             if (!thisResult.equals(thatResult)) return false;
         }
         const sameName = util.isDeepStrictEqual(this._name, that._name);
