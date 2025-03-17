@@ -737,7 +737,7 @@ function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.skip(name, filename, mark);
+	return TestResult.skip(name, { filename, mark });
 }
 
 function createTimeout({

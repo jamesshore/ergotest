@@ -172,10 +172,21 @@ export abstract class TestResult {
 	 */
 	static skip(
 		name: string | string[],
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {}
 	): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ] ]);
+		ensure.signature(arguments, [
+			[ String, Array ],
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.skip, filename, mark });

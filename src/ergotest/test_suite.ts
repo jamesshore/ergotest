@@ -509,12 +509,12 @@ class TestCase implements Test {
 				result = await runTestAsync(this);
 			}
 			else {
-				result = TestResult.skip(name, options.filename, this._mark);
+				result = TestResult.skip(name, { filename: options.filename, mark: this._mark });
 			}
 		}
 		else {
 			if (this._mark !== TestMark.only) {
-				result = TestResult.skip(name, options.filename, TestMark.skip);
+				result = TestResult.skip(name, { filename: options.filename, mark: TestMark.skip });
 			}
 			else {
 				result = TestResult.fail(
