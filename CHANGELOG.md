@@ -11,6 +11,17 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.12.x: WIP (performance)
+
+To Document:
+* TestResult.suite signature change
+* TestResult.pass signature change
+* TestResult.fail signature change
+* TestResult.skip signature change
+* TestResult.timeout signature change
+* TestSuiteResult.children --> TestSuiteResult.tests rename
+
+
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
 * **0.11.0, 10 Mar 2024:** The [assert.fail()](docs/assertion_api.md#assertfail) assertion now takes optional `actual` and `expected` parameters. If present, they will be included in the error rendering.

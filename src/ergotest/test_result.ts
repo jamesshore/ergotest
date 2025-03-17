@@ -60,32 +60,59 @@ export abstract class TestResult {
 	/**
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {TestResult[]} children The nested results of this suite.
-	 * @param {string} [filename] The file that contained this suite (optional).
-	 * @param {TestMarkValue} [mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
+	 * @param {TestResult[]} tests The nested tests in this suite (can be test suites or individual test cases).
+	 * @param {string} [options.filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
 	 */
 	static suite(
 		name: string | string[],
-		children: TestResult[],
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		tests: TestResult[],
+		{
+			filename,
+			mark = TestMark.none
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestSuiteResult {
-		ensure.signature(arguments, [[ String, Array ], Array, [ undefined, String ], [ undefined, String ]]);
+		ensure.signature(arguments, [
+			[ String, Array ],
+			Array,
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		return new TestSuiteResult(name, children, mark, filename);
+		return new TestSuiteResult(name, tests, mark, filename);
 	}
 
 	/**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {string} [filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
-	static pass(name: string | string[], filename?: string, mark?: TestMarkValue): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ]]);
+	static pass(
+		name: string | string[],
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {}
+	): TestCaseResult {
+		ensure.signature(arguments, [
+			[ String, Array ],
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.pass, filename, mark });
@@ -104,16 +131,24 @@ export abstract class TestResult {
 	static fail(
 		name: string | string[],
 		error: unknown,
-		filename?: string,
-		mark?: TestMarkValue,
-		renderError: RenderErrorFn = renderErrorFn,
+		{
+			renderError = renderErrorFn,
+			filename,
+			mark,
+		}: {
+			renderError?: RenderErrorFn
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestCaseResult {
 		ensure.signature(arguments, [
 			[ String, Array ],
 			ensure.ANY_TYPE,
-			[ undefined, String ],
-			[ undefined, String ],
-			[ undefined, Function ],
+			[ undefined, {
+				renderError: [ undefined, Function ],
+				filename: [ undefined, String ],
+				mark: [ undefined, String ],
+			}],
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
@@ -137,10 +172,21 @@ export abstract class TestResult {
 	 */
 	static skip(
 		name: string | string[],
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {}
 	): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], [ undefined, String ], [ undefined, String ] ]);
+		ensure.signature(arguments, [
+			[ String, Array ],
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
 
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.skip, filename, mark });
@@ -157,11 +203,23 @@ export abstract class TestResult {
 	static timeout(
 		name: string | string[],
 		timeout: number,
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ], [ undefined, String ] ]);
-
+		ensure.signature(arguments, [
+			[ String, Array ],
+			Number,
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
+		
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.timeout, timeout, filename, mark });
 	}
@@ -207,8 +265,8 @@ export abstract class TestResult {
 
 	/**
 	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
-	 *   flattened into a single list. This includes suites; although the test results are all in a single list, and are
-	 *   filtered, any suites in the list still have all their children.
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
 	 */
 	abstract allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
 
@@ -253,15 +311,15 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	private readonly _name: string[];
-	private readonly _children: TestResult[];
+	private readonly _tests: TestResult[];
 	private readonly _mark: TestMarkValue;
 	private readonly _filename?: string;
 
 	/** Internal use only. (Use {@link TestResult.suite} instead.) */
-	constructor(name: string[], children: TestResult[], mark: TestMarkValue, filename?: string) {
+	constructor(name: string[], tests: TestResult[], mark: TestMarkValue, filename?: string) {
 		super();
 		this._name = name;
-		this._children = children;
+		this._tests = tests;
 		this._mark = mark;
 		this._filename = filename;
 	}
@@ -285,11 +343,10 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns { TestResult[] } This suite's direct children, which can either be test case results or test suite
-	 *   results.
+	 * @returns { TestResult[] } The tests in this suite, which can either be test case results or test suite results.
 	 */
-	get children(): TestResult[] {
-		return this._children;
+	get tests(): TestResult[] {
+		return this._tests;
 	}
 
 	/**
@@ -337,7 +394,7 @@ export class TestSuiteResult extends TestResult {
 		ensure.signature(arguments, []);
 
 		const tests: TestCaseResult[] = [];
-		this._children.forEach((result: TestResult) => {
+		this._tests.forEach((result: TestResult) => {
 			result.allTests().forEach(subTest => tests.push(subTest));
 		});
 		return tests;
@@ -353,9 +410,9 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestCaseResult[]} All the marked test results (.only, etc.), not including results without marks, but
-	 *   including suites, flattened into a single list. Although the test results are all in a single list, any suites
-	 *   in the list still have all their children.
+	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
 	 */
 	allMarkedResults(): TestResult[] {
 		ensure.signature(arguments, []);
@@ -370,7 +427,7 @@ export class TestSuiteResult extends TestResult {
 
 		const results = new Set<TestResult>();
 		if (marks.includes(this.mark)) results.add(this);
-		this._children.forEach((result: TestResult) => {
+		this._tests.forEach((result: TestResult) => {
 			if (marks.includes(result.mark)) results.add(result);
 			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));
 		});
@@ -432,7 +489,7 @@ export class TestSuiteResult extends TestResult {
 			name: this._name,
 			mark: this._mark,
 			filename: this._filename,
-			suite: this._children.map(test => test.serialize()),
+			suite: this._tests.map(test => test.serialize()),
 		};
 	}
 
@@ -440,10 +497,10 @@ export class TestSuiteResult extends TestResult {
 		if (!(that instanceof TestSuiteResult)) return false;
 		if (this._mark !== that._mark) return false;
 
-		if (this._children.length !== that._children.length) return false;
-		for (let i = 0; i < this._children.length; i++) {
-			const thisResult = this._children[i]!;
-			const thatResult = that._children[i]!;
+		if (this._tests.length !== that._tests.length) return false;
+		for (let i = 0; i < this._tests.length; i++) {
+			const thisResult = this._tests[i]!;
+			const thatResult = that._tests[i]!;
 			if (!thisResult.equals(thatResult)) return false;
 		}
 

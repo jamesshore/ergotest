@@ -13,9 +13,9 @@
     "docs"
   ],
   "exports": {
-    ".": "./dist/tests/index.js",
-    "./*.js": "./dist/tests/*.js",
-    "./*.d.ts": "./dist/tests/*.d.ts"
+    ".": "./dist/ergotest/index.js",
+    "./*.js": "./dist/ergotest/*.js",
+    "./*.d.ts": "./dist/ergotest/*.d.ts"
   },
   "engines": {
     "node": ">=22.11.0"

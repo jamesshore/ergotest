@@ -3,7 +3,7 @@ import { assert, describe, it, beforeEach } from "../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
-import { TestResult, TestSuiteResult } from "./test_result.js";
+import { TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 
@@ -46,11 +46,11 @@ export default describe(() => {
 
 			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-			const expectedResult = TestResult.suite([], [
-				TestResult.suite([], [
-					TestResult.pass("test", TEST_MODULE_PATH)
-				], TEST_MODULE_PATH),
-			]);
+			const expectedResult = createSuite({ children: [
+				createSuite({ filename: TEST_MODULE_PATH, children: [
+					createPass({ name: "test", filename: TEST_MODULE_PATH })
+				]}),
+			]});
 
 			assert.dotEquals(results, expectedResult);
 		});
@@ -86,7 +86,7 @@ export default describe(() => {
 			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { onTestCaseResult });
 
 			assert.equal(progress, [
-				TestResult.pass("test", TEST_MODULE_PATH),
+				createPass({ name: "test", filename: TEST_MODULE_PATH }),
 			]);
 		});
 
@@ -254,4 +254,30 @@ async function createAsync({
 	const runner = new TestRunner(clock);
 
 	return { runner, clock };
+}
+
+function createSuite({
+	name = [],
+	children = [],
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	children?: TestResult[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResult.suite(name, children, { filename, mark });
+}
+
+function createPass({
+	name = "irrelevant name",
+	filename = undefined,
+	mark = undefined,
+}: {
+	name?: string | string[],
+	filename?: string,
+	mark?: TestMarkValue,
+} = {}) {
+	return TestResult.pass(name, { filename, mark });
 }

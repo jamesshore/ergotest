@@ -59,7 +59,7 @@ interface RecursiveRunOptions {
 	renderError?: RenderErrorFn,
 }
 
-interface Runnable {
+interface Test {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
 		parentBeforeEachFns: BeforeAfterDefinition[],
@@ -92,11 +92,11 @@ export interface TestContext {
 /**
  * A simple but full-featured test runner.
  */
-export class TestSuite implements Runnable {
+export class TestSuite implements Test {
 
 	private _name: string;
 	private _mark: TestMarkValue;
-	private _tests: Runnable[];
+	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
 	private _beforeAllFns: BeforeAfterDefinition[];
@@ -238,7 +238,7 @@ export class TestSuite implements Runnable {
 		testContext: TestContext[],
 		timeout?: Milliseconds,
 	): TestSuite {
-		const tests: Runnable[] = [];
+		const tests: Test[] = [];
 		const beforeAllFns: BeforeAfterDefinition[] = [];
 		const afterAllFns: BeforeAfterDefinition[] = [];
 		const beforeEachFns: BeforeAfterDefinition[] = [];
@@ -246,10 +246,12 @@ export class TestSuite implements Runnable {
 
 		testContext.push({
 			describe(optionalName, optionalOptions, fn, mark) {
-				return pushTest(TestSuite.create(optionalName, optionalOptions, fn, mark, testContext));
+				const suite = TestSuite.create(optionalName, optionalOptions, fn, mark, testContext);
+				tests.push(suite);
+				return suite;
 			},
 			it(name, optionalOptions, testCaseFn, mark) {
-				pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
+				tests.push(TestCase.create(name, optionalOptions, testCaseFn, mark));
 			},
 			beforeAll: defineBeforeAfterFn(beforeAllFns),
 			afterAll: defineBeforeAfterFn(afterAllFns),
@@ -265,11 +267,6 @@ export class TestSuite implements Runnable {
 		}
 
 		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
-
-		function pushTest<T extends Runnable>(test: T): T {
-			tests.push(test);
-			return test;
-		}
 
 		function defineBeforeAfterFn(beforeAfterArray: BeforeAfterDefinition[]) {
 			return function (optionsOrFnAsync: ItOptions | ItFn, possibleFnAsync?: ItFn) {
@@ -295,7 +292,7 @@ export class TestSuite implements Runnable {
 		}
 	}
 
-	/** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */
+	/** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
 	constructor(name: string, mark: TestMarkValue, {
 		tests = [],
 		beforeAllFns = [],
@@ -304,7 +301,7 @@ export class TestSuite implements Runnable {
 		afterEachFns = [],
 		timeout,
 	}: {
-		tests?: Runnable[],
+		tests?: Test[],
 		beforeAllFns?: BeforeAfterDefinition[],
 		afterAllFns?: BeforeAfterDefinition[],
 		beforeEachFns?: BeforeAfterDefinition[],
@@ -399,7 +396,12 @@ export class TestSuite implements Runnable {
 			const beforeResult = await runBeforeOrAfterFnsAsync(
 				[ ...options.name, "beforeAll()" ], this._beforeAllFns, TestMark.none, options,
 			);
-			if (!isSuccess(beforeResult)) return TestResult.suite(options.name, [ beforeResult ], options.filename, this._mark);
+			if (!isSuccess(beforeResult)) {
+				return TestResult.suite(options.name, [ beforeResult ], {
+					filename: options.filename,
+					mark: this._mark,
+				});
+			}
 		}
 
 		const results = [];
@@ -414,24 +416,27 @@ export class TestSuite implements Runnable {
 			if (!isSuccess(afterResult)) results.push(afterResult);
 		}
 
-		return TestResult.suite(options.name, results, options.filename, this._mark);
+		return TestResult.suite(options.name, results, {
+			filename: options.filename,
+			mark: this._mark,
+		});
 	}
 
 }
 
 
-class TestCase implements Runnable {
+class TestCase implements Test {
 
 	protected _name: string;
 	private _timeout?: Milliseconds;
 	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
 
-	constructor(
+	static create(
 		name: string,
 		optionsOrTestFn: TestOptions | ItFn | undefined,
 		possibleTestFn: ItFn | undefined,
-		mark: TestMarkValue
+		mark: TestMarkValue,
 	) {
 		ensure.signature(arguments, [
 			String,
@@ -440,14 +445,15 @@ class TestCase implements Runnable {
 			String
 		]);
 
-		this._name = name;
+		let timeout;
+		let testFn;
 
 		switch (typeof optionsOrTestFn) {
 			case "object":
-				this._timeout = optionsOrTestFn.timeout;
+				timeout = optionsOrTestFn.timeout;
 				break;
 			case "function":
-				this._testFn = optionsOrTestFn;
+				testFn = optionsOrTestFn;
 				break;
 			case "undefined":
 				break;
@@ -455,10 +461,22 @@ class TestCase implements Runnable {
 				ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
 		}
 		if (possibleTestFn !== undefined) {
-			ensure.that(this._testFn === undefined, "Received two test function parameters");
-			this._testFn = possibleTestFn;
+			ensure.that(testFn === undefined, "Received two test function parameters");
+			testFn = possibleTestFn;
 		}
 
+		return new TestCase(name, timeout, testFn, mark);
+	}
+
+	constructor(
+		name: string,
+		timeout: Milliseconds | undefined,
+		testFn: ItFn | undefined,
+		mark: TestMarkValue
+	) {
+		this._name = name;
+		this._timeout = timeout;
+		this._testFn = testFn;
 		this._mark = mark;
 	}
 
@@ -491,16 +509,22 @@ class TestCase implements Runnable {
 				result = await runTestAsync(this);
 			}
 			else {
-				result = TestResult.skip(name, options.filename, this._mark);
+				result = TestResult.skip(name, { filename: options.filename, mark: this._mark });
 			}
 		}
 		else {
 			if (this._mark !== TestMark.only) {
-				result = TestResult.skip(name, options.filename, TestMark.skip);
+				result = TestResult.skip(name, { filename: options.filename, mark: TestMark.skip });
 			}
 			else {
 				result = TestResult.fail(
-					name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError
+					name,
+					"Test is marked '.only', but it has no body",
+					{
+						renderError: options.renderError,
+						filename: options.filename,
+						mark: this._mark,
+					}
 				);
 			}
 		}
@@ -540,7 +564,11 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, this._filename, TestMark.none, options.renderError);
+		const result = TestResult.fail([ this._name ], this._error, {
+			renderError: options.renderError,
+			filename: this._filename,
+			mark: TestMark.none,
+		});
 		options.onTestCaseResult(result);
 		return await result;
 	}
@@ -558,7 +586,7 @@ async function runBeforeOrAfterFnsAsync(
 		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
 		if (!isSuccess(result)) return result;
 	}
-	return TestResult.pass(name, options.filename, mark);
+	return TestResult.pass(name, { filename: options.filename, mark });
 }
 
 async function runTestFnAsync(
@@ -578,13 +606,13 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, filename, mark);
+			return TestResult.pass(name, { filename, mark });
 		}
 		catch (err) {
-			return TestResult.fail(name, err, filename, mark, renderError);
+			return TestResult.fail(name, err, { filename, mark, renderError });
 		}
 	}, async () => {
-		return await TestResult.timeout(name, timeout, filename, mark);
+		return await TestResult.timeout(name, timeout, { filename, mark });
 	});
 }
 

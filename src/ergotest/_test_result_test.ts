@@ -15,7 +15,7 @@ export default describe(() => {
 			const result = TestResult.suite([ "my name" ], list);
 
 			assert.equal(result.name, [ "my name" ]);
-			assert.equal(result.children, list);
+			assert.equal(result.tests, list);
 		});
 
 		it("name can include parent suites", () => {
@@ -621,7 +621,7 @@ function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.suite(name, children, filename, mark);
+	return TestResult.suite(name, children, { filename, mark });
 }
 
 function createPass({
@@ -633,7 +633,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, filename, mark);
+	return TestResult.pass(name, { filename, mark });
 }
 
 function createFail({
@@ -649,7 +649,7 @@ function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark, renderError);
+	return TestResult.fail(name, error, { renderError, filename, mark });
 }
 
 function createSkip({
@@ -661,7 +661,7 @@ function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, filename, mark);
+	return TestResult.skip(name, { filename, mark });
 }
 
 function createTimeout({
@@ -675,5 +675,5 @@ function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, filename, mark);
+	return TestResult.timeout(name, timeout, { filename, mark });
 }

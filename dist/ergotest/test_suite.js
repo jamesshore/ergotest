@@ -155,10 +155,12 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         const afterEachFns = [];
         testContext.push({
             describe (optionalName, optionalOptions, fn, mark) {
-                return pushTest(TestSuite.create(optionalName, optionalOptions, fn, mark, testContext));
+                const suite = TestSuite.create(optionalName, optionalOptions, fn, mark, testContext);
+                tests.push(suite);
+                return suite;
             },
             it (name, optionalOptions, testCaseFn, mark) {
-                pushTest(new TestCase(name, optionalOptions, testCaseFn, mark));
+                tests.push(TestCase.create(name, optionalOptions, testCaseFn, mark));
             },
             beforeAll: defineBeforeAfterFn(beforeAllFns),
             afterAll: defineBeforeAfterFn(afterAllFns),
@@ -178,10 +180,6 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             afterEachFns,
             timeout
         });
-        function pushTest(test) {
-            tests.push(test);
-            return test;
-        }
         function defineBeforeAfterFn(beforeAfterArray) {
             return function(optionsOrFnAsync, possibleFnAsync) {
                 ensure.signature(arguments, [
@@ -212,7 +210,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             };
         }
     }
-    /** Internal use only. (Use {@link TestSuite.create} or {@link TestSuite.fromModulesAsync} instead.) */ constructor(name, mark, { tests = [], beforeAllFns = [], afterAllFns = [], beforeEachFns = [], afterEachFns = [], timeout }){
+    /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */ constructor(name, mark, { tests = [], beforeAllFns = [], afterAllFns = [], beforeEachFns = [], afterEachFns = [], timeout }){
         this._name = name;
         this._mark = mark;
         this._tests = tests;
@@ -312,9 +310,14 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
                 ...options.name,
                 "beforeAll()"
             ], this._beforeAllFns, TestMark.none, options);
-            if (!isSuccess(beforeResult)) return TestResult.suite(options.name, [
-                beforeResult
-            ], options.filename, this._mark);
+            if (!isSuccess(beforeResult)) {
+                return TestResult.suite(options.name, [
+                    beforeResult
+                ], {
+                    filename: options.filename,
+                    mark: this._mark
+                });
+            }
         }
         const results = [];
         for await (const test of this._tests){
@@ -327,7 +330,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             ], this._afterAllFns, TestMark.none, options);
             if (!isSuccess(afterResult)) results.push(afterResult);
         }
-        return TestResult.suite(options.name, results, options.filename, this._mark);
+        return TestResult.suite(options.name, results, {
+            filename: options.filename,
+            mark: this._mark
+        });
     }
 }
 class TestCase {
@@ -335,7 +341,7 @@ class TestCase {
     _timeout;
     _testFn;
     _mark;
-    constructor(name, optionsOrTestFn, possibleTestFn, mark){
+    static create(name, optionsOrTestFn, possibleTestFn, mark) {
         ensure.signature(arguments, [
             String,
             [
@@ -354,13 +360,14 @@ class TestCase {
             ],
             String
         ]);
-        this._name = name;
+        let timeout;
+        let testFn;
         switch(typeof optionsOrTestFn){
             case "object":
-                this._timeout = optionsOrTestFn.timeout;
+                timeout = optionsOrTestFn.timeout;
                 break;
             case "function":
-                this._testFn = optionsOrTestFn;
+                testFn = optionsOrTestFn;
                 break;
             case "undefined":
                 break;
@@ -368,9 +375,15 @@ class TestCase {
                 ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
         }
         if (possibleTestFn !== undefined) {
-            ensure.that(this._testFn === undefined, "Received two test function parameters");
-            this._testFn = possibleTestFn;
+            ensure.that(testFn === undefined, "Received two test function parameters");
+            testFn = possibleTestFn;
         }
+        return new TestCase(name, timeout, testFn, mark);
+    }
+    constructor(name, timeout, testFn, mark){
+        this._name = name;
+        this._timeout = timeout;
+        this._testFn = testFn;
         this._mark = mark;
     }
     /** @private */ _isDotOnly() {
@@ -395,13 +408,23 @@ class TestCase {
             if (!this._isSkipped(parentMark)) {
                 result = await runTestAsync(this);
             } else {
-                result = TestResult.skip(name, options.filename, this._mark);
+                result = TestResult.skip(name, {
+                    filename: options.filename,
+                    mark: this._mark
+                });
             }
         } else {
             if (this._mark !== TestMark.only) {
-                result = TestResult.skip(name, options.filename, TestMark.skip);
+                result = TestResult.skip(name, {
+                    filename: options.filename,
+                    mark: TestMark.skip
+                });
             } else {
-                result = TestResult.fail(name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError);
+                result = TestResult.fail(name, "Test is marked '.only', but it has no body", {
+                    renderError: options.renderError,
+                    filename: options.filename,
+                    mark: this._mark
+                });
             }
         }
         options.onTestCaseResult(result);
@@ -427,7 +450,11 @@ class FailureTestCase extends TestCase {
     async _recursiveRunAsync(parentMark, beforeEachFns, afterEachFns, options) {
         const result = TestResult.fail([
             this._name
-        ], this._error, this._filename, TestMark.none, options.renderError);
+        ], this._error, {
+            renderError: options.renderError,
+            filename: this._filename,
+            mark: TestMark.none
+        });
         options.onTestCaseResult(result);
         return await result;
     }
@@ -437,7 +464,10 @@ async function runBeforeOrAfterFnsAsync(name, beforeAfterArray, mark, options) {
         const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
         if (!isSuccess(result)) return result;
     }
-    return TestResult.pass(name, options.filename, mark);
+    return TestResult.pass(name, {
+        filename: options.filename,
+        mark
+    });
 }
 async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, timeout, config, renderError }) {
     const getConfig = (name)=>{
@@ -450,12 +480,22 @@ async function runTestFnAsync(name, fn, mark, testTimeout, { clock, filename, ti
             await fn({
                 getConfig
             });
-            return TestResult.pass(name, filename, mark);
+            return TestResult.pass(name, {
+                filename,
+                mark
+            });
         } catch (err) {
-            return TestResult.fail(name, err, filename, mark, renderError);
+            return TestResult.fail(name, err, {
+                filename,
+                mark,
+                renderError
+            });
         }
     }, async ()=>{
-        return await TestResult.timeout(name, timeout, filename, mark);
+        return await TestResult.timeout(name, timeout, {
+            filename,
+            mark
+        });
     });
 }
 function isSuccess(result) {
@@ -478,4 +518,4 @@ function isSuccess(result) {
     }
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_suite.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_suite.js.map

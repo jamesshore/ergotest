@@ -40,7 +40,10 @@ async function runWorkerAsync(
 
 		process.on("uncaughtException", (err) => {
 			const errorResult = TestResult.suite([], [
-				TestResult.fail("Unhandled error in tests", err, undefined, TestMark.none, renderError),
+				TestResult.fail("Unhandled error in tests", err, {
+					mark: TestMark.none,
+					renderError,
+				}),
 			]);
 			sendFinalResult(errorResult, cancelKeepAliveFn);
 		});

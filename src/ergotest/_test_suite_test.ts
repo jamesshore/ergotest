@@ -43,11 +43,11 @@ export default describe(() => {
 		it("creates test suite from a module (and sets filename on result)", async () => {
 			const suite = await TestSuite.fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
 
-			const testCaseResult = TestResult.pass("passes", SUCCESS_MODULE_PATH);
+			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
 			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
-					TestResult.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
-					TestResult.suite([], [ testCaseResult ], SUCCESS_MODULE_PATH),
+					createSuite({ children: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
+					createSuite({ children: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
 				]),
 			);
 		});
@@ -301,14 +301,14 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise, TestResult.suite([], [
+			assert.dotEquals(await actualPromise, createSuite({ filename, children: [
 				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				createFail({ name: "fail", error: new Error("fail"), filename }),
 				createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, filename }),
 				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
 				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
-			], filename));
+			]}));
 		});
 
 	});
@@ -1428,7 +1428,7 @@ export default describe(() => {
 			}
 
 			await suite.runAsync({ onTestCaseResult });
-			assert.dotEquals(testResult, TestResult.pass("my test"));
+			assert.dotEquals(testResult, createPass({ name: "my test" }));
 		});
 
 		it("runs notify function if module fails to require()", async () => {
@@ -1466,7 +1466,7 @@ async function runTestAsync(testName: string, testFn: () => void) {
 		it_sut(testName, testFn);
 	});
 	const result = await suite.runAsync();
-	return result.children[0];
+	return result.tests[0];
 }
 
 function createSuite({
@@ -1480,7 +1480,7 @@ function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.suite(name, children, filename, mark);
+	return TestResult.suite(name, children, { filename, mark });
 }
 
 function createPass({
@@ -1492,7 +1492,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, filename, mark);
+	return TestResult.pass(name, { filename, mark });
 }
 
 function createFail({
@@ -1506,7 +1506,7 @@ function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, { filename, mark });
 }
 
 function createSkip({
@@ -1518,7 +1518,7 @@ function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, filename, mark);
+	return TestResult.skip(name, { filename, mark });
 }
 
 function createTimeout({
@@ -1532,5 +1532,5 @@ function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, filename, mark);
+	return TestResult.timeout(name, timeout, { filename, mark });
 }

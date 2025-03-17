@@ -28,7 +28,10 @@ async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config,
         const renderError = await importRendererAsync(renderer);
         process.on("uncaughtException", (err)=>{
             const errorResult = TestResult.suite([], [
-                TestResult.fail("Unhandled error in tests", err, undefined, TestMark.none, renderError)
+                TestResult.fail("Unhandled error in tests", err, {
+                    mark: TestMark.none,
+                    renderError
+                })
             ]);
             sendFinalResult(errorResult, cancelKeepAliveFn);
         });
@@ -72,4 +75,4 @@ function send(message) {
     process.send(message);
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/test_runner_worker_process.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_runner_worker_process.js.map

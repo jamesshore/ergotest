@@ -697,7 +697,7 @@ function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestSuiteResult {
-	return TestResult.suite(name, children, filename, mark);
+	return TestResult.suite(name, children, { filename, mark });
 }
 
 function createPass({
@@ -709,7 +709,7 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.pass(name, filename, mark);
+	return TestResult.pass(name, { filename, mark });
 }
 
 function createFail({
@@ -725,7 +725,7 @@ function createFail({
 	mark?: TestMarkValue,
 	renderError?: RenderErrorFn,
 } = {}): TestCaseResult {
-	return TestResult.fail(name, error, filename, mark, renderError);
+	return TestResult.fail(name, error, { renderError, filename, mark });
 }
 
 function createSkip({
@@ -737,7 +737,7 @@ function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.skip(name, filename, mark);
+	return TestResult.skip(name, { filename, mark });
 }
 
 function createTimeout({
@@ -751,5 +751,5 @@ function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.timeout(name, timeout, filename, mark);
+	return TestResult.timeout(name, timeout, { filename, mark });
 }

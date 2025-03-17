@@ -182,4 +182,4 @@ function throwAssertionError(userMessage, assertionMessage, actual, expected) {
     });
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/tests/assert.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/assert.js.map
