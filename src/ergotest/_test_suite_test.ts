@@ -740,25 +740,23 @@ export default describe(() => {
 				}));
 			});
 
-			it("continues running afterAll() even when one fails");
-
-			it("handles exception in afterAll", async () => {
-				const error = new Error("my error");
+			it("continues running afterAll() even when one fails", async () => {
 				const suite = describe_sut(() => {
-					afterAll_sut(() => {
-						throw error;
-					});
-					it_sut("test 1", async () => {});
-					it_sut("test 2", async () => {});
+					afterAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					afterAll_sut(FAIL_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
 				});
 
-				assert.dotEquals(await suite.runAsync(), createSuite({
-					afterAll: [ createFail({ name: "afterAll() #1", error })],
-					tests: [
-						createPass({ name: [ "test 1" ]}),
-						createPass({ name: [ "test 2" ]}),
-						createFail({ name: [ "afterAll() #1" ], error }),
-					]
+				assert.equal(await suite.runAsync(), createSuite({
+					afterAll: [
+						createPass({ name: "afterAll() #1" }),
+						createPass({ name: "afterAll() #2" }),
+						createFail({ name: "afterAll() #3", error: ERROR }),
+						createPass({ name: "afterAll() #4" }),
+					],
+					tests: [ createPass({ name: "test" }) ],
 				}));
 			});
 
@@ -915,9 +913,7 @@ export default describe(() => {
 			assert.equal(afterTime, DEFAULT_TIMEOUT, "afterEach() should run as soon as it() times out");
 		});
 
-		it.skip("times out when beforeAll doesn't complete before default timeout", async () => {
-			assert.todo("Need to skip afterAll() when beforeAll() fails");
-
+		it("times out when beforeAll doesn't complete before default timeout", async () => {
 			const clock = await Clock.createNullAsync();
 
 			let itTime = null;
@@ -974,8 +970,7 @@ export default describe(() => {
 					tests: [
 						createPass({ name: "test 1" }),
 						createPass({ name: "test 2" }),
-						createTimeout({ name: "afterAll() #1", timeout: DEFAULT_TIMEOUT }),
-					]
+					],
 				}),
 				"result",
 			);

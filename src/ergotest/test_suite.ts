@@ -424,10 +424,6 @@ export class TestSuite implements Test {
 				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
 
 			afterAllResults.push(result);
-
-			if (!isSuccess(result)) {
-				testResults.push(result);
-			}
 		}
 
 		return TestResult.suite(runOptions.name, testResults, {

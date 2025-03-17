@@ -11,6 +11,7 @@ export default describe(() => {
 	describe("test suite", () => {
 
 		it("TODO: Need to test that a suite with failing beforeAll() reports its tests correctly");
+		it("TODO: Need to test that a suite with failing afterAll() reports its tests correctly");
 
 		it("has a name and list of test results", () => {
 			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
