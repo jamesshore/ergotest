@@ -99,10 +99,10 @@ export class TestSuite implements Test {
 	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
-	private _beforeAllFns: BeforeAfterDefinition[];
-	private _afterAllFns: BeforeAfterDefinition[];
-	private _beforeEachFns: BeforeAfterDefinition[];
-	private _afterEachFns: BeforeAfterDefinition[];
+	private _beforeAll: BeforeAfterDefinition[];
+	private _afterAll: BeforeAfterDefinition[];
+	private _beforeEach: BeforeAfterDefinition[];
+	private _afterEach: BeforeAfterDefinition[];
 	private _timeout?: Milliseconds;
 	private _filename?: string;
 
@@ -239,10 +239,10 @@ export class TestSuite implements Test {
 		timeout?: Milliseconds,
 	): TestSuite {
 		const tests: Test[] = [];
-		const beforeAllFns: BeforeAfterDefinition[] = [];
-		const afterAllFns: BeforeAfterDefinition[] = [];
-		const beforeEachFns: BeforeAfterDefinition[] = [];
-		const afterEachFns: BeforeAfterDefinition[] = [];
+		const beforeAll: BeforeAfterDefinition[] = [];
+		const afterAll: BeforeAfterDefinition[] = [];
+		const beforeEach: BeforeAfterDefinition[] = [];
+		const afterEach: BeforeAfterDefinition[] = [];
 
 		testContext.push({
 			describe(optionalName, optionalOptions, fn, mark) {
@@ -253,10 +253,10 @@ export class TestSuite implements Test {
 			it(name, optionalOptions, testCaseFn, mark) {
 				tests.push(TestCase.create(name, optionalOptions, testCaseFn, mark));
 			},
-			beforeAll: defineBeforeAfterFn(beforeAllFns),
-			afterAll: defineBeforeAfterFn(afterAllFns),
-			beforeEach: defineBeforeAfterFn(beforeEachFns),
-			afterEach: defineBeforeAfterFn(afterEachFns),
+			beforeAll: defineBeforeAfterFn(beforeAll),
+			afterAll: defineBeforeAfterFn(afterAll),
+			beforeEach: defineBeforeAfterFn(beforeEach),
+			afterEach: defineBeforeAfterFn(afterEach),
 		});
 
 		try {
@@ -266,7 +266,7 @@ export class TestSuite implements Test {
 			testContext.pop();
 		}
 
-		return new TestSuite(name, mark, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout });
+		return new TestSuite(name, mark, { tests, beforeAll, afterAll, beforeEach, afterEach, timeout });
 
 		function defineBeforeAfterFn(beforeAfterArray: BeforeAfterDefinition[]) {
 			return function (optionsOrFnAsync: ItOptions | ItFn, possibleFnAsync?: ItFn) {
@@ -295,17 +295,17 @@ export class TestSuite implements Test {
 	/** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
 	constructor(name: string, mark: TestMarkValue, {
 		tests = [],
-		beforeAllFns = [],
-		afterAllFns = [],
-		beforeEachFns = [],
-		afterEachFns = [],
+		beforeAll = [],
+		afterAll = [],
+		beforeEach = [],
+		afterEach = [],
 		timeout,
 	}: {
 		tests?: Test[],
-		beforeAllFns?: BeforeAfterDefinition[],
-		afterAllFns?: BeforeAfterDefinition[],
-		beforeEachFns?: BeforeAfterDefinition[],
-		afterEachFns?: BeforeAfterDefinition[],
+		beforeAll?: BeforeAfterDefinition[],
+		afterAll?: BeforeAfterDefinition[],
+		beforeEach?: BeforeAfterDefinition[],
+		afterEach?: BeforeAfterDefinition[],
 		timeout?: Milliseconds,
 	}) {
 		this._name = name;
@@ -313,10 +313,10 @@ export class TestSuite implements Test {
 		this._tests = tests;
 		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
 		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._mark));
-		this._beforeAllFns = beforeAllFns;
-		this._afterAllFns = afterAllFns;
-		this._beforeEachFns = beforeEachFns;
-		this._afterEachFns = afterEachFns;
+		this._beforeAll = beforeAll;
+		this._afterAll = afterAll;
+		this._beforeEach = beforeEach;
+		this._afterEach = afterEach;
 		this._timeout = timeout;
 	}
 
@@ -377,55 +377,64 @@ export class TestSuite implements Test {
 		parentMark: TestMarkValue,
 		parentBeforeEachFns: BeforeAfterDefinition[],
 		parentAfterEachFns: BeforeAfterDefinition[],
-		options: RecursiveRunOptions,
+		runOptions: RecursiveRunOptions,
 	) {
-		const name = [ ...options.name ];
-		if (this._name !== "") name.push(this._name);
-		const filename = this._filename ?? options.filename;
-		const timeout = this._timeout ?? options.timeout;
-		options = { ...options, name, filename, timeout };
+		runOptions = {
+			...runOptions,
+			name: [ ...runOptions.name ],
+			filename: this._filename ?? runOptions.filename,
+			timeout: this._timeout ?? runOptions.timeout
+		};
+		if (this._name !== "") runOptions.name.push(this._name);
+		const resultOptions = { filename: runOptions.filename, mark: this._mark };
+
+		const beforeAllResults: TestCaseResult[] = [];
+		for await (const before of this._beforeAll) {
+			const name = [ ...runOptions.name, `beforeAll() #${beforeAllResults.length + 1}`];
+
+			const result = this._allChildrenSkipped
+				? TestResult.skip(name, resultOptions)
+				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
+
+			beforeAllResults.push(result);
+
+			if (!isSuccess(result)) {
+				return TestResult.suite(runOptions.name, [ result ], resultOptions);
+			}
+		}
+
 
 		let myMark = this._mark;
 		if (myMark === TestMark.none) myMark = parentMark;
 		if (myMark === TestMark.only && this._hasDotOnlyChildren) myMark = TestMark.skip;
 
-		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEachFns ];
-		const afterEachFns = [ ...this._afterEachFns, ...parentAfterEachFns ];
+		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEach ];
+		const afterEachFns = [ ...this._afterEach, ...parentAfterEachFns ];
 
-		let beforeAll;
-		let afterAll;
-
-		if (!this._allChildrenSkipped) {
-			const { results: beforeResults, pass } = await runBeforeOrAfterFnsAsync_New(
-				options.name, "beforeAll()", this._beforeAllFns, TestMark.none, options,
-			);
-			if (!pass) {
-				return TestResult.suite(options.name, [ beforeResults.pop() ], {
-					filename: options.filename,
-					mark: this._mark,
-				});
-			}
-			beforeAll = beforeResults;
-		}
-
-		const results = [];
+		const testResults = [];
 		for await (const test of this._tests) {
-			results.push(await test._recursiveRunAsync(myMark, beforeEachFns, afterEachFns, options));
+			testResults.push(await test._recursiveRunAsync(myMark, beforeEachFns, afterEachFns, runOptions));
 		}
 
-		if (!this._allChildrenSkipped) {
-			const { results: afterResults, pass } = await runBeforeOrAfterFnsAsync_New(
-				options.name, "afterAll()", this._afterAllFns, TestMark.none, options
-			);
-			if (!pass) results.push(afterResults.pop());
-			afterAll = afterResults;
+		const afterAllResults: TestCaseResult[] = [];
+		for await (const after of this._afterAll) {
+			const name = [ ...runOptions.name, `afterAll() #${afterAllResults.length + 1}`];
+
+			const result = this._allChildrenSkipped
+				? TestResult.skip(name, resultOptions)
+				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
+
+			afterAllResults.push(result);
+
+			if (!isSuccess(result)) {
+				testResults.push(result);
+			}
 		}
 
-		return TestResult.suite(options.name, results, {
-			beforeAll,
-			afterAll,
-			filename: options.filename,
-			mark: this._mark,
+		return TestResult.suite(runOptions.name, testResults, {
+			beforeAll: beforeAllResults,
+			afterAll: afterAllResults,
+			...resultOptions,
 		});
 	}
 
