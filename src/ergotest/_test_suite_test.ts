@@ -37,7 +37,7 @@ const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
 const ERROR = new Error("my error");
 const PASS_FN = () => {};
-const ERROR_FN = () => { throw ERROR; };
+const FAIL_FN = () => { throw ERROR; };
 
 
 export default describe(() => {
@@ -677,7 +677,7 @@ export default describe(() => {
 			it("runs afterAll() even when tests throw exception", async () => {
 				const suite = describe_sut(() => {
 					afterAll_sut(PASS_FN);
-					it_sut("test", ERROR_FN);
+					it_sut("test", FAIL_FN);
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
@@ -686,11 +686,9 @@ export default describe(() => {
 				}));
 			});
 
-			it("stops running beforeAll() functions if one fails");
-
 			it("doesn't run tests when beforeAll() fails", async () => {
 				const suite = describe_sut(() => {
-					beforeAll_sut(ERROR_FN);
+					beforeAll_sut(FAIL_FN);
 					it_sut("test 1", async () => {});
 					it_sut("test 2", async () => {});
 				});
@@ -704,7 +702,29 @@ export default describe(() => {
 				);
 			});
 
-			it("doesn't run afterAll() when beforeAll() throws exception");
+			it("stops running beforeAll() functions if one fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(PASS_FN);
+					beforeAll_sut(PASS_FN);
+					beforeAll_sut(FAIL_FN);
+					beforeAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [
+						createPass({ name: "beforeAll() #1" }),
+						createPass({ name: "beforeAll() #2" }),
+						createFail({ name: "beforeAll() #3", error: ERROR }),
+						createSkip({ name: "beforeAll() #4" }),
+					],
+					tests: [ createSkip({ name: "test" }) ],
+				}));
+			});
+
+			it("doesn't run afterAll() when beforeAll() fails");
+
+			it("continues running afterAll() even when one fails");
 
 			it("handles exception in afterAll", async () => {
 				const error = new Error("my error");
@@ -1481,7 +1501,7 @@ export default describe(() => {
 
 		it("marks suites even if they fail 'beforeAll'", async () => {
 			const suite = describe_sut.only(() => {
-				beforeAll_sut(ERROR_FN);
+				beforeAll_sut(FAIL_FN);
 				it_sut("my test", PASS_FN);
 			});
 

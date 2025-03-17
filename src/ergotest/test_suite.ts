@@ -393,7 +393,7 @@ export class TestSuite implements Test {
 		for await (const before of this._beforeAll) {
 			const name = [ ...runOptions.name, `beforeAll() #${beforeAllResults.length + 1}`];
 
-			const result = this._allChildrenSkipped
+			const result = this._allChildrenSkipped || beforeAllFailed
 				? TestResult.skip(name, resultOptions)
 				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
 
