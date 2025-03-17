@@ -1061,7 +1061,7 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.allTests(), [
+			assert.equal(actual.tests, [
 				TestResult.pass("test 1"),  // all tests pass because nothing timed out
 				TestResult.pass("test 2"),
 			]);
@@ -1105,16 +1105,14 @@ export default describe(() => {
 				afterAll_sut(notQuiteTimeoutFn);
 				beforeEach_sut(notQuiteTimeoutFn);
 				afterEach_sut(notQuiteTimeoutFn);
-				describe_sut(() => {
-					it_sut("my test", notQuiteTimeoutFn);
-				});
+				it_sut("my test", notQuiteTimeoutFn);
 			});
 
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.allTests(), [
+			assert.equal(actual.tests, [
 				TestResult.pass("my test"),   // all tests pass because nothing timed out
 			]);
 		});
@@ -1187,7 +1185,7 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.allTests(), [
+			assert.equal(actual.tests, [
 				TestResult.pass("my test"),  // all tests pass because nothing timed out
 			]);
 		});

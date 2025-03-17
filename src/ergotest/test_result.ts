@@ -429,9 +429,14 @@ export class TestSuiteResult extends TestResult {
 		ensure.signature(arguments, []);
 
 		const tests: TestCaseResult[] = [];
-		this._tests.forEach((result: TestResult) => {
+		const collect = (result: TestResult) => {
 			result.allTests().forEach(subTest => tests.push(subTest));
-		});
+		};
+
+		this._beforeAll.forEach(collect);
+		this._afterAll.forEach(collect);
+		this._tests.forEach(collect);
+
 		return tests;
 	}
 

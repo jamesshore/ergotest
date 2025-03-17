@@ -439,7 +439,40 @@ export default describe(() => {
 			], "multiple statuses");
 		});
 
-		it("includes beforeAll() and afterAll() results in list");
+		it("includes beforeAll() and afterAll() results in list", () => {
+			const suite = createSuite({
+				beforeAll: [
+					createPass({ name: "beforeAll pass" }),
+					createSkip({ name: "beforeAll skip" }),
+					createFail({ name: "beforeAll fail" }),
+					createTimeout({ name: "beforeAll timeout" }),
+				],
+				afterAll: [
+					createPass({ name: "afterAll pass" }),
+					createSkip({ name: "afterAll skip" }),
+				],
+				tests: [
+					createPass({ name: "normal test" }),
+				]
+			});
+
+			assert.equal(suite.allTests(), [
+				createPass({ name: "beforeAll pass" }),
+				createSkip({ name: "beforeAll skip" }),
+				createFail({ name: "beforeAll fail" }),
+				createTimeout({ name: "beforeAll timeout" }),
+				createPass({ name: "afterAll pass" }),
+				createSkip({ name: "afterAll skip" }),
+				createPass({ name: "normal test" }),
+			], "allTests()");
+
+			assert.equal(suite.allMatchingTests(TestStatus.pass, TestStatus.timeout), [
+				createPass({ name: "beforeAll pass" }),
+				createTimeout({ name: "beforeAll timeout" }),
+				createPass({ name: "afterAll pass" }),
+				createPass({ name: "normal test" }),
+			], "allMatchingTests()");
+		});
 
 		it("flattens all marked results into a single list", () => {
 			const suite = createSuite({ tests: [
