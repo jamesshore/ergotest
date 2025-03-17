@@ -19,7 +19,12 @@ To Document:
 * TestResult.fail signature change
 * TestResult.skip signature change
 * TestResult.timeout signature change
+* Add TestSuiteResult.beforeAll & afterAll
 * TestSuiteResult.children --> TestSuiteResult.tests rename
+
+TO DO:
+* Add beforeAll and afterAll to TestSuiteResult
+* Handle case where beforeAll and afterAll don't run (use a special "couldn't run" mark?)
 
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

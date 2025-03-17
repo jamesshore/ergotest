@@ -36,7 +36,9 @@ export interface SerializedTestSuiteResult {
 	name: string[];
 	mark: TestMarkValue;
 	filename?: string;
-	suite: SerializedTestResult[];
+	tests: SerializedTestResult[];
+	beforeAll: SerializedTestCaseResult[];
+	afterAll: SerializedTestCaseResult[];
 }
 
 export interface SerializedTestCaseResult {
@@ -61,6 +63,8 @@ export abstract class TestResult {
 	 * Create a TestResult for a suite of tests.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {TestResult[]} tests The nested tests in this suite (can be test suites or individual test cases).
+	 * @param {TestCaseResult[]} [options.beforeAll] The beforeAll() blocks in this suite.
+	 * @param {TestCaseResult[]} [options.afterAll] The afterAll() blocks in this suite.
 	 * @param {string} [options.filename] The file that contained this suite (optional).
 	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestSuiteResult} The result.
@@ -69,9 +73,13 @@ export abstract class TestResult {
 		name: string | string[],
 		tests: TestResult[],
 		{
+			beforeAll = [],
+			afterAll = [],
 			filename,
 			mark = TestMark.none
 		}: {
+			beforeAll?: TestCaseResult[],
+			afterAll?: TestCaseResult[],
 			filename?: string,
 			mark?: TestMarkValue,
 		} = {},
@@ -80,13 +88,15 @@ export abstract class TestResult {
 			[ String, Array ],
 			Array,
 			[ undefined, {
+				beforeAll: [ undefined, Array ],
+				afterAll: [ undefined, Array ],
 				filename: [ undefined, String ],
 				mark: [ undefined, String ]
 			}],
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		return new TestSuiteResult(name, tests, mark, filename);
+		return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
 	}
 
 	/**
@@ -298,29 +308,39 @@ export class TestSuiteResult extends TestResult {
 	 * @returns {TestSuiteResult} The result object.
 	 * @see TestResult#deserialize
 	 */
-	static deserialize({ name, filename, suite, mark }: SerializedTestSuiteResult): TestSuiteResult {
+	static deserialize(suite: SerializedTestSuiteResult): TestSuiteResult {
 		ensure.signature(arguments, [{
 			type: String,
 			name: Array,
 			mark: String,
 			filename: [ undefined, String ],
-			suite: Array,
+			tests: Array,
+			beforeAll: Array,
+			afterAll: Array,
 		}], [ "serialized TestSuiteResult" ]);
 
-		const deserializedSuite = suite.map(test => TestResult.deserialize(test));
-		return new TestSuiteResult(name, deserializedSuite, mark, filename);
+		const { name, filename, mark, tests, beforeAll, afterAll } = suite;
+		const deserializedTests = tests.map(test => TestResult.deserialize(test));
+		const deserializedBeforeAll = beforeAll.map(test => TestCaseResult.deserialize(test));
+		const deserializedAfterAll = afterAll.map(test => TestCaseResult.deserialize(test));
+
+		return new TestSuiteResult(name, deserializedTests, deserializedBeforeAll, deserializedAfterAll, mark, filename);
 	}
 
 	private readonly _name: string[];
 	private readonly _tests: TestResult[];
+	private readonly _beforeAll: TestResult[];
+	private readonly _afterAll: TestResult[];
 	private readonly _mark: TestMarkValue;
 	private readonly _filename?: string;
 
 	/** Internal use only. (Use {@link TestResult.suite} instead.) */
-	constructor(name: string[], tests: TestResult[], mark: TestMarkValue, filename?: string) {
+	constructor(name: string[], tests: TestResult[], beforeAll: TestCaseResult[], afterAll: TestCaseResult[], mark: TestMarkValue, filename?: string) {
 		super();
 		this._name = name;
 		this._tests = tests;
+		this._beforeAll = beforeAll;
+		this._afterAll = afterAll;
 		this._mark = mark;
 		this._filename = filename;
 	}
@@ -348,6 +368,20 @@ export class TestSuiteResult extends TestResult {
 	 */
 	get tests(): TestResult[] {
 		return this._tests;
+	}
+
+	/**
+	 * @returns { TestResult[] } The beforeAll() blocks ran for this suite.
+	 */
+	get beforeAll(): TestResult[] {
+		return this._beforeAll;
+	}
+
+	/**
+	 * @returns { TestResult[] } The afterAll() blocks ran for this suite.
+	 */
+	get afterAll(): TestResult[] {
+		return this._afterAll;
 	}
 
 	/**
@@ -490,7 +524,9 @@ export class TestSuiteResult extends TestResult {
 			name: this._name,
 			mark: this._mark,
 			filename: this._filename,
-			suite: this._tests.map(test => test.serialize()),
+			tests: this._tests.map(test => test.serialize()),
+			beforeAll: this._beforeAll.map(test => test.serialize()),
+			afterAll: this._afterAll.map(test => test.serialize()),
 		};
 	}
 
@@ -498,15 +534,22 @@ export class TestSuiteResult extends TestResult {
 		if (!(that instanceof TestSuiteResult)) return false;
 		if (this._mark !== that._mark) return false;
 
-		if (this._tests.length !== that._tests.length) return false;
-		for (let i = 0; i < this._tests.length; i++) {
-			const thisResult = this._tests[i]!;
-			const thatResult = that._tests[i]!;
-			if (!thisResult.equals(thatResult)) return false;
-		}
+		if (!compareTestResults(this._tests, that._tests)) return false;
+		if (!compareTestResults(this._beforeAll, that._beforeAll)) return false;
+		if (!compareTestResults(this._afterAll, that._afterAll)) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
 		return sameName && this._filename === that._filename;
+
+		function compareTestResults(thisTests: TestResult[], thatTests: TestResult[]): boolean {
+			if (thisTests.length !== thatTests.length) return false;
+			for (let i = 0; i < thisTests.length; i++) {
+				const thisResult = thisTests[i]!;
+				const thatResult = thatTests[i]!;
+				if (!thisResult.equals(thatResult)) return false;
+			}
+			return true;
+		}
 	}
 
 }
