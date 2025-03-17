@@ -540,6 +540,21 @@ export default describe(() => {
 			], ".only");
 		});
 
+		it("includes beforeAll() and afterAll() results in list of marks", () => {
+			const suite = createSuite({
+				mark: TestMark.only,
+				beforeAll: [ createPass({ name: "beforeAll", mark: TestMark.none }) ],
+				afterAll: [ createPass({ name: "afterAll", mark: TestMark.none }) ],
+			});
+
+			assert.equal(suite.allMatchingMarks(TestMark.none), [
+				createPass({ name: "beforeAll", mark: TestMark.none }),
+				createPass({ name: "afterAll", mark: TestMark.none }),
+			], ".none");
+
+			assert.equal(suite.allMatchingMarks(TestMark.skip), [], ".skip");
+		});
+
 	});
 
 

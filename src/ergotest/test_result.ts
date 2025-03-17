@@ -467,10 +467,16 @@ export class TestSuiteResult extends TestResult {
 
 		const results = new Set<TestResult>();
 		if (marks.includes(this.mark)) results.add(this);
-		this._tests.forEach((result: TestResult) => {
+
+		const collect = (result: TestResult) => {
 			if (marks.includes(result.mark)) results.add(result);
 			result.allMatchingMarks.apply(result, marks).forEach(subResult => results.add(subResult));
-		});
+		};
+
+		this._beforeAll.forEach(collect);
+		this._afterAll.forEach(collect);
+		this._tests.forEach(collect);
+
 		return [ ...results ];
 	}
 
