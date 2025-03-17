@@ -25,6 +25,7 @@ To Document:
 TO DO:
 * Add beforeAll and afterAll to TestSuiteResult
 * Handle case where beforeAll and afterAll don't run (use a special "couldn't run" mark?)
+* Decide how to report on before/after all/each failures (all currently gets reported as a test, but only when it fails; each overrides actual test result)
 
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

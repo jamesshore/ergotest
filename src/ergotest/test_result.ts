@@ -329,8 +329,8 @@ export class TestSuiteResult extends TestResult {
 
 	private readonly _name: string[];
 	private readonly _tests: TestResult[];
-	private readonly _beforeAll: TestResult[];
-	private readonly _afterAll: TestResult[];
+	private readonly _beforeAll: TestCaseResult[];
+	private readonly _afterAll: TestCaseResult[];
 	private readonly _mark: TestMarkValue;
 	private readonly _filename?: string;
 
