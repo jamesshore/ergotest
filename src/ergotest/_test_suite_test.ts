@@ -1,6 +1,6 @@
 
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { afterAll, assert, beforeAll, describe, it } from "../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,
@@ -314,6 +314,26 @@ export default describe(() => {
 				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
 			]}));
 		});
+
+		it("propagates filename into beforeAll/afterAll results", async () => {
+			const filename = "my_filename";
+
+			const suite = describe_sut(() => {
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(FAIL_FN);
+				it_sut("test", PASS_FN);
+			});
+			suite._setFilename(filename);
+
+			assert.equal(await suite.runAsync(), createSuite({
+				filename,
+				beforeAll: [ createPass({ name: "beforeAll() #1", filename }) ],
+				afterAll: [ createFail({ name: "afterAll() #1", error: ERROR, filename }) ],
+				tests: [ createPass({ name: "test", filename }) ],
+			}));
+		});
+
+		it("TODO: propagate filename into beforeEach/afterEach results (modify above test)");
 
 	});
 

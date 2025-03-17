@@ -10,9 +10,6 @@ export default describe(() => {
 
 	describe("test suite", () => {
 
-		it("TODO: Need to test that a suite with failing beforeAll() reports its tests correctly");
-		it("TODO: Need to test that a suite with failing afterAll() reports its tests correctly");
-
 		it("has a name and list of test results", () => {
 			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
 			const suite = TestResult.suite([ "my name" ], tests);
@@ -569,6 +566,28 @@ export default describe(() => {
 				createFail({ filename: "my_file2" }),
 			]});
 			assert.equal(suite.allPassingFiles(), [ "my_file1" ]);
+		});
+
+		it("does not include filenames of failing beforeAll/afterAll blocks", () => {
+			const suite = createSuite({ tests: [
+				createSuite({
+					beforeAll: [ createPass({ filename: "pass_file" }) ],
+					afterAll: [ createPass({ filename: "pass_file" }) ],
+					tests: [ createPass({ filename: "pass_file" }) ],
+				}),
+				createSuite({
+					beforeAll: [ createFail({ filename: "fail_beforeAll" }) ],
+					afterAll: [ createPass({ filename: "fail_beforeAll" }) ],
+					tests: [ createPass({ filename: "fail_beforeAll" }) ],
+				}),
+				createSuite({
+					beforeAll: [ createPass({ filename: "fail_afterAll" }) ],
+					afterAll: [ createFail({ filename: "fail_afterAll" }) ],
+					tests: [ createPass({ filename: "fail_afterAll" }) ],
+				}),
+			]});
+
+			assert.equal(suite.allPassingFiles(), [ "pass_file" ]);
 		});
 
 		it("does not include filenames of skipped tests", () => {
