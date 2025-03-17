@@ -333,8 +333,6 @@ export default describe(() => {
 			}));
 		});
 
-		it("TODO: propagate filename into beforeEach/afterEach results (modify above test)");
-
 	});
 
 
@@ -645,8 +643,6 @@ export default describe(() => {
 			);
 		});
 
-		it("includes beforeEach() and afterEach() functions in test results");
-
 		it("fails when run outside of describe()", () => {
 			assert.error(
 				() => beforeAll_sut(() => {}),
@@ -855,8 +851,6 @@ export default describe(() => {
 				);
 			});
 
-			it("stops running beforeEach() functions if one fails");
-
 			it("doesn't run test when beforeEach() fails", async () => {
 				let testRan = false;
 				const suite = describe_sut("my suite", () => {
@@ -872,9 +866,7 @@ export default describe(() => {
 				assert.equal(testRan, false);
 			});
 
-			it("doesn't run afterEach() when beforeEach() throws exception");
-
-			it("FIX ME: discards afterEach() exception when both test and afterEach throw exceptions", async () => {
+			it("discards afterEach() exception when both test and afterEach throw exceptions", async () => {
 				const afterEachError = new Error("afterEach error");
 				const testError = new Error("test error");
 
@@ -894,7 +886,6 @@ export default describe(() => {
 					]),
 				);
 			});
-			it("TODO: FIX ME above");
 
 		});
 
