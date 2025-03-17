@@ -722,7 +722,23 @@ export default describe(() => {
 				}));
 			});
 
-			it("doesn't run afterAll() when beforeAll() fails");
+			it("doesn't run afterAll() when beforeAll() fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(FAIL_FN);
+					afterAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					afterAll: [
+						createSkip({ name: "afterAll() #1" }),
+						createSkip({ name: "afterAll() #2" }),
+					],
+					tests: [ createSkip({ name: "test" }) ],
+				}));
+			});
 
 			it("continues running afterAll() even when one fails");
 
