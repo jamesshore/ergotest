@@ -470,8 +470,8 @@ class TestCase implements Test {
 
 	constructor(
 		name: string,
-		timeout: Milliseconds,
-		testFn: ItFn,
+		timeout: Milliseconds | undefined,
+		testFn: ItFn | undefined,
 		mark: TestMarkValue
 	) {
 		this._name = name;
