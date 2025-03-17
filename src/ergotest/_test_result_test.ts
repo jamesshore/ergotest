@@ -11,17 +11,27 @@ export default describe(() => {
 	describe("test suite", () => {
 
 		it("has a name and list of test results", () => {
-			const list = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const result = TestResult.suite([ "my name" ], list);
+			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
+			const suite = TestResult.suite([ "my name" ], tests);
 
-			assert.equal(result.name, [ "my name" ]);
-			assert.equal(result.tests, list);
+			assert.equal(suite.name, [ "my name" ]);
+			assert.equal(suite.tests, tests);
 		});
 
 		it("name can include parent suites", () => {
 			const suite = createSuite({ name: [ "parent", "child", "grandchild" ] });
 
 			assert.equal(suite.name, [ "parent", "child", "grandchild" ]);
+		});
+
+		it("has optional beforeAll and afterAll results", () => {
+			const beforeAll = [ createPass({ name: "before 1" }), createPass({ name: "before 2" }) ];
+			const afterAll = [ createPass({ name: "after 1" }), createPass({ name: "after 2" }) ];
+			const suite = createSuite({ beforeAll, afterAll });
+
+			assert.equal(suite.beforeAll, beforeAll, "beforeAll");
+			assert.equal(suite.afterAll, afterAll, "afterAll");
+
 		});
 
 		it("has optional filename", () => {
@@ -52,12 +62,30 @@ export default describe(() => {
 			assert.notDotEquals(createSuite({ name: [ "parent", "child" ]}), createSuite({ name: [ "parent", "different" ]}));
 
 			assert.dotEquals(
-				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
+				createSuite({ tests: [ createPass({ name: "test name" }) ]}),
+				createSuite({ tests: [ createPass({ name: "test name" }) ]}),
 			);
 			assert.notDotEquals(
-				createSuite({ name: "my name", children: [ createPass({ name: "test name" }) ]}),
-				createSuite({ name: "my name", children: [ createPass({ name: "different" }) ]}),
+				createSuite({ tests: [ createPass({ name: "test name" }) ]}),
+				createSuite({ tests: [ createPass({ name: "different" }) ]}),
+			);
+
+			assert.dotEquals(
+				createSuite({ beforeAll: [ createPass({ name: "before" }) ]}),
+				createSuite({ beforeAll: [ createPass({ name: "before" }) ]}),
+			);
+			assert.notDotEquals(
+				createSuite({ beforeAll: [ createPass({ name: "before" }) ]}),
+				createSuite({ beforeAll: [ createPass({ name: "different" }) ]}),
+			);
+
+			assert.dotEquals(
+				createSuite({ afterAll: [ createPass({ name: "after" }) ]}),
+				createSuite({ afterAll: [ createPass({ name: "after" }) ]}),
+			);
+			assert.notDotEquals(
+				createSuite({ afterAll: [ createPass({ name: "after" }) ]}),
+				createSuite({ afterAll: [ createPass({ name: "different" }) ]}),
 			);
 		});
 
@@ -68,7 +96,7 @@ export default describe(() => {
 
 		it("renders marks, errors, and a summary to a nicely-formatted string", () => {
 			const fail = createFail();
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass({ mark: TestMark.only }),
 				createSkip({ mark: TestMark.skip }),
 				fail,
@@ -90,7 +118,7 @@ export default describe(() => {
 		});
 
 		it("renders marks and summary without errors", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass({ mark: TestMark.only }),
 				createSkip({ mark: TestMark.skip }),
 			]});
@@ -107,7 +135,7 @@ export default describe(() => {
 
 		it("renders errors and summary without marks", () => {
 			const fail = createFail();
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 					fail,
 					createTimeout(),
 			]});
@@ -123,7 +151,7 @@ export default describe(() => {
 		});
 
 		it("renders summary alone", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass(),
 			]});
 
@@ -134,7 +162,7 @@ export default describe(() => {
 		});
 
 		it("can include average test time in summary", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass(),
 				createSkip(),
 			]});
@@ -146,7 +174,7 @@ export default describe(() => {
 		});
 
 		it("adds optional preamble when result has marks and errors", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass({ mark: TestMark.only }),
 				createTimeout(),
 			]});
@@ -165,7 +193,7 @@ export default describe(() => {
 		});
 
 		it("adds optional preamble when result has marks alone", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass({ mark: TestMark.only }),
 			]});
 
@@ -180,7 +208,7 @@ export default describe(() => {
 		});
 
 		it("adds optional preamble when result has errors alone", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createTimeout(),
 			]});
 
@@ -366,11 +394,11 @@ export default describe(() => {
 	describe("flattening", () => {
 
 		it("flattens all test results into a single list", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass(),
 				createSkip(),
 				createFail({ name: "fail 1" }),
-				createSuite({ children: [
+				createSuite({ tests: [
 					createTimeout({ name: "timeout" }),
 					createFail({ name: "fail 2" }),
 				]}),
@@ -386,11 +414,11 @@ export default describe(() => {
 		});
 
 		it("flattens tests with requested statuses into a single list", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass(),
 				createSkip({ name: "skip" }),
 				createTimeout({ name: "timeout 1" }),
-				createSuite({ children: [
+				createSuite({ tests: [
 					createFail(),
 					createTimeout({ name: "timeout 2" }),
 				]}),
@@ -408,16 +436,50 @@ export default describe(() => {
 			], "multiple statuses");
 		});
 
+		it("includes beforeAll() and afterAll() results in list", () => {
+			const suite = createSuite({
+				beforeAll: [
+					createPass({ name: "beforeAll pass" }),
+					createSkip({ name: "beforeAll skip" }),
+					createFail({ name: "beforeAll fail" }),
+					createTimeout({ name: "beforeAll timeout" }),
+				],
+				afterAll: [
+					createPass({ name: "afterAll pass" }),
+					createSkip({ name: "afterAll skip" }),
+				],
+				tests: [
+					createPass({ name: "normal test" }),
+				]
+			});
+
+			assert.equal(suite.allTests(), [
+				createPass({ name: "beforeAll pass" }),
+				createSkip({ name: "beforeAll skip" }),
+				createFail({ name: "beforeAll fail" }),
+				createTimeout({ name: "beforeAll timeout" }),
+				createPass({ name: "afterAll pass" }),
+				createSkip({ name: "afterAll skip" }),
+				createPass({ name: "normal test" }),
+			], "allTests()");
+
+			assert.equal(suite.allMatchingTests(TestStatus.pass, TestStatus.timeout), [
+				createPass({ name: "beforeAll pass" }),
+				createTimeout({ name: "beforeAll timeout" }),
+				createPass({ name: "afterAll pass" }),
+				createPass({ name: "normal test" }),
+			], "allMatchingTests()");
+		});
 
 		it("flattens all marked results into a single list", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ name: "test 0.1", mark: TestMark.none }),
 				createPass({ name: "test 0.2", mark: TestMark.skip }),
 				createPass({ name: "test 0.3", mark: TestMark.only }),
-				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+				createSuite({ name: "suite 1", mark: TestMark.only, tests: [
 					createPass({ name: "test 1.1", mark: TestMark.only }),
 					createPass({ name: "test 1.2", mark: TestMark.skip }),
-					createSuite({ name: "suite 1.1", mark: TestMark.none, children: [
+					createSuite({ name: "suite 1.1", mark: TestMark.none, tests: [
 						createPass({ name: "test 1.1.1", mark: TestMark.skip }),
 					]}),
 					createSuite({ name: "suite 1.2", mark: TestMark.skip }),
@@ -428,10 +490,10 @@ export default describe(() => {
 			assert.equal(suite.allMarkedResults(), [
 				createPass({ name: "test 0.2", mark: TestMark.skip }),
 				createPass({ name: "test 0.3", mark: TestMark.only }),
-				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+				createSuite({ name: "suite 1", mark: TestMark.only, tests: [
 					createPass({ name: "test 1.1", mark: TestMark.only }),
 					createPass({ name: "test 1.2", mark: TestMark.skip }),
-						createSuite({ name: "suite 1.1", mark: TestMark.none, children: [
+						createSuite({ name: "suite 1.1", mark: TestMark.none, tests: [
 							createPass({ name: "test 1.1.1", mark: TestMark.skip }),
 						]}),
 						createSuite({ name: "suite 1.2", mark: TestMark.skip }),
@@ -451,11 +513,11 @@ export default describe(() => {
 		});
 
 		it("flattens results with requested marks into a single list", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ name: "test 0.1", mark: TestMark.none }),
 				createPass({ name: "test 0.2", mark: TestMark.skip }),
 				createPass({ name: "test 0.3", mark: TestMark.only }),
-				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+				createSuite({ name: "suite 1", mark: TestMark.only, tests: [
 					createPass({ name: "test 1.1", mark: TestMark.only }),
 					createPass({ name: "test 1.2", mark: TestMark.skip }),
 					createPass({ name: "test 1.3", mark: TestMark.none }),
@@ -469,7 +531,7 @@ export default describe(() => {
 
 			assert.equal(suite.allMatchingMarks(TestMark.only), [
 				createPass({ name: "test 0.3", mark: TestMark.only }),
-				createSuite({ name: "suite 1", mark: TestMark.only, children: [
+				createSuite({ name: "suite 1", mark: TestMark.only, tests: [
 					createPass({ name: "test 1.1", mark: TestMark.only }),
 					createPass({ name: "test 1.2", mark: TestMark.skip }),
 					createPass({ name: "test 1.3", mark: TestMark.none }),
@@ -478,20 +540,35 @@ export default describe(() => {
 			], ".only");
 		});
 
+		it("includes beforeAll() and afterAll() results in list of marks", () => {
+			const suite = createSuite({
+				mark: TestMark.only,
+				beforeAll: [ createPass({ name: "beforeAll", mark: TestMark.none }) ],
+				afterAll: [ createPass({ name: "afterAll", mark: TestMark.none }) ],
+			});
+
+			assert.equal(suite.allMatchingMarks(TestMark.none), [
+				createPass({ name: "beforeAll", mark: TestMark.none }),
+				createPass({ name: "afterAll", mark: TestMark.none }),
+			], ".none");
+
+			assert.equal(suite.allMatchingMarks(TestMark.skip), [], ".skip");
+		});
+
 	});
 
 
 	describe("passing test files", () => {
 
 		it("provides names of files that have all passing tests", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ filename: "file2" }),
 			]});
 			assert.equal(suite.allPassingFiles(), [ "file2" ]);
 		});
 
 		it("does not include filenames more than once", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ filename: "my_file" }),
 				createPass({ filename: "my_file" }),
 			]});
@@ -499,15 +576,37 @@ export default describe(() => {
 		});
 
 		it("does not include filenames of failing tests", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ filename: "my_file1" }),
 				createFail({ filename: "my_file2" }),
 			]});
 			assert.equal(suite.allPassingFiles(), [ "my_file1" ]);
 		});
 
+		it("does not include filenames of failing beforeAll/afterAll blocks", () => {
+			const suite = createSuite({ tests: [
+				createSuite({
+					beforeAll: [ createPass({ filename: "pass_file" }) ],
+					afterAll: [ createPass({ filename: "pass_file" }) ],
+					tests: [ createPass({ filename: "pass_file" }) ],
+				}),
+				createSuite({
+					beforeAll: [ createFail({ filename: "fail_beforeAll" }) ],
+					afterAll: [ createPass({ filename: "fail_beforeAll" }) ],
+					tests: [ createPass({ filename: "fail_beforeAll" }) ],
+				}),
+				createSuite({
+					beforeAll: [ createPass({ filename: "fail_afterAll" }) ],
+					afterAll: [ createFail({ filename: "fail_afterAll" }) ],
+					tests: [ createPass({ filename: "fail_afterAll" }) ],
+				}),
+			]});
+
+			assert.equal(suite.allPassingFiles(), [ "pass_file" ]);
+		});
+
 		it("does not include filenames of skipped tests", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ filename: "my_file1" }),
 				createSkip({ filename: "my_file2" }),
 			]});
@@ -515,7 +614,7 @@ export default describe(() => {
 		});
 
 		it("does not include filenames of timed out tests", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ filename: "my_file1" }),
 				createTimeout({ filename: "my_file2" }),
 			]});
@@ -526,8 +625,8 @@ export default describe(() => {
 		it("[bugfix] does not include filenames of failing tests even when sibling tests pass", () => {
 			// Including filename in every test suite has resulted in tests being marked as 'pass' when they were 'fail'
 
-			const suite = createSuite({ children: [
-				createSuite({ filename: "my_file", children: [
+			const suite = createSuite({ tests: [
+				createSuite({ filename: "my_file", tests: [
 					createPass({ filename: "my_file" }),
 					createFail({ filename: "my_file" }),
 				]}),
@@ -542,7 +641,7 @@ export default describe(() => {
 	describe("summarization", () => {
 
 		it("provides test count", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass(),
 				createFail(),
 				createFail(),
@@ -565,10 +664,10 @@ export default describe(() => {
 		});
 
 		it("counts tests in sub-suites", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass(),
 				createFail(),
-				createSuite({ children: [
+				createSuite({ tests: [
 					createFail(),
 					createFail(),
 					createSkip(),
@@ -590,14 +689,16 @@ export default describe(() => {
 	describe("serialization and deserialization", () => {
 
 		it("can be serialized and deserialized", () => {
-			const suite = createSuite({ children: [
+			const suite = createSuite({ tests: [
 				createPass({ name: "pass", mark: TestMark.none }),
 				createSkip({ name: "skip", mark: TestMark.skip }),
 				createFail({ name: "fail", mark: TestMark.only }),
 				createTimeout({ name: "timeout" }),
-				createSuite({ name: "child", mark: TestMark.skip, children: [
-					createPass({ name: [ "child", "child pass" ]}),
-				]}),
+				createSuite({ name: "child", mark: TestMark.skip,
+					beforeAll: [ createPass({ name: [ "child", "beforeAll" ]}) ],
+					afterAll: [ createPass({ name: [ "child", "afterAll" ]}) ],
+					tests: [ createPass({ name: [ "child", "child pass" ]}) ],
+				}),
 			]});
 
 			const serialized = suite.serialize();
@@ -612,16 +713,20 @@ export default describe(() => {
 
 function createSuite({
 	name = "irrelevant name",
-	children = [],
+	tests = [],
+	beforeAll = undefined,
+	afterAll = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
-	children?: TestResult[],
+	tests?: TestResult[],
+	beforeAll?: TestCaseResult[],
+	afterAll?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.suite(name, children, { filename, mark });
+	return TestResult.suite(name, tests, { beforeAll, afterAll, filename, mark });
 }
 
 function createPass({

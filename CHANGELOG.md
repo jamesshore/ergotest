@@ -19,7 +19,15 @@ To Document:
 * TestResult.fail signature change
 * TestResult.skip signature change
 * TestResult.timeout signature change
+* Add TestSuiteResult.beforeAll & afterAll
 * TestSuiteResult.children --> TestSuiteResult.tests rename
+* Change in behavior: beforeAll() and afterAll() now notify upon completion (change name of onTestCaseComplete? To onProgress maybe?)
+* Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
+* Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
+
+TO DO:
+* Fix beforeAll/afterAll failure reporting; currently notifies, but doesn't show up in test summary
+* Decide how to report on before/after all/each failures (all currently gets reported as a test, but only when it fails; each overrides actual test result)
 
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

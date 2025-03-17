@@ -1,6 +1,6 @@
 
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { afterAll, assert, beforeAll, describe, it } from "../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,
@@ -35,6 +35,10 @@ const NODE_MODULES_RENDERER_NAME = "_test_renderer/_renderer_in_node_modules.js"
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
+const ERROR = new Error("my error");
+const PASS_FN = () => {};
+const FAIL_FN = () => { throw ERROR; };
+
 
 export default describe(() => {
 
@@ -46,8 +50,8 @@ export default describe(() => {
 			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
 			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
-					createSuite({ children: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
-					createSuite({ children: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
+					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
+					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
 				]),
 			);
 		});
@@ -301,7 +305,7 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise, createSuite({ filename, children: [
+			assert.dotEquals(await actualPromise, createSuite({ filename, tests: [
 				createPass({ name: "pass", filename }),
 				createSkip({ name: "skip", mark: TestMark.skip, filename }),
 				createFail({ name: "fail", error: new Error("fail"), filename }),
@@ -309,6 +313,24 @@ export default describe(() => {
 				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
 				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
 			]}));
+		});
+
+		it("propagates filename into beforeAll/afterAll results", async () => {
+			const filename = "my_filename";
+
+			const suite = describe_sut(() => {
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(FAIL_FN);
+				it_sut("test", PASS_FN);
+			});
+			suite._setFilename(filename);
+
+			assert.equal(await suite.runAsync(), createSuite({
+				filename,
+				beforeAll: [ createPass({ name: "beforeAll() #1", filename }) ],
+				afterAll: [ createFail({ name: "afterAll() #1", error: ERROR, filename }) ],
+				tests: [ createPass({ name: "test", filename }) ],
+			}));
 		});
 
 	});
@@ -582,162 +604,42 @@ export default describe(() => {
 			assert.equal(afterAllReceived, "my_config", "afterAll");
 		});
 
-		it("doesn't run beforeAll and afterAll when all children are skipped", async () => {
-			let beforeRan = false;
-			let afterRan = false;
-			const suite = describe_sut("my suite", () => {
-				beforeAll_sut(() => {
-					beforeRan = true;
-				});
-				afterAll_sut(() => {
-					afterRan = true;
-				});
-				it_sut.skip("test 1", async () => {});
-				it_sut.skip("test 2", async () => {});
-			});
-
-			await suite.runAsync();
-			assert.equal(beforeRan, false, "shouldn't run beforeAll()");
-			assert.equal(afterRan, false, "shouldn't run afterAll()");
-		});
-
-		it("doesn't run beforeEach and afterEach when the test is skipped", async () => {
-			let beforeRan = false;
-			let afterRan = false;
-			const suite = describe_sut("my suite", () => {
-				beforeEach_sut(() => {
-					beforeRan = true;
-				});
-				afterEach_sut(() => {
-					afterRan = true;
-				});
-				it_sut.skip("test 1", async () => {});
-			});
-
-			await suite.runAsync();
-			assert.equal(beforeRan, false, "shouldn't run beforeEach()");
-			assert.equal(afterRan, false, "shouldn't run afterEach()");
-		});
-
-		it("handles exception in beforeAll", async () => {
-			const error = new Error("my error");
-			const suite = describe_sut("my suite", () => {
-				beforeAll_sut(() => {
-					throw error;
-				});
-				it_sut("test 1", async () => {});
-				it_sut("test 2", async () => {});
-			});
-
-			assert.dotEquals(await suite.runAsync(),
-				createSuite({ name: "my suite", children: [
-					createFail({ name: [ "my suite", "beforeAll()" ], error }),
-				]}),
-			);
-		});
-
-		it("handles exception in afterAll", async () => {
-			const error = new Error("my error");
-			const suite = describe_sut("my suite", () => {
-				afterAll_sut(() => {
-					throw error;
-				});
-				it_sut("test 1", async () => {});
-				it_sut("test 2", async () => {});
-			});
-
-			assert.dotEquals(await suite.runAsync(),
-				createSuite({ name: "my suite", children: [
-					createPass({ name: [ "my suite", "test 1" ]}),
-					createPass({ name: [ "my suite", "test 2" ]}),
-					createFail({ name: [ "my suite", "afterAll()" ], error }),
-				]}),
-			);
-		});
-
-		it("handles exception in beforeEach", async () => {
-			const error = new Error("my error");
-			const suite = describe_sut(() => {
-				beforeEach_sut(() => {
-					throw error;
-				});
-				it_sut("test 1", async () => {});
-				it_sut("test 2", async () => {});
-			});
-
-			assert.dotEquals(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("test 1", error),
-					TestResult.fail("test 2", error),
-				]),
-			);
-		});
-
-		it("doesn't run test when beforeEach throws exception", async () => {
-			let testRan = false;
-			const suite = describe_sut("my suite", () => {
-				beforeEach_sut(() => {
-					throw new Error();
-				});
-				it_sut("my test", () => {
-					testRan = true;
+		it("includes beforeAll() and afterAll() functions in test results", async () => {
+			const suite = describe_sut("parent", () => {
+				beforeAll_sut(PASS_FN);
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(PASS_FN);
+				afterAll_sut(PASS_FN);
+				it_sut("test 1", PASS_FN);
+				describe_sut("child", () => {
+					beforeAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test 2", PASS_FN);
 				});
 			});
 
-			await suite.runAsync();
-			assert.equal(testRan, false);
-		});
-
-		it("handles exception in afterEach", async () => {
-			const error = new Error("my error");
-			const suite = describe_sut(() => {
-				afterEach_sut(() => {
-					throw error;
-				});
-				it_sut("test 1", () => {});
-				it_sut("test 2", () => {});
-			});
-
-			assert.dotEquals(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("test 1", error),
-					TestResult.fail("test 2", error),
-				]),
-			);
-		});
-
-		it("runs afterEach() even when test throws exception", async() => {
-			let afterEachRan = false;
-			const suite = describe_sut("my suite", () => {
-				afterEach_sut(() => {
-					afterEachRan = true;
-				});
-				it_sut("my test", () => {
-					throw new Error();
-				});
-			});
-
-			await suite.runAsync();
-			assert.equal(afterEachRan, true);
-		});
-
-		it("only reports test exception when both test and afterEach throw exceptions", async () => {
-			const afterEachError = new Error("afterEach error");
-			const testError = new Error("test error");
-
-			const suite = describe_sut(() => {
-				afterEach_sut(() => {
-					throw afterEachError;
-				});
-				it_sut("my test", () => {
-					throw testError;
-				});
-			});
-
-			assert.dotEquals(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.fail("my test", testError),
-				]),
+			assert.equal(
+				await suite.runAsync(),
+				createSuite({
+					name: "parent",
+					beforeAll: [
+						createPass({ name: [ "parent", "beforeAll() #1" ]}),
+						createPass({ name: [ "parent", "beforeAll() #2" ]}),
+					],
+					afterAll: [
+						createPass({ name: [ "parent", "afterAll() #1" ]}),
+						createPass({ name: [ "parent", "afterAll() #2" ]}),
+					],
+					tests: [
+						createPass({ name: [ "parent", "test 1" ] }),
+						createSuite({
+							name: [ "parent", "child" ],
+							beforeAll: [ createPass({ name: [ "parent", "child", "beforeAll() #1" ]}) ],
+							afterAll: [ createPass({ name: [ "parent", "child", "afterAll() #1" ]}) ],
+							tests: [ createPass({ name: [ "parent", "child", "test 2" ] }) ],
+						}),
+					],
+				}),
 			);
 		});
 
@@ -758,6 +660,233 @@ export default describe(() => {
 				() => afterEach_sut(() => {}),
 				"afterEach() must be run inside describe()",
 			);
+		});
+
+		describe("beforeAll/afterAll edge cases", () => {
+
+			it("doesn't run beforeAll() and afterAll() when all children are skipped", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(PASS_FN);
+					beforeAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					it_sut.skip("test 1", PASS_FN);
+					it_sut.skip("test 2", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [
+						createSkip({ name: "beforeAll() #1", mark: "none" }),
+						createSkip({ name: "beforeAll() #2", mark: "none" }),
+					],
+					afterAll: [
+						createSkip({ name: "afterAll() #1", mark: "none" }),
+						createSkip({ name: "afterAll() #2", mark: "none" }),
+					],
+					tests: [
+						createSkip({ name: "test 1", mark: "skip" }),
+						createSkip({ name: "test 2", mark: "skip" }),
+					],
+				}));
+			});
+
+			it("runs afterAll() even when tests throw exception", async () => {
+				const suite = describe_sut(() => {
+					afterAll_sut(PASS_FN);
+					it_sut("test", FAIL_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					afterAll: [ createPass({ name: "afterAll() #1" }) ],
+					tests: [ createFail({ name: "test", error: ERROR }) ],
+				}));
+			});
+
+			it("doesn't run tests when beforeAll() fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(FAIL_FN);
+					it_sut("test 1", async () => {});
+					it_sut("test 2", async () => {});
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					tests: [
+						createSkip({ name: "test 1" }),
+						createSkip({ name: "test 2" }),
+					]}),
+				);
+			});
+
+			it("stops running beforeAll() functions if one fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(PASS_FN);
+					beforeAll_sut(PASS_FN);
+					beforeAll_sut(FAIL_FN);
+					beforeAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [
+						createPass({ name: "beforeAll() #1" }),
+						createPass({ name: "beforeAll() #2" }),
+						createFail({ name: "beforeAll() #3", error: ERROR }),
+						createSkip({ name: "beforeAll() #4" }),
+					],
+					tests: [ createSkip({ name: "test" }) ],
+				}));
+			});
+
+			it("doesn't run afterAll() when beforeAll() fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(FAIL_FN);
+					afterAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					afterAll: [
+						createSkip({ name: "afterAll() #1" }),
+						createSkip({ name: "afterAll() #2" }),
+					],
+					tests: [ createSkip({ name: "test" }) ],
+				}));
+			});
+
+			it("continues running afterAll() even when one fails", async () => {
+				const suite = describe_sut(() => {
+					afterAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					afterAll_sut(FAIL_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					afterAll: [
+						createPass({ name: "afterAll() #1" }),
+						createPass({ name: "afterAll() #2" }),
+						createFail({ name: "afterAll() #3", error: ERROR }),
+						createPass({ name: "afterAll() #4" }),
+					],
+					tests: [ createPass({ name: "test" }) ],
+				}));
+			});
+
+		});
+
+		describe("beforeEach/afterEach edge cases", () => {
+
+			it("doesn't run beforeEach and afterEach when the test is skipped", async () => {
+				let beforeRan = false;
+				let afterRan = false;
+				const suite = describe_sut("my suite", () => {
+					beforeEach_sut(() => {
+						beforeRan = true;
+					});
+					afterEach_sut(() => {
+						afterRan = true;
+					});
+					it_sut.skip("test 1", async () => {});
+				});
+
+				await suite.runAsync();
+				assert.equal(beforeRan, false, "shouldn't run beforeEach()");
+				assert.equal(afterRan, false, "shouldn't run afterEach()");
+			});
+
+			it("runs afterEach() even when test throws exception", async () => {
+				let afterEachRan = false;
+				const suite = describe_sut("my suite", () => {
+					afterEach_sut(() => {
+						afterEachRan = true;
+					});
+					it_sut("my test", () => {
+						throw new Error();
+					});
+				});
+
+				await suite.runAsync();
+				assert.equal(afterEachRan, true);
+			});
+
+			it("handles exception in beforeEach()", async () => {
+				const error = new Error("my error");
+				const suite = describe_sut(() => {
+					beforeEach_sut(() => {
+						throw error;
+					});
+					it_sut("test 1", async () => {});
+					it_sut("test 2", async () => {});
+				});
+
+				assert.dotEquals(
+					await suite.runAsync(),
+					TestResult.suite([], [
+						TestResult.fail("test 1", error),
+						TestResult.fail("test 2", error),
+					]),
+				);
+			});
+
+			it("handles exception in afterEach()", async () => {
+				const error = new Error("my error");
+				const suite = describe_sut(() => {
+					afterEach_sut(() => {
+						throw error;
+					});
+					it_sut("test 1", () => {});
+					it_sut("test 2", () => {});
+				});
+
+				assert.dotEquals(
+					await suite.runAsync(),
+					TestResult.suite([], [
+						TestResult.fail("test 1", error),
+						TestResult.fail("test 2", error),
+					]),
+				);
+			});
+
+			it("doesn't run test when beforeEach() fails", async () => {
+				let testRan = false;
+				const suite = describe_sut("my suite", () => {
+					beforeEach_sut(() => {
+						throw new Error();
+					});
+					it_sut("my test", () => {
+						testRan = true;
+					});
+				});
+
+				await suite.runAsync();
+				assert.equal(testRan, false);
+			});
+
+			it("discards afterEach() exception when both test and afterEach throw exceptions", async () => {
+				const afterEachError = new Error("afterEach error");
+				const testError = new Error("test error");
+
+				const suite = describe_sut(() => {
+					afterEach_sut(() => {
+						throw afterEachError;
+					});
+					it_sut("my test", () => {
+						throw testError;
+					});
+				});
+
+				assert.dotEquals(
+					await suite.runAsync(),
+					TestResult.suite([], [
+						TestResult.fail("my test", testError),
+					]),
+				);
+			});
+
 		});
 
 	});
@@ -800,7 +929,7 @@ export default describe(() => {
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = describe_sut("my suite", () => {
+			const suite = describe_sut(() => {
 				beforeAll_sut(async () => {
 					await clock.waitAsync(DEFAULT_TIMEOUT + 1);
 				});
@@ -815,12 +944,11 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite("my suite", [
-					TestResult.timeout([ "my suite", "beforeAll()" ], DEFAULT_TIMEOUT)
-				]),
-				"result",
-			);
+			assert.equal(await actualPromise, createSuite({
+				beforeAll: [ createTimeout({ name: "beforeAll() #1", timeout: DEFAULT_TIMEOUT }) ],
+				afterAll: [ createSkip({ name: "afterAll() #1" }) ],
+				tests: [ createSkip({ name: "my test" }) ],
+			}));
 			assert.equal(itTime, null, "it() should not run");
 			assert.equal(afterTime, null, "afterAll() should not run");
 		});
@@ -847,11 +975,14 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("test 1"),
-					TestResult.pass("test 2"),
-					TestResult.timeout("afterAll()", DEFAULT_TIMEOUT),
-				]),
+				createSuite({
+					beforeAll: [ createPass({ name: "beforeAll() #1" }) ],
+					afterAll: [ createTimeout({ name: "afterAll() #1", timeout: DEFAULT_TIMEOUT })],
+					tests: [
+						createPass({ name: "test 1" }),
+						createPass({ name: "test 2" }),
+					],
+				}),
 				"result",
 			);
 			assert.equal(beforeTime, 0, "beforeAll() should run immediately");
@@ -940,12 +1071,11 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("test 1"),  // all tests pass because nothing timed out
-					TestResult.pass("test 2"),
-				]),
-			);
+			const actual = await actualPromise;
+			assert.equal(actual.tests, [
+				TestResult.pass("test 1"),  // all tests pass because nothing timed out
+				TestResult.pass("test 2"),
+			]);
 		});
 
 		it("allows runner to configure default timeout", async () => {
@@ -986,21 +1116,16 @@ export default describe(() => {
 				afterAll_sut(notQuiteTimeoutFn);
 				beforeEach_sut(notQuiteTimeoutFn);
 				afterEach_sut(notQuiteTimeoutFn);
-				describe_sut(() => {
-					it_sut("my test", notQuiteTimeoutFn);
-				});
+				it_sut("my test", notQuiteTimeoutFn);
 			});
 
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.suite([], [
-						TestResult.pass("my test"),
-					]),
-				]),
-			);
+			const actual = await actualPromise;
+			assert.equal(actual.tests, [
+				TestResult.pass("my test"),   // all tests pass because nothing timed out
+			]);
 		});
 
 		it("allows nested suites to override parent suite's timeout", async () => {
@@ -1070,11 +1195,10 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.pass("my test"),  // all tests pass because nothing timed out
-				]),
-			);
+			const actual = await actualPromise;
+			assert.equal(actual.tests, [
+				TestResult.pass("my test"),  // all tests pass because nothing timed out
+			]);
 		});
 	});
 
@@ -1124,7 +1248,7 @@ export default describe(() => {
 
 			const result = await suite.runAsync();
 			assert.dotEquals(result,
-				createSuite({ mark: TestMark.skip, children: [
+				createSuite({ mark: TestMark.skip, tests: [
 					TestResult.skip("test 1"),
 					TestResult.skip("test 2"),
 					TestResult.suite([], [
@@ -1142,7 +1266,7 @@ export default describe(() => {
 
 			const result = await suite.runAsync();
 			assert.dotEquals(result,
-				createSuite({ mark: TestMark.skip, children: [
+				createSuite({ mark: TestMark.skip, tests: [
 					createSkip({ name: "test", mark: TestMark.none }),
 					createSuite({ name: "suite", mark: TestMark.none }),
 				]}),
@@ -1158,7 +1282,7 @@ export default describe(() => {
 			const result = await suite.runAsync(options);
 
 			assert.dotEquals(result,
-				createSuite({ name: "my suite", mark: TestMark.only, children: [
+				createSuite({ name: "my suite", mark: TestMark.only, tests: [
 					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
 				]}),
 			);
@@ -1176,7 +1300,7 @@ export default describe(() => {
 			const result = await suite.runAsync(options);
 
 			assert.dotEquals(result,
-				createSuite({ name: "my suite", children: [
+				createSuite({ name: "my suite", tests: [
 					createFail({
 						name: [ "my suite", "my test" ],
 						error: "Test is marked '.only', but it has no body",
@@ -1199,7 +1323,7 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ children: [
+				createSuite({ tests: [
 					createPass({ name: ".only", mark: TestMark.only }),
 					createSkip({ name: "not .only" }),
 				]}),
@@ -1219,7 +1343,7 @@ export default describe(() => {
 			clock.tickUntilTimersExpireAsync();
 
 			assert.dotEquals(await resultPromise,
-				createSuite({ children: [
+				createSuite({ tests: [
 					createPass({ name: "pass", mark: TestMark.only }),
 					createFail({ name: "fail", error: new Error("my error"), mark: TestMark.only }),
 					createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, mark: TestMark.only }),
@@ -1245,7 +1369,7 @@ export default describe(() => {
 						TestResult.skip([ "not .only", "test1" ]),
 						TestResult.skip([ "not .only", "test2" ]),
 					]),
-					createSuite({ name: ".only", mark: TestMark.only, children: [
+					createSuite({ name: ".only", mark: TestMark.only, tests: [
 						TestResult.pass([ ".only", "test3" ]),
 						TestResult.pass([ ".only", "test4" ]),
 					]}),
@@ -1261,7 +1385,7 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
+				createSuite({ mark: TestMark.only, tests: [
 					TestResult.suite([], [
 						TestResult.pass("test"),
 					]),
@@ -1276,7 +1400,7 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
+				createSuite({ mark: TestMark.only, tests: [
 					createSkip({ name: "not only" }),
 					createPass({ name: "only", mark: TestMark.only }),
 				]}),
@@ -1292,8 +1416,8 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
-					createSuite({ children: [
+				createSuite({ mark: TestMark.only, tests: [
+					createSuite({ tests: [
 						createSkip({ name: "not only" }),
 						createPass({ name: "only", mark: TestMark.only }),
 					]}),
@@ -1312,11 +1436,11 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
+				createSuite({ mark: TestMark.only, tests: [
 					TestResult.suite("not only", [
 						TestResult.skip([ "not only", "test1" ]),
 					]),
-					createSuite({ name: "only", mark: TestMark.only, children: [
+					createSuite({ name: "only", mark: TestMark.only, tests: [
 						TestResult.pass([ "only", "test2" ]),
 					]}),
 				]}),
@@ -1332,8 +1456,8 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
-					createSuite({ children: [
+				createSuite({ mark: TestMark.only, tests: [
+					createSuite({ tests: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
 						TestResult.pass("test2"),
 					]}),
@@ -1350,8 +1474,8 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.skip, children: [
-					createSuite({ children: [
+				createSuite({ mark: TestMark.skip, tests: [
+					createSuite({ tests: [
 						createPass({ name: "test1", mark: TestMark.only }),
 						createSkip({ name: "test2" }),
 					]}),
@@ -1368,8 +1492,8 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.only, children: [
-					createSuite({ mark: TestMark.skip, children: [
+				createSuite({ mark: TestMark.only, tests: [
+					createSuite({ mark: TestMark.skip, tests: [
 						TestResult.skip("test1"),
 						TestResult.skip("test2"),
 					]}),
@@ -1386,8 +1510,8 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				createSuite({ mark: TestMark.skip, children: [
-					createSuite({ mark: TestMark.only, children: [
+				createSuite({ mark: TestMark.skip, tests: [
+					createSuite({ mark: TestMark.only, tests: [
 						TestResult.pass("test1"),
 						TestResult.pass("test2"),
 					]}),
@@ -1396,20 +1520,13 @@ export default describe(() => {
 		});
 
 		it("marks suites even if they fail 'beforeAll'", async () => {
-			const suite = describe_sut.only("my suite", () => {
-				beforeAll_sut(() => { throw new Error("my error"); });
-				it_sut("my test");
+			const suite = describe_sut.only(() => {
+				beforeAll_sut(FAIL_FN);
+				it_sut("my test", PASS_FN);
 			});
 
 			const result = await suite.runAsync();
-			assert.dotEquals(result,
-				createSuite({ name: "my suite", mark: TestMark.only, children: [
-					createFail({
-						name: [ "my suite", "beforeAll()" ],
-						error: new Error("my error"),
-					}),
-				]}),
-			);
+			assert.equal(result.mark, TestMark.only);
 		});
 
 	});
@@ -1419,7 +1536,7 @@ export default describe(() => {
 
 		it("runs notify function when test completes", async () => {
 			const suite = describe_sut(() => {
-				it_sut("my test", () => {});
+				it_sut("my test", PASS_FN);
 			});
 
 			let testResult;
@@ -1429,6 +1546,26 @@ export default describe(() => {
 
 			await suite.runAsync({ onTestCaseResult });
 			assert.dotEquals(testResult, createPass({ name: "my test" }));
+		});
+
+		it("runs notify function when beforeAll() and afterAll() complete", async () => {
+			const suite = describe_sut(() => {
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(PASS_FN);
+				it_sut("my test", PASS_FN);
+			});
+
+			const testResults: TestCaseResult[] = [];
+			function onTestCaseResult(result: TestCaseResult) {
+				testResults.push(result);
+			}
+
+			await suite.runAsync({ onTestCaseResult });
+			assert.equal(testResults, [
+				createPass({ name: "beforeAll() #1" }),
+				createPass({ name: "my test" }),
+				createPass({ name: "afterAll() #1" }),
+			]);
 		});
 
 		it("runs notify function if module fails to require()", async () => {
@@ -1471,16 +1608,20 @@ async function runTestAsync(testName: string, testFn: () => void) {
 
 function createSuite({
 	name = [],
-	children = [],
+	tests = [],
+	beforeAll = undefined,
+	afterAll = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
-	children?: TestResult[],
+	tests?: TestResult[],
+	beforeAll?: TestCaseResult[],
+	afterAll?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.suite(name, children, { filename, mark });
+	return TestResult.suite(name, tests, { beforeAll, afterAll, filename, mark });
 }
 
 function createPass({
