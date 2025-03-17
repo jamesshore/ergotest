@@ -24,7 +24,9 @@ export interface SerializedTestSuiteResult {
     name: string[];
     mark: TestMarkValue;
     filename?: string;
-    suite: SerializedTestResult[];
+    tests: SerializedTestResult[];
+    beforeAll: SerializedTestCaseResult[];
+    afterAll: SerializedTestCaseResult[];
 }
 export interface SerializedTestCaseResult {
     type: "TestCaseResult";
@@ -45,11 +47,15 @@ export declare abstract class TestResult {
      * Create a TestResult for a suite of tests.
      * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {TestResult[]} tests The nested tests in this suite (can be test suites or individual test cases).
+     * @param {TestCaseResult[]} [options.beforeAll] The beforeAll() blocks in this suite.
+     * @param {TestCaseResult[]} [options.afterAll] The afterAll() blocks in this suite.
      * @param {string} [options.filename] The file that contained this suite (optional).
      * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
      * @returns {TestSuiteResult} The result.
      */
-    static suite(name: string | string[], tests: TestResult[], { filename, mark }?: {
+    static suite(name: string | string[], tests: TestResult[], { beforeAll, afterAll, filename, mark }?: {
+        beforeAll?: TestCaseResult[];
+        afterAll?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     }): TestSuiteResult;
@@ -68,9 +74,10 @@ export declare abstract class TestResult {
      * Create a TestResult for a test that failed.
      * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {unknown} error The error that occurred.
-     * @param {string} [filename] The file that contained this test (optional).
-     * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
-     * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [renderError] This
+     * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
+     *   The function to use to render the error into a string (defaults to {@link renderError})
+     * @param {string} [options.filename] The file that contained this test (optional).
+     * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      *   function will be called and the results put into {@link errorRender}.
      * @returns {TestCaseResult} The result.
      */
@@ -82,8 +89,8 @@ export declare abstract class TestResult {
     /**
      * Create a TestResult for a test that was skipped.
      * @param {string|string[]} name The name of the test. Can be a list of names.
-     * @param {string} [filename] The file that contained this test (optional).
-     * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+     * @param {string} [options.filename] The file that contained this test (optional).
+     * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
     static skip(name: string | string[], { filename, mark, }?: {
@@ -94,8 +101,8 @@ export declare abstract class TestResult {
      * Create a TestResult for a test that timed out.
      * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {number} timeout The length of the timeout.
-     * @param {string} [filename] The file that contained this test (optional).
-     * @param {TestMarkValue} [mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+     * @param {string} [options.filename] The file that contained this test (optional).
+     * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
     static timeout(name: string | string[], timeout: number, { filename, mark, }?: {
@@ -157,13 +164,15 @@ export declare class TestSuiteResult extends TestResult {
      * @returns {TestSuiteResult} The result object.
      * @see TestResult#deserialize
      */
-    static deserialize({ name, filename, suite, mark }: SerializedTestSuiteResult): TestSuiteResult;
+    static deserialize(suite: SerializedTestSuiteResult): TestSuiteResult;
     private readonly _name;
     private readonly _tests;
+    private readonly _beforeAll;
+    private readonly _afterAll;
     private readonly _mark;
     private readonly _filename?;
     /** Internal use only. (Use {@link TestResult.suite} instead.) */
-    constructor(name: string[], tests: TestResult[], mark: TestMarkValue, filename?: string);
+    constructor(name: string[], tests: TestResult[], beforeAll: TestCaseResult[], afterAll: TestCaseResult[], mark: TestMarkValue, filename?: string);
     get name(): string[];
     /**
      * @returns {string | undefined} The file that contained the suite, if any.
@@ -177,6 +186,14 @@ export declare class TestSuiteResult extends TestResult {
      * @returns { TestResult[] } The tests in this suite, which can either be test case results or test suite results.
      */
     get tests(): TestResult[];
+    /**
+     * @returns { TestResult[] } The beforeAll() blocks ran for this suite.
+     */
+    get beforeAll(): TestResult[];
+    /**
+     * @returns { TestResult[] } The afterAll() blocks ran for this suite.
+     */
+    get afterAll(): TestResult[];
     /**
      * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
      * and provides details about the tests that have failed or timed out. It doesn't provide any details about the tests

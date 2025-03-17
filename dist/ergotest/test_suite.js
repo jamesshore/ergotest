@@ -12,10 +12,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
     _tests;
     _hasDotOnlyChildren;
     _allChildrenSkipped;
-    _beforeAllFns;
-    _afterAllFns;
-    _beforeEachFns;
-    _afterEachFns;
+    _beforeAll;
+    _afterAll;
+    _beforeEach;
+    _afterEach;
     _timeout;
     _filename;
     static get DEFAULT_TIMEOUT_IN_MS() {
@@ -149,10 +149,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
     }
     static #runDescribeFunction(describeFn, name, mark, testContext, timeout) {
         const tests = [];
-        const beforeAllFns = [];
-        const afterAllFns = [];
-        const beforeEachFns = [];
-        const afterEachFns = [];
+        const beforeAll = [];
+        const afterAll = [];
+        const beforeEach = [];
+        const afterEach = [];
         testContext.push({
             describe (optionalName, optionalOptions, fn, mark) {
                 const suite = TestSuite.create(optionalName, optionalOptions, fn, mark, testContext);
@@ -162,10 +162,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             it (name, optionalOptions, testCaseFn, mark) {
                 tests.push(TestCase.create(name, optionalOptions, testCaseFn, mark));
             },
-            beforeAll: defineBeforeAfterFn(beforeAllFns),
-            afterAll: defineBeforeAfterFn(afterAllFns),
-            beforeEach: defineBeforeAfterFn(beforeEachFns),
-            afterEach: defineBeforeAfterFn(afterEachFns)
+            beforeAll: defineBeforeAfterFn(beforeAll),
+            afterAll: defineBeforeAfterFn(afterAll),
+            beforeEach: defineBeforeAfterFn(beforeEach),
+            afterEach: defineBeforeAfterFn(afterEach)
         });
         try {
             describeFn();
@@ -174,10 +174,10 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         }
         return new TestSuite(name, mark, {
             tests,
-            beforeAllFns,
-            afterAllFns,
-            beforeEachFns,
-            afterEachFns,
+            beforeAll,
+            afterAll,
+            beforeEach,
+            afterEach,
             timeout
         });
         function defineBeforeAfterFn(beforeAfterArray) {
@@ -210,16 +210,16 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             };
         }
     }
-    /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */ constructor(name, mark, { tests = [], beforeAllFns = [], afterAllFns = [], beforeEachFns = [], afterEachFns = [], timeout }){
+    /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */ constructor(name, mark, { tests = [], beforeAll = [], afterAll = [], beforeEach = [], afterEach = [], timeout }){
         this._name = name;
         this._mark = mark;
         this._tests = tests;
         this._hasDotOnlyChildren = this._tests.some((test)=>test._isDotOnly());
         this._allChildrenSkipped = this._tests.every((test)=>test._isSkipped(this._mark));
-        this._beforeAllFns = beforeAllFns;
-        this._afterAllFns = afterAllFns;
-        this._beforeEachFns = beforeEachFns;
-        this._afterEachFns = afterEachFns;
+        this._beforeAll = beforeAll;
+        this._afterAll = afterAll;
+        this._beforeEach = beforeEach;
+        this._afterEach = afterEach;
         this._timeout = timeout;
     }
     /**
@@ -281,58 +281,62 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
     /** @private */ _isSkipped() {
         return this._allChildrenSkipped;
     }
-    /** @private */ async _recursiveRunAsync(parentMark, parentBeforeEachFns, parentAfterEachFns, options) {
-        const name = [
-            ...options.name
-        ];
-        if (this._name !== "") name.push(this._name);
-        const filename = this._filename ?? options.filename;
-        const timeout = this._timeout ?? options.timeout;
-        options = {
-            ...options,
-            name,
-            filename,
-            timeout
+    /** @private */ async _recursiveRunAsync(parentMark, parentBeforeEachFns, parentAfterEachFns, runOptions) {
+        runOptions = {
+            ...runOptions,
+            name: [
+                ...runOptions.name
+            ],
+            filename: this._filename ?? runOptions.filename,
+            timeout: this._timeout ?? runOptions.timeout
         };
-        let myMark = this._mark;
-        if (myMark === TestMark.none) myMark = parentMark;
-        if (myMark === TestMark.only && this._hasDotOnlyChildren) myMark = TestMark.skip;
+        if (this._name !== "") runOptions.name.push(this._name);
+        const resultOptions = {
+            filename: runOptions.filename,
+            mark: this._mark
+        };
+        const beforeAllResults = [];
+        let beforeAllFailed = false;
+        for await (const before of this._beforeAll){
+            const name = [
+                ...runOptions.name,
+                `beforeAll() #${beforeAllResults.length + 1}`
+            ];
+            const result = this._allChildrenSkipped || beforeAllFailed ? TestResult.skip(name, resultOptions) : await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
+            if (!isSuccess(result)) beforeAllFailed = true;
+            runOptions.onTestCaseResult(result);
+            beforeAllResults.push(result);
+        }
+        let inheritedMark = this._mark;
+        if (inheritedMark === TestMark.none) inheritedMark = parentMark;
+        if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
+        if (beforeAllFailed) inheritedMark = TestMark.skip;
         const beforeEachFns = [
             ...parentBeforeEachFns,
-            ...this._beforeEachFns
+            ...this._beforeEach
         ];
         const afterEachFns = [
-            ...this._afterEachFns,
+            ...this._afterEach,
             ...parentAfterEachFns
         ];
-        if (!this._allChildrenSkipped) {
-            const beforeResult = await runBeforeOrAfterFnsAsync([
-                ...options.name,
-                "beforeAll()"
-            ], this._beforeAllFns, TestMark.none, options);
-            if (!isSuccess(beforeResult)) {
-                return TestResult.suite(options.name, [
-                    beforeResult
-                ], {
-                    filename: options.filename,
-                    mark: this._mark
-                });
-            }
-        }
-        const results = [];
+        const testResults = [];
         for await (const test of this._tests){
-            results.push(await test._recursiveRunAsync(myMark, beforeEachFns, afterEachFns, options));
+            testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEachFns, afterEachFns, runOptions));
         }
-        if (!this._allChildrenSkipped) {
-            const afterResult = await runBeforeOrAfterFnsAsync([
-                ...options.name,
-                "afterAll()"
-            ], this._afterAllFns, TestMark.none, options);
-            if (!isSuccess(afterResult)) results.push(afterResult);
+        const afterAllResults = [];
+        for await (const after of this._afterAll){
+            const name = [
+                ...runOptions.name,
+                `afterAll() #${afterAllResults.length + 1}`
+            ];
+            const result = this._allChildrenSkipped || beforeAllFailed ? TestResult.skip(name, resultOptions) : await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
+            runOptions.onTestCaseResult(result);
+            afterAllResults.push(result);
         }
-        return TestResult.suite(options.name, results, {
-            filename: options.filename,
-            mark: this._mark
+        return TestResult.suite(runOptions.name, testResults, {
+            beforeAll: beforeAllResults,
+            afterAll: afterAllResults,
+            ...resultOptions
         });
     }
 }
@@ -459,12 +463,33 @@ class FailureTestCase extends TestCase {
         return await result;
     }
 }
-async function runBeforeOrAfterFnsAsync(name, beforeAfterArray, mark, options) {
+async function runBeforeOrAfterFnsAsync_New(parentName, functionName, beforeAfterArray, mark, options) {
+    const results = [];
+    let i = 0;
     for await (const beforeAfter of beforeAfterArray){
+        i++;
+        const name = [
+            ...parentName,
+            `${functionName} #${i}`
+        ];
         const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
+        results.push(result);
+        if (!isSuccess(result)) return {
+            results,
+            pass: false
+        };
+    }
+    return {
+        results,
+        pass: true
+    };
+}
+async function runBeforeOrAfterFnsAsync(parentName, beforeAfterArray, mark, options) {
+    for await (const beforeAfter of beforeAfterArray){
+        const result = await runTestFnAsync(parentName, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
         if (!isSuccess(result)) return result;
     }
-    return TestResult.pass(name, {
+    return TestResult.pass(parentName, {
         filename: options.filename,
         mark
     });

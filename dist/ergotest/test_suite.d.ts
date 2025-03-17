@@ -59,10 +59,10 @@ export declare class TestSuite implements Test {
     private _tests;
     private _hasDotOnlyChildren;
     private _allChildrenSkipped;
-    private _beforeAllFns;
-    private _afterAllFns;
-    private _beforeEachFns;
-    private _afterEachFns;
+    private _beforeAll;
+    private _afterAll;
+    private _beforeEach;
+    private _afterEach;
     private _timeout?;
     private _filename?;
     static get DEFAULT_TIMEOUT_IN_MS(): number;
@@ -76,12 +76,12 @@ export declare class TestSuite implements Test {
     /** Internal use only. */
     static create(nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined, optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined, possibleDescribeFn: DescribeFn | undefined, mark: TestMarkValue, testContext: TestContext[]): TestSuite;
     /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
-    constructor(name: string, mark: TestMarkValue, { tests, beforeAllFns, afterAllFns, beforeEachFns, afterEachFns, timeout, }: {
+    constructor(name: string, mark: TestMarkValue, { tests, beforeAll, afterAll, beforeEach, afterEach, timeout, }: {
         tests?: Test[];
-        beforeAllFns?: BeforeAfterDefinition[];
-        afterAllFns?: BeforeAfterDefinition[];
-        beforeEachFns?: BeforeAfterDefinition[];
-        afterEachFns?: BeforeAfterDefinition[];
+        beforeAll?: BeforeAfterDefinition[];
+        afterAll?: BeforeAfterDefinition[];
+        beforeEach?: BeforeAfterDefinition[];
+        afterEach?: BeforeAfterDefinition[];
         timeout?: Milliseconds;
     });
     /**
@@ -105,7 +105,7 @@ export declare class TestSuite implements Test {
     /** @private */
     _isSkipped(): boolean;
     /** @private */
-    _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], options: RecursiveRunOptions): Promise<TestSuiteResult>;
+    _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], runOptions: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
 /** Internal use only. */
 export declare function importRendererAsync(renderer?: string): Promise<any>;
