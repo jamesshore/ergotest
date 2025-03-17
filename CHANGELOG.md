@@ -17,6 +17,8 @@ To Document:
 * TestResult.suite signature change
 * TestResult.pass signature change
 * TestResult.fail signature change
+* TestResult.skip signature change
+* TestResult.timeout signature change
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 
 

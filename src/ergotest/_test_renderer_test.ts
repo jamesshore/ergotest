@@ -751,5 +751,5 @@ function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.timeout(name, timeout, filename, mark);
+	return TestResult.timeout(name, timeout, { filename, mark });
 }

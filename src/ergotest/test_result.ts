@@ -203,11 +203,23 @@ export abstract class TestResult {
 	static timeout(
 		name: string | string[],
 		timeout: number,
-		filename?: string,
-		mark: TestMarkValue = TestMark.none,
+		{
+			filename,
+			mark,
+		}: {
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestCaseResult {
-		ensure.signature(arguments, [[ String, Array ], Number, [ undefined, String ], [ undefined, String ] ]);
-
+		ensure.signature(arguments, [
+			[ String, Array ],
+			Number,
+			[ undefined, {
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
+		
 		if (!Array.isArray(name)) name = [ name ];
 		return new TestCaseResult({ name, status: TestStatus.timeout, timeout, filename, mark });
 	}

@@ -612,7 +612,7 @@ async function runTestFnAsync(
 			return TestResult.fail(name, err, { filename, mark, renderError });
 		}
 	}, async () => {
-		return await TestResult.timeout(name, timeout, filename, mark);
+		return await TestResult.timeout(name, timeout, { filename, mark });
 	});
 }
 
