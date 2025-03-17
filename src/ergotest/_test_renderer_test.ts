@@ -20,6 +20,8 @@ const TEST_RENDERER_PATH = path.resolve(import.meta.dirname, "./test_renderer.js
 
 export default describe(() => {
 
+	it("TODO: Need to check that a suite with a failing beforeAll() renders correctly (should show beforeAll() as failing and the enclosed tests as skipped?)");
+
 	describe("summary", () => {
 
 		it("renders summary", () => {

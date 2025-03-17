@@ -389,6 +389,7 @@ export class TestSuite implements Test {
 		const resultOptions = { filename: runOptions.filename, mark: this._mark };
 
 		const beforeAllResults: TestCaseResult[] = [];
+		let beforeAllFailed = false;
 		for await (const before of this._beforeAll) {
 			const name = [ ...runOptions.name, `beforeAll() #${beforeAllResults.length + 1}`];
 
@@ -396,24 +397,22 @@ export class TestSuite implements Test {
 				? TestResult.skip(name, resultOptions)
 				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
 
+			if (!isSuccess(result)) beforeAllFailed = true;
 			beforeAllResults.push(result);
-
-			if (!isSuccess(result)) {
-				return TestResult.suite(runOptions.name, [ result ], resultOptions);
-			}
 		}
 
 
-		let myMark = this._mark;
-		if (myMark === TestMark.none) myMark = parentMark;
-		if (myMark === TestMark.only && this._hasDotOnlyChildren) myMark = TestMark.skip;
+		let inheritedMark = this._mark;
+		if (inheritedMark === TestMark.none) inheritedMark = parentMark;
+		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
+		if (beforeAllFailed) inheritedMark = TestMark.skip;
 
 		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEach ];
 		const afterEachFns = [ ...this._afterEach, ...parentAfterEachFns ];
 
 		const testResults = [];
 		for await (const test of this._tests) {
-			testResults.push(await test._recursiveRunAsync(myMark, beforeEachFns, afterEachFns, runOptions));
+			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEachFns, afterEachFns, runOptions));
 		}
 
 		const afterAllResults: TestCaseResult[] = [];

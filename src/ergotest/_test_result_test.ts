@@ -10,6 +10,8 @@ export default describe(() => {
 
 	describe("test suite", () => {
 
+		it("TODO: Need to test that a suite with failing beforeAll() reports its tests correctly");
+
 		it("has a name and list of test results", () => {
 			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
 			const suite = TestResult.suite([ "my name" ], tests);
@@ -436,6 +438,7 @@ export default describe(() => {
 			], "multiple statuses");
 		});
 
+		it("includes beforeAll() and afterAll() results in list");
 
 		it("flattens all marked results into a single list", () => {
 			const suite = createSuite({ tests: [

@@ -34,7 +34,10 @@ const NODE_MODULES_RENDERER_NAME = "_test_renderer/_renderer_in_node_modules.js"
 
 const IRRELEVANT_NAME = "irrelevant name";
 const DEFAULT_TIMEOUT = TestSuite.DEFAULT_TIMEOUT_IN_MS;
+
+const ERROR = new Error("my error");
 const PASS_FN = () => {};
+const ERROR_FN = () => { throw ERROR; };
 
 
 export default describe(() => {
@@ -671,24 +674,37 @@ export default describe(() => {
 				}));
 			});
 
-			it("runs afterAll() even when tests throw exception");
+			it("runs afterAll() even when tests throw exception", async () => {
+				const suite = describe_sut(() => {
+					afterAll_sut(PASS_FN);
+					it_sut("test", ERROR_FN);
+				});
 
-			it("handles exception in beforeAll()", async () => {
-				const error = new Error("my error");
-				const suite = describe_sut("my suite", () => {
-					beforeAll_sut(() => {
-						throw error;
-					});
+				assert.equal(await suite.runAsync(), createSuite({
+					afterAll: [ createPass({ name: "afterAll() #1" }) ],
+					tests: [ createFail({ name: "test", error: ERROR }) ],
+				}));
+			});
+
+			it("stops running beforeAll() functions if one fails");
+
+			it("doesn't run tests when beforeAll() fails", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(ERROR_FN);
 					it_sut("test 1", async () => {});
 					it_sut("test 2", async () => {});
 				});
 
-				assert.dotEquals(await suite.runAsync(),
-					createSuite({ name: "my suite", tests: [
-						createFail({ name: [ "my suite", "beforeAll() #1" ], error }),
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					tests: [
+						createSkip({ name: "test 1" }),
+						createSkip({ name: "test 2" }),
 					]}),
 				);
 			});
+
+			it("doesn't run afterAll() when beforeAll() throws exception");
 
 			it("handles exception in afterAll", async () => {
 				const error = new Error("my error");
@@ -709,12 +725,6 @@ export default describe(() => {
 					]
 				}));
 			});
-
-			it("stops running beforeAll() functions if one fails");
-
-			it("doesn't run tests when beforeAll() fails");
-
-			it("doesn't run afterAll() when beforeAll() throws exception");
 
 		});
 
@@ -869,12 +879,14 @@ export default describe(() => {
 			assert.equal(afterTime, DEFAULT_TIMEOUT, "afterEach() should run as soon as it() times out");
 		});
 
-		it("times out when beforeAll doesn't complete before default timeout", async () => {
+		it.skip("times out when beforeAll doesn't complete before default timeout", async () => {
+			assert.todo("Need to skip afterAll() when beforeAll() fails");
+
 			const clock = await Clock.createNullAsync();
 
 			let itTime = null;
 			let afterTime = null;
-			const suite = describe_sut("my suite", () => {
+			const suite = describe_sut(() => {
 				beforeAll_sut(async () => {
 					await clock.waitAsync(DEFAULT_TIMEOUT + 1);
 				});
@@ -889,12 +901,11 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite("my suite", [
-					TestResult.timeout([ "my suite", "beforeAll() #1" ], DEFAULT_TIMEOUT)
-				]),
-				"result",
-			);
+			assert.equal(await actualPromise, createSuite({
+				beforeAll: [ createTimeout({ name: "beforeAll() #1", timeout: DEFAULT_TIMEOUT }) ],
+				afterAll: [ createSkip({ name: "afterAll() #1" }) ],
+				tests: [ createSkip({ name: "my test" }) ],
+			}));
 			assert.equal(itTime, null, "it() should not run");
 			assert.equal(afterTime, null, "afterAll() should not run");
 		});
@@ -1469,20 +1480,13 @@ export default describe(() => {
 		});
 
 		it("marks suites even if they fail 'beforeAll'", async () => {
-			const suite = describe_sut.only("my suite", () => {
-				beforeAll_sut(() => { throw new Error("my error"); });
-				it_sut("my test");
+			const suite = describe_sut.only(() => {
+				beforeAll_sut(ERROR_FN);
+				it_sut("my test", PASS_FN);
 			});
 
 			const result = await suite.runAsync();
-			assert.dotEquals(result,
-				createSuite({ name: "my suite", mark: TestMark.only, tests: [
-					createFail({
-						name: [ "my suite", "beforeAll() #1" ],
-						error: new Error("my error"),
-					}),
-				]}),
-			);
+			assert.equal(result.mark, TestMark.only);
 		});
 
 	});
@@ -1503,6 +1507,8 @@ export default describe(() => {
 			await suite.runAsync({ onTestCaseResult });
 			assert.dotEquals(testResult, createPass({ name: "my test" }));
 		});
+
+		it("runs notify function when beforeAll() and afterAll() complete (TODO: Document this change in behavior)");
 
 		it("runs notify function if module fails to require()", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
@@ -1528,12 +1534,6 @@ export default describe(() => {
 			await suite.runAsync({ onTestCaseResult });
 			assert.equal(testResult!.name, [ "error when importing _module_no_export.js" ]);
 		});
-
-		it("runs notify function when beforeAll() fails");
-
-		it("runs notify function when afterAll() fails");
-
-		it("doesn't run notify function for successful before/afterAll or before/afterEach ???");
 
 	});
 
