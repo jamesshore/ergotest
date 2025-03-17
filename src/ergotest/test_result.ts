@@ -111,7 +111,7 @@ export abstract class TestResult {
 			[ undefined, {
 				filename: [ undefined, String ],
 				mark: [ undefined, String ]
-			}]
+			}],
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
@@ -131,16 +131,24 @@ export abstract class TestResult {
 	static fail(
 		name: string | string[],
 		error: unknown,
-		filename?: string,
-		mark?: TestMarkValue,
-		renderError: RenderErrorFn = renderErrorFn,
+		{
+			renderError = renderErrorFn,
+			filename,
+			mark,
+		}: {
+			renderError?: RenderErrorFn
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
 	): TestCaseResult {
 		ensure.signature(arguments, [
 			[ String, Array ],
 			ensure.ANY_TYPE,
-			[ undefined, String ],
-			[ undefined, String ],
-			[ undefined, Function ],
+			[ undefined, {
+				renderError: [ undefined, Function ],
+				filename: [ undefined, String ],
+				mark: [ undefined, String ],
+			}],
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];

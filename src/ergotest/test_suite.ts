@@ -518,7 +518,13 @@ class TestCase implements Test {
 			}
 			else {
 				result = TestResult.fail(
-					name, "Test is marked '.only', but it has no body", options.filename, this._mark, options.renderError
+					name,
+					"Test is marked '.only', but it has no body",
+					{
+						renderError: options.renderError,
+						filename: options.filename,
+						mark: this._mark,
+					}
 				);
 			}
 		}
@@ -558,7 +564,11 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, this._filename, TestMark.none, options.renderError);
+		const result = TestResult.fail([ this._name ], this._error, {
+			renderError: options.renderError,
+			filename: this._filename,
+			mark: TestMark.none,
+		});
 		options.onTestCaseResult(result);
 		return await result;
 	}
@@ -599,7 +609,7 @@ async function runTestFnAsync(
 			return TestResult.pass(name, { filename, mark });
 		}
 		catch (err) {
-			return TestResult.fail(name, err, filename, mark, renderError);
+			return TestResult.fail(name, err, { filename, mark, renderError });
 		}
 	}, async () => {
 		return await TestResult.timeout(name, timeout, filename, mark);

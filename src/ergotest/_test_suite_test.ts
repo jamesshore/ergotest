@@ -1506,7 +1506,7 @@ function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark);
+	return TestResult.fail(name, error, { filename, mark });
 }
 
 function createSkip({

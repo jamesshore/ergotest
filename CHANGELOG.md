@@ -16,6 +16,7 @@ Links to other documentation:
 To Document:
 * TestResult.suite signature change
 * TestResult.pass signature change
+* TestResult.fail signature change
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 
 

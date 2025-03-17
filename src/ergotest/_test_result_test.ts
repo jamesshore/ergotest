@@ -649,7 +649,7 @@ function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, filename, mark, renderError);
+	return TestResult.fail(name, error, { renderError, filename, mark });
 }
 
 function createSkip({

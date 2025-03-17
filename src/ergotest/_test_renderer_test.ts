@@ -725,7 +725,7 @@ function createFail({
 	mark?: TestMarkValue,
 	renderError?: RenderErrorFn,
 } = {}): TestCaseResult {
-	return TestResult.fail(name, error, filename, mark, renderError);
+	return TestResult.fail(name, error, { renderError, filename, mark });
 }
 
 function createSkip({
