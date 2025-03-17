@@ -398,6 +398,7 @@ export class TestSuite implements Test {
 				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
 
 			if (!isSuccess(result)) beforeAllFailed = true;
+			runOptions.onTestCaseResult(result);
 			beforeAllResults.push(result);
 		}
 
@@ -423,6 +424,7 @@ export class TestSuite implements Test {
 				? TestResult.skip(name, resultOptions)
 				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
 
+			runOptions.onTestCaseResult(result);
 			afterAllResults.push(result);
 		}
 

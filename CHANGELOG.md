@@ -21,6 +21,8 @@ To Document:
 * TestResult.timeout signature change
 * Add TestSuiteResult.beforeAll & afterAll
 * TestSuiteResult.children --> TestSuiteResult.tests rename
+* Change in behavior: beforeAll() and afterAll() now notify upon completion (change name of onTestCaseComplete? To onProgress maybe?)
+* Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll (and also in allTests()?)
 
 TO DO:
 * Add beforeAll and afterAll to TestSuiteResult

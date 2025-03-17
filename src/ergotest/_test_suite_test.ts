@@ -1527,7 +1527,7 @@ export default describe(() => {
 
 		it("runs notify function when test completes", async () => {
 			const suite = describe_sut(() => {
-				it_sut("my test", () => {});
+				it_sut("my test", PASS_FN);
 			});
 
 			let testResult;
@@ -1539,7 +1539,25 @@ export default describe(() => {
 			assert.dotEquals(testResult, createPass({ name: "my test" }));
 		});
 
-		it("runs notify function when beforeAll() and afterAll() complete (TODO: Document this change in behavior)");
+		it("runs notify function when beforeAll() and afterAll() complete", async () => {
+			const suite = describe_sut(() => {
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(PASS_FN);
+				it_sut("my test", PASS_FN);
+			});
+
+			const testResults: TestCaseResult[] = [];
+			function onTestCaseResult(result: TestCaseResult) {
+				testResults.push(result);
+			}
+
+			await suite.runAsync({ onTestCaseResult });
+			assert.equal(testResults, [
+				createPass({ name: "beforeAll() #1" }),
+				createPass({ name: "my test" }),
+				createPass({ name: "afterAll() #1" }),
+			]);
+		});
 
 		it("runs notify function if module fails to require()", async () => {
 			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
