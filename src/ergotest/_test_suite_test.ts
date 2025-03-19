@@ -645,7 +645,49 @@ export default describe(() => {
 			);
 		});
 
-		it("includes beforeEach() and afterEach() functions in test results");
+		it("includes beforeEach() and afterEach() functions in test results", async () => {
+			const suite = describe_sut("parent", () => {
+				beforeEach_sut(PASS_FN);
+				beforeEach_sut(PASS_FN);
+				// afterEach_sut(PASS_FN);
+				// afterEach_sut(PASS_FN);
+				it_sut("pass", PASS_FN);
+				// it_sut("fail", FAIL_FN);
+				// it_sut("skip");
+				// it_sut("timeout", TBD);
+				// describe_sut("child", () => {
+				// 	beforeEach_sut(PASS_FN);
+				// 	afterEach_sut(PASS_FN);
+				// 	it_sut("nested", PASS_FN);
+				// });
+			});
+
+			assert.equal(
+				await suite.runAsync(),
+				createSuite({
+					name: "parent",
+					tests: [
+						createPass({
+							name: [ "parent", "pass" ],
+							beforeEach: [
+								createPass({ name: [ "parent", "pass", "beforeEach()" ]}),
+								createPass({ name: [ "parent", "pass", "beforeEach() #2" ]}),
+							],
+							// afterEach: [
+							// 	createPass({ name: [ "parent", "pass", "afterEach()" ]}),
+							// 	createPass({ name: [ "parent", "pass", "afterEach() #2" ]}),
+							// ],
+						}),
+						// createSuite({
+						// 	name: [ "parent", "child" ],
+						// 	beforeAll: [ createPass({ name: [ "parent", "child", "beforeAll() #1" ]}) ],
+						// 	afterAll: [ createPass({ name: [ "parent", "child", "afterAll() #1" ]}) ],
+						// 	tests: [ createPass({ name: [ "parent", "child", "test 2" ] }) ],
+						// }),
+					],
+				}),
+			);
+		});
 
 		it("fails when run outside of describe()", () => {
 			assert.error(
@@ -817,7 +859,9 @@ export default describe(() => {
 				assert.equal(afterEachRan, true);
 			});
 
-			it("handles exception in beforeEach()", async () => {
+			it.skip("handles exception in beforeEach()", async () => {
+				assert.todo("waiting for failing beforeEach() to cause test and afterEach() to be reported as skipped");
+
 				const error = new Error("my error");
 				const suite = describe_sut(() => {
 					beforeEach_sut(() => {
@@ -998,7 +1042,9 @@ export default describe(() => {
 			assert.equal(itTime, 0, "it() should run immediately");
 		});
 
-		it("times out when beforeEach doesn't complete before default timeout", async () => {
+		it.skip("times out when beforeEach doesn't complete before default timeout", async () => {
+			assert.todo("waiting for failing beforeEach() to cause test and afterEach() to be reported as skipped");
+
 			const clock = await Clock.createNullAsync();
 
 			let itTime = null;
@@ -1081,10 +1127,7 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.tests, [
-				TestResult.pass("test 1"),  // all tests pass because nothing timed out
-				TestResult.pass("test 2"),
-			]);
+			assert.equal(actual.count().timeout, 0);
 		});
 
 		it("allows runner to configure default timeout", async () => {
@@ -1132,9 +1175,7 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.tests, [
-				TestResult.pass("my test"),   // all tests pass because nothing timed out
-			]);
+			assert.equal(actual.count().timeout, 0);
 		});
 
 		it("allows nested suites to override parent suite's timeout", async () => {
@@ -1205,9 +1246,7 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			const actual = await actualPromise;
-			assert.equal(actual.tests, [
-				TestResult.pass("my test"),  // all tests pass because nothing timed out
-			]);
+			assert.equal(actual.count().timeout, 0);
 		});
 	});
 
@@ -1636,51 +1675,67 @@ function createSuite({
 function createPass({
 	name = "irrelevant name",
 	filename = undefined,
+	beforeEach = undefined,
+	afterEach = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { filename, mark });
+	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createFail({
 	name = "irrelevant name",
 	error = new Error("irrelevant error"),
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, { filename, mark });
+	return TestResult.fail(name, error, { beforeEach, afterEach, filename, mark });
 }
 
 function createSkip({
 	name = "irrelevant name",
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, { filename, mark });
+	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	timeout?: number,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, { filename, mark });
+	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
 }

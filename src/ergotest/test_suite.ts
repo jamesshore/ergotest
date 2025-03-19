@@ -375,8 +375,8 @@ export class TestSuite implements Test {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: BeforeAfterDefinition[],
-		parentAfterEachFns: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfterDefinition[],
+		parentAfterEach: BeforeAfterDefinition[],
 		runOptions: RecursiveRunOptions,
 	) {
 		runOptions = {
@@ -395,7 +395,7 @@ export class TestSuite implements Test {
 
 			const result = this._allChildrenSkipped || beforeAllFailed
 				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
+				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, [], runOptions);
 
 			if (!isSuccess(result)) beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
@@ -408,12 +408,12 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 		if (beforeAllFailed) inheritedMark = TestMark.skip;
 
-		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEach ];
-		const afterEachFns = [ ...this._afterEach, ...parentAfterEachFns ];
+		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
+		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
 
 		const testResults = [];
 		for await (const test of this._tests) {
-			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEachFns, afterEachFns, runOptions));
+			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEach, afterEach, runOptions));
 		}
 
 		const afterAllResults: TestCaseResult[] = [];
@@ -422,7 +422,7 @@ export class TestSuite implements Test {
 
 			const result = this._allChildrenSkipped || beforeAllFailed
 				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
+				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, [], runOptions);
 
 			runOptions.onTestCaseResult(result);
 			afterAllResults.push(result);
@@ -508,8 +508,8 @@ class TestCase implements Test {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: BeforeAfterDefinition[],
-		afterEachFns: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfterDefinition[],
+		parentAfterEach: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const name = [ ...options.name ];
@@ -546,15 +546,34 @@ class TestCase implements Test {
 		return result;
 
 		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
-			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
-			if (!isSuccess(beforeResult)) return beforeResult;
+			const beforeEachResults = [];
+			for await (const before of parentBeforeEach) {
+				const number = beforeEachResults.length === 0 ? "" : ` #${beforeEachResults.length + 1}`;
+				const name = [ ...options.name, `beforeEach()${number}`];
 
-			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, options);
-			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
+				const result = await runTestFnAsync(name, before.fnAsync, self._mark, before.options.timeout, [], options);
+				if (!isSuccess(result)) return result;
+				beforeEachResults.push(result);
+			}
+
+			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
+
+			let failedTest;
+			for await (const after of parentAfterEach) {
+				if (failedTest !== undefined) continue;
+				const result = await runTestFnAsync(options.name, after.fnAsync, self._mark, after.options.timeout, [], options);
+				if (!isSuccess(result)) failedTest = result;
+			}
+
+			let afterResult;
+			if (failedTest !== undefined) afterResult = failedTest;
+			else afterResult = TestResult.pass(options.name, { filename: options.filename, mark: self._mark });
 
 			if (!isSuccess(itResult)) return itResult;
-			else return afterResult;
+			else if (!isSuccess(afterResult)) return afterResult;
+			else return itResult;
 		}
+
 	}
 }
 
@@ -589,44 +608,12 @@ class FailureTestCase extends TestCase {
 }
 
 
-async function runBeforeOrAfterFnsAsync_New(
-	parentName: string[],
-	functionName: string,
-	beforeAfterArray: BeforeAfterDefinition[],
-	mark: TestMarkValue,
-	options: RecursiveRunOptions,
-): Promise<{ results: TestCaseResult[], pass: boolean }> {
-	const results = [];
-
-	let i = 0;
-	for await (const beforeAfter of beforeAfterArray) {
-		i++;
-		const name = [ ...parentName, `${functionName} #${i}` ];
-		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
-		results.push(result);
-		if (!isSuccess(result)) return { results, pass: false };
-	}
-	return { results, pass: true };
-}
-
-async function runBeforeOrAfterFnsAsync(
-	parentName: string[],
-	beforeAfterArray: BeforeAfterDefinition[],
-	mark: TestMarkValue,
-	options: RecursiveRunOptions,
-): Promise<TestCaseResult> {
-	for await (const beforeAfter of beforeAfterArray) {
-		const result = await runTestFnAsync(parentName, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
-		if (!isSuccess(result)) return result;
-	}
-	return TestResult.pass(parentName, { filename: options.filename, mark });
-}
-
 async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
 	mark: TestMarkValue,
 	testTimeout: Milliseconds | undefined,
+	beforeEach: TestCaseResult[],
 	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
@@ -639,7 +626,7 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, { filename, mark });
+			return TestResult.pass(name, { beforeEach, filename, mark });
 		}
 		catch (err) {
 			return TestResult.fail(name, err, { filename, mark, renderError });
