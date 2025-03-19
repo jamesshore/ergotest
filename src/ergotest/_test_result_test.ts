@@ -3,6 +3,7 @@ import { assert, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
+import { TestOptions } from "./test_suite.js";
 
 const IRRELEVANT_ERROR = new Error("irrelevant error");
 
@@ -254,6 +255,25 @@ export default describe(() => {
 		it("name can include parent suites", () => {
 			const test = createPass({ name: [ "parent", "child", "grandchild" ] });
 			assert.equal(test.name, [ "parent", "child", "grandchild" ]);
+		});
+
+		it("has optional beforeEach and afterEach results", () => {
+			const beforeEach = [ createPass(), createFail() ];
+			const afterEach = [ createTimeout(), createSkip() ];
+
+			const pass = createPass({ beforeEach, afterEach });
+			const skip = createSkip({ beforeEach, afterEach });
+			const fail = createFail({ beforeEach, afterEach });
+			const timeout = createTimeout({ beforeEach, afterEach });
+
+			assert.equal(pass.beforeEach, beforeEach);
+			assert.equal(pass.afterEach, afterEach);
+			assert.equal(skip.beforeEach, beforeEach);
+			assert.equal(skip.afterEach, afterEach);
+			assert.equal(fail.beforeEach, beforeEach);
+			assert.equal(fail.afterEach, afterEach);
+			assert.equal(timeout.beforeEach, beforeEach);
+			assert.equal(timeout.afterEach, afterEach);
 		});
 
 		it("has optional filename", () => {
@@ -731,54 +751,70 @@ function createSuite({
 
 function createPass({
 	name = "irrelevant name",
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { filename, mark });
+	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createFail({
 	name = "irrelevant name",
 	error = IRRELEVANT_ERROR,
 	renderError = undefined,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
 	renderError?: () => string,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, { renderError, filename, mark });
+	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
 }
 
 function createSkip({
 	name = "irrelevant name",
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, { filename, mark });
+	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	timeout?: number,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, { filename, mark });
+	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
 }
