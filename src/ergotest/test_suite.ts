@@ -412,6 +412,10 @@ export class TestSuite implements Test {
 			const number = i === 0 ? "" : ` #${i + 1}`;
 			beforeEach.name = [ ...runOptions.name, `beforeEach()${number}` ];
 		});
+		this._afterEach.forEach((afterEach, i) => {
+			const number = i === 0 ? "" : ` #${i + 1}`;
+			afterEach.name = [ ...runOptions.name, `afterEach()${number}` ];
+		});
 
 		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
 		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
@@ -562,11 +566,15 @@ class TestCase implements Test {
 			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
 
 			let failedTest;
+			const afterEachResults = [];
 			for await (const after of parentAfterEach) {
 				if (failedTest !== undefined) continue;
-				const result = await runTestFnAsync(options.name, after.fnAsync, self._mark, after.options.timeout, [], options);
+				ensure.defined(after.name, "after.name");
+				const result = await runTestFnAsync(after.name!, after.fnAsync, self._mark, after.options.timeout, [], options);
 				if (!isSuccess(result)) failedTest = result;
+				afterEachResults.push(result);
 			}
+			itResult._afterEach = afterEachResults;
 
 			let afterResult;
 			if (failedTest !== undefined) afterResult = failedTest;

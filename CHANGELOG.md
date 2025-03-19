@@ -28,6 +28,8 @@ To Document:
 * Change in behavior: Runs all afterAll() blocks even if one fails 
 
 TO DO:
+* Ensure beforeEach() / afterEach() failures are rendered correctly (should render the name of the test that failed, but the error of the failing function, and probably list the specific beforeEach() that failed)
+* Need to handle multiple afterEach() failures
 * beforeAll() / afterAll() shouldn't put number in name until second one (like beforeEach())
 * Decide how to report on beforeEach/afterEach failures (overrides actual test result)
 

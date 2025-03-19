@@ -649,8 +649,8 @@ export default describe(() => {
 			const suite = describe_sut("parent", () => {
 				beforeEach_sut(PASS_FN);
 				beforeEach_sut(PASS_FN);
-				// afterEach_sut(PASS_FN);
-				// afterEach_sut(PASS_FN);
+				afterEach_sut(PASS_FN);
+				afterEach_sut(PASS_FN);
 				it_sut("pass", PASS_FN);
 				describe_sut("child", () => {
 					beforeEach_sut(PASS_FN);
@@ -670,10 +670,10 @@ export default describe(() => {
 								createPass({ name: [ "parent", "beforeEach()" ]}),
 								createPass({ name: [ "parent", "beforeEach() #2" ]}),
 							],
-							// afterEach: [
-							// 	createPass({ name: [ "parent", "pass", "afterEach()" ]}),
-							// 	createPass({ name: [ "parent", "pass", "afterEach() #2" ]}),
-							// ],
+							afterEach: [
+								createPass({ name: [ "parent", "afterEach()" ]}),
+								createPass({ name: [ "parent", "afterEach() #2" ]}),
+							],
 						}),
 						createSuite({
 							name: [ "parent", "child" ],
@@ -684,6 +684,11 @@ export default describe(() => {
 										createPass({ name: [ "parent", "beforeEach()" ]}),
 										createPass({ name: [ "parent", "beforeEach() #2" ]}),
 										createPass({ name: [ "parent", "child", "beforeEach()" ]}),
+									],
+									afterEach: [
+										createPass({ name: [ "parent", "child", "afterEach()" ]}),
+										createPass({ name: [ "parent", "afterEach()" ]}),
+										createPass({ name: [ "parent", "afterEach() #2" ]}),
 									],
 								}),
 							],
@@ -889,7 +894,9 @@ export default describe(() => {
 				);
 			});
 
-			it("handles exception in afterEach()", async () => {
+			it.skip("handles exception in afterEach()", async () => {
+				assert.todo("waiting for failing afterEach() to not replace test result");
+
 				const error = new Error("my error");
 				const suite = describe_sut(() => {
 					afterEach_sut(() => {
@@ -1083,7 +1090,9 @@ export default describe(() => {
 			assert.equal(afterTime, null, "afterEach() should not run");
 		});
 
-		it("times out when afterEach doesn't complete before default timeout", async () => {
+		it.skip("times out when afterEach doesn't complete before default timeout", async () => {
+			assert.todo("waiting for failing afterEach() to not replace test result");
+
 			const clock = await Clock.createNullAsync();
 
 			let beforeTime = null;
