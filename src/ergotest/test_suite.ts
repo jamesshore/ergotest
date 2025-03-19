@@ -41,7 +41,7 @@ export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
 type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 
-type BeforeAfterDefinition = { options: ItOptions, fnAsync: ItFn };
+type BeforeAfterDefinition = { name?: string[], options: ItOptions, fnAsync: ItFn };
 
 interface TestParameters {
 	getConfig: <T>(key: string) => T,
@@ -408,6 +408,11 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 		if (beforeAllFailed) inheritedMark = TestMark.skip;
 
+		this._beforeEach.forEach((beforeEach, i) => {
+			const number = i === 0 ? "" : ` #${i + 1}`;
+			beforeEach.name = [ ...runOptions.name, `beforeEach()${number}` ];
+		});
+
 		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
 		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
 
@@ -548,10 +553,8 @@ class TestCase implements Test {
 		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
 			const beforeEachResults = [];
 			for await (const before of parentBeforeEach) {
-				const number = beforeEachResults.length === 0 ? "" : ` #${beforeEachResults.length + 1}`;
-				const name = [ ...options.name, `beforeEach()${number}`];
-
-				const result = await runTestFnAsync(name, before.fnAsync, self._mark, before.options.timeout, [], options);
+				ensure.defined(before.name, "before.name");
+				const result = await runTestFnAsync(before.name!, before.fnAsync, self._mark, before.options.timeout, [], options);
 				if (!isSuccess(result)) return result;
 				beforeEachResults.push(result);
 			}

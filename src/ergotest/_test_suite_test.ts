@@ -645,21 +645,18 @@ export default describe(() => {
 			);
 		});
 
-		it("includes beforeEach() and afterEach() functions in test results", async () => {
+		it("includes beforeEach() and afterEach() functions in passing test results", async () => {
 			const suite = describe_sut("parent", () => {
 				beforeEach_sut(PASS_FN);
 				beforeEach_sut(PASS_FN);
 				// afterEach_sut(PASS_FN);
 				// afterEach_sut(PASS_FN);
 				it_sut("pass", PASS_FN);
-				// it_sut("fail", FAIL_FN);
-				// it_sut("skip");
-				// it_sut("timeout", TBD);
-				// describe_sut("child", () => {
-				// 	beforeEach_sut(PASS_FN);
-				// 	afterEach_sut(PASS_FN);
-				// 	it_sut("nested", PASS_FN);
-				// });
+				describe_sut("child", () => {
+					beforeEach_sut(PASS_FN);
+					afterEach_sut(PASS_FN);
+					it_sut("nested", PASS_FN);
+				});
 			});
 
 			assert.equal(
@@ -670,24 +667,36 @@ export default describe(() => {
 						createPass({
 							name: [ "parent", "pass" ],
 							beforeEach: [
-								createPass({ name: [ "parent", "pass", "beforeEach()" ]}),
-								createPass({ name: [ "parent", "pass", "beforeEach() #2" ]}),
+								createPass({ name: [ "parent", "beforeEach()" ]}),
+								createPass({ name: [ "parent", "beforeEach() #2" ]}),
 							],
 							// afterEach: [
 							// 	createPass({ name: [ "parent", "pass", "afterEach()" ]}),
 							// 	createPass({ name: [ "parent", "pass", "afterEach() #2" ]}),
 							// ],
 						}),
-						// createSuite({
-						// 	name: [ "parent", "child" ],
-						// 	beforeAll: [ createPass({ name: [ "parent", "child", "beforeAll() #1" ]}) ],
-						// 	afterAll: [ createPass({ name: [ "parent", "child", "afterAll() #1" ]}) ],
-						// 	tests: [ createPass({ name: [ "parent", "child", "test 2" ] }) ],
-						// }),
+						createSuite({
+							name: [ "parent", "child" ],
+							tests: [
+								createPass({
+									name: [ "parent", "child", "nested" ],
+									beforeEach: [
+										createPass({ name: [ "parent", "beforeEach()" ]}),
+										createPass({ name: [ "parent", "beforeEach() #2" ]}),
+										createPass({ name: [ "parent", "child", "beforeEach()" ]}),
+									],
+								}),
+							],
+						}),
 					],
 				}),
 			);
 		});
+
+		it("includes beforeEach() and afterEach() functions in failing test results");
+		it("includes beforeEach() and afterEach() functions in skipped test results");
+		it("includes beforeEach() and afterEach() functions in test results skipped due to .only");
+		it("includes beforeEach() and afterEach() functions in timed out test results");
 
 		it("fails when run outside of describe()", () => {
 			assert.error(
