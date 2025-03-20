@@ -397,6 +397,25 @@ export default describe(() => {
 	});
 
 
+	describe("test case interaction with beforeEach and afterEach", () => {
+
+		// Definitely inherit status. Not sure we want to inherit test outcome
+		// Maybe we need to have a separate accessor for the test result proper
+		// Maybe we need a new type TestSuiteResult --> TestCaseResult --> TestRunResult
+		it("inherits failure from beforeEach()");
+		it("inherits failure from afterEach()");
+		it("inherits first failure when multiple failures exist");
+		it("inherits timeout from beforeEach()");
+		it("inherits timeout from afterEach()");
+
+		// not sure if we want these; maybe we just change the reporting instead to support multiple failures per test case
+		it("inherits first timeout when multiple timeouts exist");
+		it("inherits failure over timeout when both exist");
+		it("inherits first failure over timeouts when multiple of each exist");
+
+	});
+
+
 	describe("test case rendering", () => {
 
 		it("renders test case as character, single line, or multi-line", () => {
