@@ -578,14 +578,7 @@ class TestCase implements Test {
 
 			itResult._beforeEach = beforeEachResults;
 			itResult._afterEach = afterEachResults;
-
-			let afterResult;
-			if (failedAfter !== undefined) afterResult = failedAfter;
-			else afterResult = TestResult.pass(options.name, { filename: options.filename, mark: self._mark });
-
-			if (!isSuccess(itResult)) return itResult;
-			else if (!isSuccess(afterResult)) return afterResult;
-			else return itResult;
+			return itResult;
 		}
 
 	}

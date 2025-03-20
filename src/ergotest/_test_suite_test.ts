@@ -864,37 +864,40 @@ export default describe(() => {
 			});
 
 			it("runs afterEach() even when test throws exception", async () => {
-				let afterEachRan = false;
-				const suite = describe_sut("my suite", () => {
-					afterEach_sut(() => {
-						afterEachRan = true;
-					});
-					it_sut("my test", () => {
-						throw new Error();
-					});
+				const suite = describe_sut(() => {
+					afterEach_sut(PASS_FN);
+					it_sut("test", FAIL_FN);
 				});
 
-				await suite.runAsync();
-				assert.equal(afterEachRan, true);
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createFail({
+							name: "test",
+							error: ERROR,
+							afterEach: [ createPass({ name: "afterEach()" }) ],
+						}),
+					],
+				}));
 			});
 
-			it.skip("handles exception in afterEach()", async () => {
-				assert.todo("waiting for failing afterEach() to not replace test result");
-
-				const error = new Error("my error");
+			it("handles exception in afterEach()", async () => {
 				const suite = describe_sut(() => {
-					afterEach_sut(() => {
-						throw error;
-					});
-					it_sut("test 1", () => {});
-					it_sut("test 2", () => {});
+					afterEach_sut(FAIL_FN);
+					it_sut("test 1", PASS_FN);
+					it_sut("test 2", PASS_FN);
 				});
 
 				assert.dotEquals(
 					await suite.runAsync(),
 					TestResult.suite([], [
-						TestResult.fail("test 1", error),
-						TestResult.fail("test 2", error),
+						createPass({
+							name: "test 1",
+							afterEach: [ createFail({ name: "afterEach()", error: ERROR }) ],
+						}),
+						createPass({
+							name: "test 2",
+							afterEach: [ createFail({ name: "afterEach()", error: ERROR }) ],
+						}),
 					]),
 				);
 			});

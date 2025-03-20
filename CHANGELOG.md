@@ -14,6 +14,7 @@ Links to other documentation:
 ## v0.12.x: WIP (performance)
 
 To Document:
+* Explicitly document data model?
 * TestResult.suite signature change
 * TestResult.pass signature change
 * TestResult.fail signature change
