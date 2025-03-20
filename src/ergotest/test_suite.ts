@@ -527,12 +527,7 @@ class TestCase implements Test {
 
 		let result;
 		if (this._testFn !== undefined) {
-			if (!this._isSkipped(parentMark)) {
-				result = await runTestAsync(this);
-			}
-			else {
-				result = TestResult.skip(name, { filename: options.filename, mark: this._mark });
-			}
+			result = await runTestAsync(this, this._isSkipped(parentMark));
 		}
 		else {
 			if (this._mark !== TestMark.only) {
@@ -554,22 +549,19 @@ class TestCase implements Test {
 		options.onTestCaseResult(result);
 		return result;
 
-		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
-			const resultOptions = { filename: options.filename, mark: self._mark };
-
-			let failedBefore = false;
+		async function runTestAsync(self: TestCase, skipRemainder: boolean): Promise<TestCaseResult> {
 			const beforeEachResults = [];
 			for await (const before of parentBeforeEach) {
 				ensure.defined(before.name, "before.name");
-				const result = failedBefore
-					? TestResult.skip(before.name!, resultOptions)
-					: await runTestFnAsync(before.name!, before.fnAsync, self._mark, before.options.timeout, [], options);
-				if (!isSuccess(result)) failedBefore = true;
+				const result = skipRemainder
+					? TestResult.skip(before.name!, { filename: options.filename, mark: TestMark.none })
+					: await runTestFnAsync(before.name!, before.fnAsync, TestMark.none, before.options.timeout, [], options);
+				if (!isSuccess(result)) skipRemainder = true;
 				beforeEachResults.push(result);
 			}
 
-			const itResult = failedBefore
-				? TestResult.skip(options.name, resultOptions)
+			const itResult = skipRemainder
+				? TestResult.skip(options.name, { filename: options.filename, mark: self._mark })
 				: await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
 
 			let failedAfter;
@@ -577,7 +569,9 @@ class TestCase implements Test {
 			for await (const after of parentAfterEach) {
 				if (failedAfter !== undefined) continue;
 				ensure.defined(after.name, "after.name");
-				const result = await runTestFnAsync(after.name!, after.fnAsync, self._mark, after.options.timeout, [], options);
+				const result = skipRemainder
+					? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
+					: await runTestFnAsync(after.name!, after.fnAsync, self._mark, after.options.timeout, [], options);
 				if (!isSuccess(result)) failedAfter = result;
 				afterEachResults.push(result);
 			}

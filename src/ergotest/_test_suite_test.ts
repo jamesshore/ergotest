@@ -840,22 +840,27 @@ export default describe(() => {
 
 		describe("beforeEach/afterEach edge cases", () => {
 
-			it("doesn't run beforeEach and afterEach when the test is skipped", async () => {
-				let beforeRan = false;
-				let afterRan = false;
-				const suite = describe_sut("my suite", () => {
-					beforeEach_sut(() => {
-						beforeRan = true;
-					});
-					afterEach_sut(() => {
-						afterRan = true;
-					});
-					it_sut.skip("test 1", async () => {});
+			it("doesn't run beforeEach() and afterEach() when the test is skipped", async () => {
+				const suite = describe_sut(() => {
+					beforeEach_sut(PASS_FN);
+					afterEach_sut(PASS_FN);
+					it_sut.skip("test", async () => {});
 				});
 
-				await suite.runAsync();
-				assert.equal(beforeRan, false, "shouldn't run beforeEach()");
-				assert.equal(afterRan, false, "shouldn't run afterEach()");
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createSkip({
+							name: "test",
+							mark: TestMark.skip,
+							beforeEach: [
+								createSkip({ name: "beforeEach()" }),
+							],
+							afterEach: [
+								createSkip({ name: "afterEach()" }),
+							],
+						}),
+					],
+				}));
 			});
 
 			it("runs afterEach() even when test throws exception", async () => {
@@ -871,27 +876,6 @@ export default describe(() => {
 
 				await suite.runAsync();
 				assert.equal(afterEachRan, true);
-			});
-
-			it.skip("handles exception in beforeEach()", async () => {
-				assert.todo("waiting for failing beforeEach() to cause test and afterEach() to be reported as skipped");
-
-				const error = new Error("my error");
-				const suite = describe_sut(() => {
-					beforeEach_sut(() => {
-						throw error;
-					});
-					it_sut("test 1", async () => {});
-					it_sut("test 2", async () => {});
-				});
-
-				assert.dotEquals(
-					await suite.runAsync(),
-					TestResult.suite([], [
-						TestResult.fail("test 1", error),
-						TestResult.fail("test 2", error),
-					]),
-				);
 			});
 
 			it.skip("handles exception in afterEach()", async () => {
@@ -918,13 +902,18 @@ export default describe(() => {
 			it("doesn't run test when beforeEach() fails", async () => {
 				const suite = describe_sut(() => {
 					beforeEach_sut(FAIL_FN);
-					it_sut("test", async () => {});
+					it_sut("test 1", async () => {});
+					it_sut("test 2", async () => {});
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
 					tests: [
 						createSkip({
-							name: "test",
+							name: "test 1",
+							beforeEach: [ createFail({ name: "beforeEach()", error: ERROR }) ],
+						}),
+						createSkip({
+							name: "test 2",
 							beforeEach: [ createFail({ name: "beforeEach()", error: ERROR }) ],
 						}),
 					]}),
