@@ -659,9 +659,7 @@ export default describe(() => {
 				});
 			});
 
-			assert.equal(
-				await suite.runAsync(),
-				createSuite({
+			assert.equal(await suite.runAsync(), createSuite({
 					name: "parent",
 					tests: [
 						createPass({
@@ -698,10 +696,32 @@ export default describe(() => {
 			);
 		});
 
-		it("includes beforeEach() and afterEach() functions in failing test results");
-		it("includes beforeEach() and afterEach() functions in skipped test results");
-		it("includes beforeEach() and afterEach() functions in test results skipped due to .only");
-		it("includes beforeEach() and afterEach() functions in timed out test results");
+		it("includes beforeEach() and afterEach() functions in test results skipped due to .only", async () => {
+			const suite = describe_sut(() => {
+				beforeEach_sut(PASS_FN);
+				afterEach_sut(PASS_FN);
+				it_sut.only("only", PASS_FN);
+				it_sut("skipped", PASS_FN);
+			});
+
+			assert.equal(await suite.runAsync(), createSuite({
+				tests: [
+					createPass({
+						name: "only",
+						mark: "only",
+						beforeEach: [ createPass({ name: "beforeEach()" }) ],
+						afterEach: [ createPass({ name: "afterEach()" }) ],
+					}),
+					createSkip({
+						name: "skipped",
+						beforeEach: [ createSkip({ name: "beforeEach()" }) ],
+						afterEach: [ createSkip({ name: "afterEach()" }) ],
+					}),
+				]
+			}));
+		});
+
+		it("includes beforeEach() and afterEach() functions in test results for functions marked .only with no body");
 
 		it("fails when run outside of describe()", () => {
 			assert.error(
@@ -721,6 +741,7 @@ export default describe(() => {
 				"afterEach() must be run inside describe()",
 			);
 		});
+
 
 		describe("beforeAll/afterAll edge cases", () => {
 
@@ -839,6 +860,8 @@ export default describe(() => {
 		});
 
 		describe("beforeEach/afterEach edge cases", () => {
+
+			it("doesn't inherit test mark");
 
 			it("doesn't run beforeEach() and afterEach() when the test is skipped", async () => {
 				const suite = describe_sut(() => {

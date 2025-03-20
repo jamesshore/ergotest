@@ -527,11 +527,11 @@ class TestCase implements Test {
 
 		let result;
 		if (this._testFn !== undefined) {
-			result = await runTestAsync(this, this._isSkipped(parentMark));
+			result = await runTestAsync(this, this._isSkipped(parentMark), this._mark);
 		}
 		else {
 			if (this._mark !== TestMark.only) {
-				result = TestResult.skip(name, { filename: options.filename, mark: TestMark.skip });
+				result = await runTestAsync(this, true, TestMark.skip);
 			}
 			else {
 				result = TestResult.fail(
@@ -549,7 +549,7 @@ class TestCase implements Test {
 		options.onTestCaseResult(result);
 		return result;
 
-		async function runTestAsync(self: TestCase, skipRemainder: boolean): Promise<TestCaseResult> {
+		async function runTestAsync(self: TestCase, skipRemainder: boolean, mark: TestMarkValue): Promise<TestCaseResult> {
 			const beforeEachResults = [];
 			for await (const before of parentBeforeEach) {
 				ensure.defined(before.name, "before.name");
@@ -561,7 +561,7 @@ class TestCase implements Test {
 			}
 
 			const itResult = skipRemainder
-				? TestResult.skip(options.name, { filename: options.filename, mark: self._mark })
+				? TestResult.skip(options.name, { filename: options.filename, mark })
 				: await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
 
 			const afterEachResults = [];
@@ -569,7 +569,7 @@ class TestCase implements Test {
 				ensure.defined(after.name, "after.name");
 				const result = skipRemainder
 					? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
-					: await runTestFnAsync(after.name!, after.fnAsync, self._mark, after.options.timeout, [], options);
+					: await runTestFnAsync(after.name!, after.fnAsync, TestMark.none, after.options.timeout, [], options);
 				afterEachResults.push(result);
 			}
 
