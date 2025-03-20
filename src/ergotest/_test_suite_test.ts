@@ -985,26 +985,23 @@ export default describe(() => {
 				}));
 			});
 
-
-			it.skip("FIX ME: discards afterEach() exception when both test and afterEach throw exceptions", async () => {
-				const afterEachError = new Error("afterEach error");
-				const testError = new Error("test error");
-
+			it("handles case where test and afterEach both fail", async () => {
 				const suite = describe_sut(() => {
-					afterEach_sut(() => {
-						throw afterEachError;
-					});
-					it_sut("my test", () => {
-						throw testError;
-					});
+					afterEach_sut(FAIL_FN);
+					it_sut("test", FAIL_FN);
 				});
 
-				assert.dotEquals(
-					await suite.runAsync(),
-					TestResult.suite([], [
-						TestResult.fail("my test", testError),
-					]),
-				);
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createFail({
+							name: "test",
+							error: ERROR,
+							afterEach: [
+								createFail({ name: "afterEach()", error: ERROR }),
+							],
+						}),
+					],
+				}));
 			});
 
 		});
