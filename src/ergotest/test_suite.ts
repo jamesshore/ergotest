@@ -500,6 +500,7 @@ class TestCase implements Test {
 		this._timeout = timeout;
 		this._testFn = testFn;
 		this._mark = mark;
+		if (testFn === undefined && mark === TestMark.none) this._mark = TestMark.skip;
 	}
 
 	/** @private */
@@ -511,7 +512,7 @@ class TestCase implements Test {
 	/** @private */
 	_isSkipped(parentMark: TestMarkValue): boolean {
 		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
-		return inheritedMark === TestMark.skip;
+		return inheritedMark === TestMark.skip || this._testFn === undefined;
 	}
 
 	/** @private */
@@ -525,67 +526,52 @@ class TestCase implements Test {
 		name.push(this._name !== "" ? this._name : "(unnamed)");
 		options = { ...options, name };
 
+		let skipTest = this._isSkipped(parentMark);
+		const beforeEachResults = [];
+		for await (const before of parentBeforeEach) {
+			ensure.defined(before.name, "before.name");
+			const result = skipTest
+				? TestResult.skip(before.name!, { filename: options.filename, mark: TestMark.none })
+				: await runTestFnAsync(before.name!, before.fnAsync, TestMark.none, before.options.timeout, [], options);
+			if (!isSuccess(result)) skipTest = true;
+			beforeEachResults.push(result);
+		}
+
 		let result;
-		if (this._testFn !== undefined) {
-			result = await runTestAsync(this, this._isSkipped(parentMark), this._mark);
+		if (this._testFn === undefined && this._mark === TestMark.only) {
+			result = TestResult.fail(
+				name,
+				"Test is marked '.only', but it has no body",
+				{
+					renderError: options.renderError,
+					filename: options.filename,
+					mark: TestMark.only,
+				},
+			);
+		}
+		else if (skipTest) {
+			result = TestResult.skip(options.name, { filename: options.filename, mark: this._mark });
 		}
 		else {
-			if (this._mark !== TestMark.only) {
-				result = await runTestAsync(this, true, TestMark.skip);
-			}
-			else {
-				const failure = TestResult.fail(
-					name,
-					"Test is marked '.only', but it has no body",
-					{
-						renderError: options.renderError,
-						filename: options.filename,
-						mark: this._mark,
-					}
-				);
-				result = await runTestAsync(this, true, TestMark.skip, failure);
-			}
+			result = await runTestFnAsync(
+				options.name, this._testFn!, this._mark, this._timeout, beforeEachResults, options
+			);
 		}
+
+		const afterEachResults = [];
+		for await (const after of parentAfterEach) {
+			ensure.defined(after.name, "after.name");
+			const result = skipTest
+				? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
+				: await runTestFnAsync(after.name!, after.fnAsync, TestMark.none, after.options.timeout, [], options);
+			afterEachResults.push(result);
+		}
+
+		result._beforeEach = beforeEachResults;
+		result._afterEach = afterEachResults;
 
 		options.onTestCaseResult(result);
 		return result;
-
-		async function runTestAsync(self: TestCase, skipRemainder: boolean, mark: TestMarkValue, testResult?: TestCaseResult): Promise<TestCaseResult> {
-			const beforeEachResults = [];
-			for await (const before of parentBeforeEach) {
-				ensure.defined(before.name, "before.name");
-				const result = skipRemainder
-					? TestResult.skip(before.name!, { filename: options.filename, mark: TestMark.none })
-					: await runTestFnAsync(before.name!, before.fnAsync, TestMark.none, before.options.timeout, [], options);
-				if (!isSuccess(result)) skipRemainder = true;
-				beforeEachResults.push(result);
-			}
-
-			let itResult;
-			if (testResult !== undefined) {
-				itResult = testResult;
-			}
-			else if (skipRemainder) {
-				itResult = TestResult.skip(options.name, { filename: options.filename, mark });
-			}
-			else {
-				itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
-			}
-
-			const afterEachResults = [];
-			for await (const after of parentAfterEach) {
-				ensure.defined(after.name, "after.name");
-				const result = skipRemainder
-					? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
-					: await runTestFnAsync(after.name!, after.fnAsync, TestMark.none, after.options.timeout, [], options);
-				afterEachResults.push(result);
-			}
-
-			itResult._beforeEach = beforeEachResults;
-			itResult._afterEach = afterEachResults;
-			return itResult;
-		}
-
 	}
 }
 

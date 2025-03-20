@@ -770,7 +770,7 @@ export default describe(() => {
 					afterAll_sut(PASS_FN);
 					afterAll_sut(PASS_FN);
 					it_sut.skip("test 1", PASS_FN);
-					it_sut.skip("test 2", PASS_FN);
+					it_sut("test 2");
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
