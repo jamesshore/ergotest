@@ -879,7 +879,8 @@ export default describe(() => {
 
 		describe("beforeEach/afterEach edge cases", () => {
 
-			it("doesn't inherit test mark");
+			it("doesn't inherit test mark", () => {
+			});
 
 			it("doesn't run beforeEach() and afterEach() when the test is skipped", async () => {
 				const suite = describe_sut(() => {
@@ -1147,68 +1148,50 @@ export default describe(() => {
 			assert.equal(itTime, 0, "it() should run immediately");
 		});
 
-		it.skip("times out when beforeEach doesn't complete before default timeout", async () => {
-			assert.todo("waiting for failing beforeEach() to cause test and afterEach() to be reported as skipped");
-
+		it("times out when beforeEach doesn't complete before default timeout", async () => {
 			const clock = await Clock.createNullAsync();
 
-			let itTime = null;
-			let afterTime = null;
 			const suite = describe_sut(() => {
 				beforeEach_sut(async () => {
 					await clock.waitAsync(DEFAULT_TIMEOUT + 1);
 				});
-				afterEach_sut(() => {
-					afterTime = clock.now();
-				});
-				it_sut("my test", () => {
-					itTime = clock.now();
-				});
+				afterEach_sut(PASS_FN);
+				it_sut("my test", PASS_FN);
 			});
 
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
-				]),
-				"result",
-			);
-			assert.equal(itTime, null, "it() should not run");
-			assert.equal(afterTime, null, "afterEach() should not run");
+			assert.equal(await actualPromise, createSuite({ tests: [
+				createSkip({
+					name: "my test",
+					beforeEach: [ createTimeout({ name: "beforeEach()", timeout: DEFAULT_TIMEOUT }) ],
+					afterEach: [ createSkip({ name: "afterEach()" }) ],
+				})
+			]}));
 		});
 
-		it.skip("times out when afterEach doesn't complete before default timeout", async () => {
-			assert.todo("waiting for failing afterEach() to not replace test result");
-
+		it("times out when afterEach doesn't complete before default timeout", async () => {
 			const clock = await Clock.createNullAsync();
 
-			let beforeTime = null;
-			let itTime = null;
 			const suite = describe_sut(() => {
-				beforeEach_sut(() => {
-					beforeTime = clock.now();
-				});
+				beforeEach_sut(PASS_FN);
 				afterEach_sut(async () => {
 					await clock.waitAsync(DEFAULT_TIMEOUT + 1);
 				});
-				it_sut("my test", () => {
-					itTime = clock.now();
-				});
+				it_sut("my test", PASS_FN);
 			});
 
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
-				]),
-				"result",
-			);
-			assert.equal(beforeTime, 0, "beforeEach() should run immediately");
-			assert.equal(itTime, 0, "it() should run immediately");
+			assert.equal(await actualPromise, createSuite({ tests: [
+				createPass({
+					name: "my test",
+					beforeEach: [ createPass({ name: "beforeEach()" }) ],
+					afterEach: [ createTimeout({ name: "afterEach()", timeout: DEFAULT_TIMEOUT }) ],
+				}),
+			]}));
 		});
 
 		it("times out each function separately", async () => {
