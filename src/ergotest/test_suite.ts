@@ -534,7 +534,7 @@ class TestCase implements Test {
 				result = await runTestAsync(this, true, TestMark.skip);
 			}
 			else {
-				result = TestResult.fail(
+				const failure = TestResult.fail(
 					name,
 					"Test is marked '.only', but it has no body",
 					{
@@ -543,13 +543,14 @@ class TestCase implements Test {
 						mark: this._mark,
 					}
 				);
+				result = await runTestAsync(this, true, TestMark.skip, failure);
 			}
 		}
 
 		options.onTestCaseResult(result);
 		return result;
 
-		async function runTestAsync(self: TestCase, skipRemainder: boolean, mark: TestMarkValue): Promise<TestCaseResult> {
+		async function runTestAsync(self: TestCase, skipRemainder: boolean, mark: TestMarkValue, testResult?: TestCaseResult): Promise<TestCaseResult> {
 			const beforeEachResults = [];
 			for await (const before of parentBeforeEach) {
 				ensure.defined(before.name, "before.name");
@@ -560,9 +561,16 @@ class TestCase implements Test {
 				beforeEachResults.push(result);
 			}
 
-			const itResult = skipRemainder
-				? TestResult.skip(options.name, { filename: options.filename, mark })
-				: await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
+			let itResult;
+			if (testResult !== undefined) {
+				itResult = testResult;
+			}
+			else if (skipRemainder) {
+				itResult = TestResult.skip(options.name, { filename: options.filename, mark });
+			}
+			else {
+				itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
+			}
 
 			const afterEachResults = [];
 			for await (const after of parentAfterEach) {

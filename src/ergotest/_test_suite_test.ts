@@ -721,7 +721,25 @@ export default describe(() => {
 			}));
 		});
 
-		it("includes beforeEach() and afterEach() functions in test results for functions marked .only with no body");
+		it("includes beforeEach() and afterEach() functions in test results for tests marked .only and have no body", async () => {
+			const suite = describe_sut(() => {
+				beforeEach_sut(PASS_FN);
+				afterEach_sut(PASS_FN);
+				it_sut.only("only");
+			});
+
+			assert.equal(await suite.runAsync(), createSuite({
+				tests: [
+					createFail({
+						name: "only",
+						mark: "only",
+						error: "Test is marked '.only', but it has no body",
+						beforeEach: [ createSkip({ name: "beforeEach()" }) ],
+						afterEach: [ createSkip({ name: "afterEach()" }) ],
+					}),
+				]
+			}));
+		});
 
 		it("fails when run outside of describe()", () => {
 			assert.error(
