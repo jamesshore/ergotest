@@ -564,15 +564,12 @@ class TestCase implements Test {
 				? TestResult.skip(options.name, { filename: options.filename, mark: self._mark })
 				: await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, beforeEachResults, options);
 
-			let failedAfter;
 			const afterEachResults = [];
 			for await (const after of parentAfterEach) {
-				if (failedAfter !== undefined) continue;
 				ensure.defined(after.name, "after.name");
 				const result = skipRemainder
 					? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
 					: await runTestFnAsync(after.name!, after.fnAsync, self._mark, after.options.timeout, [], options);
-				if (!isSuccess(result)) failedAfter = result;
 				afterEachResults.push(result);
 			}
 

@@ -945,9 +945,48 @@ export default describe(() => {
 				}));
 			});
 
-			it("doesn't run afterEach() when beforeEach() fails");
+			it("doesn't run afterEach() when beforeEach() fails", async () => {
+				const suite = describe_sut(() => {
+					beforeEach_sut(FAIL_FN);
+					afterEach_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
 
-			it("FIX ME: discards afterEach() exception when both test and afterEach throw exceptions", async () => {
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [ createSkip({
+						name: "test",
+						beforeEach: [ createFail({ name: "beforeEach()", error: ERROR }) ],
+						afterEach: [ createSkip({ name: "afterEach()" }) ],
+					}) ],
+				}));
+			});
+
+			it("continues running afterEach() even when one fails", async () => {
+				const suite = describe_sut(() => {
+					afterEach_sut(PASS_FN);
+					afterEach_sut(PASS_FN);
+					afterEach_sut(FAIL_FN);
+					afterEach_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createPass({
+							name: "test",
+							afterEach: [
+								createPass({ name: "afterEach()" }),
+								createPass({ name: "afterEach() #2" }),
+								createFail({ name: "afterEach() #3", error: ERROR }),
+								createPass({ name: "afterEach() #4" }),
+							],
+						}),
+					],
+				}));
+			});
+
+
+			it.skip("FIX ME: discards afterEach() exception when both test and afterEach throw exceptions", async () => {
 				const afterEachError = new Error("afterEach error");
 				const testError = new Error("test error");
 
@@ -967,7 +1006,6 @@ export default describe(() => {
 					]),
 				);
 			});
-			it("TODO: FIX ME above");
 
 		});
 
