@@ -291,24 +291,16 @@ export default describe(() => {
 
 		describe("beforeEach/afterEach", () => {
 
-			it.skip("doesn't render passing beforeEach() / afterEach() when they all pass", () => {
-				assert.todo("Convert to test renderMultiLineTest()");
-
-				assert.equal(renderSingleLineTest(createPass({
-					name: "my name",
+			it("doesn't render passing beforeEach() / afterEach() when they all pass", () => {
+				assert.equal(renderMultiLineTest(createPass({
 					beforeEach: [ createPass() ],
 					afterEach: [ createPass() ],
-				})), passColor("passed") + " my name", "test passes");
+				})), renderMultiLineTest(createPass()));
 
-				assert.equal(renderSingleLineTest(createFail({
-					name: "my name",
-					beforeEach: [
-						createPass({ name: "before" }),
-					],
-					afterEach: [
-						createPass({ name: "after" }),
-					],
-				})), singleLineFailColor("failed") + " my name", "test fails");
+				assert.equal(renderMultiLineTest(createTimeout({
+					beforeEach: [ createPass({ name: "before" }) ],
+					afterEach: [ createPass({ name: "after" }) ],
+				})), renderMultiLineTest(createTimeout()));
 			});
 
 			it.skip("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {
