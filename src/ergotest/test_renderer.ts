@@ -206,14 +206,14 @@ export class TestRenderer {
 				const status = self.renderStatusAsSingleWord(testResult);
 				const name = self.renderNameOnOneLine(testResult);
 
-				const beforeAfter = [
-					...testResult.beforeEach.filter(beforeEach => beforeEach.status !== TestStatus.pass),
-					...testResult.afterEach.filter(beforeEach => beforeEach.status !== TestStatus.pass),
-				];
+				const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+				const showTestDetail = beforeAfter.some(result => result.status !== TestStatus.pass);
 
-				const beforeEachRender = beforeAfter.length > 0
-					? "\n  " + render(self, beforeAfter).join("\n  ")
+				const detailSeparator = `\n  ${summaryColor("-->")}  `;
+				const beforeEachRender = showTestDetail
+					? detailSeparator + render(self, beforeAfter).join(detailSeparator)
 					: "";
+
 
 				return `${status} ${name}${beforeEachRender}`;
 			});

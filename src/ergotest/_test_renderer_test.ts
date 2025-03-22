@@ -182,10 +182,11 @@ export default describe(() => {
 				});
 				assert.equal(renderSingleLineTest(result),
 					passColor("passed") + " my name"
-					+ "\n  " + singleLineSkipColor("skipped") + " before 1"
-					+ "\n  " + singleLineSkipColor("skipped") + " before 2"
-					+ "\n  " + singleLineSkipColor("skipped") + " after 1"
-					+ "\n  " + singleLineSkipColor("skipped") + " after 2"
+					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 1`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 2`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after 1`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after 2`
 				);
 			});
 
@@ -193,7 +194,40 @@ export default describe(() => {
 
 			it("renders fail");
 
-			it("renders multiple");
+			it("renders passing beforeEach() / afterEach() when one of them isn't passing", () => {
+				assert.equal(renderSingleLineTest(createPass({
+					name: "my name",
+					beforeEach: [
+						createSkip({ name: "before" }),
+					],
+					afterEach: [
+						createPass({ name: "after" }),
+					],
+				})),
+					passColor("passed") + " my name"
+					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before`
+					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} after`
+				);
+
+				assert.equal(renderSingleLineTest(createPass({
+					name: "my name",
+					beforeEach: [
+						createPass({ name: "before" }),
+					],
+					afterEach: [
+						createSkip({ name: "after" }),
+					],
+				})),
+					passColor("passed") + " my name"
+					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} before`
+					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after`
+				);
+
+			});
+
+			it("doesn't render passing beforeEach() / afterEach() when all of them pass, even if test fails");
 
 		});
 
