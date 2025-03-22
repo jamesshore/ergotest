@@ -684,7 +684,18 @@ export class TestCaseResult extends TestResult {
 	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
 	get status(): TestStatusValue {
-		return this._status;
+		const beforeEachStatus = this._beforeEach.reduce((memo: TestStatusValue, beforeEach) => {
+			if (memo === TestStatus.fail || beforeEach.status === TestStatus.fail) return TestStatus.fail;
+			else return memo;
+		}, TestStatus.pass);
+
+		const afterEachStatus = this._afterEach.reduce((memo: TestStatusValue, afterEach) => {
+			if (memo === TestStatus.fail || afterEach.status === TestStatus.fail) return TestStatus.fail;
+			else return memo;
+		}, TestStatus.pass);
+
+		if (beforeEachStatus === TestStatus.fail || afterEachStatus === TestStatus.fail) return TestStatus.fail;
+		else return this._status;
 	}
 
 	/**

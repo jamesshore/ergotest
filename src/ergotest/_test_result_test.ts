@@ -1,9 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
+import { assert, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
-import { TestOptions } from "./test_suite.js";
 
 const IRRELEVANT_ERROR = new Error("irrelevant error");
 
@@ -399,15 +398,60 @@ export default describe(() => {
 
 	describe("test case interaction with beforeEach and afterEach", () => {
 
-		it.skip("inherits failure from beforeEach()", () => {
-			const test = createPass({
-				beforeEach: [ createFail({ name: "beforeEach()" }) ],
-			});
+		it("consolidates failure status from beforeEach, afterEach, and test status", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+				],
+				afterEach: [
+					createPass(),
+				],
+			}).status, TestStatus.pass, "no failure");
 
-			assert.equal(test.status, TestStatus.fail);
+			assert.equal(createFail({
+				beforeEach: [
+					createPass(),
+				],
+				afterEach: [
+					createPass(),
+				],
+			}).status, TestStatus.fail, "test failure");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+					createFail(),
+					createPass(),
+				],
+			}).status, TestStatus.fail, "beforeEach()");
+
+			assert.equal(createPass({
+				afterEach: [
+					createPass(),
+					createFail(),
+					createPass(),
+				],
+			}).status, TestStatus.fail, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createFail(),
+				],
+				afterEach: [
+					createPass(),
+				],
+			}).status, TestStatus.fail, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+				],
+				afterEach: [
+					createFail(),
+				],
+			}).status, TestStatus.fail, "afterEach() but not afterEach()");
 		});
 
-		it("inherits failure from afterEach()");
 		it("inherits timeout from beforeEach()");
 		it("inherits timeout from afterEach()");
 		it("does not inherit skip from beforeEach() or afterEach()");
