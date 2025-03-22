@@ -315,12 +315,14 @@ export default describe(() => {
 			]}));
 		});
 
-		it("propagates filename into beforeAll/afterAll results", async () => {
+		it("propagates filename into before/after results", async () => {
 			const filename = "my_filename";
 
 			const suite = describe_sut(() => {
 				beforeAll_sut(PASS_FN);
 				afterAll_sut(FAIL_FN);
+				beforeEach_sut(PASS_FN);
+				afterEach_sut(FAIL_FN);
 				it_sut("test", PASS_FN);
 			});
 			suite._setFilename(filename);
@@ -329,11 +331,14 @@ export default describe(() => {
 				filename,
 				beforeAll: [ createPass({ name: "beforeAll() #1", filename }) ],
 				afterAll: [ createFail({ name: "afterAll() #1", error: ERROR, filename }) ],
-				tests: [ createPass({ name: "test", filename }) ],
+				tests: [ createPass({
+					name: "test",
+					filename,
+					beforeEach: [ createPass({ name: "beforeEach()", filename }) ],
+					afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
+				}) ],
 			}));
 		});
-
-		it("TODO: propagate filename into beforeEach/afterEach results (modify above test)");
 
 	});
 
