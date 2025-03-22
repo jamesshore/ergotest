@@ -905,36 +905,6 @@ export default describe(() => {
 			});
 		});
 
-		it("handles failures in beforeEach() and afterEach()", () => {
-			assert.equal(createSuite({
-				tests: [
-					createPass({
-						beforeEach: [ createFail() ],
-					}),
-				]
-			}).count(), {
-				[TestStatus.pass]: 0,
-				[TestStatus.fail]: 1,
-				[TestStatus.skip]: 0,
-				[TestStatus.timeout]: 0,
-				total: 1,
-			}, "beforeEach()");
-
-			assert.equal(createSuite({
-				tests: [
-					createPass({
-						afterEach: [ createFail() ],
-					}),
-				]
-			}).count(), {
-				[TestStatus.pass]: 0,
-				[TestStatus.fail]: 1,
-				[TestStatus.skip]: 0,
-				[TestStatus.timeout]: 0,
-				total: 1,
-			}, "afterEach()");
-		});
-
 	});
 
 

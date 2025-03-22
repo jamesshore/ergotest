@@ -30,7 +30,6 @@ To Document:
 
 TO DO:
 * Ensure beforeEach() / afterEach() failures, timeouts, and skips are rendered correctly (should render the name of the test that failed, but then list each before/after that failed)
-* Remove TestResult test: summarization --> handles failures in beforeEach() / afterEach()
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
 * Factor out TestSuiteResult --> TestCaseResult --> RunResult?
 
