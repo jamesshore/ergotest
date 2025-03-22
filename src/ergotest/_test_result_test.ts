@@ -949,14 +949,20 @@ export default describe(() => {
 				createSuite({ name: "child", mark: TestMark.skip,
 					beforeAll: [ createPass({ name: [ "child", "beforeAll" ]}) ],
 					afterAll: [ createPass({ name: [ "child", "afterAll" ]}) ],
-					tests: [ createPass({ name: [ "child", "child pass" ]}) ],
+					tests: [
+						createPass({
+							name: [ "child", "child pass" ],
+							beforeEach: [ createPass({ name: [ "child", "beforeEach" ]}) ],
+							afterEach: [ createPass({ name: [ "child", "afterEach" ]}) ],
+						}),
+					],
 				}),
 			]});
 
 			const serialized = suite.serialize();
 			const deserialized = TestResult.deserialize(serialized);
 
-			assert.dotEquals(deserialized, suite);
+			assert.equal(deserialized, suite);
 		});
 
 	});

@@ -50,6 +50,8 @@ export interface SerializedTestCaseResult {
 	errorMessage?: string;
 	errorRender?: unknown;
 	timeout?: number;
+	beforeEach: SerializedTestCaseResult[];
+	afterEach: SerializedTestCaseResult[];
 }
 
 export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
@@ -621,6 +623,8 @@ export class TestCaseResult extends TestResult {
 			errorMessage: [ undefined, String ],
 			errorRender: ensure.ANY_TYPE,
 			timeout: [ undefined, Number ],
+			beforeEach: [ undefined, Array ],
+			afterEach: [ undefined, Array ],
 		}], [ "serialized TestCaseResult" ]);
 
 		return new TestCaseResult(serializedResult);
@@ -859,6 +863,8 @@ export class TestCaseResult extends TestResult {
 			errorMessage: this._errorMessage,
 			errorRender: this._errorRender,
 			timeout: this._timeout,
+			beforeEach: this._beforeEach,
+			afterEach: this._afterEach,
 		};
 	}
 
