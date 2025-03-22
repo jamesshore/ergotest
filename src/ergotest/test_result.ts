@@ -686,7 +686,9 @@ export class TestCaseResult extends TestResult {
 	get status(): TestStatusValue {
 		const consolidatedBefore = this._beforeEach.reduce(consolidateTestCase, TestStatus.pass);
 		const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateTestCase, consolidatedBefore);
-		return consolidateStatus(consolidatedBeforeAndAfter, this._status);
+
+		if (consolidatedBeforeAndAfter === TestStatus.pass && this._status === TestStatus.skip) return TestStatus.skip;
+		else return consolidateStatus(consolidatedBeforeAndAfter, this._status);
 
 		function consolidateTestCase(previousStatus: TestStatusValue, testCaseResult: TestCaseResult) {
 			return consolidateStatus(previousStatus, testCaseResult._status);
@@ -694,7 +696,9 @@ export class TestCaseResult extends TestResult {
 
 		function consolidateStatus(left: TestStatusValue, right: TestStatusValue) {
 			if (left === TestStatus.fail || right === TestStatus.fail) return TestStatus.fail;
-			else return right;
+			else if (left === TestStatus.timeout || right === TestStatus.timeout) return TestStatus.timeout;
+			else if (left === TestStatus.pass || right === TestStatus.pass) return TestStatus.pass;
+			else return TestStatus.skip;
 		}
 	}
 

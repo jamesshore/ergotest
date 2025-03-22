@@ -398,23 +398,15 @@ export default describe(() => {
 
 	describe("test case interaction with beforeEach and afterEach", () => {
 
-		it("consolidates failure status from beforeEach, afterEach, and test status", () => {
+		it("consolidates failure status from beforeEach, afterEach, and test", () => {
 			assert.equal(createPass({
-				beforeEach: [
-					createPass(),
-				],
-				afterEach: [
-					createPass(),
-				],
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
 			}).status, TestStatus.pass, "no failure");
 
 			assert.equal(createFail({
-				beforeEach: [
-					createPass(),
-				],
-				afterEach: [
-					createPass(),
-				],
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
 			}).status, TestStatus.fail, "test failure");
 
 			assert.equal(createPass({
@@ -434,29 +426,175 @@ export default describe(() => {
 			}).status, TestStatus.fail, "afterEach()");
 
 			assert.equal(createPass({
-				beforeEach: [
-					createFail(),
-				],
-				afterEach: [
-					createPass(),
-				],
+				beforeEach: [ createFail() ],
+				afterEach: [ createPass() ],
 			}).status, TestStatus.fail, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createFail() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "both beforeEach() and afterEach()");
+
+			assert.equal(createFail({
+				beforeEach: [ createFail() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "all");
+		});
+
+		it("consolidates timeout status from beforeEach, afterEach, and test", () => {
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "no timeout");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.timeout, "test timeout");
 
 			assert.equal(createPass({
 				beforeEach: [
 					createPass(),
+					createTimeout(),
+					createPass(),
 				],
+			}).status, TestStatus.timeout, "beforeEach()");
+
+			assert.equal(createPass({
 				afterEach: [
-					createFail(),
+					createPass(),
+					createTimeout(),
+					createPass(),
 				],
-			}).status, TestStatus.fail, "afterEach() but not afterEach()");
+			}).status, TestStatus.timeout, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.timeout, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "both beforeEach() and afterEach()");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "all");
 		});
 
-		it("inherits timeout from beforeEach()");
-		it("inherits timeout from afterEach()");
-		it("does not inherit skip from beforeEach() or afterEach()");
-		it("inherits failure over timeout from beforeEach()");
-		it("inherits failure over timeout from afterEach()");
+		it("does not inherit skip from beforeEach() or afterEach(), but does use it when test is skipped", () => {
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "no skip");
+
+			assert.equal(createSkip({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.skip, "test skip");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+					createSkip(),
+					createPass(),
+				],
+			}).status, TestStatus.pass, "beforeEach()");
+
+			assert.equal(createPass({
+				afterEach: [
+					createPass(),
+					createSkip(),
+					createPass(),
+				],
+			}).status, TestStatus.pass, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.pass, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.pass, "both beforeEach() and afterEach()");
+
+			assert.equal(createSkip({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.skip, "all");
+		});
+
+		it("inherits failure over timeout", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createTimeout(),
+					createFail(),
+					createTimeout(),
+				],
+			}).status, TestStatus.fail, "beforeEach");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createFail() ],
+			}).status, TestStatus.fail, "test timeout, beforeEach fail");
+
+			assert.equal(createFail({
+				beforeEach: [ createTimeout() ],
+			}).status, TestStatus.fail, "test fail, beforeEach timeout");
+		});
+
+		it("inherits timeout over skip", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createSkip(),
+					createTimeout(),
+					createSkip(),
+				],
+			}).status, TestStatus.timeout, "beforeEach");
+
+			assert.equal(createSkip({
+				beforeEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "test skip, beforeEach timeout");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createSkip() ],
+			}).status, TestStatus.timeout, "test timeout, beforeEach skip");
+		});
+
+		it("inherits failure over skip", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createSkip(),
+					createFail(),
+					createSkip(),
+				],
+			}).status, TestStatus.fail, "beforeEach");
+
+			assert.equal(createSkip({
+				beforeEach: [ createFail() ],
+			}).status, TestStatus.fail, "test skip, beforeEach fail");
+
+			assert.equal(createFail({
+				beforeEach: [ createSkip() ],
+			}).status, TestStatus.fail, "test fail, beforeEach skip");
+		});
 
 	});
 
