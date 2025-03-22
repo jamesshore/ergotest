@@ -684,18 +684,18 @@ export class TestCaseResult extends TestResult {
 	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
 	get status(): TestStatusValue {
-		const beforeEachStatus = this._beforeEach.reduce((memo: TestStatusValue, beforeEach) => {
-			if (memo === TestStatus.fail || beforeEach.status === TestStatus.fail) return TestStatus.fail;
-			else return memo;
-		}, TestStatus.pass);
+		const consolidatedBefore = this._beforeEach.reduce(consolidateTestCase, TestStatus.pass);
+		const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateTestCase, consolidatedBefore);
+		return consolidateStatus(consolidatedBeforeAndAfter, this._status);
 
-		const afterEachStatus = this._afterEach.reduce((memo: TestStatusValue, afterEach) => {
-			if (memo === TestStatus.fail || afterEach.status === TestStatus.fail) return TestStatus.fail;
-			else return memo;
-		}, TestStatus.pass);
+		function consolidateTestCase(previousStatus: TestStatusValue, testCaseResult: TestCaseResult) {
+			return consolidateStatus(previousStatus, testCaseResult._status);
+		}
 
-		if (beforeEachStatus === TestStatus.fail || afterEachStatus === TestStatus.fail) return TestStatus.fail;
-		else return this._status;
+		function consolidateStatus(left: TestStatusValue, right: TestStatusValue) {
+			if (left === TestStatus.fail || right === TestStatus.fail) return TestStatus.fail;
+			else return right;
+		}
 	}
 
 	/**
