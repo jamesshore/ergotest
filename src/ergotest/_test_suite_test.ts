@@ -879,7 +879,27 @@ export default describe(() => {
 
 		describe("beforeEach/afterEach edge cases", () => {
 
-			it("doesn't inherit test mark", () => {
+			it("doesn't inherit test mark", async () => {
+				const suite = describe_sut(() => {
+					beforeEach_sut(PASS_FN);
+					afterEach_sut(PASS_FN);
+					it_sut.only("test", async () => {});
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createPass({
+							name: "test",
+							mark: TestMark.only,
+							beforeEach: [
+								createPass({ name: "beforeEach()" }),
+							],
+							afterEach: [
+								createPass({ name: "afterEach()" }),
+							],
+						}),
+					],
+				}));
 			});
 
 			it("doesn't run beforeEach() and afterEach() when the test is skipped", async () => {
