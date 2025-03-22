@@ -1,4 +1,3 @@
-
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { afterAll, assert, beforeAll, describe, it } from "../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
@@ -972,8 +971,8 @@ export default describe(() => {
 			it("doesn't run test when beforeEach() fails", async () => {
 				const suite = describe_sut(() => {
 					beforeEach_sut(FAIL_FN);
-					it_sut("test 1", async () => {});
-					it_sut("test 2", async () => {});
+					it_sut("test 1", PASS_FN);
+					it_sut("test 2", PASS_FN);
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
