@@ -27,6 +27,7 @@ To Document:
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
 * Change in behavior: Runs all afterAll() blocks even if one fails 
+* Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
 
 TO DO:
 * Ensure beforeEach() / afterEach() failures, timeouts, and skips are rendered correctly (should render the name of the test that failed, but then list each before/after that failed)

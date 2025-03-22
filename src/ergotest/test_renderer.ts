@@ -199,12 +199,26 @@ export class TestRenderer {
 	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
-		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
-			const status = this.renderStatusAsSingleWord(testResult);
-			const name = this.renderNameOnOneLine(testResult);
+		return render(this, testCaseResults).join("\n");
 
-			return `${status} ${name}`;
-		});
+		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[]): string[] {
+			const str = self.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
+				const status = self.renderStatusAsSingleWord(testResult);
+				const name = self.renderNameOnOneLine(testResult);
+
+				const beforeAfter = [
+					...testResult.beforeEach.filter(beforeEach => beforeEach.status !== TestStatus.pass),
+					...testResult.afterEach.filter(beforeEach => beforeEach.status !== TestStatus.pass),
+				];
+
+				const beforeEachRender = beforeAfter.length > 0
+					? "\n  " + render(self, beforeAfter).join("\n  ")
+					: "";
+
+				return `${status} ${name}${beforeEachRender}`;
+			});
+			return str.split("\n");
+		}
 	}
 
 	/**
