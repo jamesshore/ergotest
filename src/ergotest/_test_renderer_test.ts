@@ -114,6 +114,22 @@ export default describe(() => {
 			assert.equal(renderCharacterTest([]), "");
 		});
 
+		it("doesn't render beforeEach() / afterEach() in any circumstance", () => {
+			const result = createPass({
+				name: "my name",
+				beforeEach: [
+					createSkip({ name: "before 1" }),
+					createTimeout({ name: "before 2" }),
+					createPass({ name: "before 3" }),
+				],
+				afterEach: [
+					createSkip({ name: "after 1" }),
+					createFail({ name: "after 2" }),
+					createPass({ name: "after 3" }),
+				],
+			});
+			assert.equal(renderCharacterTest(result), renderCharacterTest(createFail()));
+		});
 	});
 
 
