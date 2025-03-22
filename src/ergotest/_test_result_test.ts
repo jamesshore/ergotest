@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { assert, beforeEach, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
@@ -903,6 +903,36 @@ export default describe(() => {
 				[TestStatus.timeout]: 0,
 				total: 5,
 			});
+		});
+
+		it("handles failures in beforeEach() and afterEach()", () => {
+			assert.equal(createSuite({
+				tests: [
+					createPass({
+						beforeEach: [ createFail() ],
+					}),
+				]
+			}).count(), {
+				[TestStatus.pass]: 0,
+				[TestStatus.fail]: 1,
+				[TestStatus.skip]: 0,
+				[TestStatus.timeout]: 0,
+				total: 1,
+			}, "beforeEach()");
+
+			assert.equal(createSuite({
+				tests: [
+					createPass({
+						afterEach: [ createFail() ],
+					}),
+				]
+			}).count(), {
+				[TestStatus.pass]: 0,
+				[TestStatus.fail]: 1,
+				[TestStatus.skip]: 0,
+				[TestStatus.timeout]: 0,
+				total: 1,
+			}, "afterEach()");
 		});
 
 	});
