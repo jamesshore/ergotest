@@ -627,7 +627,14 @@ export class TestCaseResult extends TestResult {
 			afterEach: [ undefined, Array ],
 		}], [ "serialized TestCaseResult" ]);
 
-		return new TestCaseResult(serializedResult);
+		const deserializedBeforeEach = serializedResult.beforeEach.map(test => TestCaseResult.deserialize(test));
+		const deserializedAfterEach = serializedResult.afterEach.map(test => TestCaseResult.deserialize(test));
+
+		return new TestCaseResult({
+			...serializedResult,
+			beforeEach: deserializedBeforeEach,
+			afterEach: deserializedAfterEach
+		});
 	}
 
 	private _name: string[];
@@ -863,8 +870,8 @@ export class TestCaseResult extends TestResult {
 			errorMessage: this._errorMessage,
 			errorRender: this._errorRender,
 			timeout: this._timeout,
-			beforeEach: this._beforeEach,
-			afterEach: this._afterEach,
+			beforeEach: this._beforeEach.map(result => result.serialize()),
+			afterEach: this._afterEach.map(result => result.serialize()),
 		};
 	}
 
