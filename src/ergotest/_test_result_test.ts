@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
@@ -399,19 +399,20 @@ export default describe(() => {
 
 	describe("test case interaction with beforeEach and afterEach", () => {
 
-		// Definitely inherit status. Not sure we want to inherit test outcome
-		// Maybe we need to have a separate accessor for the test result proper
-		// Maybe we need a new type TestSuiteResult --> TestCaseResult --> TestRunResult
-		it("inherits failure from beforeEach()");
+		it.skip("inherits failure from beforeEach()", () => {
+			const test = createPass({
+				beforeEach: [ createFail({ name: "beforeEach()" }) ],
+			});
+
+			assert.equal(test.status, TestStatus.fail);
+		});
+
 		it("inherits failure from afterEach()");
-		it("inherits first failure when multiple failures exist");
 		it("inherits timeout from beforeEach()");
 		it("inherits timeout from afterEach()");
-
-		// not sure if we want these; maybe we just change the reporting instead to support multiple failures per test case
-		it("inherits first timeout when multiple timeouts exist");
-		it("inherits failure over timeout when both exist");
-		it("inherits first failure over timeouts when multiple of each exist");
+		it("does not inherit skip from beforeEach() or afterEach()");
+		it("inherits failure over timeout from beforeEach()");
+		it("inherits failure over timeout from afterEach()");
 
 	});
 

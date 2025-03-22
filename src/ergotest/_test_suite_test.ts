@@ -1012,6 +1012,24 @@ export default describe(() => {
 				}));
 			});
 
+			it("doesn't consider afterEach() results when setting test status", async () => {
+				const suite = describe_sut(() => {
+					afterEach_sut(FAIL_FN);
+					it_sut("test", PASS_FN);
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					tests: [
+						createPass({
+							name: "test",
+							afterEach: [
+								createFail({ name: "afterEach()", error: ERROR }),
+							],
+						}),
+					],
+				}));
+			});
+
 			it("doesn't run afterEach() when beforeEach() fails", async () => {
 				const suite = describe_sut(() => {
 					beforeEach_sut(FAIL_FN);
