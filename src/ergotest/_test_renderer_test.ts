@@ -182,7 +182,7 @@ export default describe(() => {
 				});
 				assert.equal(renderSingleLineTest(result),
 					passColor("passed") + " my name"
-					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
 					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 1`
 					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 2`
 					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after 1`
@@ -205,7 +205,7 @@ export default describe(() => {
 					],
 				})),
 					passColor("passed") + " my name"
-					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
 					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before`
 					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} after`
 				);
@@ -220,14 +220,24 @@ export default describe(() => {
 					],
 				})),
 					passColor("passed") + " my name"
-					// + `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
 					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} before`
 					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after`
 				);
 
 			});
 
-			it("doesn't render passing beforeEach() / afterEach() when all of them pass, even if test fails");
+			it("doesn't render passing beforeEach() / afterEach() when all of them pass, even if test fails", () => {
+				assert.equal(renderSingleLineTest(createFail({
+					name: "my name",
+					beforeEach: [
+						createPass({ name: "before" }),
+					],
+					afterEach: [
+						createPass({ name: "after" }),
+					],
+				})), singleLineFailColor("failed") + " my name");
+			});
 
 		});
 

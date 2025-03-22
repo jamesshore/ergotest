@@ -213,9 +213,11 @@ export class TestRenderer {
 				const beforeEachRender = showTestDetail
 					? detailSeparator + render(self, beforeAfter).join(detailSeparator)
 					: "";
+				const testDetail = showTestDetail
+					? `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
+					: "";
 
-
-				return `${status} ${name}${beforeEachRender}`;
+				return `${status} ${name}${testDetail}${beforeEachRender}`;
 			});
 			return str.split("\n");
 		}

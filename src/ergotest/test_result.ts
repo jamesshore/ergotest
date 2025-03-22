@@ -641,7 +641,7 @@ export class TestCaseResult extends TestResult {
 	private _filename?: string;
 	public _beforeEach: TestCaseResult[];
 	public _afterEach: TestCaseResult[];
-	private _status: TestStatusValue;
+	public _status: TestStatusValue;
 	private _mark: TestMarkValue;
 	private _errorMessage?: string;
 	private _errorRender?: unknown;
