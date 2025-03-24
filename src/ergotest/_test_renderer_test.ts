@@ -347,37 +347,25 @@ export default describe(() => {
 				);
 			});
 
-			it.skip("renders all test detail even if one set of beforeEach or afterEach is passing", () => {
-				assert.todo("Convert to test renderMultiLineTest()");
-
-				assert.equal(renderSingleLineTest(createPass({
+			it("renders all test detail even if one set of beforeEach or afterEach is passing", () => {
+				const before = createSkip({ name: "before" });
+				const after = createPass({ name: "after" });
+				const result = createPass({
 					name: "my name",
-					beforeEach: [
-						createSkip({ name: "before" }),
-					],
-					afterEach: [
-						createPass({ name: "after" }),
-					],
-				})),
-					testPassColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before`
-					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after`
-				);
+					beforeEach: [ before ],
+					afterEach: [ after ],
+				});
 
-				assert.equal(renderSingleLineTest(createPass({
-					name: "my name",
-					beforeEach: [
-						createPass({ name: "before" }),
-					],
-					afterEach: [
-						createSkip({ name: "after" }),
-					],
-				})),
-					testPassColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before`
-					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after`
+				const renderer = TestRenderer.create();
+				assert.equal(renderMultiLineTest(result),
+					renderer.renderNameOnMultipleLines(result) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before") + "\n" + renderer.renderNameOnOneLine(before) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after") + "\n" + renderer.renderNameOnOneLine(after) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ headerColor("«««")
 				);
 			});
 		});
