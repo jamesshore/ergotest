@@ -643,9 +643,6 @@ export class TestCaseResult extends TestResult {
 	public readonly _beforeEach: TestCaseResult[];
 	public readonly _afterEach: TestCaseResult[];
 	private readonly _it: RunResult;
-	private readonly _errorMessage?: string;
-	private readonly _errorRender?: unknown;
-	private readonly _timeout?: number;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
@@ -677,10 +674,7 @@ export class TestCaseResult extends TestResult {
 		this._mark = mark ?? TestMark.none;
 		this._beforeEach = beforeEach;
 		this._afterEach = afterEach;
-		this._it = new RunResult(status);
-		this._errorMessage = errorMessage;
-		this._errorRender = errorRender;
-		this._timeout = timeout;
+		this._it = new RunResult(status, errorMessage, errorRender, timeout);
 	}
 
 	// TODO: Deleteme
@@ -745,8 +739,7 @@ export class TestCaseResult extends TestResult {
 	 * @throws {Error} Throws an error if this test didn't fail.
 	 */
 	get errorMessage(): string {
-		ensure.that(this.isFail(), "Attempted to retrieve error message from a test that didn't fail");
-		return this._errorMessage!;
+		return this._it.errorMessage;
 	}
 
 	/**
@@ -755,8 +748,7 @@ export class TestCaseResult extends TestResult {
 	 * @throws {Error} Throws an error if this test didn't fail.
 	 */
 	get errorRender(): unknown {
-		ensure.that(this.isFail(), "Attempted to retrieve error render from a test that didn't fail");
-		return this._errorRender!;
+		return this._it.errorRender;
 	}
 
 	/**
@@ -765,8 +757,7 @@ export class TestCaseResult extends TestResult {
 	 * @throws {Error} Throws an error if this test didn't time out.
 	 */
 	get timeout(): number {
-		ensure.that(this.isTimeout(), "Attempted to retrieve timeout from a test that didn't time out");
-		return this._timeout!;
+		return this._it.timeout;
 	}
 
 	/**
@@ -866,31 +857,39 @@ export class TestCaseResult extends TestResult {
 	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);
 
-		return {
+		const result: SerializedTestCaseResult = {
 			type: "TestCaseResult",
 			name: this._name,
 			mark: this._mark,
 			filename: this._filename,
 			status: this._it.status,
-			errorMessage: this._errorMessage,
-			errorRender: this._errorRender,
-			timeout: this._timeout,
 			beforeEach: this._beforeEach.map(result => result.serialize()),
 			afterEach: this._afterEach.map(result => result.serialize()),
 		};
+		if (this._it.status === TestStatus.fail) {
+			result.errorMessage = this._it.errorMessage;
+			result.errorRender = this._it.errorRender;
+		}
+		if (this._it.status === TestStatus.timeout) {
+			result.timeout = this._it.timeout;
+		}
+		return result;
 	}
 
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
+		if (this._it.status !== that._it.status) return false;
 
 		const sameName = util.isDeepStrictEqual(this._name, that._name);
-		const sameError = this._errorMessage === that._errorMessage;
+
+		const sameError = this._it.status !== TestStatus.fail || this._it.errorMessage === that._it.errorMessage;
+		const sameTimeout = this._it.status !== TestStatus.timeout || this._it.timeout === that._it.timeout;
 
 		return sameName &&
 			sameError &&
 			this._it.status === that._it.status &&
 			this._mark === that._mark &&
-			this._timeout === that._timeout &&
+			sameTimeout &&
 			this.filename === that.filename;
 	}
 
@@ -904,9 +903,18 @@ export class TestCaseResult extends TestResult {
 class RunResult {
 
 	private readonly _status: TestStatusValue;
+	private readonly _errorMessage?: string;
+	private readonly _errorRender?: unknown;
+	private readonly _timeout?: number;
 
-	constructor(status: TestStatusValue) {
+	/**
+	 * @private
+	 */
+	constructor(status: TestStatusValue, errorMessage?: string, errorRender?: unknown, timeout?: number) {
 		this._status = status;
+		this._errorMessage = errorMessage;
+		this._errorRender = errorRender;
+		this._timeout = timeout;
 	}
 
 	/**
@@ -915,6 +923,36 @@ class RunResult {
 	 */
 	get status(): TestStatusValue {
 		return this._status;
+	}
+
+	/**
+	 * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
+	 *   equal to the error's `message` property. Otherwise, the error is converted to a string using `util.inspect()`.
+	 * @throws {Error} Throws an error if this test didn't fail.
+	 */
+	get errorMessage(): string {
+		ensure.that(this.status === TestStatus.fail, "Attempted to retrieve error message from a test that didn't fail");
+		return this._errorMessage!;
+	}
+
+	/**
+	 * @returns {unknown} The complete rendering of the reason this test failed. May be of any type, depending on how
+	 *   `renderError()` in TestOptions is defined, but it defaults to a string.
+	 * @throws {Error} Throws an error if this test didn't fail.
+	 */
+	get errorRender(): unknown {
+		ensure.that(this.status === TestStatus.fail, "Attempted to retrieve error render from a test that didn't fail");
+		return this._errorRender!;
+	}
+
+	/**
+	 * @returns {number} The timeout that this test didn't satisfy. Note that this is not the actual amount of run time
+	 *   of the test.
+	 * @throws {Error} Throws an error if this test didn't time out.
+	 */
+	get timeout(): number {
+		ensure.that(this.status === TestStatus.timeout, "Attempted to retrieve timeout from a test that didn't time out");
+		return this._timeout!;
 	}
 
 }

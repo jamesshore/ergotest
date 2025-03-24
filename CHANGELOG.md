@@ -35,6 +35,7 @@ TO DO:
 * Serialize/deserialize RunResult
 * Fix public _beforeEach/_afterEach in TestCaseResult
 * Fix public _status in TestCaseResult and duplication of renderStatusAsSingleWord() in renderAsSingleLines()
+* Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
 * Factor out TestSuiteResult --> TestCaseResult --> RunResult?
 
