@@ -175,22 +175,23 @@ export default describe(() => {
 
 		describe("beforeEach/afterEach", () => {
 
-			it("doesn't render passing beforeEach() / afterEach() when they all pass", () => {
+			it("doesn't render beforeEach() / afterEach() when they all pass", () => {
 				assert.equal(renderSingleLineTest(createPass({
-					name: "my name",
 					beforeEach: [ createPass() ],
 					afterEach: [ createPass() ],
-				})), passColor("passed") + " my name", "test passes");
+				})), renderSingleLineTest(createPass()), "test passes");
 
 				assert.equal(renderSingleLineTest(createFail({
-					name: "my name",
-					beforeEach: [
-						createPass({ name: "before" }),
-					],
-					afterEach: [
-						createPass({ name: "after" }),
-					],
-				})), singleLineFailColor("failed") + " my name", "test fails");
+					beforeEach: [ createPass({ name: "before" }) ],
+					afterEach: [ createPass({ name: "after" }) ],
+				})), renderSingleLineTest(createFail()), "test fails");
+			});
+
+			it("doesn't render beforeEach() / afterEach() when they’re all skipped AND the test is skipped", () => {
+				assert.equal(renderSingleLineTest(createSkip({
+					beforeEach: [ createSkip() ],
+					afterEach: [ createSkip() ],
+				})), renderSingleLineTest(createSkip()));
 			});
 
 			it("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {

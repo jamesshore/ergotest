@@ -207,13 +207,13 @@ export class TestRenderer {
 				const name = self.renderNameOnOneLine(testResult);
 
 				const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
-				const showTestDetail = beforeAfter.some(result => result.status !== TestStatus.pass);
+				const showDetail = showTestDetail(testResult);
 
 				const detailSeparator = `\n  ${summaryColor("-->")}  `;
-				const beforeEachRender = showTestDetail
+				const beforeEachRender = showDetail
 					? detailSeparator + render(self, beforeAfter).join(detailSeparator)
 					: "";
-				const testDetail = showTestDetail
+				const testDetail = showDetail
 					? `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
 					: "";
 
@@ -339,4 +339,12 @@ function normalizeNameOld(testResult: TestResult) {
 
 function normalizeName(name: string[]) {
 	return name.length === 0 ? [ "(no name)" ] : [ ...name ];
+}
+
+function showTestDetail(testResult: TestCaseResult) {
+	const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+	const allBeforeAfterPass = beforeAfter.every(result => result.status === TestStatus.pass);
+	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
+
+	return !(allBeforeAfterPass || (allBeforeAfterSkipped && testResult._status === TestStatus.skip));
 }
