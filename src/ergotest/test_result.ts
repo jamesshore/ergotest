@@ -57,7 +57,7 @@ export interface SerializedTestCaseResult {
 export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
 
 /**
- * The result of a test run. Can be a single test case or a suite of nested test results.
+ * The result of a running a test. Can be a single test case or a suite of nested test results.
  */
 export abstract class TestResult {
 
@@ -637,15 +637,15 @@ export class TestCaseResult extends TestResult {
 		});
 	}
 
-	private _name: string[];
-	private _filename?: string;
-	public _beforeEach: TestCaseResult[];
-	public _afterEach: TestCaseResult[];
-	public _status: TestStatusValue;
-	private _mark: TestMarkValue;
-	private _errorMessage?: string;
-	private _errorRender?: unknown;
-	private _timeout?: number;
+	private readonly _name: string[];
+	private readonly _filename?: string;
+	private readonly _mark: TestMarkValue;
+	public readonly _beforeEach: TestCaseResult[];
+	public readonly _afterEach: TestCaseResult[];
+	private readonly _it: RunResult;
+	private readonly _errorMessage?: string;
+	private readonly _errorRender?: unknown;
+	private readonly _timeout?: number;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
@@ -674,13 +674,18 @@ export class TestCaseResult extends TestResult {
 		super();
 		this._name = name;
 		this._filename = filename;
+		this._mark = mark ?? TestMark.none;
 		this._beforeEach = beforeEach;
 		this._afterEach = afterEach;
-		this._status = status;
-		this._mark = mark ?? TestMark.none;
+		this._it = new RunResult(status);
 		this._errorMessage = errorMessage;
 		this._errorRender = errorRender;
 		this._timeout = timeout;
+	}
+
+	// TODO: Deleteme
+	get _status(): TestStatusValue {
+		return this._it.status;
 	}
 
 	get filename(): string | undefined {
@@ -698,11 +703,11 @@ export class TestCaseResult extends TestResult {
 		const consolidatedBefore = this._beforeEach.reduce(consolidateTestCase, TestStatus.pass);
 		const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateTestCase, consolidatedBefore);
 
-		if (consolidatedBeforeAndAfter === TestStatus.pass && this._status === TestStatus.skip) return TestStatus.skip;
-		else return consolidateStatus(consolidatedBeforeAndAfter, this._status);
+		if (consolidatedBeforeAndAfter === TestStatus.pass && this._it.status === TestStatus.skip) return TestStatus.skip;
+		else return consolidateStatus(consolidatedBeforeAndAfter, this._it.status);
 
 		function consolidateTestCase(previousStatus: TestStatusValue, testCaseResult: TestCaseResult) {
-			return consolidateStatus(previousStatus, testCaseResult._status);
+			return consolidateStatus(previousStatus, testCaseResult._it.status);
 		}
 
 		function consolidateStatus(left: TestStatusValue, right: TestStatusValue) {
@@ -866,7 +871,7 @@ export class TestCaseResult extends TestResult {
 			name: this._name,
 			mark: this._mark,
 			filename: this._filename,
-			status: this._status,
+			status: this._it.status,
 			errorMessage: this._errorMessage,
 			errorRender: this._errorRender,
 			timeout: this._timeout,
@@ -883,13 +888,37 @@ export class TestCaseResult extends TestResult {
 
 		return sameName &&
 			sameError &&
-			this._status === that._status &&
+			this._it.status === that._it.status &&
 			this._mark === that._mark &&
 			this._timeout === that._timeout &&
 			this.filename === that.filename;
 	}
 
 }
+
+
+/**
+ * The result of running an individual test function, such as beforeAll(), afterAll(), beforeEach(), afterEach(), or
+ * it().
+ */
+class RunResult {
+
+	private readonly _status: TestStatusValue;
+
+	constructor(status: TestStatusValue) {
+		this._status = status;
+	}
+
+	/**
+	 * @returns {TestStatusValue} Whether this test function passed (completed normally), failed (threw an exception),
+	 *   timed out, or was skipped.
+	 */
+	get status(): TestStatusValue {
+		return this._status;
+	}
+
+}
+
 
 function ensureValidMarks(marks: TestMarkValue[]) {
 	const validMarks = Object.values(TestMark);
