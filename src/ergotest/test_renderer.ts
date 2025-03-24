@@ -49,7 +49,7 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
 		renderedError = errorMessageColor(util.inspect(error));
 	}
 
-	const diff = (error instanceof AssertionError) ?
+	const diff = (error instanceof AssertionError && (error.expected !== undefined || error.actual !== undefined)) ?
 		"\n\n" + renderDiff(error) :
 		"";
 

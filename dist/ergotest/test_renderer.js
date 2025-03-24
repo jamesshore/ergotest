@@ -45,7 +45,7 @@ const summaryColor = Colors.brightWhite.dim;
     } else {
         renderedError = errorMessageColor(util.inspect(error));
     }
-    const diff = error instanceof AssertionError ? "\n\n" + renderDiff(error) : "";
+    const diff = error instanceof AssertionError && (error.expected !== undefined || error.actual !== undefined) ? "\n\n" + renderDiff(error) : "";
     return `${renderedError}${diff}`;
 }
 /**

@@ -652,6 +652,20 @@ export default describe(() => {
 			);
 		});
 
+		it("doesn't render diff when assertion doesn't have expected and actual values", () => {
+			const error = new AssertionError({
+				message: "my error",
+			});
+			error.stack = "my stack";
+
+			assert.equal(render({ name: "my name", error }),
+				"my stack\n" +
+				"\n" +
+				Colors.brightWhite("my name »\n") +
+				Colors.brightRed("my error")
+			);
+		});
+
 		function render({
 			name = "irrelevant name",
 			error,
