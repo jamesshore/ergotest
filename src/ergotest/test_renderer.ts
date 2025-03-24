@@ -206,18 +206,16 @@ export class TestRenderer {
 				const status = self.renderStatusAsSingleWord(testResult);
 				const name = self.renderNameOnOneLine(testResult);
 
-				const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
-				const showDetail = showTestDetail(testResult);
+				let testDetail = "";
+				let beforeAfter = "";
+				if (showTestDetail(testResult)) {
+					const detailSeparator = `\n  ${summaryColor("-->")}  `;
+					const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+					testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
+					beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
+				}
 
-				const detailSeparator = `\n  ${summaryColor("-->")}  `;
-				const beforeEachRender = showDetail
-					? detailSeparator + render(self, beforeAfter).join(detailSeparator)
-					: "";
-				const testDetail = showDetail
-					? `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
-					: "";
-
-				return `${status} ${name}${testDetail}${beforeEachRender}`;
+				return `${status} ${name}${testDetail}${beforeAfter}`;
 			});
 			return str.split("\n");
 		}
@@ -229,12 +227,26 @@ export class TestRenderer {
 	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
-			const name = this.renderNameOnMultipleLines(testResult);
-			const status = this.renderStatusWithMultiLineDetails(testResult);
+		return render(this, testCaseResults, "\n\n\n");
 
-			return `${name}\n\n${status}`;
-		});
+		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[], separator: string): string {
+			return self.#renderMultipleResults(testCaseResults, separator, TestCaseResult, (testResult: TestCaseResult) => {
+				const name = self.renderNameOnMultipleLines(testResult);
+
+				if (showTestDetail(testResult)) {
+					const separator = `\n\n${headerColor("-->")}  `;
+					const before = separator + render(self, testResult.beforeEach, separator);
+					const test = separator + headerColor("the test itself")
+						+ "\n\n" + self.renderStatusWithMultiLineDetails(testResult);
+					const after = separator + render(self, testResult.afterEach, separator);
+					return `${name}${before}${test}${after}`;
+				}
+				else {
+					const status = self.renderStatusWithMultiLineDetails(testResult);
+					return `${name}\n\n${status}`;
+				}
+			});
+		}
 	}
 
 	/**
@@ -292,7 +304,7 @@ export class TestRenderer {
 	}
 
 	renderStatusWithMultiLineDetails(testCaseResult: TestCaseResult): string {
-		switch (testCaseResult.status) {
+		switch (testCaseResult._status) {
 			case TestStatus.pass:
 			case TestStatus.skip:
 				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];

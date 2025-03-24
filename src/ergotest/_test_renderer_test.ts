@@ -10,15 +10,17 @@ import path from "node:path";
 import { SourceMap } from "../infrastructure/source_map.js";
 
 const headerColor = Colors.brightWhite.bold;
-const summaryColor = Colors.brightWhite.dim;
-const failColor = Colors.brightRed;
-const timeoutColor = Colors.purple;
-const skipColor = Colors.cyan;
-const passColor = Colors.green;
 
-const singleLineSkipColor = Colors.brightCyan;
-const singleLineTimeoutColor = Colors.brightPurple;
-const singleLineFailColor = Colors.brightRed;
+const summaryColor = Colors.brightWhite.dim;
+const summaryFailColor = Colors.brightRed;
+const summaryTimeoutColor = Colors.purple;
+const summarySkipColor = Colors.cyan;
+const summaryPassColor = Colors.green;
+
+const testFailColor = Colors.brightRed;
+const testTimeoutColor = Colors.brightPurple;
+const testSkipColor = Colors.brightCyan;
+const testPassColor = Colors.green;
 
 const TEST_RENDERER_PATH = path.resolve(import.meta.dirname, "./test_renderer.js");
 
@@ -42,13 +44,13 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result, 1000),
 				summaryColor("(") +
-				failColor("3 failed") +
+				summaryFailColor("3 failed") +
 				summaryColor("; ") +
-				timeoutColor("4 timed out") +
+				summaryTimeoutColor("4 timed out") +
 				summaryColor("; ") +
-				skipColor("2 skipped") +
+				summarySkipColor("2 skipped") +
 				summaryColor("; ") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor("; ") +
 				summaryColor("125.0ms avg.") +
 				summaryColor(")")
@@ -60,7 +62,7 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result, 1000),
 				summaryColor("(") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor("; ") +
 				summaryColor("1000.0ms avg.") +
 				summaryColor(")")
@@ -72,7 +74,7 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result),
 				summaryColor("(") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor(")")
 			);
 		});
@@ -137,22 +139,22 @@ export default describe(() => {
 
 		it("pass", () => {
 			const result = createPass({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), passColor("passed") + " my name");
+			assert.equal(renderSingleLineTest(result), testPassColor("passed") + " my name");
 		});
 
 		it("skip", () => {
 			const result = createSkip({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), singleLineSkipColor("skipped") + " my name");
+			assert.equal(renderSingleLineTest(result), testSkipColor("skipped") + " my name");
 		});
 
 		it("timeout", () => {
 			const result = createTimeout({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), singleLineTimeoutColor("timeout") + " my name");
+			assert.equal(renderSingleLineTest(result), testTimeoutColor("timeout") + " my name");
 		});
 
 		it("fail", () => {
 			const result = createFail({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), singleLineFailColor("failed") + " my name");
+			assert.equal(renderSingleLineTest(result), testFailColor("failed") + " my name");
 		});
 
 		it("renders multiple results with a line feed between each one", () => {
@@ -209,14 +211,14 @@ export default describe(() => {
 					],
 				});
 				assert.equal(renderSingleLineTest(result),
-					singleLineFailColor("failed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 1`
-					+ `\n  ${summaryColor("-->")}  ${singleLineTimeoutColor("timeout")} before 2`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} before 3`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after 1`
-					+ `\n  ${summaryColor("-->")}  ${singleLineFailColor("failed")} after 2`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} after 3`
+					testFailColor("failed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before 1`
+					+ `\n  ${summaryColor("-->")}  ${testTimeoutColor("timeout")} before 2`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before 3`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after 1`
+					+ `\n  ${summaryColor("-->")}  ${testFailColor("failed")} after 2`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after 3`
 				);
 			});
 
@@ -230,10 +232,10 @@ export default describe(() => {
 						createPass({ name: "after" }),
 					],
 				})),
-					passColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} after`
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after`
 				);
 
 				assert.equal(renderSingleLineTest(createPass({
@@ -245,10 +247,10 @@ export default describe(() => {
 						createSkip({ name: "after" }),
 					],
 				})),
-					passColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} before`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after`
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after`
 				);
 
 			});
@@ -304,29 +306,43 @@ export default describe(() => {
 				})), renderMultiLineTest(createTimeout()));
 			});
 
-			it.skip("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {
-				assert.todo("Convert to test renderMultiLineTest()");
+			it("doesn't render beforeEach() / afterEach() when they’re all skipped AND the test is skipped", () => {
+				assert.equal(renderMultiLineTest(createSkip({
+					beforeEach: [ createSkip() ],
+					afterEach: [ createSkip() ],
+				})), renderMultiLineTest(createSkip()));
+			});
 
+			it("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {
+				const after1 = createSkip({ name: "after 1" });
+				const after2 = createFail({ name: "after 2" });
+				const after3 = createPass({ name: "after 3" });
+				const before1 = createSkip({ name: "before 1" });
+				const before2 = createTimeout({ name: "before 2" });
+				const before3 = createPass({ name: "before 3" });
 				const result = createPass({
 					name: "my name",
-					beforeEach: [
-						createSkip({ name: "before 1" }),
-						createTimeout({ name: "before 2" }),
-						createPass({ name: "before 3" }),
-					],
-					afterEach: [
-						createSkip({ name: "after 1" }),
-						createFail({ name: "after 2" }),
-						createPass({ name: "after 3" }),
-					],
+					beforeEach: [ before1, before2, before3 ],
+					afterEach: [ after1, after2, after3 ],
 				});
-				assert.equal(renderSingleLineTest(result),
-					singleLineFailColor("failed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before 1`
-					+ `\n  ${summaryColor("-->")}  ${singleLineTimeoutColor("timeout")} before 2`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after 1`
-					+ `\n  ${summaryColor("-->")}  ${singleLineFailColor("failed")} after 2`
+
+				const renderer = TestRenderer.create();
+				assert.equal(renderMultiLineTest(result),
+					renderer.renderNameOnMultipleLines(result) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before1) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before2) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before3) + "\n\n"
+					+ headerColor("-->") + "  " + headerColor("the test itself") + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after1) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after2) + "\n\n"
+					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after3)
 				);
 			});
 
@@ -342,10 +358,10 @@ export default describe(() => {
 						createPass({ name: "after" }),
 					],
 				})),
-					passColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} before`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} after`
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after`
 				);
 
 				assert.equal(renderSingleLineTest(createPass({
@@ -357,10 +373,10 @@ export default describe(() => {
 						createSkip({ name: "after" }),
 					],
 				})),
-					passColor("passed") + " my name"
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} the test itself`
-					+ `\n  ${summaryColor("-->")}  ${passColor("passed")} before`
-					+ `\n  ${summaryColor("-->")}  ${singleLineSkipColor("skipped")} after`
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after`
 				);
 			});
 		});
