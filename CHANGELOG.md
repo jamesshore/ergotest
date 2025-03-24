@@ -28,6 +28,7 @@ To Document:
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
 * Change in behavior: Runs all afterAll() blocks even if one fails 
 * Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
+* Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name)
 
 TO DO:
 * Ensure beforeEach() / afterEach() failures, timeouts, and skips are rendered correctly (should render the name of the test that failed, but then list each before/after that failed)

@@ -62,10 +62,12 @@ export const TestMark = {
     /**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
+	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
 	 * @param {string} [options.filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static pass(name, { filename, mark } = {}) {
+	 */ static pass(name, { beforeEach, afterEach, filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -74,6 +76,14 @@ export const TestMark = {
             [
                 undefined,
                 {
+                    beforeEach: [
+                        undefined,
+                        Array
+                    ],
+                    afterEach: [
+                        undefined,
+                        Array
+                    ],
                     filename: [
                         undefined,
                         String
@@ -91,6 +101,8 @@ export const TestMark = {
         return new TestCaseResult({
             name,
             status: TestStatus.pass,
+            beforeEach,
+            afterEach,
             filename,
             mark
         });
@@ -101,11 +113,13 @@ export const TestMark = {
 	 * @param {unknown} error The error that occurred.
 	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
 	 *   The function to use to render the error into a string (defaults to {@link renderError})
+ *   @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
 	 * @param {string} [options.filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 *   function will be called and the results put into {@link errorRender}.
 	 * @returns {TestCaseResult} The result.
-	 */ static fail(name, error, { renderError = renderErrorFn, filename, mark } = {}) {
+	 */ static fail(name, error, { renderError = renderErrorFn, beforeEach, afterEach, filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -118,6 +132,14 @@ export const TestMark = {
                     renderError: [
                         undefined,
                         Function
+                    ],
+                    beforeEach: [
+                        undefined,
+                        Array
+                    ],
+                    afterEach: [
+                        undefined,
+                        Array
                     ],
                     filename: [
                         undefined,
@@ -145,6 +167,8 @@ export const TestMark = {
             status: TestStatus.fail,
             errorMessage,
             errorRender,
+            beforeEach,
+            afterEach,
             filename,
             mark
         });
@@ -152,10 +176,12 @@ export const TestMark = {
     /**
 	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
+	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
 	 * @param {string} [options.filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static skip(name, { filename, mark } = {}) {
+	 */ static skip(name, { beforeEach, afterEach, filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -164,6 +190,14 @@ export const TestMark = {
             [
                 undefined,
                 {
+                    beforeEach: [
+                        undefined,
+                        Array
+                    ],
+                    afterEach: [
+                        undefined,
+                        Array
+                    ],
                     filename: [
                         undefined,
                         String
@@ -181,6 +215,8 @@ export const TestMark = {
         return new TestCaseResult({
             name,
             status: TestStatus.skip,
+            beforeEach,
+            afterEach,
             filename,
             mark
         });
@@ -189,10 +225,12 @@ export const TestMark = {
 	 * Create a TestResult for a test that timed out.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.
+	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
 	 * @param {string} [options.filename] The file that contained this test (optional).
 	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
-	 */ static timeout(name, timeout, { filename, mark } = {}) {
+	 */ static timeout(name, timeout, { beforeEach, afterEach, filename, mark } = {}) {
         ensure.signature(arguments, [
             [
                 String,
@@ -202,6 +240,14 @@ export const TestMark = {
             [
                 undefined,
                 {
+                    beforeEach: [
+                        undefined,
+                        Array
+                    ],
+                    afterEach: [
+                        undefined,
+                        Array
+                    ],
                     filename: [
                         undefined,
                         String
@@ -220,6 +266,8 @@ export const TestMark = {
             name,
             status: TestStatus.timeout,
             timeout,
+            beforeEach,
+            afterEach,
             filename,
             mark
         });
@@ -312,12 +360,12 @@ export const TestMark = {
         return this._tests;
     }
     /**
-	 * @returns { TestResult[] } The beforeAll() blocks ran for this suite.
+	 * @returns { TestCaseResult[] } The beforeAll() blocks for this suite.
 	 */ get beforeAll() {
         return this._beforeAll;
     }
     /**
-	 * @returns { TestResult[] } The afterAll() blocks ran for this suite.
+	 * @returns { TestCaseResult[] } The afterAll() blocks for this suite.
 	 */ get afterAll() {
         return this._afterAll;
     }
@@ -505,24 +553,42 @@ export const TestMark = {
                 timeout: [
                     undefined,
                     Number
+                ],
+                beforeEach: [
+                    undefined,
+                    Array
+                ],
+                afterEach: [
+                    undefined,
+                    Array
                 ]
             }
         ], [
             "serialized TestCaseResult"
         ]);
-        return new TestCaseResult(serializedResult);
+        const deserializedBeforeEach = serializedResult.beforeEach.map((test)=>TestCaseResult.deserialize(test));
+        const deserializedAfterEach = serializedResult.afterEach.map((test)=>TestCaseResult.deserialize(test));
+        return new TestCaseResult({
+            ...serializedResult,
+            beforeEach: deserializedBeforeEach,
+            afterEach: deserializedAfterEach
+        });
     }
     _name;
     _filename;
+    _beforeEach;
+    _afterEach;
     _status;
     _mark;
     _errorMessage;
     _errorRender;
     _timeout;
-    /** Internal use only. (Use {@link TestResult} factory methods instead.) */ constructor({ name, status, errorMessage, errorRender, timeout, filename, mark }){
+    /** Internal use only. (Use {@link TestResult} factory methods instead.) */ constructor({ name, status, errorMessage, errorRender, timeout, beforeEach = [], afterEach = [], filename, mark }){
         super();
         this._name = name;
         this._filename = filename;
+        this._beforeEach = beforeEach;
+        this._afterEach = afterEach;
         this._status = status;
         this._mark = mark ?? TestMark.none;
         this._errorMessage = errorMessage;
@@ -538,12 +604,34 @@ export const TestMark = {
     /**
 	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */ get status() {
-        return this._status;
+        const consolidatedBefore = this._beforeEach.reduce(consolidateTestCase, TestStatus.pass);
+        const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateTestCase, consolidatedBefore);
+        if (consolidatedBeforeAndAfter === TestStatus.pass && this._status === TestStatus.skip) return TestStatus.skip;
+        else return consolidateStatus(consolidatedBeforeAndAfter, this._status);
+        function consolidateTestCase(previousStatus, testCaseResult) {
+            return consolidateStatus(previousStatus, testCaseResult._status);
+        }
+        function consolidateStatus(left, right) {
+            if (left === TestStatus.fail || right === TestStatus.fail) return TestStatus.fail;
+            else if (left === TestStatus.timeout || right === TestStatus.timeout) return TestStatus.timeout;
+            else if (left === TestStatus.pass || right === TestStatus.pass) return TestStatus.pass;
+            else return TestStatus.skip;
+        }
     }
     /**
 	 * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
 	 */ get mark() {
         return this._mark;
+    }
+    /**
+	 * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
+	 */ get beforeEach() {
+        return this._beforeEach;
+    }
+    /**
+	 * @returns { TestCaseResult[] } The afterEach() blocks for this test.
+	 */ get afterEach() {
+        return this._afterEach;
     }
     /**
 	 * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
@@ -655,7 +743,9 @@ export const TestMark = {
             status: this._status,
             errorMessage: this._errorMessage,
             errorRender: this._errorRender,
-            timeout: this._timeout
+            timeout: this._timeout,
+            beforeEach: this._beforeEach.map((result)=>result.serialize()),
+            afterEach: this._afterEach.map((result)=>result.serialize())
         };
     }
     equals(that) {

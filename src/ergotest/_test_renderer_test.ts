@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
@@ -329,20 +329,21 @@ export default describe(() => {
 				const renderer = TestRenderer.create();
 				assert.equal(renderMultiLineTest(result),
 					renderer.renderNameOnMultipleLines(result) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 1") + "\n" + renderer.renderNameOnOneLine(before1) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before1) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 2") + "\n" + renderer.renderNameOnOneLine(before2) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before2) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(before3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 3") + "\n" + renderer.renderNameOnOneLine(before3) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before3) + "\n\n"
-					+ headerColor("-->") + "  " + headerColor("the test itself") + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 1") + "\n" + renderer.renderNameOnOneLine(after1) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after1) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 2") + "\n" + renderer.renderNameOnOneLine(after2) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after2) + "\n\n"
-					+ headerColor("-->") + "  " + renderer.renderNameOnMultipleLines(after3) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(after3)
+					+ headerColor("»»» ") + headerColor("after 3") + "\n" + renderer.renderNameOnOneLine(after3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ headerColor("«««")
 				);
 			});
 
@@ -471,18 +472,21 @@ export default describe(() => {
 		});
 
 		it("renders multiple names", () => {
-			const result = createPass({ name: [ "suite 1", "suite 2", "my name" ]});
-			assert.equal(render(result), headerColor("suite 1 » suite 2\n» my name"));
+			const result = createPass({ name: [ "suite 1", "suite 2", "suite 3", "my name" ]});
+			assert.equal(
+				render(result),
+				headerColor("suite 1") + " » suite 2 » suite 3\n" + headerColor("» ") + headerColor("my name")
+			);
 		});
 
 		it("renders filename and name together", () => {
 			const result = createPass({ filename: "my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file\n» my name"));
+			assert.equal(render(result), headerColor("my_file") + "\n" + headerColor("» ") + headerColor("my name"));
 		});
 
 		it("strips directories from filename", () => {
 			const result = createPass({ filename: "/root/parent/child/my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file\n» my name"));
+			assert.equal(render(result), headerColor("my_file") + "\n" + headerColor("» ") + headerColor("my name"));
 		});
 
 		function render(result: TestCaseResult): string {

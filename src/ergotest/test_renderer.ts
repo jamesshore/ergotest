@@ -30,7 +30,7 @@ const summaryColor = Colors.brightWhite.dim;
 export function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
 	ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
 
-	const nameFoo = normalizeName(name).pop();
+	const finalName = normalizeName(name).pop();
 
 	let renderedError;
 	if (error instanceof Error && error?.stack !== undefined) {
@@ -38,7 +38,7 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
 		if (error.message !== undefined && error.message !== "") {
 			renderedError +=
 				"\n\n" +
-				highlightColor(`${nameFoo} »\n`) +
+				highlightColor(`${finalName} »\n`) +
 				errorMessageColor(`${error.message}`);
 		}
 	}
@@ -234,18 +234,26 @@ export class TestRenderer {
 				const name = self.renderNameOnMultipleLines(testResult);
 
 				if (showTestDetail(testResult)) {
-					const separator = `\n\n${headerColor("-->")}  `;
-					const before = separator + render(self, testResult.beforeEach, separator);
-					const test = separator + headerColor("the test itself")
-						+ "\n\n" + self.renderStatusWithMultiLineDetails(testResult);
-					const after = separator + render(self, testResult.afterEach, separator);
-					return `${name}${before}${test}${after}`;
+					return renderDetail(self, testResult);
 				}
 				else {
 					const status = self.renderStatusWithMultiLineDetails(testResult);
 					return `${name}\n\n${status}`;
 				}
 			});
+		}
+
+		function renderDetail(self: TestRenderer, testResult: TestCaseResult): string {
+			const chevrons = headerColor(`»»» `);
+			const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+			const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult: TestCaseResult) => {
+				const status = self.renderStatusWithMultiLineDetails(detailResult);
+				const finalName = normalizeName(detailResult.name).pop() as string;
+				return chevrons + headerColor(finalName) + `\n${self.renderNameOnOneLine(detailResult)}\n\n${status}`;
+			});
+			const test = `\n\n${chevrons}${headerColor("the test itself")}\n`
+				+ `${self.renderNameOnOneLine(testResult)}\n\n${self.renderStatusWithMultiLineDetails(testResult)}`;
+			return `${(self.renderNameOnMultipleLines(testResult))}${beforeAfter}${test}\n\n${headerColor("«««")}`;
 		}
 	}
 
@@ -290,10 +298,14 @@ export class TestRenderer {
 
 		const suites = name.slice(0, name.length - 1);
 		const test = name[name.length - 1];
+
 		if (testResult.filename !== undefined) suites.unshift(path.basename(testResult.filename));
 
-		const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
-		return headerColor(suitesName + test);
+		const suitesName = suites.length > 0
+			? headerColor(suites[0]) + suites.slice(1).map(name => ` » ${name}`).join("") + "\n" + headerColor("» ")
+			: "";
+
+		return suitesName + headerColor(test);
 	}
 
 	/**
@@ -307,7 +319,7 @@ export class TestRenderer {
 		switch (testCaseResult._status) {
 			case TestStatus.pass:
 			case TestStatus.skip:
-				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
+				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult._status];
 			case TestStatus.fail:
 				return (typeof testCaseResult.errorRender === "string") ?
 					testCaseResult.errorRender :
@@ -315,7 +327,7 @@ export class TestRenderer {
 			case TestStatus.timeout:
 				return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
 			default:
-				throw new Error(`Unrecognized test result status: ${testCaseResult.status}`);
+				throw new Error(`Unrecognized test result status: ${testCaseResult._status}`);
 		}
 	}
 
@@ -349,7 +361,7 @@ function normalizeNameOld(testResult: TestResult) {
 	return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 }
 
-function normalizeName(name: string[]) {
+function normalizeName(name: string[]): string[] {
 	return name.length === 0 ? [ "(no name)" ] : [ ...name ];
 }
 
