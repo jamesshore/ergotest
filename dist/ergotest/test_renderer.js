@@ -33,19 +33,19 @@ const summaryColor = Colors.brightWhite.dim;
             String
         ]
     ]);
-    const nameFoo = normalizeName(name).pop();
+    const finalName = normalizeName(name).pop();
     let renderedError;
     if (error instanceof Error && error?.stack !== undefined) {
         renderedError = renderStack(error, filename);
         if (error.message !== undefined && error.message !== "") {
-            renderedError += "\n\n" + highlightColor(`${nameFoo} »\n`) + errorMessageColor(`${error.message}`);
+            renderedError += "\n\n" + highlightColor(`${finalName} »\n`) + errorMessageColor(`${error.message}`);
         }
     } else if (typeof error === "string") {
         renderedError = errorMessageColor(error);
     } else {
         renderedError = errorMessageColor(util.inspect(error));
     }
-    const diff = error instanceof AssertionError ? "\n\n" + renderDiff(error) : "";
+    const diff = error instanceof AssertionError && (error.expected !== undefined || error.actual !== undefined) ? "\n\n" + renderDiff(error) : "";
     return `${renderedError}${diff}`;
 }
 /**
@@ -189,11 +189,26 @@ export class TestRenderer {
                 Array
             ]
         ]);
-        return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult)=>{
-            const status = this.renderStatusAsSingleWord(testResult);
-            const name = this.renderNameOnOneLine(testResult);
-            return `${status} ${name}`;
-        });
+        return render(this, testCaseResults).join("\n");
+        function render(self, testCaseResults) {
+            const str = self.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult)=>{
+                const status = self.renderStatusAsSingleWord(testResult);
+                const name = self.renderNameOnOneLine(testResult);
+                let testDetail = "";
+                let beforeAfter = "";
+                if (showTestDetail(testResult)) {
+                    const detailSeparator = `\n  ${summaryColor("-->")}  `;
+                    const beforeAfterResults = [
+                        ...testResult.beforeEach,
+                        ...testResult.afterEach
+                    ];
+                    testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
+                    beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
+                }
+                return `${status} ${name}${testDetail}${beforeAfter}`;
+            });
+            return str.split("\n");
+        }
     }
     /**
 	 * @returns {string} A full explanation of this test result.
@@ -205,11 +220,32 @@ export class TestRenderer {
                 Array
             ]
         ]);
-        return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult)=>{
-            const name = this.renderNameOnMultipleLines(testResult);
-            const status = this.renderStatusWithMultiLineDetails(testResult);
-            return `${name}\n\n${status}`;
-        });
+        return render(this, testCaseResults, "\n\n\n");
+        function render(self, testCaseResults, separator) {
+            return self.#renderMultipleResults(testCaseResults, separator, TestCaseResult, (testResult)=>{
+                const name = self.renderNameOnMultipleLines(testResult);
+                if (showTestDetail(testResult)) {
+                    return renderDetail(self, testResult);
+                } else {
+                    const status = self.renderStatusWithMultiLineDetails(testResult);
+                    return `${name}\n\n${status}`;
+                }
+            });
+        }
+        function renderDetail(self, testResult) {
+            const chevrons = headerColor(`»»» `);
+            const beforeAfterResults = [
+                ...testResult.beforeEach,
+                ...testResult.afterEach
+            ];
+            const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult)=>{
+                const status = self.renderStatusWithMultiLineDetails(detailResult);
+                const finalName = normalizeName(detailResult.name).pop();
+                return chevrons + headerColor(finalName) + `\n${self.renderNameOnOneLine(detailResult)}\n\n${status}`;
+            });
+            const test = `\n\n${chevrons}${headerColor("the test itself")}\n` + `${self.renderNameOnOneLine(testResult)}\n\n${self.renderStatusWithMultiLineDetails(testResult)}`;
+            return `${self.renderNameOnMultipleLines(testResult)}${beforeAfter}${test}\n\n${headerColor("«««")}`;
+        }
     }
     /**
 	 * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
@@ -249,8 +285,8 @@ export class TestRenderer {
         const suites = name.slice(0, name.length - 1);
         const test = name[name.length - 1];
         if (testResult.filename !== undefined) suites.unshift(path.basename(testResult.filename));
-        const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
-        return headerColor(suitesName + test);
+        const suitesName = suites.length > 0 ? headerColor(suites[0]) + suites.slice(1).map((name)=>` » ${name}`).join("") + "\n" + headerColor("» ") : "";
+        return suitesName + headerColor(test);
     }
     /**
 	 * @returns {string} The color-coded status of the test.
@@ -258,10 +294,10 @@ export class TestRenderer {
         return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
     }
     renderStatusWithMultiLineDetails(testCaseResult) {
-        switch(testCaseResult.status){
+        switch(testCaseResult._status){
             case TestStatus.pass:
             case TestStatus.skip:
-                return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
+                return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult._status];
             case TestStatus.fail:
                 return typeof testCaseResult.errorRender === "string" ? testCaseResult.errorRender : util.inspect(testCaseResult.errorRender, {
                     depth: Infinity
@@ -269,7 +305,7 @@ export class TestRenderer {
             case TestStatus.timeout:
                 return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
             default:
-                throw new Error(`Unrecognized test result status: ${testCaseResult.status}`);
+                throw new Error(`Unrecognized test result status: ${testCaseResult._status}`);
         }
     }
     /**
@@ -307,6 +343,15 @@ function normalizeName(name) {
     ] : [
         ...name
     ];
+}
+function showTestDetail(testResult) {
+    const beforeAfter = [
+        ...testResult.beforeEach,
+        ...testResult.afterEach
+    ];
+    const allBeforeAfterPass = beforeAfter.every((result)=>result.status === TestStatus.pass);
+    const allBeforeAfterSkipped = beforeAfter.every((result)=>result.status === TestStatus.skip);
+    return !(allBeforeAfterPass || allBeforeAfterSkipped && testResult._status === TestStatus.skip);
 }
 
 //# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_renderer.js.map

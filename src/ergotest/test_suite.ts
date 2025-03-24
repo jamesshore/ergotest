@@ -41,7 +41,7 @@ export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 
 type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 
-type BeforeAfterDefinition = { options: ItOptions, fnAsync: ItFn };
+type BeforeAfterDefinition = { name?: string[], options: ItOptions, fnAsync: ItFn };
 
 interface TestParameters {
 	getConfig: <T>(key: string) => T,
@@ -375,8 +375,8 @@ export class TestSuite implements Test {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: BeforeAfterDefinition[],
-		parentAfterEachFns: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfterDefinition[],
+		parentAfterEach: BeforeAfterDefinition[],
 		runOptions: RecursiveRunOptions,
 	) {
 		runOptions = {
@@ -395,7 +395,7 @@ export class TestSuite implements Test {
 
 			const result = this._allChildrenSkipped || beforeAllFailed
 				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, runOptions);
+				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, [], runOptions);
 
 			if (!isSuccess(result)) beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
@@ -408,12 +408,21 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 		if (beforeAllFailed) inheritedMark = TestMark.skip;
 
-		const beforeEachFns = [ ...parentBeforeEachFns, ...this._beforeEach ];
-		const afterEachFns = [ ...this._afterEach, ...parentAfterEachFns ];
+		this._beforeEach.forEach((beforeEach, i) => {
+			const number = i === 0 ? "" : ` #${i + 1}`;
+			beforeEach.name = [ ...runOptions.name, `beforeEach()${number}` ];
+		});
+		this._afterEach.forEach((afterEach, i) => {
+			const number = i === 0 ? "" : ` #${i + 1}`;
+			afterEach.name = [ ...runOptions.name, `afterEach()${number}` ];
+		});
+
+		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
+		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
 
 		const testResults = [];
 		for await (const test of this._tests) {
-			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEachFns, afterEachFns, runOptions));
+			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEach, afterEach, runOptions));
 		}
 
 		const afterAllResults: TestCaseResult[] = [];
@@ -422,7 +431,7 @@ export class TestSuite implements Test {
 
 			const result = this._allChildrenSkipped || beforeAllFailed
 				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, runOptions);
+				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, [], runOptions);
 
 			runOptions.onTestCaseResult(result);
 			afterAllResults.push(result);
@@ -491,6 +500,7 @@ class TestCase implements Test {
 		this._timeout = timeout;
 		this._testFn = testFn;
 		this._mark = mark;
+		if (testFn === undefined && mark === TestMark.none) this._mark = TestMark.skip;
 	}
 
 	/** @private */
@@ -502,59 +512,66 @@ class TestCase implements Test {
 	/** @private */
 	_isSkipped(parentMark: TestMarkValue): boolean {
 		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
-		return inheritedMark === TestMark.skip;
+		return inheritedMark === TestMark.skip || this._testFn === undefined;
 	}
 
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: BeforeAfterDefinition[],
-		afterEachFns: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfterDefinition[],
+		parentAfterEach: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const name = [ ...options.name ];
 		name.push(this._name !== "" ? this._name : "(unnamed)");
 		options = { ...options, name };
 
+		let skipTest = this._isSkipped(parentMark);
+		const beforeEachResults = [];
+		for await (const before of parentBeforeEach) {
+			ensure.defined(before.name, "before.name");
+			const result = skipTest
+				? TestResult.skip(before.name!, { filename: options.filename, mark: TestMark.none })
+				: await runTestFnAsync(before.name!, before.fnAsync, TestMark.none, before.options.timeout, [], options);
+			if (!isSuccess(result)) skipTest = true;
+			beforeEachResults.push(result);
+		}
+
 		let result;
-		if (this._testFn !== undefined) {
-			if (!this._isSkipped(parentMark)) {
-				result = await runTestAsync(this);
-			}
-			else {
-				result = TestResult.skip(name, { filename: options.filename, mark: this._mark });
-			}
+		if (this._testFn === undefined && this._mark === TestMark.only) {
+			result = TestResult.fail(
+				name,
+				"Test is marked '.only', but it has no body",
+				{
+					renderError: options.renderError,
+					filename: options.filename,
+					mark: TestMark.only,
+				},
+			);
+		}
+		else if (skipTest) {
+			result = TestResult.skip(options.name, { filename: options.filename, mark: this._mark });
 		}
 		else {
-			if (this._mark !== TestMark.only) {
-				result = TestResult.skip(name, { filename: options.filename, mark: TestMark.skip });
-			}
-			else {
-				result = TestResult.fail(
-					name,
-					"Test is marked '.only', but it has no body",
-					{
-						renderError: options.renderError,
-						filename: options.filename,
-						mark: this._mark,
-					}
-				);
-			}
+			result = await runTestFnAsync(
+				options.name, this._testFn!, this._mark, this._timeout, beforeEachResults, options
+			);
 		}
+
+		const afterEachResults = [];
+		for await (const after of parentAfterEach) {
+			ensure.defined(after.name, "after.name");
+			const result = skipTest
+				? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
+				: await runTestFnAsync(after.name!, after.fnAsync, TestMark.none, after.options.timeout, [], options);
+			afterEachResults.push(result);
+		}
+
+		result._beforeEach = beforeEachResults;
+		result._afterEach = afterEachResults;
 
 		options.onTestCaseResult(result);
 		return result;
-
-		async function runTestAsync(self: TestCase): Promise<TestCaseResult> {
-			const beforeResult = await runBeforeOrAfterFnsAsync(options.name, beforeEachFns, self._mark, options);
-			if (!isSuccess(beforeResult)) return beforeResult;
-
-			const itResult = await runTestFnAsync(options.name, self._testFn!, self._mark, self._timeout, options);
-			const afterResult = await runBeforeOrAfterFnsAsync(options.name, afterEachFns, self._mark, options);
-
-			if (!isSuccess(itResult)) return itResult;
-			else return afterResult;
-		}
 	}
 }
 
@@ -589,44 +606,12 @@ class FailureTestCase extends TestCase {
 }
 
 
-async function runBeforeOrAfterFnsAsync_New(
-	parentName: string[],
-	functionName: string,
-	beforeAfterArray: BeforeAfterDefinition[],
-	mark: TestMarkValue,
-	options: RecursiveRunOptions,
-): Promise<{ results: TestCaseResult[], pass: boolean }> {
-	const results = [];
-
-	let i = 0;
-	for await (const beforeAfter of beforeAfterArray) {
-		i++;
-		const name = [ ...parentName, `${functionName} #${i}` ];
-		const result = await runTestFnAsync(name, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
-		results.push(result);
-		if (!isSuccess(result)) return { results, pass: false };
-	}
-	return { results, pass: true };
-}
-
-async function runBeforeOrAfterFnsAsync(
-	parentName: string[],
-	beforeAfterArray: BeforeAfterDefinition[],
-	mark: TestMarkValue,
-	options: RecursiveRunOptions,
-): Promise<TestCaseResult> {
-	for await (const beforeAfter of beforeAfterArray) {
-		const result = await runTestFnAsync(parentName, beforeAfter.fnAsync, mark, beforeAfter.options.timeout, options);
-		if (!isSuccess(result)) return result;
-	}
-	return TestResult.pass(parentName, { filename: options.filename, mark });
-}
-
 async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
 	mark: TestMarkValue,
 	testTimeout: Milliseconds | undefined,
+	beforeEach: TestCaseResult[],
 	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
 ): Promise<TestCaseResult> {
 	const getConfig = <T>(name: string) => {
@@ -639,7 +624,7 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, { filename, mark });
+			return TestResult.pass(name, { beforeEach, filename, mark });
 		}
 		catch (err) {
 			return TestResult.fail(name, err, { filename, mark, renderError });

@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { assert, beforeEach, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
 import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
@@ -256,6 +256,25 @@ export default describe(() => {
 			assert.equal(test.name, [ "parent", "child", "grandchild" ]);
 		});
 
+		it("has optional beforeEach and afterEach results", () => {
+			const beforeEach = [ createPass(), createFail() ];
+			const afterEach = [ createTimeout(), createSkip() ];
+
+			const pass = createPass({ beforeEach, afterEach });
+			const skip = createSkip({ beforeEach, afterEach });
+			const fail = createFail({ beforeEach, afterEach });
+			const timeout = createTimeout({ beforeEach, afterEach });
+
+			assert.equal(pass.beforeEach, beforeEach);
+			assert.equal(pass.afterEach, afterEach);
+			assert.equal(skip.beforeEach, beforeEach);
+			assert.equal(skip.afterEach, afterEach);
+			assert.equal(fail.beforeEach, beforeEach);
+			assert.equal(fail.afterEach, afterEach);
+			assert.equal(timeout.beforeEach, beforeEach);
+			assert.equal(timeout.afterEach, afterEach);
+		});
+
 		it("has optional filename", () => {
 			const test = createPass({ filename: "my_filename" });
 			assert.equal(test.filename, "my_filename");
@@ -372,6 +391,209 @@ export default describe(() => {
 			// marks
 			assert.dotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
 			assert.notDotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
+		});
+
+	});
+
+
+	describe("test case interaction with beforeEach and afterEach", () => {
+
+		it("consolidates failure status from beforeEach, afterEach, and test", () => {
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "no failure");
+
+			assert.equal(createFail({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.fail, "test failure");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+					createFail(),
+					createPass(),
+				],
+			}).status, TestStatus.fail, "beforeEach()");
+
+			assert.equal(createPass({
+				afterEach: [
+					createPass(),
+					createFail(),
+					createPass(),
+				],
+			}).status, TestStatus.fail, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createFail() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.fail, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createFail() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "both beforeEach() and afterEach()");
+
+			assert.equal(createFail({
+				beforeEach: [ createFail() ],
+				afterEach: [ createFail() ],
+			}).status, TestStatus.fail, "all");
+		});
+
+		it("consolidates timeout status from beforeEach, afterEach, and test", () => {
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "no timeout");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.timeout, "test timeout");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+					createTimeout(),
+					createPass(),
+				],
+			}).status, TestStatus.timeout, "beforeEach()");
+
+			assert.equal(createPass({
+				afterEach: [
+					createPass(),
+					createTimeout(),
+					createPass(),
+				],
+			}).status, TestStatus.timeout, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.timeout, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "both beforeEach() and afterEach()");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createTimeout() ],
+				afterEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "all");
+		});
+
+		it("does not inherit skip from beforeEach() or afterEach(), but does use it when test is skipped", () => {
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "no skip");
+
+			assert.equal(createSkip({
+				beforeEach: [ createPass() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.skip, "test skip");
+
+			assert.equal(createPass({
+				beforeEach: [
+					createPass(),
+					createSkip(),
+					createPass(),
+				],
+			}).status, TestStatus.pass, "beforeEach()");
+
+			assert.equal(createPass({
+				afterEach: [
+					createPass(),
+					createSkip(),
+					createPass(),
+				],
+			}).status, TestStatus.pass, "afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createPass() ],
+			}).status, TestStatus.pass, "beforeEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createPass() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.pass, "afterEach() but not afterEach()");
+
+			assert.equal(createPass({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.pass, "both beforeEach() and afterEach()");
+
+			assert.equal(createSkip({
+				beforeEach: [ createSkip() ],
+				afterEach: [ createSkip() ],
+			}).status, TestStatus.skip, "all");
+		});
+
+		it("inherits failure over timeout", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createTimeout(),
+					createFail(),
+					createTimeout(),
+				],
+			}).status, TestStatus.fail, "beforeEach");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createFail() ],
+			}).status, TestStatus.fail, "test timeout, beforeEach fail");
+
+			assert.equal(createFail({
+				beforeEach: [ createTimeout() ],
+			}).status, TestStatus.fail, "test fail, beforeEach timeout");
+		});
+
+		it("inherits timeout over skip", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createSkip(),
+					createTimeout(),
+					createSkip(),
+				],
+			}).status, TestStatus.timeout, "beforeEach");
+
+			assert.equal(createSkip({
+				beforeEach: [ createTimeout() ],
+			}).status, TestStatus.timeout, "test skip, beforeEach timeout");
+
+			assert.equal(createTimeout({
+				beforeEach: [ createSkip() ],
+			}).status, TestStatus.timeout, "test timeout, beforeEach skip");
+		});
+
+		it("inherits failure over skip", () => {
+			assert.equal(createPass({
+				beforeEach: [
+					createSkip(),
+					createFail(),
+					createSkip(),
+				],
+			}).status, TestStatus.fail, "beforeEach");
+
+			assert.equal(createSkip({
+				beforeEach: [ createFail() ],
+			}).status, TestStatus.fail, "test skip, beforeEach fail");
+
+			assert.equal(createFail({
+				beforeEach: [ createSkip() ],
+			}).status, TestStatus.fail, "test fail, beforeEach skip");
 		});
 
 	});
@@ -697,14 +919,20 @@ export default describe(() => {
 				createSuite({ name: "child", mark: TestMark.skip,
 					beforeAll: [ createPass({ name: [ "child", "beforeAll" ]}) ],
 					afterAll: [ createPass({ name: [ "child", "afterAll" ]}) ],
-					tests: [ createPass({ name: [ "child", "child pass" ]}) ],
+					tests: [
+						createPass({
+							name: [ "child", "child pass" ],
+							beforeEach: [ createPass({ name: [ "child", "beforeEach" ]}) ],
+							afterEach: [ createPass({ name: [ "child", "afterEach" ]}) ],
+						}),
+					],
 				}),
 			]});
 
 			const serialized = suite.serialize();
 			const deserialized = TestResult.deserialize(serialized);
 
-			assert.dotEquals(deserialized, suite);
+			assert.equal(deserialized, suite);
 		});
 
 	});
@@ -731,54 +959,70 @@ function createSuite({
 
 function createPass({
 	name = "irrelevant name",
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { filename, mark });
+	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createFail({
 	name = "irrelevant name",
 	error = IRRELEVANT_ERROR,
 	renderError = undefined,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	error?: string | Error,
 	renderError?: () => string,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, { renderError, filename, mark });
+	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
 }
 
 function createSkip({
 	name = "irrelevant name",
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, { filename, mark });
+	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createTimeout({
 	name = "irrelevant name",
 	timeout = 42,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
 	timeout?: number,
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, { filename, mark });
+	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
 }

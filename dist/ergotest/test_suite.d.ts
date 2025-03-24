@@ -20,6 +20,7 @@ export type DescribeFn = () => void;
 export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
 type BeforeAfter = (optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) => void;
 type BeforeAfterDefinition = {
+    name?: string[];
     options: ItOptions;
     fnAsync: ItFn;
 };
@@ -105,7 +106,7 @@ export declare class TestSuite implements Test {
     /** @private */
     _isSkipped(): boolean;
     /** @private */
-    _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEachFns: BeforeAfterDefinition[], parentAfterEachFns: BeforeAfterDefinition[], runOptions: RecursiveRunOptions): Promise<TestSuiteResult>;
+    _recursiveRunAsync(parentMark: TestMarkValue, parentBeforeEach: BeforeAfterDefinition[], parentAfterEach: BeforeAfterDefinition[], runOptions: RecursiveRunOptions): Promise<TestSuiteResult>;
 }
 /** Internal use only. */
 export declare function importRendererAsync(renderer?: string): Promise<any>;

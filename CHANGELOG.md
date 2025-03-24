@@ -14,21 +14,28 @@ Links to other documentation:
 ## v0.12.x: WIP (performance)
 
 To Document:
+* Explicitly document data model?
 * TestResult.suite signature change
 * TestResult.pass signature change
 * TestResult.fail signature change
 * TestResult.skip signature change
 * TestResult.timeout signature change
 * Add TestSuiteResult.beforeAll & afterAll
+* Add TestCaseResult.beforeEach & afterEach
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (change name of onTestCaseComplete? To onProgress maybe?)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
+* Change in behavior: Runs all afterAll() blocks even if one fails 
+* Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
+* Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name)
 
 TO DO:
-* Fix beforeAll/afterAll failure reporting; currently notifies, but doesn't show up in test summary
-* Decide how to report on before/after all/each failures (all currently gets reported as a test, but only when it fails; each overrides actual test result)
-
+* Ensure beforeEach() / afterEach() failures, timeouts, and skips are rendered correctly (should render the name of the test that failed, but then list each before/after that failed)
+* Fix public _beforeEach/_afterEach in TestCaseResult
+* Fix public _status in TestCaseResult and duplication of renderStatusAsSingleWord() in renderAsSingleLines()
+* before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
+* Factor out TestSuiteResult --> TestCaseResult --> RunResult?
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 

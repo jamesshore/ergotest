@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it } from "../util/tests.js";
+import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
@@ -10,11 +10,17 @@ import path from "node:path";
 import { SourceMap } from "../infrastructure/source_map.js";
 
 const headerColor = Colors.brightWhite.bold;
+
 const summaryColor = Colors.brightWhite.dim;
-const failColor = Colors.brightRed;
-const timeoutColor = Colors.purple;
-const skipColor = Colors.cyan;
-const passColor = Colors.green;
+const summaryFailColor = Colors.brightRed;
+const summaryTimeoutColor = Colors.purple;
+const summarySkipColor = Colors.cyan;
+const summaryPassColor = Colors.green;
+
+const testFailColor = Colors.brightRed;
+const testTimeoutColor = Colors.brightPurple;
+const testSkipColor = Colors.brightCyan;
+const testPassColor = Colors.green;
 
 const TEST_RENDERER_PATH = path.resolve(import.meta.dirname, "./test_renderer.js");
 
@@ -38,13 +44,13 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result, 1000),
 				summaryColor("(") +
-				failColor("3 failed") +
+				summaryFailColor("3 failed") +
 				summaryColor("; ") +
-				timeoutColor("4 timed out") +
+				summaryTimeoutColor("4 timed out") +
 				summaryColor("; ") +
-				skipColor("2 skipped") +
+				summarySkipColor("2 skipped") +
 				summaryColor("; ") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor("; ") +
 				summaryColor("125.0ms avg.") +
 				summaryColor(")")
@@ -56,7 +62,7 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result, 1000),
 				summaryColor("(") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor("; ") +
 				summaryColor("1000.0ms avg.") +
 				summaryColor(")")
@@ -68,7 +74,7 @@ export default describe(() => {
 
 			assert.equal(TestRenderer.create().renderSummary(result),
 				summaryColor("(") +
-				passColor("1 passed") +
+				summaryPassColor("1 passed") +
 				summaryColor(")")
 			);
 		});
@@ -110,6 +116,22 @@ export default describe(() => {
 			assert.equal(renderCharacterTest([]), "");
 		});
 
+		it("doesn't render beforeEach() / afterEach() in any circumstance", () => {
+			const result = createPass({
+				name: "my name",
+				beforeEach: [
+					createSkip({ name: "before 1" }),
+					createTimeout({ name: "before 2" }),
+					createPass({ name: "before 3" }),
+				],
+				afterEach: [
+					createSkip({ name: "after 1" }),
+					createFail({ name: "after 2" }),
+					createPass({ name: "after 3" }),
+				],
+			});
+			assert.equal(renderCharacterTest(result), renderCharacterTest(createFail()));
+		});
 	});
 
 
@@ -117,22 +139,22 @@ export default describe(() => {
 
 		it("pass", () => {
 			const result = createPass({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), Colors.green("passed") + " my name");
+			assert.equal(renderSingleLineTest(result), testPassColor("passed") + " my name");
 		});
 
 		it("skip", () => {
 			const result = createSkip({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), Colors.brightCyan("skipped") + " my name");
+			assert.equal(renderSingleLineTest(result), testSkipColor("skipped") + " my name");
 		});
 
 		it("timeout", () => {
 			const result = createTimeout({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), Colors.brightPurple("timeout") + " my name");
+			assert.equal(renderSingleLineTest(result), testTimeoutColor("timeout") + " my name");
 		});
 
 		it("fail", () => {
 			const result = createFail({ name: "my name" });
-			assert.equal(renderSingleLineTest(result), Colors.brightRed("failed") + " my name");
+			assert.equal(renderSingleLineTest(result), testFailColor("failed") + " my name");
 		});
 
 		it("renders multiple results with a line feed between each one", () => {
@@ -151,6 +173,88 @@ export default describe(() => {
 
 		it("renders no results as an empty string", () => {
 			assert.equal(renderSingleLineTest([]), "");
+		});
+
+		describe("beforeEach/afterEach", () => {
+
+			it("doesn't render beforeEach() / afterEach() when they all pass", () => {
+				assert.equal(renderSingleLineTest(createPass({
+					beforeEach: [ createPass() ],
+					afterEach: [ createPass() ],
+				})), renderSingleLineTest(createPass()), "test passes");
+
+				assert.equal(renderSingleLineTest(createFail({
+					beforeEach: [ createPass({ name: "before" }) ],
+					afterEach: [ createPass({ name: "after" }) ],
+				})), renderSingleLineTest(createFail()), "test fails");
+			});
+
+			it("doesn't render beforeEach() / afterEach() when they’re all skipped AND the test is skipped", () => {
+				assert.equal(renderSingleLineTest(createSkip({
+					beforeEach: [ createSkip() ],
+					afterEach: [ createSkip() ],
+				})), renderSingleLineTest(createSkip()));
+			});
+
+			it("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {
+				const result = createPass({
+					name: "my name",
+					beforeEach: [
+						createSkip({ name: "before 1" }),
+						createTimeout({ name: "before 2" }),
+						createPass({ name: "before 3" }),
+					],
+					afterEach: [
+						createSkip({ name: "after 1" }),
+						createFail({ name: "after 2" }),
+						createPass({ name: "after 3" }),
+					],
+				});
+				assert.equal(renderSingleLineTest(result),
+					testFailColor("failed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before 1`
+					+ `\n  ${summaryColor("-->")}  ${testTimeoutColor("timeout")} before 2`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before 3`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after 1`
+					+ `\n  ${summaryColor("-->")}  ${testFailColor("failed")} after 2`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after 3`
+				);
+			});
+
+			it("renders all test detail even if one set of beforeEach or afterEach is passing", () => {
+				assert.equal(renderSingleLineTest(createPass({
+					name: "my name",
+					beforeEach: [
+						createSkip({ name: "before" }),
+					],
+					afterEach: [
+						createPass({ name: "after" }),
+					],
+				})),
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} before`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} after`
+				);
+
+				assert.equal(renderSingleLineTest(createPass({
+					name: "my name",
+					beforeEach: [
+						createPass({ name: "before" }),
+					],
+					afterEach: [
+						createSkip({ name: "after" }),
+					],
+				})),
+					testPassColor("passed") + " my name"
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} the test itself`
+					+ `\n  ${summaryColor("-->")}  ${testPassColor("passed")} before`
+					+ `\n  ${summaryColor("-->")}  ${testSkipColor("skipped")} after`
+				);
+
+			});
+
 		});
 
 	});
@@ -186,6 +290,84 @@ export default describe(() => {
 
 		it("renders no results as an empty string", () => {
 			assert.equal(renderMultiLineTest([]), "");
+		});
+
+		describe("beforeEach/afterEach", () => {
+
+			it("doesn't render passing beforeEach() / afterEach() when they all pass", () => {
+				assert.equal(renderMultiLineTest(createPass({
+					beforeEach: [ createPass() ],
+					afterEach: [ createPass() ],
+				})), renderMultiLineTest(createPass()));
+
+				assert.equal(renderMultiLineTest(createTimeout({
+					beforeEach: [ createPass({ name: "before" }) ],
+					afterEach: [ createPass({ name: "after" }) ],
+				})), renderMultiLineTest(createTimeout()));
+			});
+
+			it("doesn't render beforeEach() / afterEach() when they’re all skipped AND the test is skipped", () => {
+				assert.equal(renderMultiLineTest(createSkip({
+					beforeEach: [ createSkip() ],
+					afterEach: [ createSkip() ],
+				})), renderMultiLineTest(createSkip()));
+			});
+
+			it("renders detailed beforeEach() / afterEach() as well as the test detail when they don't all pass", () => {
+				const after1 = createSkip({ name: "after 1" });
+				const after2 = createFail({ name: "after 2" });
+				const after3 = createPass({ name: "after 3" });
+				const before1 = createSkip({ name: "before 1" });
+				const before2 = createTimeout({ name: "before 2" });
+				const before3 = createPass({ name: "before 3" });
+				const result = createPass({
+					name: "my name",
+					beforeEach: [ before1, before2, before3 ],
+					afterEach: [ after1, after2, after3 ],
+				});
+
+				const renderer = TestRenderer.create();
+				assert.equal(renderMultiLineTest(result),
+					renderer.renderNameOnMultipleLines(result) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 1") + "\n" + renderer.renderNameOnOneLine(before1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 2") + "\n" + renderer.renderNameOnOneLine(before2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 3") + "\n" + renderer.renderNameOnOneLine(before3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 1") + "\n" + renderer.renderNameOnOneLine(after1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 2") + "\n" + renderer.renderNameOnOneLine(after2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 3") + "\n" + renderer.renderNameOnOneLine(after3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ headerColor("«««")
+				);
+			});
+
+			it("renders all test detail even if one set of beforeEach or afterEach is passing", () => {
+				const before = createSkip({ name: "before" });
+				const after = createPass({ name: "after" });
+				const result = createPass({
+					name: "my name",
+					beforeEach: [ before ],
+					afterEach: [ after ],
+				});
+
+				const renderer = TestRenderer.create();
+				assert.equal(renderMultiLineTest(result),
+					renderer.renderNameOnMultipleLines(result) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before") + "\n" + renderer.renderNameOnOneLine(before) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after") + "\n" + renderer.renderNameOnOneLine(after) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ headerColor("«««")
+				);
+			});
 		});
 
 	});
@@ -278,18 +460,21 @@ export default describe(() => {
 		});
 
 		it("renders multiple names", () => {
-			const result = createPass({ name: [ "suite 1", "suite 2", "my name" ]});
-			assert.equal(render(result), headerColor("suite 1 » suite 2\n» my name"));
+			const result = createPass({ name: [ "suite 1", "suite 2", "suite 3", "my name" ]});
+			assert.equal(
+				render(result),
+				headerColor("suite 1") + " » suite 2 » suite 3\n" + headerColor("» ") + headerColor("my name")
+			);
 		});
 
 		it("renders filename and name together", () => {
 			const result = createPass({ filename: "my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file\n» my name"));
+			assert.equal(render(result), headerColor("my_file") + "\n" + headerColor("» ") + headerColor("my name"));
 		});
 
 		it("strips directories from filename", () => {
 			const result = createPass({ filename: "/root/parent/child/my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file\n» my name"));
+			assert.equal(render(result), headerColor("my_file") + "\n" + headerColor("» ") + headerColor("my name"));
 		});
 
 		function render(result: TestCaseResult): string {
@@ -452,6 +637,20 @@ export default describe(() => {
 				Colors.brightRed("my error") + "\n" +
 				"\n" +
 				renderDiff(error)
+			);
+		});
+
+		it("doesn't render diff when assertion doesn't have expected and actual values", () => {
+			const error = new AssertionError({
+				message: "my error",
+			});
+			error.stack = "my stack";
+
+			assert.equal(render({ name: "my name", error }),
+				"my stack\n" +
+				"\n" +
+				Colors.brightWhite("my name »\n") +
+				Colors.brightRed("my error")
 			);
 		});
 
@@ -702,54 +901,70 @@ function createSuite({
 
 function createPass({
 	name = [],
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = TestMark.none,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.pass(name, { filename, mark });
+	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createFail({
 	name = [],
 	error = new Error("irrelevant error"),
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = TestMark.none,
 	renderError = undefined,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	error?: unknown,
 	filename?: string,
 	mark?: TestMarkValue,
 	renderError?: RenderErrorFn,
 } = {}): TestCaseResult {
-	return TestResult.fail(name, error, { renderError, filename, mark });
+	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
 }
 
 function createSkip({
 	name = [],
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = TestMark.none,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.skip(name, { filename, mark });
+	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
 }
 
 function createTimeout({
 	name = [],
 	timeout = 42,
+	beforeEach = undefined,
+	afterEach = undefined,
 	filename = undefined,
 	mark = TestMark.none,
 }: {
 	name?: string | string[],
+	beforeEach?: TestCaseResult[],
+	afterEach?: TestCaseResult[],
 	timeout?: number,
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}): TestCaseResult {
-	return TestResult.timeout(name, timeout, { filename, mark });
+	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
 }

@@ -30,7 +30,7 @@ const summaryColor = Colors.brightWhite.dim;
 export function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
 	ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
 
-	const nameFoo = normalizeName(name).pop();
+	const finalName = normalizeName(name).pop();
 
 	let renderedError;
 	if (error instanceof Error && error?.stack !== undefined) {
@@ -38,7 +38,7 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
 		if (error.message !== undefined && error.message !== "") {
 			renderedError +=
 				"\n\n" +
-				highlightColor(`${nameFoo} »\n`) +
+				highlightColor(`${finalName} »\n`) +
 				errorMessageColor(`${error.message}`);
 		}
 	}
@@ -49,7 +49,7 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
 		renderedError = errorMessageColor(util.inspect(error));
 	}
 
-	const diff = (error instanceof AssertionError) ?
+	const diff = (error instanceof AssertionError && (error.expected !== undefined || error.actual !== undefined)) ?
 		"\n\n" + renderDiff(error) :
 		"";
 
@@ -199,12 +199,26 @@ export class TestRenderer {
 	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
-		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
-			const status = this.renderStatusAsSingleWord(testResult);
-			const name = this.renderNameOnOneLine(testResult);
+		return render(this, testCaseResults).join("\n");
 
-			return `${status} ${name}`;
-		});
+		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[]): string[] {
+			const str = self.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
+				const status = self.renderStatusAsSingleWord(testResult);
+				const name = self.renderNameOnOneLine(testResult);
+
+				let testDetail = "";
+				let beforeAfter = "";
+				if (showTestDetail(testResult)) {
+					const detailSeparator = `\n  ${summaryColor("-->")}  `;
+					const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+					testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
+					beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
+				}
+
+				return `${status} ${name}${testDetail}${beforeAfter}`;
+			});
+			return str.split("\n");
+		}
 	}
 
 	/**
@@ -213,12 +227,34 @@ export class TestRenderer {
 	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
-			const name = this.renderNameOnMultipleLines(testResult);
-			const status = this.renderStatusWithMultiLineDetails(testResult);
+		return render(this, testCaseResults, "\n\n\n");
 
-			return `${name}\n\n${status}`;
-		});
+		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[], separator: string): string {
+			return self.#renderMultipleResults(testCaseResults, separator, TestCaseResult, (testResult: TestCaseResult) => {
+				const name = self.renderNameOnMultipleLines(testResult);
+
+				if (showTestDetail(testResult)) {
+					return renderDetail(self, testResult);
+				}
+				else {
+					const status = self.renderStatusWithMultiLineDetails(testResult);
+					return `${name}\n\n${status}`;
+				}
+			});
+		}
+
+		function renderDetail(self: TestRenderer, testResult: TestCaseResult): string {
+			const chevrons = headerColor(`»»» `);
+			const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+			const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult: TestCaseResult) => {
+				const status = self.renderStatusWithMultiLineDetails(detailResult);
+				const finalName = normalizeName(detailResult.name).pop() as string;
+				return chevrons + headerColor(finalName) + `\n${self.renderNameOnOneLine(detailResult)}\n\n${status}`;
+			});
+			const test = `\n\n${chevrons}${headerColor("the test itself")}\n`
+				+ `${self.renderNameOnOneLine(testResult)}\n\n${self.renderStatusWithMultiLineDetails(testResult)}`;
+			return `${(self.renderNameOnMultipleLines(testResult))}${beforeAfter}${test}\n\n${headerColor("«««")}`;
+		}
 	}
 
 	/**
@@ -262,10 +298,14 @@ export class TestRenderer {
 
 		const suites = name.slice(0, name.length - 1);
 		const test = name[name.length - 1];
+
 		if (testResult.filename !== undefined) suites.unshift(path.basename(testResult.filename));
 
-		const suitesName = suites.length > 0 ? suites.join(" » ") + "\n» " : "";
-		return headerColor(suitesName + test);
+		const suitesName = suites.length > 0
+			? headerColor(suites[0]) + suites.slice(1).map(name => ` » ${name}`).join("") + "\n" + headerColor("» ")
+			: "";
+
+		return suitesName + headerColor(test);
 	}
 
 	/**
@@ -276,10 +316,10 @@ export class TestRenderer {
 	}
 
 	renderStatusWithMultiLineDetails(testCaseResult: TestCaseResult): string {
-		switch (testCaseResult.status) {
+		switch (testCaseResult._status) {
 			case TestStatus.pass:
 			case TestStatus.skip:
-				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
+				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult._status];
 			case TestStatus.fail:
 				return (typeof testCaseResult.errorRender === "string") ?
 					testCaseResult.errorRender :
@@ -287,7 +327,7 @@ export class TestRenderer {
 			case TestStatus.timeout:
 				return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
 			default:
-				throw new Error(`Unrecognized test result status: ${testCaseResult.status}`);
+				throw new Error(`Unrecognized test result status: ${testCaseResult._status}`);
 		}
 	}
 
@@ -321,6 +361,14 @@ function normalizeNameOld(testResult: TestResult) {
 	return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 }
 
-function normalizeName(name: string[]) {
+function normalizeName(name: string[]): string[] {
 	return name.length === 0 ? [ "(no name)" ] : [ ...name ];
+}
+
+function showTestDetail(testResult: TestCaseResult) {
+	const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+	const allBeforeAfterPass = beforeAfter.every(result => result.status === TestStatus.pass);
+	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
+
+	return !(allBeforeAfterPass || (allBeforeAfterSkipped && testResult._status === TestStatus.skip));
 }

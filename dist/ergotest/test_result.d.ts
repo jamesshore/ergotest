@@ -37,6 +37,8 @@ export interface SerializedTestCaseResult {
     errorMessage?: string;
     errorRender?: unknown;
     timeout?: number;
+    beforeEach: SerializedTestCaseResult[];
+    afterEach: SerializedTestCaseResult[];
 }
 export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
 /**
@@ -62,11 +64,15 @@ export declare abstract class TestResult {
     /**
      * Create a TestResult for a test that passed.
      * @param {string|string[]} name The name of the test. Can be a list of names.
+     * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+     * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
      * @param {string} [options.filename] The file that contained this test (optional).
      * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static pass(name: string | string[], { filename, mark, }?: {
+    static pass(name: string | string[], { beforeEach, afterEach, filename, mark, }?: {
+        beforeEach?: TestCaseResult[];
+        afterEach?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     }): TestCaseResult;
@@ -76,24 +82,32 @@ export declare abstract class TestResult {
      * @param {unknown} error The error that occurred.
      * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
      *   The function to use to render the error into a string (defaults to {@link renderError})
+ *   @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+     * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
      * @param {string} [options.filename] The file that contained this test (optional).
      * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      *   function will be called and the results put into {@link errorRender}.
      * @returns {TestCaseResult} The result.
      */
-    static fail(name: string | string[], error: unknown, { renderError, filename, mark, }?: {
+    static fail(name: string | string[], error: unknown, { renderError, beforeEach, afterEach, filename, mark, }?: {
         renderError?: RenderErrorFn;
+        beforeEach?: TestCaseResult[];
+        afterEach?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     }): TestCaseResult;
     /**
      * Create a TestResult for a test that was skipped.
      * @param {string|string[]} name The name of the test. Can be a list of names.
+     * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+     * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
      * @param {string} [options.filename] The file that contained this test (optional).
      * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static skip(name: string | string[], { filename, mark, }?: {
+    static skip(name: string | string[], { beforeEach, afterEach, filename, mark, }?: {
+        beforeEach?: TestCaseResult[];
+        afterEach?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     }): TestCaseResult;
@@ -101,11 +115,15 @@ export declare abstract class TestResult {
      * Create a TestResult for a test that timed out.
      * @param {string|string[]} name The name of the test. Can be a list of names.
      * @param {number} timeout The length of the timeout.
+     * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+     * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
      * @param {string} [options.filename] The file that contained this test (optional).
      * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
      * @returns {TestCaseResult} The result.
      */
-    static timeout(name: string | string[], timeout: number, { filename, mark, }?: {
+    static timeout(name: string | string[], timeout: number, { beforeEach, afterEach, filename, mark, }?: {
+        beforeEach?: TestCaseResult[];
+        afterEach?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     }): TestCaseResult;
@@ -187,13 +205,13 @@ export declare class TestSuiteResult extends TestResult {
      */
     get tests(): TestResult[];
     /**
-     * @returns { TestResult[] } The beforeAll() blocks ran for this suite.
+     * @returns { TestCaseResult[] } The beforeAll() blocks for this suite.
      */
-    get beforeAll(): TestResult[];
+    get beforeAll(): TestCaseResult[];
     /**
-     * @returns { TestResult[] } The afterAll() blocks ran for this suite.
+     * @returns { TestCaseResult[] } The afterAll() blocks for this suite.
      */
-    get afterAll(): TestResult[];
+    get afterAll(): TestCaseResult[];
     /**
      * Convert this suite to a nicely-formatted string. The string describes the tests that have marks (such as .only)
      * and provides details about the tests that have failed or timed out. It doesn't provide any details about the tests
@@ -255,18 +273,22 @@ export declare class TestCaseResult extends TestResult {
     static deserialize(serializedResult: SerializedTestCaseResult): TestCaseResult;
     private _name;
     private _filename?;
-    private _status;
+    _beforeEach: TestCaseResult[];
+    _afterEach: TestCaseResult[];
+    _status: TestStatusValue;
     private _mark;
     private _errorMessage?;
     private _errorRender?;
     private _timeout?;
     /** Internal use only. (Use {@link TestResult} factory methods instead.) */
-    constructor({ name, status, errorMessage, errorRender, timeout, filename, mark, }: {
+    constructor({ name, status, errorMessage, errorRender, timeout, beforeEach, afterEach, filename, mark, }: {
         name: string[];
         status: TestStatusValue;
         errorMessage?: string;
         errorRender?: unknown;
         timeout?: number;
+        beforeEach?: TestCaseResult[];
+        afterEach?: TestCaseResult[];
         filename?: string;
         mark?: TestMarkValue;
     });
@@ -280,6 +302,14 @@ export declare class TestCaseResult extends TestResult {
      * @return { TestMark } Whether the test was explicitly marked with `.skip`, `.only`, or not at all.
      */
     get mark(): TestMarkValue;
+    /**
+     * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
+     */
+    get beforeEach(): TestCaseResult[];
+    /**
+     * @returns { TestCaseResult[] } The afterEach() blocks for this test.
+     */
+    get afterEach(): TestCaseResult[];
     /**
      * @returns {string} A short description of the reason this test failed. If the error is an Error instance, it's
      *   equal to the error's `message` property. Otherwise, the error is converted to a string using `util.inspect()`.
