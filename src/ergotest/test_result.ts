@@ -135,7 +135,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		return new TestCaseResult({ name, status: TestStatus.pass, beforeEach, afterEach, filename, mark });
+		const it = new RunResult({ status: TestStatus.pass });
+		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -189,8 +190,8 @@ export abstract class TestResult {
 
 		const errorRender = renderError(name, error, mark ?? TestMark.none, filename);
 
-		return new TestCaseResult(
-			{ name, status: TestStatus.fail, errorMessage, errorRender, beforeEach, afterEach, filename, mark }
+		const it = new RunResult({ status: TestStatus.fail, errorMessage, errorRender });
+		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark }
 		);
 	}
 
@@ -228,7 +229,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		return new TestCaseResult({ name, status: TestStatus.skip, beforeEach, afterEach, filename, mark });
+		const it = new RunResult({ status: TestStatus.skip });
+		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -268,7 +270,8 @@ export abstract class TestResult {
 		]);
 		
 		if (!Array.isArray(name)) name = [ name ];
-		return new TestCaseResult({ name, status: TestStatus.timeout, timeout, beforeEach, afterEach, filename, mark });
+		const it = new RunResult({ status: TestStatus.timeout, timeout });
+		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -609,7 +612,7 @@ export class TestCaseResult extends TestResult {
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
-	 * @param {object} serializedTestResult The serialized test result.
+	 * @param {object} serializedResult The serialized test result.
 	 * @returns {TestCaseResult} The result object.
 	 * @see TestResult#deserialize
 	 */
@@ -633,7 +636,8 @@ export class TestCaseResult extends TestResult {
 		return new TestCaseResult({
 			...serializedResult,
 			beforeEach: deserializedBeforeEach,
-			afterEach: deserializedAfterEach
+			afterEach: deserializedAfterEach,
+			it: new RunResult(serializedResult),
 		});
 	}
 
@@ -648,22 +652,16 @@ export class TestCaseResult extends TestResult {
 	constructor(
 		{
 			name,
-			status,
-			errorMessage,
-			errorRender,
-			timeout,
 			beforeEach = [],
 			afterEach = [],
+			it,
 			filename,
 			mark,
 		}: {
 			name: string[],
-			status: TestStatusValue,
-			errorMessage?: string,
-			errorRender?: unknown,
-			timeout?: number,
 			beforeEach?: TestCaseResult[],
 			afterEach?: TestCaseResult[],
+			it: RunResult,
 			filename?: string,
 			mark?: TestMarkValue
 		},
@@ -674,7 +672,7 @@ export class TestCaseResult extends TestResult {
 		this._mark = mark ?? TestMark.none;
 		this._beforeEach = beforeEach;
 		this._afterEach = afterEach;
-		this._it = new RunResult(status, errorMessage, errorRender, timeout);
+		this._it = it;
 	}
 
 	// TODO: Deleteme
@@ -910,7 +908,17 @@ class RunResult {
 	/**
 	 * @private
 	 */
-	constructor(status: TestStatusValue, errorMessage?: string, errorRender?: unknown, timeout?: number) {
+	constructor({
+		status,
+		errorMessage,
+		errorRender,
+		timeout,
+	}: {
+		status: TestStatusValue,
+		errorMessage?: string,
+		errorRender?: unknown,
+		timeout?: number
+	}) {
 		this._status = status;
 		this._errorMessage = errorMessage;
 		this._errorRender = errorRender;
