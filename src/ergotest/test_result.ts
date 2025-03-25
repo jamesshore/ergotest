@@ -135,7 +135,7 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, filename, status: TestStatus.pass });
+		const it = RunResult.pass({ name, filename });
 		return new TestCaseResult({ beforeEach, afterEach, it, mark });
 	}
 
@@ -911,6 +911,27 @@ class RunResult {
 	private readonly _timeout?: number;
 
 	/**
+	 * Create a RunResult for a test function that completed normally.
+	 * @param {string|string[]} options.name The name of the test function. Can be a list of names.
+	 * @param {string} [options.filename] The file that contained this test function (optional).
+	 * @returns {RunResult} The result.
+	 */
+	static pass({
+		name,
+		filename,
+	}: {
+		name: string | string[],
+		filename?: string,
+	}): RunResult {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ String, Array ],
+			filename: [ undefined, String ],
+		}]]);
+
+		return new RunResult({ name, filename, status: TestStatus.pass });
+	}
+
+	/**
 	 * @private
 	 */
 	constructor({
@@ -921,14 +942,14 @@ class RunResult {
 		errorRender,
 		timeout,
 	}: {
-		name: string[],
+		name: string | string[],
 		filename?: string,
 		status: TestStatusValue,
 		errorMessage?: string,
 		errorRender?: unknown,
 		timeout?: number
 	}) {
-		this._name = name;
+		this._name = Array.isArray(name) ? name : [ name ];
 		this._filename = filename;
 		this._status = status;
 		this._errorMessage = errorMessage;
