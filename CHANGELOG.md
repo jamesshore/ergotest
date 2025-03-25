@@ -36,6 +36,7 @@ TO DO:
   * NEXT: Move createPass() etc. factories to RunResult
   * THEN: Modify TestSuite to return RunResult when running test function rather than TestCaseResult
   * THEN: Introduce TestCaseResult.testRun or .test or .it accessor?
+* Check that stack trace highlighting works with beforeEach etc.
 * Serialize/deserialize RunResult
 * Fix public _beforeEach/_afterEach in TestCaseResult
 * Fix public _status in TestCaseResult and duplication of renderStatusAsSingleWord() in renderAsSingleLines()

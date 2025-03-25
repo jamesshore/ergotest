@@ -135,8 +135,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, status: TestStatus.pass });
-		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, filename, status: TestStatus.pass });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark });
 	}
 
 	/**
@@ -190,8 +190,8 @@ export abstract class TestResult {
 
 		const errorRender = renderError(name, error, mark ?? TestMark.none, filename);
 
-		const it = new RunResult({ name, status: TestStatus.fail, errorMessage, errorRender });
-		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark }
+		const it = new RunResult({ name, filename, status: TestStatus.fail, errorMessage, errorRender });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark }
 		);
 	}
 
@@ -229,8 +229,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, status: TestStatus.skip });
-		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, filename, status: TestStatus.skip });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark });
 	}
 
 	/**
@@ -270,8 +270,8 @@ export abstract class TestResult {
 		]);
 		
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, status: TestStatus.timeout, timeout });
-		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, filename, status: TestStatus.timeout, timeout });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark });
 	}
 
 	/**
@@ -299,7 +299,7 @@ export abstract class TestResult {
 	abstract get name(): string[];
 
 	/**
-	 * @returns {string | undefined} The file that contained the test (or suite), if any.
+	 * @returns {string | undefined} The file that contained the test (or suite), if known.
 	 */
 	abstract get filename(): string | undefined;
 
@@ -393,7 +393,7 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
-	 * @returns {string | undefined} The file that contained the suite, if any.
+	 * @returns {string | undefined} The file that contained the suite, if known.
 	 */
 	get filename(): string | undefined {
 		return this._filename;
@@ -645,7 +645,6 @@ export class TestCaseResult extends TestResult {
 		});
 	}
 
-	private readonly _filename?: string;
 	private readonly _mark: TestMarkValue;
 	public readonly _beforeEach: TestCaseResult[];
 	public readonly _afterEach: TestCaseResult[];
@@ -657,18 +656,15 @@ export class TestCaseResult extends TestResult {
 			beforeEach = [],
 			afterEach = [],
 			it,
-			filename,
 			mark,
 		}: {
 			beforeEach?: TestCaseResult[],
 			afterEach?: TestCaseResult[],
 			it: RunResult,
-			filename?: string,
 			mark?: TestMarkValue
 		},
 	) {
 		super();
-		this._filename = filename;
 		this._mark = mark ?? TestMark.none;
 		this._beforeEach = beforeEach;
 		this._afterEach = afterEach;
@@ -689,10 +685,10 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {string | undefined} The file that contained the test, if any.
+	 * @returns {string | undefined} The file that contained the test, if known.
 	 */
 	get filename(): string | undefined {
-		return this._filename;
+		return this._it.filename;
 	}
 
 	/**
@@ -866,7 +862,7 @@ export class TestCaseResult extends TestResult {
 			type: "TestCaseResult",
 			name: this._it.name,
 			mark: this._mark,
-			filename: this._filename,
+			filename: this._it.filename,
 			status: this._it.status,
 			beforeEach: this._beforeEach.map(result => result.serialize()),
 			afterEach: this._afterEach.map(result => result.serialize()),
@@ -908,6 +904,7 @@ export class TestCaseResult extends TestResult {
 class RunResult {
 
 	private readonly _name: string[];
+	private readonly _filename?: string;
 	private readonly _status: TestStatusValue;
 	private readonly _errorMessage?: string;
 	private readonly _errorRender?: unknown;
@@ -918,18 +915,21 @@ class RunResult {
 	 */
 	constructor({
 		name,
+		filename,
 		status,
 		errorMessage,
 		errorRender,
 		timeout,
 	}: {
 		name: string[],
+		filename?: string,
 		status: TestStatusValue,
 		errorMessage?: string,
 		errorRender?: unknown,
 		timeout?: number
 	}) {
 		this._name = name;
+		this._filename = filename;
 		this._status = status;
 		this._errorMessage = errorMessage;
 		this._errorRender = errorRender;
@@ -942,6 +942,13 @@ class RunResult {
 	 */
 	get name(): string[] {
 		return this._name;
+	}
+
+	/**
+	 * @returns {string | undefined} The file that contained the test function, if known.
+	 */
+	get filename(): string | undefined {
+		return this._filename;
 	}
 
 	/**
