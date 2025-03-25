@@ -135,8 +135,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ status: TestStatus.pass });
-		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, status: TestStatus.pass });
+		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -190,8 +190,8 @@ export abstract class TestResult {
 
 		const errorRender = renderError(name, error, mark ?? TestMark.none, filename);
 
-		const it = new RunResult({ status: TestStatus.fail, errorMessage, errorRender });
-		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark }
+		const it = new RunResult({ name, status: TestStatus.fail, errorMessage, errorRender });
+		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark }
 		);
 	}
 
@@ -229,8 +229,8 @@ export abstract class TestResult {
 		]);
 
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ status: TestStatus.skip });
-		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, status: TestStatus.skip });
+		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -270,8 +270,8 @@ export abstract class TestResult {
 		]);
 		
 		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ status: TestStatus.timeout, timeout });
-		return new TestCaseResult({ name, beforeEach, afterEach, it, filename, mark });
+		const it = new RunResult({ name, status: TestStatus.timeout, timeout });
+		return new TestCaseResult({ beforeEach, afterEach, it, filename, mark });
 	}
 
 	/**
@@ -293,15 +293,15 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * @returns {string | undefined} The file that contained the test (or suite), if any.
-	 */
-	abstract get filename(): string | undefined;
-
-	/**
 	 * @returns {string []} The name of the test (or suite), and all enclosing suites, with the outermost suite first.
 	 *   Does not include the file name.
 	 */
 	abstract get name(): string[];
+
+	/**
+	 * @returns {string | undefined} The file that contained the test (or suite), if any.
+	 */
+	abstract get filename(): string | undefined;
 
 	/**
 	 * @return { TestMark } Whether the test (or suite) was explicitly marked with `.skip`, `.only`, or not at all.
@@ -384,6 +384,10 @@ export class TestSuiteResult extends TestResult {
 		this._filename = filename;
 	}
 
+	/**
+	 * @returns {string []} The name of the suite, and all enclosing suites, with the outermost suite first.
+	 *   Does not include the file name.
+	 */
 	get name(): string[] {
 		return this._name;
 	}
@@ -641,7 +645,6 @@ export class TestCaseResult extends TestResult {
 		});
 	}
 
-	private readonly _name: string[];
 	private readonly _filename?: string;
 	private readonly _mark: TestMarkValue;
 	public readonly _beforeEach: TestCaseResult[];
@@ -651,14 +654,12 @@ export class TestCaseResult extends TestResult {
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(
 		{
-			name,
 			beforeEach = [],
 			afterEach = [],
 			it,
 			filename,
 			mark,
 		}: {
-			name: string[],
 			beforeEach?: TestCaseResult[],
 			afterEach?: TestCaseResult[],
 			it: RunResult,
@@ -667,7 +668,6 @@ export class TestCaseResult extends TestResult {
 		},
 	) {
 		super();
-		this._name = name;
 		this._filename = filename;
 		this._mark = mark ?? TestMark.none;
 		this._beforeEach = beforeEach;
@@ -680,12 +680,19 @@ export class TestCaseResult extends TestResult {
 		return this._it.status;
 	}
 
-	get filename(): string | undefined {
-		return this._filename;
+	/**
+	 * @returns {string []} The name of the test, and all enclosing suites, with the outermost suite first.
+	 *   Does not include the file name.
+	 */
+	get name(): string[] {
+		return this._it.name;
 	}
 
-	get name(): string[] {
-		return this._name;
+	/**
+	 * @returns {string | undefined} The file that contained the test, if any.
+	 */
+	get filename(): string | undefined {
+		return this._filename;
 	}
 
 	/**
@@ -857,7 +864,7 @@ export class TestCaseResult extends TestResult {
 
 		const result: SerializedTestCaseResult = {
 			type: "TestCaseResult",
-			name: this._name,
+			name: this._it.name,
 			mark: this._mark,
 			filename: this._filename,
 			status: this._it.status,
@@ -878,7 +885,7 @@ export class TestCaseResult extends TestResult {
 		if (!(that instanceof TestCaseResult)) return false;
 		if (this._it.status !== that._it.status) return false;
 
-		const sameName = util.isDeepStrictEqual(this._name, that._name);
+		const sameName = util.isDeepStrictEqual(this._it.name, that._it.name);
 
 		const sameError = this._it.status !== TestStatus.fail || this._it.errorMessage === that._it.errorMessage;
 		const sameTimeout = this._it.status !== TestStatus.timeout || this._it.timeout === that._it.timeout;
@@ -900,6 +907,7 @@ export class TestCaseResult extends TestResult {
  */
 class RunResult {
 
+	private readonly _name: string[];
 	private readonly _status: TestStatusValue;
 	private readonly _errorMessage?: string;
 	private readonly _errorRender?: unknown;
@@ -909,20 +917,31 @@ class RunResult {
 	 * @private
 	 */
 	constructor({
+		name,
 		status,
 		errorMessage,
 		errorRender,
 		timeout,
 	}: {
+		name: string[],
 		status: TestStatusValue,
 		errorMessage?: string,
 		errorRender?: unknown,
 		timeout?: number
 	}) {
+		this._name = name;
 		this._status = status;
 		this._errorMessage = errorMessage;
 		this._errorRender = errorRender;
 		this._timeout = timeout;
+	}
+
+	/**
+	 * @returns {string []} The name of the test function, and all enclosing suites, with the outermost suite first.
+	 *   Does not include the file name.
+	 */
+	get name(): string[] {
+		return this._name;
 	}
 
 	/**
