@@ -101,6 +101,25 @@ export abstract class TestResult {
 		return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
 	}
 
+	static testCase({
+		name,
+		mark,
+		beforeEach = [],
+		afterEach = [],
+	}: {
+		name: string | string[],
+		mark: TestMarkValue
+		beforeEach?: TestCaseResult[],
+		afterEach?: TestCaseResult[],
+	}) {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ String, Array ],
+			mark: [ String ],
+			beforeEach: [ undefined, Array ],
+			afterEach: [ undefined, Array ],
+		}]]);
+	}
+
 	/**
 	 * Create a TestResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.

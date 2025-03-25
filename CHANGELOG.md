@@ -15,14 +15,16 @@ Links to other documentation:
 
 To Document:
 * Explicitly document data model?
+* Add TestResult.testCase
 * TestResult.suite signature change
-* TestResult.pass signature change
-* TestResult.fail signature change
-* TestResult.skip signature change
-* TestResult.timeout signature change
+* TestResult.pass signature change and move to RunResult
+* TestResult.fail signature change and move to RunResult
+* TestResult.skip signature change and move to RunResult
+* TestResult.timeout signature change and move to RunResult
 * Add TestSuiteResult.beforeAll & afterAll
 * Add TestCaseResult.beforeEach & afterEach
 * Add RunResult
+* 
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
@@ -38,6 +40,7 @@ TO DO:
   * THEN: Modify TestSuite to return RunResult when running test function rather than TestCaseResult
   * THEN: Introduce TestCaseResult.testRun or .test or .it accessor?
 * Check that stack trace highlighting works with beforeEach etc.
+* Modify TestResult.suite() to match signature of RunResult factory methods
 * Serialize/deserialize RunResult
 * Fix public _beforeEach/_afterEach in TestCaseResult
 * Fix public _status in TestCaseResult and duplication of renderStatusAsSingleWord() in renderAsSingleLines()
