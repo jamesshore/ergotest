@@ -43,15 +43,20 @@ export interface SerializedTestSuiteResult {
 
 export interface SerializedTestCaseResult {
 	type: "TestCaseResult";
-	name: string[];
 	mark: TestMarkValue;
+	beforeEach: RunResult[];
+	afterEach: RunResult[];
+	it: SerializedRunResult;
+}
+
+export interface SerializedRunResult {
+	type: "RunResult";
+	name: string[];
 	filename?: string;
 	status: TestStatusValue;
 	errorMessage?: string;
 	errorRender?: unknown;
 	timeout?: number;
-	beforeEach: SerializedTestCaseResult[];
-	afterEach: SerializedTestCaseResult[];
 }
 
 export type RenderErrorFn = (names: string[], error: unknown, filename?: string) => unknown;
@@ -469,28 +474,23 @@ export class TestCaseResult extends TestResult {
 	 * @returns {TestCaseResult} The result object.
 	 * @see TestResult#deserialize
 	 */
-	static deserialize(serializedResult: SerializedTestCaseResult): TestCaseResult {
+	static deserialize({ mark, beforeEach, afterEach, it }: SerializedTestCaseResult): TestCaseResult {
 		ensure.signature(arguments, [{
 			type: String,
-			name: Array,
 			mark: String,
-			filename: [ undefined, String ],
-			status: String,
-			errorMessage: [ undefined, String ],
-			errorRender: ensure.ANY_TYPE,
-			timeout: [ undefined, Number ],
 			beforeEach: [ undefined, Array ],
 			afterEach: [ undefined, Array ],
+			it: Object,
 		}], [ "serialized TestCaseResult" ]);
 
-		const deserializedBeforeEach = serializedResult.beforeEach.map(test => TestCaseResult.deserialize(test));
-		const deserializedAfterEach = serializedResult.afterEach.map(test => TestCaseResult.deserialize(test));
+		const deserializedBeforeEach = beforeEach.map(each => RunResult.deserialize(each));
+		const deserializedAfterEach = afterEach.map(each => RunResult.deserialize(each));
 
 		return new TestCaseResult({
-			...serializedResult,
+			mark,
 			beforeEach: deserializedBeforeEach,
 			afterEach: deserializedAfterEach,
-			it: new RunResult(serializedResult),
+			it: RunResult.deserialize(it),
 		});
 	}
 
@@ -515,16 +515,8 @@ export class TestCaseResult extends TestResult {
 	) {
 		super();
 		this._mark = mark ?? TestMark.none;
-		this._beforeEachInternal = beforeEach.map(result => {
-			if (result instanceof RunResult) return result;
-
-			return new RunResult(result.serialize());
-		});
-		this._afterEachInternal = afterEach.map(result => {
-			if (result instanceof RunResult) return result;
-
-			return new RunResult(result.serialize());
-		});
+		this._beforeEachInternal = beforeEach;
+		this._afterEachInternal = afterEach;
 		this._it = it;
 	}
 
@@ -537,16 +529,10 @@ export class TestCaseResult extends TestResult {
 	get _beforeEach(): TestCaseResult[] {
 		return this._beforeEachInternal.map(result => new TestCaseResult({ it: result }));
 	}
-	set _beforeEach(beforeEach: TestCaseResult[]) {
-		this._beforeEachInternal = beforeEach.map(result => new RunResult(result.serialize()));
-	}
 
 	// TODO: Deleteme
 	get _afterEach(): TestCaseResult[] {
 		return this._afterEachInternal.map(result => new TestCaseResult({ it: result }));
-	}
-	set _afterEach(beforeEach: TestCaseResult[]) {
-		this._afterEachInternal = beforeEach.map(result => new RunResult(result.serialize()));
 	}
 
 	/**
@@ -568,14 +554,14 @@ export class TestCaseResult extends TestResult {
 	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
 	get status(): TestStatusValue {
-		const consolidatedBefore = this._beforeEach.reduce(consolidateTestCase, TestStatus.pass);
-		const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateTestCase, consolidatedBefore);
+		const consolidatedBefore = this._beforeEachInternal.reduce(consolidateRunResult, TestStatus.pass);
+		const consolidatedBeforeAndAfter = this._afterEachInternal.reduce(consolidateRunResult, consolidatedBefore);
 
 		if (consolidatedBeforeAndAfter === TestStatus.pass && this._it.status === TestStatus.skip) return TestStatus.skip;
 		else return consolidateStatus(consolidatedBeforeAndAfter, this._it.status);
 
-		function consolidateTestCase(previousStatus: TestStatusValue, testCaseResult: TestCaseResult) {
-			return consolidateStatus(previousStatus, testCaseResult._it.status);
+		function consolidateRunResult(previousStatus: TestStatusValue, runResult: RunResult) {
+			return consolidateStatus(previousStatus, runResult.status);
 		}
 
 		function consolidateStatus(left: TestStatusValue, right: TestStatusValue) {
@@ -738,23 +724,13 @@ export class TestCaseResult extends TestResult {
 	serialize(): SerializedTestCaseResult {
 		ensure.signature(arguments, []);
 
-		const result: SerializedTestCaseResult = {
+		return {
 			type: "TestCaseResult",
-			name: this._it.name,
 			mark: this._mark,
-			filename: this._it.filename,
-			status: this._it.status,
-			beforeEach: this._beforeEach.map(result => result.serialize()),
-			afterEach: this._afterEach.map(result => result.serialize()),
+			beforeEach: this._beforeEachInternal.map(each => each.serialize()),
+			afterEach: this._afterEachInternal.map(each => each.serialize()),
+			it: this._it.serialize(),
 		};
-		if (this._it.status === TestStatus.fail) {
-			result.errorMessage = this._it.errorMessage;
-			result.errorRender = this._it.errorRender;
-		}
-		if (this._it.status === TestStatus.timeout) {
-			result.timeout = this._it.timeout;
-		}
-		return result;
 	}
 
 	equals(that: TestResult): boolean {
@@ -904,6 +880,26 @@ export class RunResult {
 	}
 
 	/**
+	 * For use by {@link TestRunner}. Converts a serialized run result back into a RunResult instance.
+	 * @param {object} serializedResult The serialized run result.
+	 * @returns {TestRunResult} The result object.
+	 * @see TestResult#deserialize
+	 */
+	static deserialize(serializedResult: SerializedRunResult): RunResult {
+		ensure.signature(arguments, [{
+			type: String,
+			name: Array,
+			filename: [ undefined, String ],
+			status: String,
+			errorMessage: [ undefined, String ],
+			errorRender: ensure.ANY_TYPE,
+			timeout: [ undefined, Number ],
+		}], [ "serialized RunResult" ]);
+
+		return new RunResult(serializedResult);
+	}
+
+	/**
 	 * @private
 	 */
 	constructor({
@@ -980,6 +976,25 @@ export class RunResult {
 	get timeout(): number {
 		ensure.that(this.status === TestStatus.timeout, "Attempted to retrieve timeout from a test that didn't time out");
 		return this._timeout!;
+	}
+
+	/**
+	 * Convert this result into a bare object later deserialization.
+	 * @returns {object} The serialized object.
+	 * @see RunResult.deserialize
+	 */
+	serialize(): SerializedRunResult {
+		ensure.signature(arguments, []);
+
+		return {
+			type: "RunResult",
+			name: this._name,
+			filename: this._filename,
+			status: this._status,
+			errorMessage: this._errorMessage,
+			errorRender: this._errorRender,
+			timeout: this._timeout,
+		};
 	}
 
 }
