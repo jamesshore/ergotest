@@ -28,15 +28,15 @@ export function createPass({
 	mark = undefined,
 }: {
 	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
+	beforeEach?: RunResult[] | TestCaseResult[],
+	afterEach?: RunResult[] | TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
 	return TestResult.testCase({
 		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
+		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
+		afterEach: afterEach.map(each => { return each instanceof RunResult ? each : each.it; }),
 		it: RunResult.pass({ name, filename }),
 	});
 }
@@ -53,15 +53,15 @@ export function createFail({
 	name?: string | string[],
 	error?: string | Error,
 	renderError?: () => string,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
+	beforeEach?: RunResult[] | TestCaseResult[],
+	afterEach?: RunResult[] | TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
 	return TestResult.testCase({
 		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
+		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
+		afterEach: afterEach.map(each => { return each instanceof RunResult ? each : each.it; }),
 		it: RunResult.fail({ name, filename, error, renderError }),
 	});
 }
@@ -74,15 +74,15 @@ export function createSkip({
 	mark = undefined,
 }: {
 	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
+	beforeEach?: RunResult[] | TestCaseResult[],
+	afterEach?: RunResult[] | TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
 	return TestResult.testCase({
 		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
+		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
+		afterEach: afterEach.map(each => { return each instanceof RunResult ? each : each.it; }),
 		it: RunResult.skip({ name, filename }),
 	});
 }
@@ -97,15 +97,15 @@ export function createTimeout({
 }: {
 	name?: string | string[],
 	timeout?: number,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
+	beforeEach?: RunResult[] | TestCaseResult[],
+	afterEach?: RunResult[] | TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
 	return TestResult.testCase({
 		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
+		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
+		afterEach: afterEach.map(each => { return each instanceof RunResult ? each : each.it; }),
 		it: RunResult.timeout({ name, filename, timeout }),
 	});
 }

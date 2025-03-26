@@ -210,7 +210,7 @@ export class TestRenderer {
 				let beforeAfter = "";
 				if (showTestDetail(testResult)) {
 					const detailSeparator = `\n  ${summaryColor("-->")}  `;
-					const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+					const beforeAfterResults = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
 					testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
 					beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
 				}
@@ -245,7 +245,7 @@ export class TestRenderer {
 
 		function renderDetail(self: TestRenderer, testResult: TestCaseResult): string {
 			const chevrons = headerColor(`»»» `);
-			const beforeAfterResults = [ ...testResult.beforeEach, ...testResult.afterEach ];
+			const beforeAfterResults = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
 			const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult: TestCaseResult) => {
 				const status = self.renderStatusWithMultiLineDetails(detailResult);
 				const finalName = normalizeName(detailResult.name).pop() as string;
@@ -366,7 +366,7 @@ function normalizeName(name: string[]): string[] {
 }
 
 function showTestDetail(testResult: TestCaseResult) {
-	const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+	const beforeAfter = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
 	const allBeforeAfterPass = beforeAfter.every(result => result.status === TestStatus.pass);
 	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
 

@@ -526,12 +526,12 @@ export class TestCaseResult extends TestResult {
 	}
 
 	// TODO: Deleteme
-	get _beforeEach(): TestCaseResult[] {
+	get beforeEach_OLD(): TestCaseResult[] {
 		return this._beforeEachInternal.map(result => new TestCaseResult({ it: result }));
 	}
 
 	// TODO: Deleteme
-	get _afterEach(): TestCaseResult[] {
+	get afterEach_OLD(): TestCaseResult[] {
 		return this._afterEachInternal.map(result => new TestCaseResult({ it: result }));
 	}
 
@@ -582,15 +582,15 @@ export class TestCaseResult extends TestResult {
 	/**
 	 * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
 	 */
-	get beforeEach(): TestCaseResult[] {
-		return this._beforeEach;
+	get beforeEach(): RunResult[] {
+		return this._beforeEachInternal;
 	}
 
 	/**
 	 * @returns { TestCaseResult[] } The afterEach() blocks for this test.
 	 */
-	get afterEach(): TestCaseResult[] {
-		return this._afterEach;
+	get afterEach(): RunResult[] {
+		return this._afterEachInternal;
 	}
 
 	/**
