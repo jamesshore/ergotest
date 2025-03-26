@@ -102,18 +102,18 @@ export abstract class TestResult {
 	}
 
 	static testCase({
-		mark,
+		mark = TestMark.none,
 		beforeEach = [],
 		afterEach = [],
 		it,
 	}: {
-		mark: TestMarkValue
+		mark?: TestMarkValue
 		beforeEach?: TestCaseResult[],
 		afterEach?: TestCaseResult[],
 		it: RunResult,
 	}) {
 		ensure.signature(arguments, [[ undefined, {
-			mark: String,
+			mark: [ undefined, String ],
 			beforeEach: [ undefined, Array ],
 			afterEach: [ undefined, Array ],
 			it: RunResult,
