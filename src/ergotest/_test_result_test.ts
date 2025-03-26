@@ -1,10 +1,18 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, beforeEach, describe, it } from "../util/tests.js";
+import {
+	assert,
+	beforeEach,
+	createFail,
+	createPass,
+	createSkip,
+	createSuite,
+	createTimeout,
+	describe,
+	it,
+} from "../util/tests.js";
 import { AssertionError } from "node:assert";
-import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
+import { TestMark, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
-
-const IRRELEVANT_ERROR = new Error("irrelevant error");
 
 export default describe(() => {
 
@@ -939,95 +947,3 @@ export default describe(() => {
 
 });
 
-function createSuite({
-	name = "irrelevant name",
-	tests = [],
-	beforeAll = undefined,
-	afterAll = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	tests?: TestResult[],
-	beforeAll?: TestCaseResult[],
-	afterAll?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.suite(name, tests, { beforeAll, afterAll, filename, mark });
-}
-
-function createPass({
-	name = "irrelevant name",
-	beforeEach = [],
-	afterEach = [],
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.testCase({
-		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
-		it: RunResult.pass({ name, filename })
-	});
-}
-
-function createFail({
-	name = "irrelevant name",
-	error = IRRELEVANT_ERROR,
-	renderError = undefined,
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	error?: string | Error,
-	renderError?: () => string,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
-}
-
-function createSkip({
-	name = "irrelevant name",
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
-}
-
-function createTimeout({
-	name = "irrelevant name",
-	timeout = 42,
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	timeout?: number,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
-}

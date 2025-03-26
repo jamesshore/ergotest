@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, beforeEach } from "../util/tests.js";
+import { assert, describe, it, beforeEach, createSuite, createPass } from "../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -46,13 +46,13 @@ export default describe(() => {
 
 			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
 
-			const expectedResult = createSuite({ children: [
-				createSuite({ filename: TEST_MODULE_PATH, children: [
+			const expectedResult = createSuite({ tests: [
+				createSuite({ filename: TEST_MODULE_PATH, tests: [
 					createPass({ name: "test", filename: TEST_MODULE_PATH })
 				]}),
 			]});
 
-			assert.dotEquals(results, expectedResult);
+			assert.equal(results, expectedResult);
 		});
 
 		it("passes through config", async () => {
@@ -254,33 +254,4 @@ async function createAsync({
 	const runner = new TestRunner(clock);
 
 	return { runner, clock };
-}
-
-function createSuite({
-	name = [],
-	children = [],
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	children?: TestResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.suite(name, children, { filename, mark });
-}
-
-function createPass({
-	name = "irrelevant name",
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.testCase({
-		mark,
-		it: RunResult.pass({ name, filename })
-	});
 }
