@@ -121,7 +121,7 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Create a TestResult for a test that passed.
+	 * Create a RunResult for a test that passed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
 	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
@@ -159,7 +159,7 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Create a TestResult for a test that failed.
+	 * Create a RunResult for a test that failed.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {unknown} error The error that occurred.
 	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
@@ -1016,41 +1016,27 @@ class RunResult {
 	}
 
 	/**
-	 * Create a TestResult for a test that was skipped.
-	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
-	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
+	 * Create a RunResult for a test function that was skipped.
+	 * @param {string|string[]} options.name The name of the test. Can be a list of names.
 	 * @param {string} [options.filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
 	 * @returns {TestCaseResult} The result.
 	 */
 	static skip(
-		name: string | string[],
 		{
-			beforeEach,
-			afterEach,
+			name,
 			filename,
-			mark,
 		}: {
-			beforeEach?: TestCaseResult[],
-			afterEach?: TestCaseResult[],
+			name: string | string[],
 			filename?: string,
-			mark?: TestMarkValue,
-		} = {}
-	): TestCaseResult {
-		ensure.signature(arguments, [
-			[ String, Array ],
-			[ undefined, {
-				beforeEach: [ undefined, Array ],
-				afterEach: [ undefined, Array ],
-				filename: [ undefined, String ],
-				mark: [ undefined, String ]
-			}],
-		]);
+		}
+	): RunResult {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ String, Array ],
+			filename: [ undefined, String ],
+			mark: [ undefined, String ]
+		}]]);
 
-		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, filename, status: TestStatus.skip });
-		return new TestCaseResult({ beforeEach, afterEach, it, mark });
+		return new RunResult({ name, filename, status: TestStatus.skip });
 	}
 
 	/**
