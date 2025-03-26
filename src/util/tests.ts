@@ -79,7 +79,12 @@ export function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.skip({ name, filename }),
+	});
 }
 
 export function createTimeout({
@@ -97,5 +102,10 @@ export function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.timeout({ name, filename, timeout }),
+	});
 }

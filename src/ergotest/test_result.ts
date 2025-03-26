@@ -124,44 +124,6 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Create a TestResult for a test that was skipped.
-	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
-	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
-	 * @param {string} [options.filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
-	 * @returns {TestCaseResult} The result.
-	 */
-	static skip(
-		name: string | string[],
-		{
-			beforeEach,
-			afterEach,
-			filename,
-			mark,
-		}: {
-			beforeEach?: TestCaseResult[],
-			afterEach?: TestCaseResult[],
-			filename?: string,
-			mark?: TestMarkValue,
-		} = {}
-	): TestCaseResult {
-		ensure.signature(arguments, [
-			[ String, Array ],
-			[ undefined, {
-				beforeEach: [ undefined, Array ],
-				afterEach: [ undefined, Array ],
-				filename: [ undefined, String ],
-				mark: [ undefined, String ]
-			}],
-		]);
-
-		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, filename, status: TestStatus.skip });
-		return new TestCaseResult({ beforeEach, afterEach, it, mark });
-	}
-
-	/**
 	 * Create a TestResult for a test that timed out.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {number} timeout The length of the timeout.

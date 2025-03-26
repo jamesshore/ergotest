@@ -1446,10 +1446,10 @@ export default describe(() => {
 			const result = await suite.runAsync();
 			assert.dotEquals(result,
 				createSuite({ mark: TestMark.skip, tests: [
-					TestResult.skip("test 1"),
-					TestResult.skip("test 2"),
+					createSkip({ name: "test 1" }),
+					createSkip({ name: "test 2" }),
 					TestResult.suite([], [
-						TestResult.skip("test 3"),
+						createSkip({ name: "test 3" }),
 					]),
 				]}),
 			);
@@ -1563,8 +1563,8 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(),
 				TestResult.suite([], [
 					TestResult.suite("not .only", [
-						TestResult.skip([ "not .only", "test1" ]),
-						TestResult.skip([ "not .only", "test2" ]),
+						createSkip({ name: [ "not .only", "test1" ] }),
+						createSkip({ name: [ "not .only", "test2" ] }),
 					]),
 					createSuite({ name: ".only", mark: TestMark.only, tests: [
 						createPass({ name: [ ".only", "test3" ] }),
@@ -1635,7 +1635,7 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, tests: [
 					TestResult.suite("not only", [
-						TestResult.skip([ "not only", "test1" ]),
+						createSkip({ name: [ "not only", "test1" ] }),
 					]),
 					createSuite({ name: "only", mark: TestMark.only, tests: [
 						createPass({ name: [ "only", "test2" ] }),
@@ -1691,8 +1691,8 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, tests: [
 					createSuite({ mark: TestMark.skip, tests: [
-						TestResult.skip("test1"),
-						TestResult.skip("test2"),
+						createSkip({ name: "test1" }),
+						createSkip({ name: "test2" }),
 					]}),
 				]}),
 			);
