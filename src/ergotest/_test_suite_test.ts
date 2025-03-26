@@ -1134,7 +1134,7 @@ export default describe(() => {
 
 			assert.dotEquals(await actualPromise,
 				TestResult.suite([], [
-					TestResult.timeout("my test", DEFAULT_TIMEOUT)
+					createTimeout({ name: "my test", timeout: DEFAULT_TIMEOUT })
 				]),
 				"result",
 			);
@@ -1299,7 +1299,7 @@ export default describe(() => {
 				await actualPromise,
 				TestResult.suite([], [
 					createPass({ name: "no timeout" }),
-					TestResult.timeout("timeout", NEW_TIMEOUT),
+					createTimeout({ name: "timeout", timeout: NEW_TIMEOUT }),
 				]),
 			);
 		});
