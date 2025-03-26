@@ -1017,9 +1017,9 @@ class RunResult {
 
 	/**
 	 * Create a RunResult for a test function that was skipped.
-	 * @param {string|string[]} options.name The name of the test. Can be a list of names.
+	 * @param {string|string[]} options.name The name of the test function. Can be a list of names.
 	 * @param {string} [options.filename] The file that contained this test (optional).
-	 * @returns {TestCaseResult} The result.
+	 * @returns {RunResult} The result.
 	 */
 	static skip(
 		{
@@ -1040,44 +1040,30 @@ class RunResult {
 	}
 
 	/**
-	 * Create a TestResult for a test that timed out.
-	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {number} timeout The length of the timeout.
-	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
-	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
+	 * Create a RunResult for a test function that timed out.
+	 * @param {string|string[]} options.name The name of the test function. Can be a list of names.
 	 * @param {string} [options.filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @param {number} options.timeout The length of the timeout (not the actual time taken by the function).
 	 * @returns {TestCaseResult} The result.
 	 */
 	static timeout(
-		name: string | string[],
-		timeout: number,
 		{
-			beforeEach,
-			afterEach,
+			name,
 			filename,
-			mark,
+			timeout,
 		}: {
-			beforeEach?: TestCaseResult[],
-			afterEach?: TestCaseResult[],
+			name: string | string[],
 			filename?: string,
-			mark?: TestMarkValue,
-		} = {},
-	): TestCaseResult {
-		ensure.signature(arguments, [
-			[ String, Array ],
-			Number,
-			[ undefined, {
-				beforeEach: [ undefined, Array ],
-				afterEach: [ undefined, Array ],
-				filename: [ undefined, String ],
-				mark: [ undefined, String ]
-			}],
-		]);
+			timeout: number,
+		},
+	): RunResult {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ String, Array ],
+			filename: [ undefined, String ],
+			timeout: Number,
+		}]]);
 
-		if (!Array.isArray(name)) name = [ name ];
-		const it = new RunResult({ name, filename, status: TestStatus.timeout, timeout });
-		return new TestCaseResult({ beforeEach, afterEach, it, mark });
+		return new RunResult({ name, filename, status: TestStatus.timeout, timeout });
 	}
 
 	/**
