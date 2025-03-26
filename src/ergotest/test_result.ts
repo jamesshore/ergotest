@@ -108,8 +108,8 @@ export abstract class TestResult {
 		it,
 	}: {
 		mark?: TestMarkValue
-		beforeEach?: TestCaseResult[],
-		afterEach?: TestCaseResult[],
+		beforeEach?: RunResult[],
+		afterEach?: RunResult[],
 		it: RunResult,
 	}) {
 		ensure.signature(arguments, [[ undefined, {
@@ -680,8 +680,8 @@ export class TestCaseResult extends TestResult {
 			it,
 			mark,
 		}: {
-			beforeEach?: TestCaseResult[],
-			afterEach?: TestCaseResult[],
+			beforeEach?: RunResult[],
+			afterEach?: RunResult[],
 			it: RunResult,
 			mark?: TestMarkValue
 		},
