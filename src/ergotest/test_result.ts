@@ -665,8 +665,8 @@ export class TestCaseResult extends TestResult {
 	}
 
 	private readonly _mark: TestMarkValue;
-	public readonly _beforeEach: TestCaseResult[];
-	public readonly _afterEach: TestCaseResult[];
+	public _beforeEachInternal: RunResult[];
+	public _afterEachInternal: RunResult[];
 	private readonly _it: RunResult;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
@@ -693,6 +693,22 @@ export class TestCaseResult extends TestResult {
 	// TODO: Deleteme
 	get _status(): TestStatusValue {
 		return this._it.status;
+	}
+
+	// TODO: Deleteme
+	get _beforeEach(): TestCaseResult[] {
+		return this._beforeEachInternal.map(result => new TestCaseResult({ it: result }));
+	}
+	set _beforeEach(beforeEach: TestCaseResult[]) {
+		this._beforeEachInternal = beforeEach.map(result => new RunResult(result.serialize()));
+	}
+
+	// TODO: Deleteme
+	get _afterEach(): TestCaseResult[] {
+		return this._afterEachInternal.map(result => new TestCaseResult({ it: result }));
+	}
+	set _afterEach(beforeEach: TestCaseResult[]) {
+		this._afterEachInternal = beforeEach.map(result => new RunResult(result.serialize()));
 	}
 
 	/**
