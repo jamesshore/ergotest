@@ -21,10 +21,10 @@ To Document:
 * TestResult.fail signature change and move to RunResult
 * TestResult.skip signature change and move to RunResult
 * TestResult.timeout signature change and move to RunResult
+* TestRenderer.renderError() signature change
 * Add TestSuiteResult.beforeAll & afterAll
 * Add TestCaseResult.beforeEach & afterEach
 * Add RunResult
-* 
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll

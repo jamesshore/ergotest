@@ -27,8 +27,8 @@ const summaryColor = Colors.brightWhite.dim;
  * @param {string} [filename] The file that contained the test, if known
  * @return The description
  */
-export function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
-	ensure.signature(arguments, [ Array, ensure.ANY_TYPE, String, [ undefined, String ] ]);
+export function renderError(name: string[], error: unknown, filename?: string) {
+	ensure.signature(arguments, [ Array, ensure.ANY_TYPE, [ undefined, String ] ]);
 
 	const finalName = normalizeName(name).pop();
 

@@ -517,7 +517,7 @@ export default describe(() => {
 		it("renders fail", () => {
 			assert.equal(
 				render(createFail({ error: "my error" })),
-				renderError([ "irrelevant name" ], "my error", TestMark.none, "irrelevant filename"),
+				renderError([ "irrelevant name" ], "my error", "irrelevant filename"),
 			);
 		});
 
@@ -565,7 +565,7 @@ export default describe(() => {
 			});
 			const result = (await suite.runAsync(options)).allTests()[0];
 
-			await assert.equal(result.errorRender, renderError([ "my test" ], "my error", TestMark.none));
+			await assert.equal(result.errorRender, renderError([ "my test" ], "my error"));
 		});
 
 		it("renders error message", () => {
@@ -663,7 +663,7 @@ export default describe(() => {
 		}): string {
 			if (!Array.isArray(name)) name = [ name ];
 
-			return renderError(name, error, TestMark.none, "irrelevant filename");
+			return renderError(name, error, "irrelevant filename");
 		}
 
 	});

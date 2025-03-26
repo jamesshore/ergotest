@@ -54,7 +54,7 @@ export interface SerializedTestCaseResult {
 	afterEach: SerializedTestCaseResult[];
 }
 
-export type RenderErrorFn = (names: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
+export type RenderErrorFn = (names: string[], error: unknown, filename?: string) => unknown;
 
 /**
  * The result of a running a test. Can be a single test case or a suite of nested test results.
@@ -207,7 +207,7 @@ export abstract class TestResult {
 		else if (typeof error === "string") errorMessage = error;
 		else errorMessage = util.inspect(error, { depth: Infinity });
 
-		const errorRender = renderError(name, error, mark ?? TestMark.none, filename);
+		const errorRender = renderError(name, error, filename);
 
 		const it = new RunResult({ name, filename, status: TestStatus.fail, errorMessage, errorRender });
 		return new TestCaseResult({ beforeEach, afterEach, it, mark }
@@ -685,8 +685,16 @@ export class TestCaseResult extends TestResult {
 	) {
 		super();
 		this._mark = mark ?? TestMark.none;
-		this._beforeEach = beforeEach;
-		this._afterEach = afterEach;
+		this._beforeEachInternal = beforeEach.map(result => {
+			if (result instanceof RunResult) return result;
+
+			return new RunResult(result.serialize());
+		});
+		this._afterEachInternal = afterEach.map(result => {
+			if (result instanceof RunResult) return result;
+
+			return new RunResult(result.serialize());
+		});
 		this._it = it;
 	}
 
@@ -964,6 +972,126 @@ class RunResult {
 		}]]);
 
 		return new RunResult({ name, filename, status: TestStatus.pass });
+	}
+
+	/**
+	 * Create a TestResult for a test function that threw an exception.
+	 * @param {string|string[]} options.name The name of the test function. Can be a list of names.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {unknown} options.error The error that occurred.
+	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
+	 *   The function to use to render the error into a string (defaults to {@link renderError})
+	 * @returns {RunResult} The result.
+	 */
+	static fail(
+		{
+			name,
+			filename,
+			error,
+			renderError = renderErrorFn,
+		}: {
+			name: string | string[],
+			filename?: string,
+			error: unknown,
+			renderError?: RenderErrorFn
+		},
+	): RunResult {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ String, Array ],
+			filename: [ undefined, String ],
+			error: ensure.ANY_TYPE,
+			renderError: [ undefined, Function ],
+		}]]);
+
+		if (!Array.isArray(name)) name = [ name ];
+
+		let errorMessage: string;
+		if (error instanceof Error) errorMessage = error.message ?? "";
+		else if (typeof error === "string") errorMessage = error;
+		else errorMessage = util.inspect(error, { depth: Infinity });
+
+		const errorRender = renderError(name, error, filename);
+
+		return new RunResult({ name, filename, status: TestStatus.fail, errorMessage, errorRender });
+	}
+
+	/**
+	 * Create a TestResult for a test that was skipped.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
+	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @returns {TestCaseResult} The result.
+	 */
+	static skip(
+		name: string | string[],
+		{
+			beforeEach,
+			afterEach,
+			filename,
+			mark,
+		}: {
+			beforeEach?: TestCaseResult[],
+			afterEach?: TestCaseResult[],
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {}
+	): TestCaseResult {
+		ensure.signature(arguments, [
+			[ String, Array ],
+			[ undefined, {
+				beforeEach: [ undefined, Array ],
+				afterEach: [ undefined, Array ],
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
+
+		if (!Array.isArray(name)) name = [ name ];
+		const it = new RunResult({ name, filename, status: TestStatus.skip });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark });
+	}
+
+	/**
+	 * Create a TestResult for a test that timed out.
+	 * @param {string|string[]} name The name of the test. Can be a list of names.
+	 * @param {number} timeout The length of the timeout.
+	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
+	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
+	 * @param {string} [options.filename] The file that contained this test (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
+	 * @returns {TestCaseResult} The result.
+	 */
+	static timeout(
+		name: string | string[],
+		timeout: number,
+		{
+			beforeEach,
+			afterEach,
+			filename,
+			mark,
+		}: {
+			beforeEach?: TestCaseResult[],
+			afterEach?: TestCaseResult[],
+			filename?: string,
+			mark?: TestMarkValue,
+		} = {},
+	): TestCaseResult {
+		ensure.signature(arguments, [
+			[ String, Array ],
+			Number,
+			[ undefined, {
+				beforeEach: [ undefined, Array ],
+				afterEach: [ undefined, Array ],
+				filename: [ undefined, String ],
+				mark: [ undefined, String ]
+			}],
+		]);
+
+		if (!Array.isArray(name)) name = [ name ];
+		const it = new RunResult({ name, filename, status: TestStatus.timeout, timeout });
+		return new TestCaseResult({ beforeEach, afterEach, it, mark });
 	}
 
 	/**
