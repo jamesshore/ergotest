@@ -3,7 +3,7 @@
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
 import {
-	RenderErrorFn,
+	RenderErrorFn, RunResult,
 	TestCaseResult,
 	TestMark,
 	TestMarkValue,
@@ -621,17 +621,18 @@ async function runTestFnAsync(
 
 	timeout = testTimeout ?? timeout;
 
-	return await clock.timeoutAsync(timeout, async () => {
+	const it = await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, { beforeEach, filename, mark });
+			return RunResult.pass({ name, filename });
 		}
-		catch (err) {
-			return TestResult.fail(name, err, { filename, mark, renderError });
+		catch (error) {
+			return RunResult.fail({ name, filename, error, renderError });
 		}
 	}, async () => {
-		return await TestResult.timeout(name, timeout, { filename, mark });
+		return await RunResult.timeout({ name, filename, timeout });
 	});
+	return await TestResult.testCase({ mark, it });
 }
 
 function isSuccess(result: TestCaseResult) {

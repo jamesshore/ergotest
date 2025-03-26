@@ -102,22 +102,25 @@ export abstract class TestResult {
 	}
 
 	static testCase({
-		name,
 		mark,
 		beforeEach = [],
 		afterEach = [],
+		it,
 	}: {
-		name: string | string[],
 		mark: TestMarkValue
 		beforeEach?: TestCaseResult[],
 		afterEach?: TestCaseResult[],
+		it: RunResult,
 	}) {
 		ensure.signature(arguments, [[ undefined, {
-			name: [ String, Array ],
-			mark: [ String ],
+			mark: String,
 			beforeEach: [ undefined, Array ],
 			afterEach: [ undefined, Array ],
+			it: RunResult,
 		}]]);
+
+		return new TestCaseResult({ mark, beforeEach, afterEach, it });
+
 	}
 
 	/**
@@ -944,7 +947,7 @@ export class TestCaseResult extends TestResult {
  * The result of running an individual test function, such as beforeAll(), afterAll(), beforeEach(), afterEach(), or
  * it().
  */
-class RunResult {
+export class RunResult {
 
 	private readonly _name: string[];
 	private readonly _filename?: string;
