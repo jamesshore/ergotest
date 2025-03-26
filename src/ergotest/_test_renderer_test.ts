@@ -1,5 +1,15 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
+import {
+	afterEach,
+	assert,
+	beforeEach,
+	createFail,
+	createPass,
+	createSkip,
+	createSuite, createTimeout,
+	describe,
+	it,
+} from "../util/tests.js";
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import {
@@ -37,7 +47,7 @@ export default describe(() => {
 	describe("summary", () => {
 
 		it("renders summary", () => {
-			const result = createSuite({ children: [
+			const result = createSuite({ tests: [
 				createPass(),
 				createSkip(),
 				createSkip(),
@@ -66,7 +76,7 @@ export default describe(() => {
 		});
 
 		it("only renders information for non-zero counts", () => {
-			const result = createSuite({ children: [ createPass() ]});
+			const result = createSuite({ tests: [ createPass() ]});
 
 			assert.equal(TestRenderer.create().renderSummary(result, 1000),
 				summaryColor("(") +
@@ -78,7 +88,7 @@ export default describe(() => {
 		});
 
 		it("leaves out test time if elapsed time not provided", () => {
-			const result = createSuite({ children: [ createPass() ]});
+			const result = createSuite({ tests: [ createPass() ]});
 
 			assert.equal(TestRenderer.create().renderSummary(result),
 				summaryColor("(") +
@@ -403,7 +413,7 @@ export default describe(() => {
 				createPass({ name: "skip 1", mark: TestMark.skip }),
 				createPass({ name: "none 2", mark: TestMark.none }),
 				createPass({ name: "only 3", mark: TestMark.only }),
-				createSuite({ name: "suite only 1", mark: TestMark.only, children: [
+				createSuite({ name: "suite only 1", mark: TestMark.only, tests: [
 					createSkip({ name: "does not look inside suites", mark: TestMark.skip }),
 				]}),
 				createSuite({ name: "suite skip 2", mark: TestMark.skip }),
@@ -531,7 +541,7 @@ export default describe(() => {
 
 		it("renders fail when errorRender isn't a string", () => {
 			const fail = createFail({
-				renderError: () => [ 1, 2, 3 ],
+				renderError: () => [ 1, 2, 3 ] as unknown as string,
 			});
 			assert.equal(render(fail), "[ 1, 2, 3 ]");
 		});
@@ -891,93 +901,4 @@ function renderMultiLineTest(result: TestCaseResult | TestCaseResult[]): string 
 
 function renderSingleLineMark(result: TestResult | TestResult[]): string {
 	return TestRenderer.create().renderMarksAsLines(result);
-}
-
-function createSuite({
-	name = [],
-	children = [],
-	filename = undefined,
-	mark = TestMark.none,
-}: {
-	name?: string | string[],
-	children?: TestResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}): TestSuiteResult {
-	return TestResult.suite(name, children, { filename, mark });
-}
-
-function createPass({
-	name = "irrelevant name",
-	beforeEach = [],
-	afterEach = [],
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.testCase({
-		mark,
-		beforeEach: beforeEach.map(each => each.it),
-		afterEach: afterEach.map(each => each.it),
-		it: RunResult.pass({ name, filename })
-	});
-}
-
-function createFail({
-	name = [],
-	error = new Error("irrelevant error"),
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = TestMark.none,
-	renderError = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	error?: unknown,
-	filename?: string,
-	mark?: TestMarkValue,
-	renderError?: RenderErrorFn,
-} = {}): TestCaseResult {
-	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
-}
-
-function createSkip({
-	name = [],
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = TestMark.none,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}): TestCaseResult {
-	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
-}
-
-function createTimeout({
-	name = [],
-	timeout = 42,
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = TestMark.none,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	timeout?: number,
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}): TestCaseResult {
-	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
 }

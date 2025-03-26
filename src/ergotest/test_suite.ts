@@ -590,11 +590,14 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, {
-			renderError: options.renderError,
+		const it = RunResult.fail({
+			name: this._name,
 			filename: this._filename,
-			mark: TestMark.none,
+			error: this._error,
+			renderError: options.renderError,
 		});
+		const result = TestResult.testCase({ mark: TestMark.none, it });
+
 		options.onTestCaseResult(result);
 		return await result;
 	}

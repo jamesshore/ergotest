@@ -37,7 +37,7 @@ export function createPass({
 		mark,
 		beforeEach: beforeEach.map(each => each.it),
 		afterEach: afterEach.map(each => each.it),
-		it: RunResult.pass({ name, filename })
+		it: RunResult.pass({ name, filename }),
 	});
 }
 
@@ -45,8 +45,8 @@ export function createFail({
 	name = [],
 	error = "irrelevant error",
 	renderError = undefined,
-	beforeEach = undefined,
-	afterEach = undefined,
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
 	mark = undefined,
 }: {
@@ -58,13 +58,18 @@ export function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.fail({ name, filename, error, renderError }),
+	});
 }
 
 export function createSkip({
 	name = [],
-	beforeEach = undefined,
-	afterEach = undefined,
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
 	mark = undefined,
 }: {
@@ -80,8 +85,8 @@ export function createSkip({
 export function createTimeout({
 	name = [],
 	timeout = 42,
-	beforeEach = undefined,
-	afterEach = undefined,
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
 	mark = undefined,
 }: {

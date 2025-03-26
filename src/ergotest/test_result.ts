@@ -124,62 +124,6 @@ export abstract class TestResult {
 	}
 
 	/**
-	 * Create a RunResult for a test that failed.
-	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {unknown} error The error that occurred.
-	 * @param {(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown} [options.renderError]
-	 *   The function to use to render the error into a string (defaults to {@link renderError})
- *   @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.
-	 * @param {TestCaseResult[]} [options.afterEach] The afterEach() blocks for this test.
-	 * @param {string} [options.filename] The file that contained this test (optional).
-	 * @param {TestMarkValue} [options.mark] Whether this test was marked with `.skip`, `.only`, or nothing.
-	 *   function will be called and the results put into {@link errorRender}.
-	 * @returns {TestCaseResult} The result.
-	 */
-	static fail(
-		name: string | string[],
-		error: unknown,
-		{
-			renderError = renderErrorFn,
-			beforeEach,
-			afterEach,
-			filename,
-			mark,
-		}: {
-			renderError?: RenderErrorFn
-			beforeEach?: TestCaseResult[],
-			afterEach?: TestCaseResult[],
-			filename?: string,
-			mark?: TestMarkValue,
-		} = {},
-	): TestCaseResult {
-		ensure.signature(arguments, [
-			[ String, Array ],
-			ensure.ANY_TYPE,
-			[ undefined, {
-				renderError: [ undefined, Function ],
-				beforeEach: [ undefined, Array ],
-				afterEach: [ undefined, Array ],
-				filename: [ undefined, String ],
-				mark: [ undefined, String ],
-			}],
-		]);
-
-		if (!Array.isArray(name)) name = [ name ];
-
-		let errorMessage: string;
-		if (error instanceof Error) errorMessage = error.message ?? "";
-		else if (typeof error === "string") errorMessage = error;
-		else errorMessage = util.inspect(error, { depth: Infinity });
-
-		const errorRender = renderError(name, error, filename);
-
-		const it = new RunResult({ name, filename, status: TestStatus.fail, errorMessage, errorRender });
-		return new TestCaseResult({ beforeEach, afterEach, it, mark }
-		);
-	}
-
-	/**
 	 * Create a TestResult for a test that was skipped.
 	 * @param {string|string[]} name The name of the test. Can be a list of names.
 	 * @param {TestCaseResult[]} [options.beforeEach] The beforeEach() blocks for this test.

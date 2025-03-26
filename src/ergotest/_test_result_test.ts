@@ -11,7 +11,7 @@ import {
 	it,
 } from "../util/tests.js";
 import { AssertionError } from "node:assert";
-import { TestMark, TestResult, TestStatus } from "./test_result.js";
+import { RunResult, TestMark, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
 
 export default describe(() => {
@@ -331,7 +331,7 @@ export default describe(() => {
 			check({ message: "my message" }, "{ message: 'my message' }");
 
 			function check(error: unknown, expected: string) {
-				const result = TestResult.fail([], error);
+				const result = TestResult.testCase({ it: RunResult.fail({ name: [], error }) });
 				assert.equal(result.errorMessage, expected);
 			}
 		});

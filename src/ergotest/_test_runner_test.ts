@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, beforeEach, createSuite, createPass } from "../util/tests.js";
+import { assert, describe, it, beforeEach, createSuite, createPass, createFail } from "../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
@@ -136,7 +136,7 @@ export default describe(() => {
 			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
 
 			assert.dotEquals(results, TestResult.suite([], [
-				TestResult.fail("Unhandled error in tests", new Error("my error")),
+				createFail({ name: "Unhandled error in tests", error: new Error("my error") }),
 			]));
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
@@ -154,7 +154,7 @@ export default describe(() => {
 			const results = await resultsPromise;
 
 			assert.dotEquals(results, TestResult.suite([], [
-				TestResult.fail("Test runner watchdog", "Detected infinite loop in tests"),
+				createFail({ name: "Test runner watchdog", error: "Detected infinite loop in tests" }),
 			]));
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});

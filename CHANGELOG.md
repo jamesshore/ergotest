@@ -38,6 +38,8 @@ TO DO:
 * IN PROGRESS: Factor out RunResult
   * NEXT: Convert beforeEach/afterEach from TestCaseResult[] to RunResult[]
   * THEN: Move createPass() etc. factories to RunResult
+  * Convert TestResult.suite() to TestSuiteResult.create() and TestResult.testCase() to TestCaseResult.create()
+  * Revise TestSuiteResult.create() to match signature of other result factories
   * THEN: Modify TestSuite to return RunResult when running test function rather than TestCaseResult
   * THEN: Introduce TestCaseResult.testRun or .test or .it accessor?
 * Check that stack trace highlighting works with beforeEach etc.

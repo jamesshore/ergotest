@@ -6,7 +6,8 @@ import {
 	createFail,
 	createPass,
 	createSkip,
-	createSuite, createTimeout,
+	createSuite,
+	createTimeout,
 	describe,
 	it,
 } from "../util/tests.js";
@@ -20,7 +21,7 @@ import {
 	it as it_sut,
 } from "./test_api.js";
 import { Clock } from "../infrastructure/clock.js";
-import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
+import { TestCaseResult, TestMark, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -394,7 +395,7 @@ export default describe(() => {
 			const result = await runTestAsync("my test", () => {
 				throw error;
 			});
-			assert.dotEquals(result, TestResult.fail("my test", error));
+			assert.dotEquals(result, createFail({ name: "my test", error }));
 		});
 
 		it("can retrieve config variables", async () => {
@@ -420,7 +421,7 @@ export default describe(() => {
 
 			const results = await suite.runAsync({});
 			assert.dotEquals(results, TestResult.suite([], [
-				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
+				createFail({ name: IRRELEVANT_NAME, error: new Error("No test config found for name 'no_such_config'") }),
 			]));
 		});
 
@@ -433,7 +434,7 @@ export default describe(() => {
 
 			const results = await suite.runAsync({ config: {} });
 			assert.dotEquals(results, TestResult.suite([], [
-				TestResult.fail(IRRELEVANT_NAME, new Error("No test config found for name 'no_such_config'")),
+				createFail({ name: IRRELEVANT_NAME, error: new Error("No test config found for name 'no_such_config'") }),
 			]));
 		});
 
