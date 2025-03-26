@@ -2,7 +2,15 @@
 import { afterEach, assert, beforeEach, describe, it } from "../util/tests.js";
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
-import { RenderErrorFn, TestCaseResult, TestMark, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import {
+	RenderErrorFn,
+	RunResult,
+	TestCaseResult,
+	TestMark,
+	TestMarkValue,
+	TestResult,
+	TestSuiteResult,
+} from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import util from "node:util";
 import { describe as describe_sut, it as it_sut } from "./test_api.js";
@@ -900,19 +908,24 @@ function createSuite({
 }
 
 function createPass({
-	name = [],
-	beforeEach = undefined,
-	afterEach = undefined,
+	name = "irrelevant name",
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
-	mark = TestMark.none,
+	mark = undefined,
 }: {
 	name?: string | string[],
 	beforeEach?: TestCaseResult[],
 	afterEach?: TestCaseResult[],
 	filename?: string,
 	mark?: TestMarkValue,
-} = {}): TestCaseResult {
-	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
+} = {}) {
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.pass({ name, filename })
+	});
 }
 
 function createFail({

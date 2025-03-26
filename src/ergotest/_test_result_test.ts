@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, beforeEach, describe, it } from "../util/tests.js";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
 
 const IRRELEVANT_ERROR = new Error("irrelevant error");
@@ -959,8 +959,8 @@ function createSuite({
 
 function createPass({
 	name = "irrelevant name",
-	beforeEach = undefined,
-	afterEach = undefined,
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
 	mark = undefined,
 }: {
@@ -970,7 +970,12 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.pass({ name, filename })
+	});
 }
 
 function createFail({

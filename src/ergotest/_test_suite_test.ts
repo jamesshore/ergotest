@@ -10,7 +10,7 @@ import {
 	it as it_sut,
 } from "./test_api.js";
 import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
 import path from "node:path";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
@@ -177,9 +177,9 @@ export default describe(() => {
 			const result = await suite.runAsync();
 			assert.dotEquals(result,
 				TestResult.suite([], [
-					TestResult.pass("test 1"),
-					TestResult.pass("test 2"),
-					TestResult.pass("test 3"),
+					createPass({ name: "test 1" }),
+					createPass({ name: "test 2" }),
+					createPass({ name: "test 3" }),
 				]),
 			);
 		});
@@ -212,7 +212,7 @@ export default describe(() => {
 				TestResult.suite("top", [
 					TestResult.suite([ "top", "middle" ], [
 						TestResult.suite([ "top", "middle", "bottom" ], [
-							TestResult.pass([ "top", "middle", "bottom", "my test" ]),
+							createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
 						]),
 					]),
 				]),
@@ -234,15 +234,15 @@ export default describe(() => {
 
 			assert.dotEquals(await top.runAsync(),
 				TestResult.suite("top", [
-					TestResult.pass([ "top", "top.1" ]),
+					createPass({ name: [ "top", "top.1" ] }),
 					TestResult.suite([ "top", "middle" ], [
-						TestResult.pass([ "top", "middle", "middle.1" ]),
+						createPass({ name: [ "top", "middle", "middle.1" ] }),
 						TestResult.suite([ "top", "middle", "bottom" ], [
-							TestResult.pass([ "top", "middle", "bottom", "bottom.1" ]),
+							createPass({ name: [ "top", "middle", "bottom", "bottom.1" ] }),
 						]),
-						TestResult.pass([ "top", "middle", "middle.2" ]),
+						createPass({ name: [ "top", "middle", "middle.2" ] }),
 					]),
-					TestResult.pass([ "top", "top.2" ]),
+					createPass({ name: [ "top", "top.2" ] }),
 				]),
 			);
 		});
@@ -263,8 +263,8 @@ export default describe(() => {
 
 			assert.dotEquals(await parent.runAsync(),
 				TestResult.suite("parent", [
-					TestResult.pass([ "parent", "parent.1" ]),
-					TestResult.pass([ "parent", "parent.2" ]),
+					createPass({ name: [ "parent", "parent.1" ] }),
+					createPass({ name: [ "parent", "parent.2" ] }),
 				]),
 			);
 		});
@@ -376,7 +376,7 @@ export default describe(() => {
 
 		it("passes when test doesn't throw exception", async () => {
 			const result = await runTestAsync("my test", () => {});
-			assert.dotEquals(result, TestResult.pass("my test"));
+			assert.dotEquals(result, createPass({ name: "my test" }));
 		});
 
 		it("fails when test throws exception", async () => {
@@ -455,8 +455,14 @@ export default describe(() => {
 				it_sut("has no name", () => {});
 			});
 
-			assert.dotEquals(await name.runAsync(), TestResult.suite("named", [ TestResult.pass([ "named", "has a name" ]) ]));
-			assert.dotEquals(await noName.runAsync(), TestResult.suite([], [ TestResult.pass("has no name") ]));
+			assert.equal(await name.runAsync(), createSuite({
+				name: "named",
+				tests: [ createPass({ name: [ "named", "has a name" ] }) ],
+			}));
+
+			assert.equal(await noName.runAsync(), createSuite({
+				tests: [ createPass({ name: "has no name" }) ],
+			}));
 		});
 
 		it("test cases without names are given a default", async () => {
@@ -464,7 +470,7 @@ export default describe(() => {
 				it_sut("", () => {});
 			});
 
-			assert.dotEquals(await suite.runAsync(), TestResult.suite([], [ TestResult.pass("(unnamed)") ]));
+			assert.dotEquals(await suite.runAsync(), TestResult.suite([], [ createPass({ name: "(unnamed)" }) ]));
 		});
 
 		it("sets name of test result to include nested suites", async () => {
@@ -481,7 +487,7 @@ export default describe(() => {
 				TestResult.suite([ "top" ], [
 					TestResult.suite([ "top", "middle" ], [
 						TestResult.suite([ "top", "middle", "bottom" ], [
-							TestResult.pass([ "top", "middle", "bottom", "my test" ]),
+							createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
 						]),
 					]),
 				]),
@@ -502,7 +508,7 @@ export default describe(() => {
 				TestResult.suite("top", [
 					TestResult.suite("top", [
 						TestResult.suite("top", [
-							TestResult.pass([ "top", "my test" ]),
+							createPass({ name: [ "top", "my test" ] }),
 						]),
 					]),
 				]),
@@ -1281,7 +1287,7 @@ export default describe(() => {
 			assert.dotEquals(
 				await actualPromise,
 				TestResult.suite([], [
-					TestResult.pass("no timeout"),
+					createPass({ name: "no timeout" }),
 					TestResult.timeout("timeout", NEW_TIMEOUT),
 				]),
 			);
@@ -1328,7 +1334,7 @@ export default describe(() => {
 			assert.dotEquals(await actualPromise,
 				TestResult.suite([], [
 					TestResult.suite("my suite", [
-						TestResult.pass([ "my suite", "my test" ]),
+						createPass({ name: [ "my suite", "my test" ] }),
 					]),
 				]),
 			);
@@ -1349,7 +1355,7 @@ export default describe(() => {
 
 			assert.dotEquals(await actualPromise,
 				TestResult.suite([], [
-					TestResult.pass("my test"),
+					createPass({ name: "my test" }),
 				]),
 			);
 		});
@@ -1550,8 +1556,8 @@ export default describe(() => {
 						TestResult.skip([ "not .only", "test2" ]),
 					]),
 					createSuite({ name: ".only", mark: TestMark.only, tests: [
-						TestResult.pass([ ".only", "test3" ]),
-						TestResult.pass([ ".only", "test4" ]),
+						createPass({ name: [ ".only", "test3" ] }),
+						createPass({ name: [ ".only", "test4" ] }),
 					]}),
 				]),
 			);
@@ -1567,7 +1573,7 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, tests: [
 					TestResult.suite([], [
-						TestResult.pass("test"),
+						createPass({ name: "test" }),
 					]),
 				]}),
 			);
@@ -1621,7 +1627,7 @@ export default describe(() => {
 						TestResult.skip([ "not only", "test1" ]),
 					]),
 					createSuite({ name: "only", mark: TestMark.only, tests: [
-						TestResult.pass([ "only", "test2" ]),
+						createPass({ name: [ "only", "test2" ] }),
 					]}),
 				]}),
 			);
@@ -1639,7 +1645,7 @@ export default describe(() => {
 				createSuite({ mark: TestMark.only, tests: [
 					createSuite({ tests: [
 						createSkip({ name: "test1", mark: TestMark.skip }),
-						TestResult.pass("test2"),
+						createPass({ name: "test2" }),
 					]}),
 				]}),
 			);
@@ -1692,8 +1698,8 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.skip, tests: [
 					createSuite({ mark: TestMark.only, tests: [
-						TestResult.pass("test1"),
-						TestResult.pass("test2"),
+						createPass({ name: "test1" }),
+						createPass({ name: "test2" }),
 					]}),
 				]}),
 			);
@@ -1806,9 +1812,9 @@ function createSuite({
 
 function createPass({
 	name = "irrelevant name",
+	beforeEach = [],
+	afterEach = [],
 	filename = undefined,
-	beforeEach = undefined,
-	afterEach = undefined,
 	mark = undefined,
 }: {
 	name?: string | string[],
@@ -1817,7 +1823,12 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
+	return TestResult.testCase({
+		mark,
+		beforeEach: beforeEach.map(each => each.it),
+		afterEach: afterEach.map(each => each.it),
+		it: RunResult.pass({ name, filename })
+	});
 }
 
 function createFail({

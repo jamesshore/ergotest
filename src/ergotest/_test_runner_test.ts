@@ -3,7 +3,7 @@ import { assert, describe, it, beforeEach } from "../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "./test_suite.js";
-import { TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import { RunResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 
@@ -279,5 +279,8 @@ function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
-	return TestResult.pass(name, { filename, mark });
+	return TestResult.testCase({
+		mark,
+		it: RunResult.pass({ name, filename })
+	});
 }
