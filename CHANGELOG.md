@@ -39,8 +39,7 @@ TO DO:
   * Convert beforeAll/afterAll from TestCaseResult[] to RunResult[]
   * Convert TestResult.suite() to TestSuiteResult.create() and TestResult.testCase() to TestCaseResult.create()
   * Revise TestSuiteResult.create() to match signature of other result factories
-  * THEN: Modify TestSuite to return RunResult when running test function rather than TestCaseResult
-  * THEN: Introduce TestCaseResult.testRun or .test or .it accessor?
+  * Revise TestRenderer to more specific types where possible (including RunResult instead of TestResult)
 * Check that stack trace highlighting works with beforeEach etc.
 * Modify TestResult.suite() to match signature of RunResult factory methods
 * Serialize/deserialize RunResult
@@ -50,7 +49,6 @@ TO DO:
 * Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?
 * Rename TestCaseResult.status to .consolidatedStatus? If we do, should we add TestSuiteResult.consolidatedStatus?
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
-* Factor out TestSuiteResult --> TestCaseResult --> RunResult?
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
