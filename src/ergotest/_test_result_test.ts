@@ -266,12 +266,12 @@ export default describe(() => {
 
 		it("has optional beforeEach and afterEach results", () => {
 			const beforeEach = [
-				createPass({ name: "my_pass" }),
-				createFail({ name: "my_fail", error: "my_error" })
+				RunResult.pass({ name: "my_pass" }),
+				RunResult.fail({ name: "my_fail", error: "my_error" })
 			];
 			const afterEach = [
-				createTimeout({ name: "my_timeout", timeout: 99 }),
-				createSkip({ name: "my_skip"})
+				RunResult.timeout({ name: "my_timeout", timeout: 99 }),
+				RunResult.skip({ name: "my_skip"})
 			];
 
 			const pass = createPass({ beforeEach, afterEach });
@@ -279,14 +279,14 @@ export default describe(() => {
 			const fail = createFail({ beforeEach, afterEach });
 			const timeout = createTimeout({ beforeEach, afterEach });
 
-			assert.equal(pass.beforeEach_OLD, beforeEach);
-			assert.equal(pass.afterEach_OLD, afterEach);
-			assert.equal(skip.beforeEach_OLD, beforeEach);
-			assert.equal(skip.afterEach_OLD, afterEach);
-			assert.equal(fail.beforeEach_OLD, beforeEach);
-			assert.equal(fail.afterEach_OLD, afterEach);
-			assert.equal(timeout.beforeEach_OLD, beforeEach);
-			assert.equal(timeout.afterEach_OLD, afterEach);
+			assert.equal(pass.beforeEach, beforeEach);
+			assert.equal(pass.afterEach, afterEach);
+			assert.equal(skip.beforeEach, beforeEach);
+			assert.equal(skip.afterEach, afterEach);
+			assert.equal(fail.beforeEach, beforeEach);
+			assert.equal(fail.afterEach, afterEach);
+			assert.equal(timeout.beforeEach, beforeEach);
+			assert.equal(timeout.afterEach, afterEach);
 		});
 
 		it("has optional filename", () => {

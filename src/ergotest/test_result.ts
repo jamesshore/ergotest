@@ -525,16 +525,6 @@ export class TestCaseResult extends TestResult {
 		return this._it.status;
 	}
 
-	// TODO: Deleteme
-	get beforeEach_OLD(): TestCaseResult[] {
-		return this._beforeEachInternal.map(result => new TestCaseResult({ it: result }));
-	}
-
-	// TODO: Deleteme
-	get afterEach_OLD(): TestCaseResult[] {
-		return this._afterEachInternal.map(result => new TestCaseResult({ it: result }));
-	}
-
 	/**
 	 * @returns {string []} The name of the test, and all enclosing suites, with the outermost suite first.
 	 *   Does not include the file name.
