@@ -36,7 +36,6 @@ To Document:
 
 TO DO:
 * IN PROGRESS: Factor out RunResult
-  * NEXT: Convert TestRenderer to use .beforeEach/.afterEach instead of .beforeEach_OLD/.afterEach_OLD
   * Convert beforeAll/afterAll from TestCaseResult[] to RunResult[]
   * Convert TestResult.suite() to TestSuiteResult.create() and TestResult.testCase() to TestCaseResult.create()
   * Revise TestSuiteResult.create() to match signature of other result factories

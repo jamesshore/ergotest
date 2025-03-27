@@ -495,8 +495,8 @@ export class TestCaseResult extends TestResult {
 	}
 
 	private readonly _mark: TestMarkValue;
-	public _beforeEachInternal: RunResult[];
-	public _afterEachInternal: RunResult[];
+	private _beforeEach: RunResult[];
+	private _afterEach: RunResult[];
 	private readonly _it: RunResult;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
@@ -515,8 +515,8 @@ export class TestCaseResult extends TestResult {
 	) {
 		super();
 		this._mark = mark ?? TestMark.none;
-		this._beforeEachInternal = beforeEach;
-		this._afterEachInternal = afterEach;
+		this._beforeEach = beforeEach;
+		this._afterEach = afterEach;
 		this._it = it;
 	}
 
@@ -544,8 +544,8 @@ export class TestCaseResult extends TestResult {
 	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
 	 */
 	get status(): TestStatusValue {
-		const consolidatedBefore = this._beforeEachInternal.reduce(consolidateRunResult, TestStatus.pass);
-		const consolidatedBeforeAndAfter = this._afterEachInternal.reduce(consolidateRunResult, consolidatedBefore);
+		const consolidatedBefore = this._beforeEach.reduce(consolidateRunResult, TestStatus.pass);
+		const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateRunResult, consolidatedBefore);
 
 		if (consolidatedBeforeAndAfter === TestStatus.pass && this._it.status === TestStatus.skip) return TestStatus.skip;
 		else return consolidateStatus(consolidatedBeforeAndAfter, this._it.status);
@@ -573,14 +573,14 @@ export class TestCaseResult extends TestResult {
 	 * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
 	 */
 	get beforeEach(): RunResult[] {
-		return this._beforeEachInternal;
+		return this._beforeEach;
 	}
 
 	/**
 	 * @returns { TestCaseResult[] } The afterEach() blocks for this test.
 	 */
 	get afterEach(): RunResult[] {
-		return this._afterEachInternal;
+		return this._afterEach;
 	}
 
 	/**
@@ -717,8 +717,8 @@ export class TestCaseResult extends TestResult {
 		return {
 			type: "TestCaseResult",
 			mark: this._mark,
-			beforeEach: this._beforeEachInternal.map(each => each.serialize()),
-			afterEach: this._afterEachInternal.map(each => each.serialize()),
+			beforeEach: this._beforeEach.map(each => each.serialize()),
+			afterEach: this._afterEach.map(each => each.serialize()),
 			it: this._it.serialize(),
 		};
 	}
