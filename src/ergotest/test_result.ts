@@ -116,7 +116,7 @@ export abstract class TestResult {
 		beforeEach?: RunResult[],
 		afterEach?: RunResult[],
 		it: RunResult,
-	}) {
+	}): TestCaseResult {
 		ensure.signature(arguments, [[ undefined, {
 			mark: [ undefined, String ],
 			beforeEach: [ undefined, Array ],

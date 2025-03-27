@@ -1,7 +1,15 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../util/ensure.js";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import {
+	RunResult,
+	TestCaseResult,
+	TestMark,
+	TestMarkValue,
+	TestResult,
+	TestStatus,
+	TestSuiteResult,
+} from "./test_result.js";
 import { ColorFn, Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -199,25 +207,30 @@ export class TestRenderer {
 	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
-		return render(this, testCaseResults).join("\n");
+		const self = this;
+		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
+			return showTestDetail(testResult)
+				? renderDetail(testResult)
+				: renderResult(testResult);
+		});
 
-		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[]): string[] {
-			const str = self.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
-				const status = self.renderStatusAsSingleWord(testResult);
-				const name = self.renderNameOnOneLine(testResult);
+		function renderDetail(testResult: TestCaseResult) {
+			const separator = `\n  ${summaryColor("-->")}  `;
 
-				let testDetail = "";
-				let beforeAfter = "";
-				if (showTestDetail(testResult)) {
-					const detailSeparator = `\n  ${summaryColor("-->")}  `;
-					const beforeAfterResults = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
-					testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
-					beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
-				}
+			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+			const details = self.#renderMultipleResults(beforeAfter, separator, RunResult, detail => renderResult(detail));
 
-				return `${status} ${name}${testDetail}${beforeAfter}`;
-			});
-			return str.split("\n");
+			return renderResult(testResult)
+				+ `${separator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
+				+ separator + details;
+		}
+
+		function renderResult(result: RunResult | TestCaseResult) {
+			if (result instanceof RunResult) result = TestResult.testCase({ it: result });
+
+			const status = self.renderStatusAsSingleWord(result);
+			const name = self.renderNameOnOneLine(result);
+			return `${status} ${name}`;
 		}
 	}
 
@@ -227,21 +240,17 @@ export class TestRenderer {
 	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		return render(this, testCaseResults, "\n\n\n");
+		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
+			const name = this.renderNameOnMultipleLines(testResult);
 
-		function render(self: TestRenderer, testCaseResults: TestCaseResult | TestCaseResult[], separator: string): string {
-			return self.#renderMultipleResults(testCaseResults, separator, TestCaseResult, (testResult: TestCaseResult) => {
-				const name = self.renderNameOnMultipleLines(testResult);
-
-				if (showTestDetail(testResult)) {
-					return renderDetail(self, testResult);
-				}
-				else {
-					const status = self.renderStatusWithMultiLineDetails(testResult);
-					return `${name}\n\n${status}`;
-				}
-			});
-		}
+			if (showTestDetail(testResult)) {
+				return renderDetail(this, testResult);
+			}
+			else {
+				const status = this.renderStatusWithMultiLineDetails(testResult);
+				return `${name}\n\n${status}`;
+			}
+		});
 
 		function renderDetail(self: TestRenderer, testResult: TestCaseResult): string {
 			const chevrons = headerColor(`»»» `);
