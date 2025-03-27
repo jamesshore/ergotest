@@ -240,11 +240,12 @@ export class TestRenderer {
 	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
+		const self = this;
 		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
 			const name = this.renderNameOnMultipleLines(testResult);
 
 			if (showTestDetail(testResult)) {
-				return renderDetail(this, testResult);
+				return renderDetail(testResult);
 			}
 			else {
 				const status = this.renderStatusWithMultiLineDetails(testResult);
@@ -252,17 +253,25 @@ export class TestRenderer {
 			}
 		});
 
-		function renderDetail(self: TestRenderer, testResult: TestCaseResult): string {
+		function renderDetail(testResult: TestCaseResult): string {
 			const chevrons = headerColor(`»»» `);
-			const beforeAfterResults = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
-			const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult: TestCaseResult) => {
-				const status = self.renderStatusWithMultiLineDetails(detailResult);
-				const finalName = normalizeName(detailResult.name).pop() as string;
-				return chevrons + headerColor(finalName) + `\n${self.renderNameOnOneLine(detailResult)}\n\n${status}`;
+			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
+			const details = self.#renderMultipleResults(beforeAfter, `\n\n`, RunResult, detail => {
+				const testCase = TestResult.testCase({ it: detail });
+				const status = self.renderStatusWithMultiLineDetails(testCase);
+				const finalName = normalizeName(detail.name).pop() as string;
+
+				return chevrons + headerColor(finalName) + "\n"
+					+ self.renderNameOnOneLine(testCase) + "\n\n"
+					+ status;
 			});
-			const test = `\n\n${chevrons}${headerColor("the test itself")}\n`
-				+ `${self.renderNameOnOneLine(testResult)}\n\n${self.renderStatusWithMultiLineDetails(testResult)}`;
-			return `${(self.renderNameOnMultipleLines(testResult))}${beforeAfter}${test}\n\n${headerColor("«««")}`;
+
+			return self.renderNameOnMultipleLines(testResult) + "\n\n"
+				+ details + "\n\n"
+				+ chevrons + headerColor("the test itself") + "\n"
+				+ self.renderNameOnOneLine(testResult) + "\n\n"
+				+ self.renderStatusWithMultiLineDetails(testResult) + "\n\n"
+				+ headerColor("«««");
 		}
 	}
 
@@ -286,7 +295,7 @@ export class TestRenderer {
 	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
 	 */
 	renderNameOnOneLine(testCaseResult: TestResult) {
-		ensure.signature(arguments, [ TestResult ]);
+		ensure.signature(arguments, [[ TestResult, RunResult ]]);
 
 		const filename = testCaseResult.filename === undefined
 			? ""
