@@ -384,7 +384,7 @@ function normalizeName(name: string[]): string[] {
 }
 
 function showTestDetail(testResult: TestCaseResult) {
-	const beforeAfter = [ ...testResult.beforeEach_OLD, ...testResult.afterEach_OLD ];
+	const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
 	const allBeforeAfterPass = beforeAfter.every(result => result.status === TestStatus.pass);
 	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
 
