@@ -251,7 +251,7 @@ export class TestRenderer {
 				return renderDetail(testResult);
 			}
 			else {
-				const status = this.renderStatusWithMultiLineDetails(testResult);
+				const status = this.renderStatusWithMultiLineDetails(testResult.it);
 				return `${name}\n\n${status}`;
 			}
 		});
@@ -260,20 +260,20 @@ export class TestRenderer {
 			const chevrons = headerColor(`»»» `);
 			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
 			const details = renderMultipleResults(beforeAfter, `\n\n`, RunResult, detail => {
-				const testCase = TestCaseResult.create({ it: detail });
-				const status = self.renderStatusWithMultiLineDetails(testCase);
+				const status = self.renderStatusWithMultiLineDetails(detail);
 				const finalName = normalizeName(detail.name).pop() as string;
 
 				return chevrons + headerColor(finalName) + "\n"
-					+ self.renderNameOnOneLine(testCase.name, testCase.filename) + "\n\n"
+					+ self.renderNameOnOneLine(detail.name, detail.filename) + "\n\n"
 					+ status;
 			});
 
-			return self.renderNameOnMultipleLines(testResult.name, testResult.filename) + "\n\n"
+			const test = testResult.it;
+			return self.renderNameOnMultipleLines(test.name, test.filename) + "\n\n"
 				+ details + "\n\n"
 				+ chevrons + headerColor("the test itself") + "\n"
-				+ self.renderNameOnOneLine(testResult.name, testResult.filename) + "\n\n"
-				+ self.renderStatusWithMultiLineDetails(testResult) + "\n\n"
+				+ self.renderNameOnOneLine(test.name, test.filename) + "\n\n"
+				+ self.renderStatusWithMultiLineDetails(test) + "\n\n"
 				+ headerColor("«««");
 		}
 	}
@@ -336,25 +336,30 @@ export class TestRenderer {
 	}
 
 	/**
-	 * @returns {string} The color-coded status of the test.
+	 * @param { TestStatusValue } status The status to render.
+	 * @returns {string} The color-coded status.
 	 */
 	renderStatusAsSingleWord(status: TestStatusValue) {
 		return TestRenderer.#DESCRIPTION_RENDERING[status];
 	}
 
-	renderStatusWithMultiLineDetails(testCaseResult: TestCaseResult): string {
-		switch (testCaseResult._status) {
+	/**
+	 * @param { RunResult } status The result to render
+	 * @returns { string } The color-coded status, including error and timeout details where appropriate.
+	 */
+	renderStatusWithMultiLineDetails(runResult: RunResult): string {
+		switch (runResult.status) {
 			case TestStatus.pass:
 			case TestStatus.skip:
-				return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult._status];
+				return TestRenderer.#DESCRIPTION_RENDERING[runResult.status];
 			case TestStatus.fail:
-				return (typeof testCaseResult.errorRender === "string") ?
-					testCaseResult.errorRender :
-					util.inspect(testCaseResult.errorRender, { depth: Infinity });
+				return (typeof runResult.errorRender === "string") ?
+					runResult.errorRender :
+					util.inspect(runResult.errorRender, { depth: Infinity });
 			case TestStatus.timeout:
-				return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
+				return timeoutMessageColor(`Timed out after ${runResult.timeout}ms`);
 			default:
-				throw new Error(`Unrecognized test result status: ${testCaseResult._status}`);
+				throw new Error(`Unrecognized test result status: ${runResult.status}`);
 		}
 	}
 

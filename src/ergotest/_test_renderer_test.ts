@@ -348,19 +348,19 @@ export default describe(() => {
 				assert.equal(renderAsMultipleLines(result),
 					renderer.renderNameOnMultipleLines(["my name"]) + "\n\n"
 					+ headerColor("»»» ") + headerColor("before 1") + "\n" + renderer.renderNameOnOneLine(["before 1"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(before1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before1.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("before 2") + "\n" + renderer.renderNameOnOneLine(["before 2"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(before2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before2.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("before 3") + "\n" + renderer.renderNameOnOneLine(["before 3"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(before3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before3.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("after 1") + "\n" + renderer.renderNameOnOneLine(["after 1"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(after1) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after1.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("after 2") + "\n" + renderer.renderNameOnOneLine(["after 2"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(after2) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after2.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("after 3") + "\n" + renderer.renderNameOnOneLine(["after 3"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(after3) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after3.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(["my name"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result.it) + "\n\n"
 					+ headerColor("«««")
 				);
 			});
