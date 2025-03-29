@@ -1,8 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import {
-	afterEach,
 	assert,
-	beforeEach,
 	createFail,
 	createPass,
 	createSkip,
@@ -13,13 +11,10 @@ import {
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import {
-	RenderErrorFn,
-	RunResult,
 	TestCaseResult,
 	TestMark,
 	TestMarkValue,
 	TestResult, TestStatus, TestStatusValue,
-	TestSuiteResult,
 } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import util from "node:util";
@@ -286,7 +281,7 @@ export default describe(() => {
 
 			assert.equal(renderAsMultipleLines(result),
 				renderer.renderNameOnMultipleLines([ "my suite", "my name" ]) + "\n\n"
-				+ renderer.renderStatusWithMultiLineDetails(result)
+				+ renderer.renderStatusWithMultiLineDetails(result.it)
 			);
 		});
 
@@ -543,7 +538,7 @@ export default describe(() => {
 		});
 
 		function render(result: TestCaseResult): string {
-			return TestRenderer.create().renderStatusWithMultiLineDetails(result);
+			return TestRenderer.create().renderStatusWithMultiLineDetails(result.it);
 		}
 
 	});

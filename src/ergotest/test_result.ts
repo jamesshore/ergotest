@@ -512,11 +512,6 @@ export class TestCaseResult extends TestResult {
 		this._it = it;
 	}
 
-	// TODO: Deleteme
-	get _status(): TestStatusValue {
-		return this._it.status;
-	}
-
 	/**
 	 * @returns {string []} The name of the test, and all enclosing suites, with the outermost suite first.
 	 *   Does not include the file name.

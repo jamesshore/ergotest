@@ -223,7 +223,7 @@ export class TestRenderer {
 			const details = renderMultipleResults(beforeAfter, separator, RunResult, detail => renderResult(detail));
 
 			return renderResult(testResult)
-				+ `${separator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
+				+ `${separator}${self.renderStatusAsSingleWord(testResult.it.status)} the test itself`
 				+ separator + details;
 		}
 
@@ -387,7 +387,7 @@ function showTestDetail(testResult: TestCaseResult) {
 	const allBeforeAfterPass = beforeAfter.every(result => result.status === TestStatus.pass);
 	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
 
-	return !(allBeforeAfterPass || (allBeforeAfterSkipped && testResult._status === TestStatus.skip));
+	return !(allBeforeAfterPass || (allBeforeAfterSkipped && testResult.it.status === TestStatus.skip));
 }
 
 function renderMultipleResults<T>(

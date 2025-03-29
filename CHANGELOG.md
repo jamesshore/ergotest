@@ -38,8 +38,7 @@ To Document:
 * Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name); it previously highlighted everything
 
 TO DO:
-* IN PROGRESS: Factor out RunResult
-  * Split up large files
+* Split up large files
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
 * Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?
 * Rename TestCaseResult.status to .consolidatedStatus? If we do, should we add TestSuiteResult.consolidatedStatus?
