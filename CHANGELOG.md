@@ -40,8 +40,6 @@ To Document:
 TO DO:
 * Split up large files
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
-* Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?
-* Rename TestCaseResult.status to .consolidatedStatus? If we do, should we add TestSuiteResult.consolidatedStatus?
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

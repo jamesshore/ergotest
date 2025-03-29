@@ -528,7 +528,8 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
+	 * @returns {TestStatusValue} Whether this test passed, failed, etc., taking into account the status of beforeEach()
+	 *   and afterEach() results.
 	 */
 	get status(): TestStatusValue {
 		const consolidatedBefore = this._beforeEach.reduce(consolidateRunResult, TestStatus.pass);
@@ -557,14 +558,14 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
+	 * @returns { RunResult[] } The beforeEach() blocks for this test.
 	 */
 	get beforeEach(): RunResult[] {
 		return this._beforeEach;
 	}
 
 	/**
-	 * @returns { TestCaseResult[] } The afterEach() blocks for this test.
+	 * @returns { RunResult[] } The afterEach() blocks for this test.
 	 */
 	get afterEach(): RunResult[] {
 		return this._afterEach;
