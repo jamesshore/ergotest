@@ -143,11 +143,13 @@ async function runTestsInWorkerProcessAsync(
 
 function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) => void, renderError?: RenderErrorFn) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
-		const errorResult = TestResult.suite([], [
-			TestResult.testCase({
-				it: RunResult.fail({ name: "Test runner watchdog", error: "Detected infinite loop in tests", renderError }),
-			}),
-		]);
+		const errorResult = TestSuiteResult.create({
+			tests: [
+				TestResult.testCase({
+					it: RunResult.fail({ name: "Test runner watchdog", error: "Detected infinite loop in tests", renderError }),
+				}),
+			],
+		});
 		resolve(errorResult);
 	});
 	return { aliveFn, cancelFn };

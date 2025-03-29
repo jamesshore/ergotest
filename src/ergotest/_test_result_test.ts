@@ -20,7 +20,7 @@ export default describe(() => {
 
 		it("has a name and list of test results", () => {
 			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const suite = TestResult.suite([ "my name" ], tests);
+			const suite = createSuite({ name: [ "my name" ], tests });
 
 			assert.equal(suite.name, [ "my name" ]);
 			assert.equal(suite.tests, tests);

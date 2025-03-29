@@ -66,46 +66,6 @@ export type RenderErrorFn = (names: string[], error: unknown, filename?: string)
  */
 export abstract class TestResult {
 
-	/**
-	 * Create a TestResult for a suite of tests.
-	 * @param {string|string[]} name The name of the test. Can be a list of names.
-	 * @param {TestResult[]} tests The nested tests in this suite (can be test suites or individual test cases).
-	 * @param {TestCaseResult[]} [options.beforeAll] The beforeAll() blocks in this suite.
-	 * @param {TestCaseResult[]} [options.afterAll] The afterAll() blocks in this suite.
-	 * @param {string} [options.filename] The file that contained this suite (optional).
-	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
-	 * @returns {TestSuiteResult} The result.
-	 */
-	static suite(
-		name: string | string[],
-		tests: TestResult[],
-		{
-			beforeAll = [],
-			afterAll = [],
-			filename,
-			mark = TestMark.none
-		}: {
-			beforeAll?: TestCaseResult[],
-			afterAll?: TestCaseResult[],
-			filename?: string,
-			mark?: TestMarkValue,
-		} = {},
-	): TestSuiteResult {
-		ensure.signature(arguments, [
-			[ String, Array ],
-			Array,
-			[ undefined, {
-				beforeAll: [ undefined, Array ],
-				afterAll: [ undefined, Array ],
-				filename: [ undefined, String ],
-				mark: [ undefined, String ]
-			}],
-		]);
-
-		if (!Array.isArray(name)) name = [ name ];
-		return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
-	}
-
 	static testCase({
 		mark = TestMark.none,
 		beforeEach = [],
@@ -194,6 +154,44 @@ export abstract class TestResult {
  * The result of running a test suite.
  */
 export class TestSuiteResult extends TestResult {
+
+	/**
+	 * Create a TestSuiteResult for a suite of tests.
+	 * @param {string|string[]} [options.name] The name of the test. Can be a list of names.
+	 * @param {TestResult[]} [options.tests] The nested tests in this suite (can be test suites or individual test cases).
+	 * @param {TestCaseResult[]} [options.beforeAll] The beforeAll() blocks in this suite.
+	 * @param {TestCaseResult[]} [options.afterAll] The afterAll() blocks in this suite.
+	 * @param {string} [options.filename] The file that contained this suite (optional).
+	 * @param {TestMarkValue} [options.mark] Whether this suite was marked with `.skip`, `.only`, or nothing.
+	 * @returns {TestSuiteResult} The result.
+	 */
+	static create({
+		name = [],
+		tests = [],
+		beforeAll = [],
+		afterAll = [],
+		filename,
+		mark = TestMark.none
+	}: {
+		name?: string | string[],
+		tests?: TestResult[],
+		beforeAll?: TestCaseResult[],
+		afterAll?: TestCaseResult[],
+		filename?: string,
+		mark?: TestMarkValue,
+	} = {}): TestSuiteResult {
+		ensure.signature(arguments, [[ undefined, {
+			name: [ undefined, String, Array ],
+			tests: [ undefined, Array ],
+			beforeAll: [ undefined, Array ],
+			afterAll: [ undefined, Array ],
+			filename: [ undefined, String ],
+			mark: [ undefined, String ]
+		}]]);
+
+		if (!Array.isArray(name)) name = [ name ];
+		return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
+	}
 
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.

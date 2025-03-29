@@ -59,10 +59,10 @@ export default describe(() => {
 
 			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
 			assert.dotEquals(await suite.runAsync(),
-				TestResult.suite([], [
+				createSuite({ tests: [
 					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
 					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
-				]),
+				]}),
 			);
 		});
 
@@ -187,11 +187,11 @@ export default describe(() => {
 
 			const result = await suite.runAsync();
 			assert.dotEquals(result,
-				TestResult.suite([], [
+				createSuite({ tests: [
 					createPass({ name: "test 1" }),
 					createPass({ name: "test 2" }),
 					createPass({ name: "test 3" }),
-				]),
+				]}),
 			);
 		});
 
@@ -220,13 +220,13 @@ export default describe(() => {
 
 			const result = await top.runAsync();
 			assert.dotEquals(result,
-				TestResult.suite("top", [
-					TestResult.suite([ "top", "middle" ], [
-						TestResult.suite([ "top", "middle", "bottom" ], [
+				createSuite({ name: "top", tests: [
+					createSuite({ name: [ "top", "middle" ], tests: [
+						createSuite({ name: [ "top", "middle", "bottom" ], tests: [
 							createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
-						]),
-					]),
-				]),
+						]}),
+					]}),
+				]}),
 			);
 		});
 
@@ -243,18 +243,18 @@ export default describe(() => {
 				it_sut("top.2", () => {});
 			});
 
-			assert.dotEquals(await top.runAsync(),
-				TestResult.suite("top", [
+			assert.equal(await top.runAsync(),
+				createSuite({ name: "top", tests: [
 					createPass({ name: [ "top", "top.1" ] }),
-					TestResult.suite([ "top", "middle" ], [
+					createSuite({ name: [ "top", "middle" ], tests: [
 						createPass({ name: [ "top", "middle", "middle.1" ] }),
-						TestResult.suite([ "top", "middle", "bottom" ], [
+						createSuite({ name: [ "top", "middle", "bottom" ], tests: [
 							createPass({ name: [ "top", "middle", "bottom", "bottom.1" ] }),
-						]),
+						]}),
 						createPass({ name: [ "top", "middle", "middle.2" ] }),
-					]),
+					]}),
 					createPass({ name: [ "top", "top.2" ] }),
-				]),
+				]}),
 			);
 		});
 
@@ -272,11 +272,11 @@ export default describe(() => {
 				it_sut("parent.2", () => {});
 			});
 
-			assert.dotEquals(await parent.runAsync(),
-				TestResult.suite("parent", [
+			assert.equal(await parent.runAsync(),
+				createSuite({ name: "parent", tests: [
 					createPass({ name: [ "parent", "parent.1" ] }),
 					createPass({ name: [ "parent", "parent.2" ] }),
-				]),
+				]}),
 			);
 		});
 
@@ -420,9 +420,9 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({});
-			assert.dotEquals(results, TestResult.suite([], [
+			assert.dotEquals(results, createSuite({ tests: [
 				createFail({ name: IRRELEVANT_NAME, error: new Error("No test config found for name 'no_such_config'") }),
-			]));
+			]}));
 		});
 
 		it("fails fast when config defined, but config variable not found", async () => {
@@ -433,9 +433,9 @@ export default describe(() => {
 			});
 
 			const results = await suite.runAsync({ config: {} });
-			assert.dotEquals(results, TestResult.suite([], [
+			assert.dotEquals(results, createSuite({ tests: [
 				createFail({ name: IRRELEVANT_NAME, error: new Error("No test config found for name 'no_such_config'") }),
-			]));
+			]}));
 		});
 
 		it("fails when run outside of describe()", () => {
@@ -481,7 +481,11 @@ export default describe(() => {
 				it_sut("", () => {});
 			});
 
-			assert.dotEquals(await suite.runAsync(), TestResult.suite([], [ createPass({ name: "(unnamed)" }) ]));
+			assert.equal(await suite.runAsync(),
+				createSuite({ tests: [
+					createPass({ name: "(unnamed)" })
+				]
+			}));
 		});
 
 		it("sets name of test result to include nested suites", async () => {
@@ -495,13 +499,13 @@ export default describe(() => {
 
 			const result = await top.runAsync();
 			assert.dotEquals(result,
-				TestResult.suite([ "top" ], [
-					TestResult.suite([ "top", "middle" ], [
-						TestResult.suite([ "top", "middle", "bottom" ], [
+				createSuite({ name: [ "top" ], tests: [
+					createSuite({ name: [ "top", "middle" ], tests: [
+						createSuite({ name: [ "top", "middle", "bottom" ], tests: [
 							createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
-						]),
-					]),
-				]),
+						]}),
+					]}),
+				]}),
 			);
 		});
 
@@ -516,13 +520,13 @@ export default describe(() => {
 
 			const result = await top.runAsync();
 			assert.dotEquals(result,
-				TestResult.suite("top", [
-					TestResult.suite("top", [
-						TestResult.suite("top", [
+				createSuite({ name: "top", tests: [
+					createSuite({ name: "top", tests: [
+						createSuite({ name: "top", tests: [
 							createPass({ name: [ "top", "my test" ] }),
-						]),
-					]),
-				]),
+						]}),
+					]}),
+				]}),
 			);
 		});
 
@@ -972,7 +976,7 @@ export default describe(() => {
 
 				assert.dotEquals(
 					await suite.runAsync(),
-					TestResult.suite([], [
+					createSuite({ tests: [
 						createPass({
 							name: "test 1",
 							afterEach: [ createFail({ name: "afterEach()", error: ERROR }) ],
@@ -981,7 +985,7 @@ export default describe(() => {
 							name: "test 2",
 							afterEach: [ createFail({ name: "afterEach()", error: ERROR }) ],
 						}),
-					]),
+					]}),
 				);
 			});
 
@@ -1133,9 +1137,9 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					createTimeout({ name: "my test", timeout: DEFAULT_TIMEOUT })
-				]),
+				createSuite({
+					tests: [ createTimeout({ name: "my test", timeout: DEFAULT_TIMEOUT }) ]
+				}),
 				"result",
 			);
 			assert.equal(beforeTime, 0, "beforeEach() should run immediately");
@@ -1297,10 +1301,10 @@ export default describe(() => {
 
 			assert.dotEquals(
 				await actualPromise,
-				TestResult.suite([], [
+				createSuite({ tests: [
 					createPass({ name: "no timeout" }),
 					createTimeout({ name: "timeout", timeout: NEW_TIMEOUT }),
-				]),
+				]}),
 			);
 		});
 
@@ -1342,12 +1346,12 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
-					TestResult.suite("my suite", [
+			assert.equal(await actualPromise,
+				createSuite({ tests: [
+					createSuite({ name: "my suite", tests: [
 						createPass({ name: [ "my suite", "my test" ] }),
-					]),
-				]),
+					]}),
+				]}),
 			);
 		});
 
@@ -1364,10 +1368,10 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
-				TestResult.suite([], [
+			assert.equal(await actualPromise,
+				createSuite({ tests: [
 					createPass({ name: "my test" }),
-				]),
+				]}),
 			);
 		});
 
@@ -1448,9 +1452,9 @@ export default describe(() => {
 				createSuite({ mark: TestMark.skip, tests: [
 					createSkip({ name: "test 1" }),
 					createSkip({ name: "test 2" }),
-					TestResult.suite([], [
+					createSuite({ tests: [
 						createSkip({ name: "test 3" }),
-					]),
+					]}),
 				]}),
 			);
 		});
@@ -1561,16 +1565,16 @@ export default describe(() => {
 			});
 
 			assert.dotEquals(await suite.runAsync(),
-				TestResult.suite([], [
-					TestResult.suite("not .only", [
+				createSuite({ tests: [
+					createSuite({ name: "not .only", tests: [
 						createSkip({ name: [ "not .only", "test1" ] }),
 						createSkip({ name: [ "not .only", "test2" ] }),
-					]),
+					]}),
 					createSuite({ name: ".only", mark: TestMark.only, tests: [
 						createPass({ name: [ ".only", "test3" ] }),
 						createPass({ name: [ ".only", "test4" ] }),
 					]}),
-				]),
+				]}),
 			);
 		});
 
@@ -1583,9 +1587,9 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, tests: [
-					TestResult.suite([], [
+					createSuite({ tests: [
 						createPass({ name: "test" }),
-					]),
+					]}),
 				]}),
 			);
 		});
@@ -1634,9 +1638,9 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ mark: TestMark.only, tests: [
-					TestResult.suite("not only", [
+					createSuite({ name: "not only", tests: [
 						createSkip({ name: [ "not only", "test1" ] }),
-					]),
+					]}),
 					createSuite({ name: "only", mark: TestMark.only, tests: [
 						createPass({ name: [ "only", "test2" ] }),
 					]}),

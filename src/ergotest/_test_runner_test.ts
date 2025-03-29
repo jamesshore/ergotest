@@ -135,9 +135,9 @@ export default describe(() => {
 			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
 			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
 
-			assert.dotEquals(results, TestResult.suite([], [
+			assert.dotEquals(results, createSuite({ tests: [
 				createFail({ name: "Unhandled error in tests", error: new Error("my error") }),
-			]));
+			]}));
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
@@ -153,9 +153,9 @@ export default describe(() => {
 			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
 			const results = await resultsPromise;
 
-			assert.dotEquals(results, TestResult.suite([], [
+			assert.dotEquals(results, createSuite({ tests: [
 				createFail({ name: "Test runner watchdog", error: "Detected infinite loop in tests" }),
-			]));
+			]}));
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 

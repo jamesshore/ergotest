@@ -439,7 +439,9 @@ export class TestSuite implements Test {
 			afterAllResults.push(result);
 		}
 
-		return TestResult.suite(runOptions.name, testResults, {
+		return TestSuiteResult.create({
+			name: runOptions.name,
+			tests: testResults,
 			beforeAll: beforeAllResults,
 			afterAll: afterAllResults,
 			...resultOptions,
