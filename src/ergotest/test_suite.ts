@@ -3,7 +3,7 @@
 import * as ensure from "../util/ensure.js";
 import { Clock } from "../infrastructure/clock.js";
 import {
-	RenderErrorFn,
+	RenderErrorFn, RunResult,
 	TestCaseResult,
 	TestMark,
 	TestMarkValue,
@@ -393,9 +393,10 @@ export class TestSuite implements Test {
 		for await (const before of this._beforeAll) {
 			const name = [ ...runOptions.name, `beforeAll() #${beforeAllResults.length + 1}`];
 
-			const result = this._allChildrenSkipped || beforeAllFailed
-				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, before.fnAsync, TestMark.none, before.options.timeout, [], runOptions);
+			const it = this._allChildrenSkipped || beforeAllFailed
+				? RunResult.skip({ name, filename: runOptions.filename })
+				: await runTestFnAsync(name, before.fnAsync, before.options.timeout, runOptions);
+			const result = TestCaseResult.create({ it });
 
 			if (!isSuccess(result)) beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
@@ -429,15 +430,18 @@ export class TestSuite implements Test {
 		for await (const after of this._afterAll) {
 			const name = [ ...runOptions.name, `afterAll() #${afterAllResults.length + 1}`];
 
-			const result = this._allChildrenSkipped || beforeAllFailed
-				? TestResult.skip(name, resultOptions)
-				: await runTestFnAsync(name, after.fnAsync, TestMark.none, after.options.timeout, [], runOptions);
+			const it = this._allChildrenSkipped || beforeAllFailed
+				? RunResult.skip({ name, filename: runOptions.filename })
+				: await runTestFnAsync(name, after.fnAsync, after.options.timeout, runOptions);
+			const result = TestCaseResult.create({ it });
 
 			runOptions.onTestCaseResult(result);
 			afterAllResults.push(result);
 		}
 
-		return TestResult.suite(runOptions.name, testResults, {
+		return TestSuiteResult.create({
+			name: runOptions.name,
+			tests: testResults,
 			beforeAll: beforeAllResults,
 			afterAll: afterAllResults,
 			...resultOptions,
@@ -527,48 +531,42 @@ class TestCase implements Test {
 		options = { ...options, name };
 
 		let skipTest = this._isSkipped(parentMark);
-		const beforeEachResults = [];
+		const beforeEach = [];
 		for await (const before of parentBeforeEach) {
 			ensure.defined(before.name, "before.name");
 			const result = skipTest
-				? TestResult.skip(before.name!, { filename: options.filename, mark: TestMark.none })
-				: await runTestFnAsync(before.name!, before.fnAsync, TestMark.none, before.options.timeout, [], options);
+				? RunResult.skip({ name: before.name!, filename: options.filename })
+				: await runTestFnAsync(before.name!, before.fnAsync, before.options.timeout, options);
 			if (!isSuccess(result)) skipTest = true;
-			beforeEachResults.push(result);
+			beforeEach.push(result);
 		}
 
-		let result;
+		let it;
 		if (this._testFn === undefined && this._mark === TestMark.only) {
-			result = TestResult.fail(
+			it = RunResult.fail({
 				name,
-				"Test is marked '.only', but it has no body",
-				{
-					renderError: options.renderError,
-					filename: options.filename,
-					mark: TestMark.only,
-				},
-			);
+				filename: options.filename,
+				error: "Test is marked '.only', but it has no body",
+				renderError: options.renderError,
+			});
 		}
 		else if (skipTest) {
-			result = TestResult.skip(options.name, { filename: options.filename, mark: this._mark });
+			it = RunResult.skip({ name: options.name, filename: options.filename });
 		}
 		else {
-			result = await runTestFnAsync(
-				options.name, this._testFn!, this._mark, this._timeout, beforeEachResults, options
-			);
+			it = await runTestFnAsync(options.name, this._testFn!, this._timeout, options);
 		}
 
-		const afterEachResults = [];
+		const afterEach = [];
 		for await (const after of parentAfterEach) {
 			ensure.defined(after.name, "after.name");
 			const result = skipTest
-				? TestResult.skip(after.name!, { filename: options.filename, mark: TestMark.none })
-				: await runTestFnAsync(after.name!, after.fnAsync, TestMark.none, after.options.timeout, [], options);
-			afterEachResults.push(result);
+				? RunResult.skip({ name: after.name!, filename: options.filename })
+				: await runTestFnAsync(after.name!, after.fnAsync, after.options.timeout, options);
+			afterEach.push(result);
 		}
 
-		result._beforeEach = beforeEachResults;
-		result._afterEach = afterEachResults;
+		const result = TestCaseResult.create({ mark: this._mark, beforeEach, afterEach, it });
 
 		options.onTestCaseResult(result);
 		return result;
@@ -594,11 +592,14 @@ class FailureTestCase extends TestCase {
 		afterEachFns: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const result = TestResult.fail([ this._name ], this._error, {
-			renderError: options.renderError,
+		const it = RunResult.fail({
+			name: this._name,
 			filename: this._filename,
-			mark: TestMark.none,
+			error: this._error,
+			renderError: options.renderError,
 		});
+		const result = TestCaseResult.create({ mark: TestMark.none, it });
+
 		options.onTestCaseResult(result);
 		return await result;
 	}
@@ -609,11 +610,9 @@ class FailureTestCase extends TestCase {
 async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
-	mark: TestMarkValue,
 	testTimeout: Milliseconds | undefined,
-	beforeEach: TestCaseResult[],
 	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
-): Promise<TestCaseResult> {
+): Promise<RunResult> {
 	const getConfig = <T>(name: string) => {
 		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
 		return config[name] as T;
@@ -624,17 +623,17 @@ async function runTestFnAsync(
 	return await clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return TestResult.pass(name, { beforeEach, filename, mark });
+			return RunResult.pass({ name, filename });
 		}
-		catch (err) {
-			return TestResult.fail(name, err, { filename, mark, renderError });
+		catch (error) {
+			return RunResult.fail({ name, filename, error, renderError });
 		}
 	}, async () => {
-		return await TestResult.timeout(name, timeout, { filename, mark });
+		return await RunResult.timeout({ name, filename, timeout });
 	});
 }
 
-function isSuccess(result: TestCaseResult) {
+function isSuccess(result: TestCaseResult | RunResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
 

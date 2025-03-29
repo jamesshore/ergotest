@@ -24,6 +24,7 @@ export default [
 
     rules: {
 			"@typescript-eslint/no-unused-vars": IGNORE,
+			"@typescript-eslint/no-this-alias": IGNORE,
       "no-regex-spaces": IGNORE,
       "no-unused-private-class-members": IGNORE,
 

@@ -11,31 +11,38 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
-## v0.12.x: WIP (performance)
+## v0.12.x: WIP (data model, which will enable 0.13.x performance tracking)
 
 To Document:
 * Explicitly document data model?
+* Add TestResult.testCase
 * TestResult.suite signature change
-* TestResult.pass signature change
-* TestResult.fail signature change
-* TestResult.skip signature change
-* TestResult.timeout signature change
+* TestResult.pass signature change and move to RunResult
+* TestResult.fail signature change and move to RunResult
+* TestResult.skip signature change and move to RunResult
+* TestResult.timeout signature change and move to RunResult
+* TestRenderer.renderError() signature change
 * Add TestSuiteResult.beforeAll & afterAll
 * Add TestCaseResult.beforeEach & afterEach
+* Add RunResult
 * TestSuiteResult.children --> TestSuiteResult.tests rename
-* Change in behavior: beforeAll() and afterAll() now notify upon completion (change name of onTestCaseComplete? To onProgress maybe?)
+* Move TestResult.suite() --> TestSuiteResult.create()
+* Add TestCaseResult.create()
+* Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
+* Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
 * Change in behavior: Runs all afterAll() blocks even if one fails 
 * Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
-* Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name)
+* Change in rendering: renderAsMultipleLines() breaks out beforeEach / afterEach
+* Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name); it previously highlighted everything
 
 TO DO:
-* Ensure beforeEach() / afterEach() failures, timeouts, and skips are rendered correctly (should render the name of the test that failed, but then list each before/after that failed)
-* Fix public _beforeEach/_afterEach in TestCaseResult
-* Fix public _status in TestCaseResult and duplication of renderStatusAsSingleWord() in renderAsSingleLines()
+* Split up large files
+* Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
+* Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?
+* Rename TestCaseResult.status to .consolidatedStatus? If we do, should we add TestSuiteResult.consolidatedStatus?
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
-* Factor out TestSuiteResult --> TestCaseResult --> RunResult?
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 

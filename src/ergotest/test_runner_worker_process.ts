@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
@@ -38,13 +38,14 @@ async function runWorkerAsync(
 	try {
 		const renderError = await importRendererAsync(renderer);
 
-		process.on("uncaughtException", (err) => {
-			const errorResult = TestResult.suite([], [
-				TestResult.fail("Unhandled error in tests", err, {
-					mark: TestMark.none,
-					renderError,
-				}),
-			]);
+		process.on("uncaughtException", (error) => {
+			const errorResult = TestSuiteResult.create({
+				tests: [
+					TestCaseResult.create({
+						it: RunResult.fail({ name: "Unhandled error in tests", error, renderError }),
+					})
+				],
+			});
 			sendFinalResult(errorResult, cancelKeepAliveFn);
 		});
 

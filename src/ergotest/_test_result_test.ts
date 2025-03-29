@@ -1,10 +1,20 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, beforeEach, describe, it } from "../util/tests.js";
+import {
+	afterAll,
+	afterEach,
+	assert, beforeAll,
+	beforeEach,
+	createFail,
+	createPass,
+	createSkip,
+	createSuite,
+	createTimeout,
+	describe,
+	it,
+} from "../util/tests.js";
 import { AssertionError } from "node:assert";
-import { TestCaseResult, TestMark, TestMarkValue, TestResult, TestStatus } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
-
-const IRRELEVANT_ERROR = new Error("irrelevant error");
 
 export default describe(() => {
 
@@ -12,7 +22,7 @@ export default describe(() => {
 
 		it("has a name and list of test results", () => {
 			const tests = [ createPass({ name: "test 1" }), createPass({ name: "test 2" }) ];
-			const suite = TestResult.suite([ "my name" ], tests);
+			const suite = createSuite({ name: [ "my name" ], tests });
 
 			assert.equal(suite.name, [ "my name" ]);
 			assert.equal(suite.tests, tests);
@@ -257,8 +267,14 @@ export default describe(() => {
 		});
 
 		it("has optional beforeEach and afterEach results", () => {
-			const beforeEach = [ createPass(), createFail() ];
-			const afterEach = [ createTimeout(), createSkip() ];
+			const beforeEach = [
+				RunResult.pass({ name: "my_pass" }),
+				RunResult.fail({ name: "my_fail", error: "my_error" })
+			];
+			const afterEach = [
+				RunResult.timeout({ name: "my_timeout", timeout: 99 }),
+				RunResult.skip({ name: "my_skip"})
+			];
 
 			const pass = createPass({ beforeEach, afterEach });
 			const skip = createSkip({ beforeEach, afterEach });
@@ -323,7 +339,7 @@ export default describe(() => {
 			check({ message: "my message" }, "{ message: 'my message' }");
 
 			function check(error: unknown, expected: string) {
-				const result = TestResult.fail([], error);
+				const result = TestCaseResult.create({ it: RunResult.fail({ name: [], error }) });
 				assert.equal(result.errorMessage, expected);
 			}
 		});
@@ -939,90 +955,3 @@ export default describe(() => {
 
 });
 
-function createSuite({
-	name = "irrelevant name",
-	tests = [],
-	beforeAll = undefined,
-	afterAll = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	tests?: TestResult[],
-	beforeAll?: TestCaseResult[],
-	afterAll?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.suite(name, tests, { beforeAll, afterAll, filename, mark });
-}
-
-function createPass({
-	name = "irrelevant name",
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.pass(name, { beforeEach, afterEach, filename, mark });
-}
-
-function createFail({
-	name = "irrelevant name",
-	error = IRRELEVANT_ERROR,
-	renderError = undefined,
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	error?: string | Error,
-	renderError?: () => string,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.fail(name, error, { renderError, beforeEach, afterEach, filename, mark });
-}
-
-function createSkip({
-	name = "irrelevant name",
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.skip(name, { beforeEach, afterEach, filename, mark });
-}
-
-function createTimeout({
-	name = "irrelevant name",
-	timeout = 42,
-	beforeEach = undefined,
-	afterEach = undefined,
-	filename = undefined,
-	mark = undefined,
-}: {
-	name?: string | string[],
-	timeout?: number,
-	beforeEach?: TestCaseResult[],
-	afterEach?: TestCaseResult[],
-	filename?: string,
-	mark?: TestMarkValue,
-} = {}) {
-	return TestResult.timeout(name, timeout, { beforeEach, afterEach, filename, mark });
-}
