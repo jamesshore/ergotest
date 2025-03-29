@@ -956,6 +956,18 @@ export class RunResult {
 		return this._timeout!;
 	}
 
+	equals(that: RunResult): boolean {
+		if (!(that instanceof RunResult)) return false;
+
+		const sameStatus = this._status === that._status;
+		const sameFilename = this.filename === that.filename;
+		const sameName = util.isDeepStrictEqual(this._name, that._name);
+		const sameError = this.status !== TestStatus.fail || this._errorMessage === that._errorMessage;
+		const sameTimeout = this._status !== TestStatus.timeout || this._timeout === that._timeout;
+
+		return sameName && sameFilename && sameStatus && sameError && sameTimeout;
+	}
+
 	/**
 	 * Convert this result into a bare object later deserialization.
 	 * @returns {object} The serialized object.

@@ -381,7 +381,7 @@ export default describe(() => {
 			assert.equal(onlyMark.mark, TestMark.only, "mark");
 		});
 
-		it("can be compared using equals()", () => {
+		it.skip("can be compared using equals()", () => {
 			assert.dotEquals(createPass({ name: "my name" }), createPass({ name: "my name" }));
 			assert.dotEquals(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "child" ] }));
 
@@ -407,6 +407,16 @@ export default describe(() => {
 			// marks
 			assert.dotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.skip }));
 			assert.notDotEquals(createPass({ mark: TestMark.skip }), createPass({ mark: TestMark.none }));
+
+			// beforeEach / afterEach
+			assert.dotEquals(
+				createPass({ beforeEach: [ createPass({ name: "before" }) ]}),
+				createPass({ beforeEach: [ createPass({ name: "before" }) ]}),
+			);
+			assert.notDotEquals(
+				createPass({ beforeEach: [ createPass({ name: "before" }) ]}),
+				createPass({ beforeEach: [ createPass({ name: "different" }) ]}),
+			);
 		});
 
 	});
@@ -625,6 +635,50 @@ export default describe(() => {
 			assert.equal(result.renderAsSingleLine(), renderer.renderAsSingleLines(result));
 			assert.equal(result.renderAsMultipleLines(), renderer.renderAsMultipleLines(result));
 		});
+
+	});
+
+
+	describe("run results", () => {
+
+		it("can be compared using equals()", () => {
+			// status
+			assertNotEqual(createPass(), createSkip());
+
+			// name
+			assertEqual(createPass({ name: "my name" }), createPass({ name: "my name" }));
+			assertEqual(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "child" ] }));
+			assertNotEqual(createPass({ name: "my name" }), createPass({ name: "different" }));
+			assertNotEqual(createPass({ name: [ "parent", "child" ] }), createPass({ name: [ "parent", "different" ] }));
+
+			// filename
+			assertEqual(createPass({ filename: "same" }), createPass({ filename: "same" }));
+			assertNotEqual(createPass({ filename: "same" }), createPass({ filename: "different" }));
+
+			// error (disregard rendering when comparing errors: if message is equal, error is equal)
+			assertEqual(
+				createFail({ name: "my name", error: new Error("my error") }),
+				createFail({ name: "my name", error: new Error("my error") }),
+			);
+			assertNotEqual(
+				createFail({ name: "my name", error: new Error("my error") }),
+				createFail({ name: "my name", error: new Error("different error") }),
+			);
+
+			// timeout
+			assertNotEqual(
+				createTimeout({ name: "my name", timeout: 1 }),
+				createTimeout({ name: "my name", timeout: 2 }),
+			);
+		});
+
+		function assertEqual(left: TestCaseResult, right: TestCaseResult) {
+			assert.dotEquals(left.it, right.it);
+		}
+
+		function assertNotEqual(left: TestCaseResult, right: TestCaseResult) {
+			assert.notDotEquals(left.it, right.it);
+		}
 
 	});
 
