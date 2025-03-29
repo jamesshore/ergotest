@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { TestCaseResult, TestMark, TestResult, TestSuiteResult } from "./test_result.js";
+import { RunResult, TestCaseResult, TestSuiteResult } from "./test_result.js";
 import child_process from "node:child_process";
 import path from "node:path";
 import { Clock } from "../infrastructure/clock.js";
@@ -111,12 +111,17 @@ async function runTestsInWorkerProcessAsync(worker, clock, modulePaths, { timeou
 }
 function detectInfiniteLoops(clock, resolve, renderError) {
     const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, ()=>{
-        const errorResult = TestResult.suite([], [
-            TestResult.fail("Test runner watchdog", "Detected infinite loop in tests", {
-                mark: TestMark.none,
-                renderError
-            })
-        ]);
+        const errorResult = TestSuiteResult.create({
+            tests: [
+                TestCaseResult.create({
+                    it: RunResult.fail({
+                        name: "Test runner watchdog",
+                        error: "Detected infinite loop in tests",
+                        renderError
+                    })
+                })
+            ]
+        });
         resolve(errorResult);
     });
     return {

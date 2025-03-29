@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { TestMark, TestResult } from "./test_result.js";
+import { RunResult, TestCaseResult, TestSuiteResult } from "./test_result.js";
 import { Clock } from "../infrastructure/clock.js";
 import process from "node:process";
 const KEEPALIVE_INTERVAL_IN_MS = 100;
@@ -26,13 +26,18 @@ function main() {
 async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config, renderer }) {
     try {
         const renderError = await importRendererAsync(renderer);
-        process.on("uncaughtException", (err)=>{
-            const errorResult = TestResult.suite([], [
-                TestResult.fail("Unhandled error in tests", err, {
-                    mark: TestMark.none,
-                    renderError
-                })
-            ]);
+        process.on("uncaughtException", (error)=>{
+            const errorResult = TestSuiteResult.create({
+                tests: [
+                    TestCaseResult.create({
+                        it: RunResult.fail({
+                            name: "Unhandled error in tests",
+                            error,
+                            renderError
+                        })
+                    })
+                ]
+            });
             sendFinalResult(errorResult, cancelKeepAliveFn);
         });
         const suite = await TestSuite.fromModulesAsync(modulePaths);

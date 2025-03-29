@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../util/ensure.js";
-import { TestCaseResult, TestMark, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
 import { Colors } from "../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
@@ -20,14 +20,12 @@ const summaryColor = Colors.brightWhite.dim;
  * rather than called directly.
  * @param {string[]} name The names of the test
  * @param {unknown} error The error that occurred
- * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
  * @param {string} [filename] The file that contained the test, if known
  * @return The description
- */ export function renderError(name, error, mark, filename) {
+ */ export function renderError(name, error, filename) {
     ensure.signature(arguments, [
         Array,
         ensure.ANY_TYPE,
-        String,
         [
             undefined,
             String
@@ -168,19 +166,22 @@ export class TestRenderer {
         }
     }
     /**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */ renderAsCharacters(testCaseResults) {
         ensure.signature(arguments, [
             [
                 TestCaseResult,
+                RunResult,
                 Array
             ]
         ]);
-        return this.#renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult)=>{
+        return renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult)=>{
             return TestRenderer.#PROGRESS_RENDERING[testResult.status];
         });
     }
     /**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
 	 */ renderAsSingleLines(testCaseResults) {
         ensure.signature(arguments, [
@@ -189,28 +190,30 @@ export class TestRenderer {
                 Array
             ]
         ]);
-        return render(this, testCaseResults).join("\n");
-        function render(self, testCaseResults) {
-            const str = self.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult)=>{
-                const status = self.renderStatusAsSingleWord(testResult);
-                const name = self.renderNameOnOneLine(testResult);
-                let testDetail = "";
-                let beforeAfter = "";
-                if (showTestDetail(testResult)) {
-                    const detailSeparator = `\n  ${summaryColor("-->")}  `;
-                    const beforeAfterResults = [
-                        ...testResult.beforeEach,
-                        ...testResult.afterEach
-                    ];
-                    testDetail = `${detailSeparator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`;
-                    beforeAfter = detailSeparator + render(self, beforeAfterResults).join(detailSeparator);
-                }
-                return `${status} ${name}${testDetail}${beforeAfter}`;
+        const self = this;
+        return renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult)=>{
+            return showTestDetail(testResult) ? renderDetail(testResult) : renderResult(testResult);
+        });
+        function renderDetail(testResult) {
+            const separator = `\n  ${summaryColor("-->")}  `;
+            const beforeAfter = [
+                ...testResult.beforeEach,
+                ...testResult.afterEach
+            ];
+            const details = renderMultipleResults(beforeAfter, separator, RunResult, (detail)=>renderResult(detail));
+            return renderResult(testResult) + `${separator}${self.renderStatusAsSingleWord(testResult.it.status)} the test itself` + separator + details;
+        }
+        function renderResult(result) {
+            if (result instanceof RunResult) result = TestCaseResult.create({
+                it: result
             });
-            return str.split("\n");
+            const status = self.renderStatusAsSingleWord(result.status);
+            const name = self.renderNameOnOneLine(result.name, result.filename);
+            return `${status} ${name}`;
         }
     }
     /**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A full explanation of this test result.
 	 */ renderAsMultipleLines(testCaseResults) {
         ensure.signature(arguments, [
@@ -220,35 +223,34 @@ export class TestRenderer {
                 Array
             ]
         ]);
-        return render(this, testCaseResults, "\n\n\n");
-        function render(self, testCaseResults, separator) {
-            return self.#renderMultipleResults(testCaseResults, separator, TestCaseResult, (testResult)=>{
-                const name = self.renderNameOnMultipleLines(testResult);
-                if (showTestDetail(testResult)) {
-                    return renderDetail(self, testResult);
-                } else {
-                    const status = self.renderStatusWithMultiLineDetails(testResult);
-                    return `${name}\n\n${status}`;
-                }
-            });
-        }
-        function renderDetail(self, testResult) {
+        const self = this;
+        return renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult)=>{
+            const name = this.renderNameOnMultipleLines(testResult.name, testResult.filename);
+            if (showTestDetail(testResult)) {
+                return renderDetail(testResult);
+            } else {
+                const status = this.renderStatusWithMultiLineDetails(testResult.it);
+                return `${name}\n\n${status}`;
+            }
+        });
+        function renderDetail(testResult) {
             const chevrons = headerColor(`»»» `);
-            const beforeAfterResults = [
+            const beforeAfter = [
                 ...testResult.beforeEach,
                 ...testResult.afterEach
             ];
-            const beforeAfter = `\n\n` + self.#renderMultipleResults(beforeAfterResults, `\n\n`, TestCaseResult, (detailResult)=>{
-                const status = self.renderStatusWithMultiLineDetails(detailResult);
-                const finalName = normalizeName(detailResult.name).pop();
-                return chevrons + headerColor(finalName) + `\n${self.renderNameOnOneLine(detailResult)}\n\n${status}`;
+            const details = renderMultipleResults(beforeAfter, `\n\n`, RunResult, (detail)=>{
+                const status = self.renderStatusWithMultiLineDetails(detail);
+                const finalName = normalizeName(detail.name).pop();
+                return chevrons + headerColor(finalName) + "\n" + self.renderNameOnOneLine(detail.name, detail.filename) + "\n\n" + status;
             });
-            const test = `\n\n${chevrons}${headerColor("the test itself")}\n` + `${self.renderNameOnOneLine(testResult)}\n\n${self.renderStatusWithMultiLineDetails(testResult)}`;
-            return `${self.renderNameOnMultipleLines(testResult)}${beforeAfter}${test}\n\n${headerColor("«««")}`;
+            const test = testResult.it;
+            return self.renderNameOnMultipleLines(test.name, test.filename) + "\n\n" + details + "\n\n" + chevrons + headerColor("the test itself") + "\n" + self.renderNameOnOneLine(test.name, test.filename) + "\n\n" + self.renderStatusWithMultiLineDetails(test) + "\n\n" + headerColor("«««");
         }
     }
     /**
-	 * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
+	 * @param {TestResult | TestResult[]} The tests or suites to render.
+	 * @returns {string} A line for each test or suite that's marked (.only, .skip, etc.) with the mark and the test name.
 	 */ renderMarksAsLines(testResults) {
         ensure.signature(arguments, [
             [
@@ -257,61 +259,79 @@ export class TestRenderer {
                 Array
             ]
         ]);
-        return this.#renderMultipleResults(testResults, "\n", TestResult, (testResult)=>{
-            const mark = this.renderMarkAsSingleWord(testResult);
-            const name = this.renderNameOnOneLine(testResult);
+        return renderMultipleResults(testResults, "\n", TestResult, (testResult)=>{
+            const mark = this.renderMarkAsSingleWord(testResult.mark);
+            const name = this.renderNameOnOneLine(testResult.name, testResult.filename);
             if (mark === "") return "";
             else return `${mark} ${name}`;
         });
     }
     /**
-	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
-	 */ renderNameOnOneLine(testCaseResult) {
+	 * @param { string[] } name The name to render.
+	 * @param { string? } [filename] The filename to render.
+	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line. Only the
+	 *   filename is rendered; the rest of the path is ignored.
+	 */ renderNameOnOneLine(name, filename) {
         ensure.signature(arguments, [
-            TestResult
+            Array,
+            [
+                undefined,
+                String
+            ]
         ]);
-        const filename = testCaseResult.filename === undefined ? "" : headerColor(path.basename(testCaseResult.filename)) + " » ";
-        const name = normalizeNameOld(testCaseResult).join(" » ");
-        return `${filename}${name}`;
+        const renderedFilename = filename === undefined ? "" : headerColor(path.basename(filename)) + " » ";
+        const renderedName = normalizeName(name).join(" » ");
+        return `${renderedFilename}${renderedName}`;
     }
     /**
+	 * @param { string[] } name The name to render.
+	 * @param { string? } [filename] The filename to render.	 *
 	 * @returns {string} The name of the test, including parent suites and filename, with the suites and filename
-	 *   rendered on a separate line.
-	 */ renderNameOnMultipleLines(testResult) {
+	 *   rendered on a separate line. Only the filename is rendered; the rest of the path is ignored.
+	 */ renderNameOnMultipleLines(name, filename) {
         ensure.signature(arguments, [
-            TestResult
+            Array,
+            [
+                undefined,
+                String
+            ]
         ]);
-        const name = normalizeNameOld(testResult);
+        name = normalizeName(name);
         const suites = name.slice(0, name.length - 1);
         const test = name[name.length - 1];
-        if (testResult.filename !== undefined) suites.unshift(path.basename(testResult.filename));
+        if (filename !== undefined) suites.unshift(path.basename(filename));
         const suitesName = suites.length > 0 ? headerColor(suites[0]) + suites.slice(1).map((name)=>` » ${name}`).join("") + "\n" + headerColor("» ") : "";
         return suitesName + headerColor(test);
     }
     /**
-	 * @returns {string} The color-coded status of the test.
-	 */ renderStatusAsSingleWord(testCaseResult) {
-        return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
+	 * @param { TestStatusValue } status The status to render.
+	 * @returns {string} The color-coded status.
+	 */ renderStatusAsSingleWord(status) {
+        return TestRenderer.#DESCRIPTION_RENDERING[status];
     }
-    renderStatusWithMultiLineDetails(testCaseResult) {
-        switch(testCaseResult._status){
+    /**
+	 * @param { RunResult } status The result to render.
+	 * @returns { string } The color-coded status, including error and timeout details where appropriate.
+	 */ renderStatusWithMultiLineDetails(runResult) {
+        switch(runResult.status){
             case TestStatus.pass:
             case TestStatus.skip:
-                return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult._status];
+                return TestRenderer.#DESCRIPTION_RENDERING[runResult.status];
             case TestStatus.fail:
-                return typeof testCaseResult.errorRender === "string" ? testCaseResult.errorRender : util.inspect(testCaseResult.errorRender, {
+                return typeof runResult.errorRender === "string" ? runResult.errorRender : util.inspect(runResult.errorRender, {
                     depth: Infinity
                 });
             case TestStatus.timeout:
-                return timeoutMessageColor(`Timed out after ${testCaseResult.timeout}ms`);
+                return timeoutMessageColor(`Timed out after ${runResult.timeout}ms`);
             default:
-                throw new Error(`Unrecognized test result status: ${testCaseResult._status}`);
+                throw new Error(`Unrecognized test result status: ${runResult.status}`);
         }
     }
     /**
+	 * @param { TestMarkValue } mark The mark.
 	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
-	 */ renderMarkAsSingleWord(testResult) {
-        switch(testResult.mark){
+	 */ renderMarkAsSingleWord(mark) {
+        switch(mark){
             case TestMark.none:
                 return "(no mark)";
             case TestMark.skip:
@@ -319,23 +339,9 @@ export class TestRenderer {
             case TestMark.only:
                 return Colors.brightCyan(".only");
             default:
-                ensure.unreachable(`Unrecognized test mark: ${testResult.mark}`);
+                ensure.unreachable(`Unrecognized test mark: ${mark}`);
         }
     }
-    #renderMultipleResults(testResults, separator, expectedType, renderFn) {
-        if (!Array.isArray(testResults)) testResults = [
-            testResults
-        ];
-        testResults.forEach((result, i)=>ensure.type(result, expectedType, `testResult[${i}]`));
-        return testResults.map((result)=>renderFn(result)).join(separator);
-    }
-}
-function normalizeNameOld(testResult) {
-    return testResult.name.length === 0 ? [
-        "(no name)"
-    ] : [
-        ...testResult.name
-    ];
 }
 function normalizeName(name) {
     return name.length === 0 ? [
@@ -351,7 +357,14 @@ function showTestDetail(testResult) {
     ];
     const allBeforeAfterPass = beforeAfter.every((result)=>result.status === TestStatus.pass);
     const allBeforeAfterSkipped = beforeAfter.every((result)=>result.status === TestStatus.skip);
-    return !(allBeforeAfterPass || allBeforeAfterSkipped && testResult._status === TestStatus.skip);
+    return !(allBeforeAfterPass || allBeforeAfterSkipped && testResult.it.status === TestStatus.skip);
+}
+function renderMultipleResults(testResults, separator, expectedType, renderFn) {
+    if (!Array.isArray(testResults)) testResults = [
+        testResults
+    ];
+    testResults.forEach((result, i)=>ensure.type(result, expectedType, `testResult[${i}]`));
+    return testResults.map((result)=>renderFn(result)).join(separator);
 }
 
 //# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_renderer.js.map

@@ -1,4 +1,4 @@
-import { TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMarkValue, TestResult, TestStatusValue, TestSuiteResult } from "./test_result.js";
 import { AssertionError } from "node:assert";
 import { SourceMap } from "../infrastructure/source_map.js";
 /**
@@ -6,11 +6,10 @@ import { SourceMap } from "../infrastructure/source_map.js";
  * rather than called directly.
  * @param {string[]} name The names of the test
  * @param {unknown} error The error that occurred
- * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
  * @param {string} [filename] The file that contained the test, if known
  * @return The description
  */
-export declare function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string): string;
+export declare function renderError(name: string[], error: unknown, filename?: string): string;
 /**
  * Provides an error's stack trace, or "" if there wasn't one. If `filename` is provided, the stack frames that
  * correspond to the filename will be highlighted.
@@ -36,37 +35,52 @@ export declare class TestRenderer {
      */
     renderSummary(testSuiteResult: TestSuiteResult, elapsedMs?: number): string;
     /**
+     * @param {TestCaseResult | TestCaseResult[]} The tests to render.
      * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
      */
     renderAsCharacters(testCaseResults: TestCaseResult | TestCaseResult[]): string;
     /**
+     * @param {TestCaseResult | TestCaseResult[]} The tests to render.
      * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
      */
     renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string;
     /**
+     * @param {TestCaseResult | TestCaseResult[]} The tests to render.
      * @returns {string} A full explanation of this test result.
      */
     renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string;
     /**
-     * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
+     * @param {TestResult | TestResult[]} The tests or suites to render.
+     * @returns {string} A line for each test or suite that's marked (.only, .skip, etc.) with the mark and the test name.
      */
     renderMarksAsLines(testResults: TestResult | TestResult[]): string;
     /**
-     * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
+     * @param { string[] } name The name to render.
+     * @param { string? } [filename] The filename to render.
+     * @returns {string} The name of the test, including parent suites and filename, rendered as a single line. Only the
+     *   filename is rendered; the rest of the path is ignored.
      */
-    renderNameOnOneLine(testCaseResult: TestResult): string;
+    renderNameOnOneLine(name: string[], filename?: string): string;
     /**
+     * @param { string[] } name The name to render.
+     * @param { string? } [filename] The filename to render.	 *
      * @returns {string} The name of the test, including parent suites and filename, with the suites and filename
-     *   rendered on a separate line.
+     *   rendered on a separate line. Only the filename is rendered; the rest of the path is ignored.
      */
-    renderNameOnMultipleLines(testResult: TestResult): string;
+    renderNameOnMultipleLines(name: string[], filename?: string): string;
     /**
-     * @returns {string} The color-coded status of the test.
+     * @param { TestStatusValue } status The status to render.
+     * @returns {string} The color-coded status.
      */
-    renderStatusAsSingleWord(testCaseResult: TestCaseResult): string;
-    renderStatusWithMultiLineDetails(testCaseResult: TestCaseResult): string;
+    renderStatusAsSingleWord(status: TestStatusValue): string;
     /**
+     * @param { RunResult } status The result to render.
+     * @returns { string } The color-coded status, including error and timeout details where appropriate.
+     */
+    renderStatusWithMultiLineDetails(runResult: RunResult): string;
+    /**
+     * @param { TestMarkValue } mark The mark.
      * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
      */
-    renderMarkAsSingleWord(testResult: TestResult): string;
+    renderMarkAsSingleWord(mark: TestMarkValue): string;
 }
