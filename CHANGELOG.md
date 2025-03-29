@@ -28,6 +28,7 @@ To Document:
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Move TestResult.suite() --> TestSuiteResult.create()
 * Add TestCaseResult.create()
+* TestCaseResult.equals() considers beforeEach/afterEach (and they must be in same order)
 * Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll

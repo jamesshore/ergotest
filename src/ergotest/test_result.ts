@@ -713,19 +713,26 @@ export class TestCaseResult extends TestResult {
 
 	equals(that: TestResult): boolean {
 		if (!(that instanceof TestCaseResult)) return false;
-		if (this._it.status !== that._it.status) return false;
 
-		const sameName = util.isDeepStrictEqual(this._it.name, that._it.name);
+		const sameMark = this._mark === that._mark;
+		const sameIt = this._it.equals(that._it);
+		const sameBeforeEach = compareRunResults(this._beforeEach, that._beforeEach);
+		const sameAfterEach = compareRunResults(this._afterEach, that._afterEach);
 
-		const sameError = this._it.status !== TestStatus.fail || this._it.errorMessage === that._it.errorMessage;
-		const sameTimeout = this._it.status !== TestStatus.timeout || this._it.timeout === that._it.timeout;
+		return sameMark
+			&& sameIt
+			&& sameBeforeEach
+			&& sameAfterEach;
 
-		return sameName &&
-			sameError &&
-			this._it.status === that._it.status &&
-			this._mark === that._mark &&
-			sameTimeout &&
-			this.filename === that.filename;
+		function compareRunResults(thisResults: RunResult[], thatResults: RunResult[]): boolean {
+			if (thisResults.length !== thatResults.length) return false;
+			for (let i = 0; i < thisResults.length; i++) {
+				const thisResult = thisResults[i]!;
+				const thatResult = thatResults[i]!;
+				if (!thisResult.equals(thatResult)) return false;
+			}
+			return true;
+		}
 	}
 
 }

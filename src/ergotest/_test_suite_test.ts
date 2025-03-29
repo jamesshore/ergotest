@@ -1136,9 +1136,14 @@ export default describe(() => {
 			const actualPromise = suite.runAsync({ clock });
 			await clock.tickUntilTimersExpireAsync();
 
-			assert.dotEquals(await actualPromise,
+			assert.equal(await actualPromise,
 				createSuite({
-					tests: [ createTimeout({ name: "my test", timeout: DEFAULT_TIMEOUT }) ]
+					tests: [ createTimeout({
+						name: "my test",
+						timeout: DEFAULT_TIMEOUT,
+						beforeEach: [ createPass({ name: "beforeEach()" })],
+						afterEach: [ createPass({ name: "afterEach()" })],
+					}) ]
 				}),
 				"result",
 			);
