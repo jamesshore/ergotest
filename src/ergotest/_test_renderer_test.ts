@@ -347,19 +347,19 @@ export default describe(() => {
 				const renderer = TestRenderer.create();
 				assert.equal(renderAsMultipleLines(result),
 					renderer.renderNameOnMultipleLines(result) + "\n\n"
-					+ headerColor("»»» ") + headerColor("before 1") + "\n" + renderer.renderNameOnOneLine(before1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 1") + "\n" + renderer.renderNameOnOneLine(["before 1"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before1) + "\n\n"
-					+ headerColor("»»» ") + headerColor("before 2") + "\n" + renderer.renderNameOnOneLine(before2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 2") + "\n" + renderer.renderNameOnOneLine(["before 2"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before2) + "\n\n"
-					+ headerColor("»»» ") + headerColor("before 3") + "\n" + renderer.renderNameOnOneLine(before3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before 3") + "\n" + renderer.renderNameOnOneLine(["before 3"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before3) + "\n\n"
-					+ headerColor("»»» ") + headerColor("after 1") + "\n" + renderer.renderNameOnOneLine(after1) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 1") + "\n" + renderer.renderNameOnOneLine(["after 1"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after1) + "\n\n"
-					+ headerColor("»»» ") + headerColor("after 2") + "\n" + renderer.renderNameOnOneLine(after2) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 2") + "\n" + renderer.renderNameOnOneLine(["after 2"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after2) + "\n\n"
-					+ headerColor("»»» ") + headerColor("after 3") + "\n" + renderer.renderNameOnOneLine(after3) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after 3") + "\n" + renderer.renderNameOnOneLine(["after 3"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after3) + "\n\n"
-					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(["my name"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
 					+ headerColor("«««")
 				);
@@ -377,11 +377,11 @@ export default describe(() => {
 				const renderer = TestRenderer.create();
 				assert.equal(renderAsMultipleLines(result),
 					renderer.renderNameOnMultipleLines(result) + "\n\n"
-					+ headerColor("»»» ") + headerColor("before") + "\n" + renderer.renderNameOnOneLine(before) + "\n\n"
+					+ headerColor("»»» ") + headerColor("before") + "\n" + renderer.renderNameOnOneLine(["before"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(before) + "\n\n"
-					+ headerColor("»»» ") + headerColor("after") + "\n" + renderer.renderNameOnOneLine(after) + "\n\n"
+					+ headerColor("»»» ") + headerColor("after") + "\n" + renderer.renderNameOnOneLine(["after"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(after) + "\n\n"
-					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(result) + "\n\n"
+					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(["my name"]) + "\n\n"
 					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
 					+ headerColor("«««")
 				);
@@ -434,32 +434,27 @@ export default describe(() => {
 	describe("single-line names", () => {
 
 		it("renders default name when no name provided", () => {
-			const result = createPass({ name: [] });
-			assert.equal(render(result), "(no name)");
+			assert.equal(render([]), "(no name)");
 		});
 
 		it("renders one name", () => {
-			const result = createPass({ name: "my name" });
-			assert.equal(render(result), "my name");
+			assert.equal(render([ "my name" ]), "my name");
 		});
 
 		it("renders multiple names", () => {
-			const result = createPass({ name: [ "suite 1", "suite 2", "my name" ]});
-			assert.equal(render(result), "suite 1 » suite 2 » my name");
+			assert.equal(render([ "suite 1", "suite 2", "my name" ]), "suite 1 » suite 2 » my name");
 		});
 
 		it("renders filename and name together", () => {
-			const result = createPass({ filename: "my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file") +" » my name");
+			assert.equal(render([ "my name" ], "my_file"), headerColor("my_file") +" » my name");
 		});
 
 		it("strips directories from filename", () => {
-			const result = createPass({ filename: "/root/parent/child/my_file", name: "my name" });
-			assert.equal(render(result), headerColor("my_file") + " » my name");
+			assert.equal(render([ "my name" ], "/root/parent/child/my_file"), headerColor("my_file") + " » my name");
 		});
 
-		function render(result: TestCaseResult): string {
-			return TestRenderer.create().renderNameOnOneLine(result);
+		function render(name: string[], filename?: string): string {
+			return TestRenderer.create().renderNameOnOneLine(name, filename);
 		}
 
 	});

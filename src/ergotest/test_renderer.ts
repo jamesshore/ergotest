@@ -191,6 +191,7 @@ export class TestRenderer {
 	}
 
 	/**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */
 	renderAsCharacters(testCaseResults: TestCaseResult | TestCaseResult[]): string {
@@ -202,6 +203,7 @@ export class TestRenderer {
 	}
 
 	/**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A line for each test with the status (passed, failed, etc.) and the test name.
 	 */
 	renderAsSingleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
@@ -229,12 +231,13 @@ export class TestRenderer {
 			if (result instanceof RunResult) result = TestCaseResult.create({ it: result });
 
 			const status = self.renderStatusAsSingleWord(result.status);
-			const name = self.renderNameOnOneLine(result);
+			const name = self.renderNameOnOneLine(result.name, result.filename);
 			return `${status} ${name}`;
 		}
 	}
 
 	/**
+	 * @param {TestCaseResult | TestCaseResult[]} The tests to render.
 	 * @returns {string} A full explanation of this test result.
 	 */
 	renderAsMultipleLines(testCaseResults: TestCaseResult | TestCaseResult[]): string {
@@ -262,28 +265,29 @@ export class TestRenderer {
 				const finalName = normalizeName(detail.name).pop() as string;
 
 				return chevrons + headerColor(finalName) + "\n"
-					+ self.renderNameOnOneLine(testCase) + "\n\n"
+					+ self.renderNameOnOneLine(testCase.name, testCase.filename) + "\n\n"
 					+ status;
 			});
 
 			return self.renderNameOnMultipleLines(testResult) + "\n\n"
 				+ details + "\n\n"
 				+ chevrons + headerColor("the test itself") + "\n"
-				+ self.renderNameOnOneLine(testResult) + "\n\n"
+				+ self.renderNameOnOneLine(testResult.name, testResult.filename) + "\n\n"
 				+ self.renderStatusWithMultiLineDetails(testResult) + "\n\n"
 				+ headerColor("«««");
 		}
 	}
 
 	/**
-	 * @returns {string} A line for each test that's marked (.only, .skip, etc.) with the mark and the test name.
+	 * @param {TestResult | TestResult[]} The tests or suites to render.
+	 * @returns {string} A line for each test or suite that's marked (.only, .skip, etc.) with the mark and the test name.
 	 */
 	renderMarksAsLines(testResults: TestResult | TestResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
 		return renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
 			const mark = this.renderMarkAsSingleWord(testResult);
-			const name = this.renderNameOnOneLine(testResult);
+			const name = this.renderNameOnOneLine(testResult.name, testResult.filename);
 
 			if (mark === "") return "";
 			else return `${mark} ${name}`;
@@ -292,17 +296,19 @@ export class TestRenderer {
 	}
 
 	/**
-	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line.
+	 * @param { string[] } name The name to render.
+	 * @param { string? } [filename] The filename to render.
+	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line. Only the filename is rendered; the rest of the path is ignored.
 	 */
-	renderNameOnOneLine(testCaseResult: TestResult) {
-		ensure.signature(arguments, [[ TestResult, RunResult ]]);
+	renderNameOnOneLine(name: string[], filename?: string) {
+		ensure.signature(arguments, [ Array, [ undefined, String ]]);
 
-		const filename = testCaseResult.filename === undefined
+		const renderedFilename = filename === undefined
 			? ""
-			: headerColor(path.basename(testCaseResult.filename)) + " » ";
-		const name = normalizeNameOld(testCaseResult).join(" » ");
+			: headerColor(path.basename(filename)) + " » ";
+		const renderedName = normalizeName(name).join(" » ");
 
-		return `${filename}${name}`;
+		return `${renderedFilename}${renderedName}`;
 	}
 
 	/**
@@ -312,7 +318,7 @@ export class TestRenderer {
 	renderNameOnMultipleLines(testResult: TestResult): string {
 		ensure.signature(arguments, [ TestResult ]);
 
-		const name = normalizeNameOld(testResult);
+		const name = DELETEME_normalizeName(testResult);
 
 		const suites = name.slice(0, name.length - 1);
 		const test = name[name.length - 1];
@@ -363,7 +369,7 @@ export class TestRenderer {
 
 }
 
-function normalizeNameOld(testResult: TestResult) {
+function DELETEME_normalizeName(testResult: TestResult) {
 	return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 }
 
