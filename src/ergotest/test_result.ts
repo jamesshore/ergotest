@@ -325,16 +325,11 @@ export class TestSuiteResult extends TestResult {
 	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
 
-		const tests: TestCaseResult[] = [];
-		const collect = (result: TestResult) => {
-			result.allTests().forEach(subTest => tests.push(subTest));
-		};
-
-		this._beforeAll.forEach(collect);
-		this._afterAll.forEach(collect);
-		this._tests.forEach(collect);
-
-		return tests;
+		return [
+			...this._beforeAll,
+			...this._afterAll,
+			...this._tests.flatMap(result => result.allTests()),
+		];
 	}
 
 	/**
