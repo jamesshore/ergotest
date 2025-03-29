@@ -28,6 +28,7 @@ To Document:
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Move TestResult.suite() --> TestSuiteResult.create()
 * Add TestCaseResult.create()
+* Change signature: TestRenderer.renderStatusAsSingleWord()
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')

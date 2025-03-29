@@ -5,9 +5,8 @@ import {
 	RunResult,
 	TestCaseResult,
 	TestMark,
-	TestMarkValue,
 	TestResult,
-	TestStatus,
+	TestStatus, TestStatusValue,
 	TestSuiteResult,
 } from "./test_result.js";
 import { ColorFn, Colors } from "../infrastructure/colors.js";
@@ -15,6 +14,7 @@ import path from "node:path";
 import { AssertionError } from "node:assert";
 import util from "node:util";
 import { SourceMap } from "../infrastructure/source_map.js";
+import { TypeDescriptor } from "../util/type.js";
 
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
@@ -31,7 +31,6 @@ const summaryColor = Colors.brightWhite.dim;
  * rather than called directly.
  * @param {string[]} name The names of the test
  * @param {unknown} error The error that occurred
- * @param {TestMarkValue} mark Whether the test was marked '.skip', '.only', etc.
  * @param {string} [filename] The file that contained the test, if known
  * @return The description
  */
@@ -120,10 +119,11 @@ export function renderDiff(error: AssertionError): string {
 		}
 	}
 
-	return "" +
-		expectedColor("expected: ") + expected.join("\n") + "\n" +
-		actualColor("actual:   ") + actual.join("\n");
+	return ""
+		+ expectedColor("expected: ") + expected.join("\n") + "\n"
+		+ actualColor("actual:   ") + actual.join("\n");
 }
+
 
 export class TestRenderer {
 
@@ -194,9 +194,9 @@ export class TestRenderer {
 	 * @returns {string} A single character for each test: a dot for passed, a red X for failed, etc.
 	 */
 	renderAsCharacters(testCaseResults: TestCaseResult | TestCaseResult[]): string {
-		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
+		ensure.signature(arguments, [[ TestCaseResult, RunResult, Array ]]);
 
-		return this.#renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult: TestCaseResult) => {
+		return renderMultipleResults(testCaseResults, "", TestCaseResult, (testResult: TestCaseResult) => {
 			return (TestRenderer.#PROGRESS_RENDERING)[testResult.status];
 		});
 	}
@@ -208,7 +208,7 @@ export class TestRenderer {
 		ensure.signature(arguments, [[ TestCaseResult, Array ]]);
 
 		const self = this;
-		return this.#renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
+		return renderMultipleResults(testCaseResults, "\n", TestCaseResult, (testResult: TestCaseResult) => {
 			return showTestDetail(testResult)
 				? renderDetail(testResult)
 				: renderResult(testResult);
@@ -218,7 +218,7 @@ export class TestRenderer {
 			const separator = `\n  ${summaryColor("-->")}  `;
 
 			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
-			const details = self.#renderMultipleResults(beforeAfter, separator, RunResult, detail => renderResult(detail));
+			const details = renderMultipleResults(beforeAfter, separator, RunResult, detail => renderResult(detail));
 
 			return renderResult(testResult)
 				+ `${separator}${TestRenderer.#DESCRIPTION_RENDERING[testResult._status]} the test itself`
@@ -228,7 +228,7 @@ export class TestRenderer {
 		function renderResult(result: RunResult | TestCaseResult) {
 			if (result instanceof RunResult) result = TestCaseResult.create({ it: result });
 
-			const status = self.renderStatusAsSingleWord(result);
+			const status = self.renderStatusAsSingleWord(result.status);
 			const name = self.renderNameOnOneLine(result);
 			return `${status} ${name}`;
 		}
@@ -241,7 +241,7 @@ export class TestRenderer {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
 		const self = this;
-		return this.#renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
+		return renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
 			const name = this.renderNameOnMultipleLines(testResult);
 
 			if (showTestDetail(testResult)) {
@@ -256,7 +256,7 @@ export class TestRenderer {
 		function renderDetail(testResult: TestCaseResult): string {
 			const chevrons = headerColor(`»»» `);
 			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
-			const details = self.#renderMultipleResults(beforeAfter, `\n\n`, RunResult, detail => {
+			const details = renderMultipleResults(beforeAfter, `\n\n`, RunResult, detail => {
 				const testCase = TestCaseResult.create({ it: detail });
 				const status = self.renderStatusWithMultiLineDetails(testCase);
 				const finalName = normalizeName(detail.name).pop() as string;
@@ -281,7 +281,7 @@ export class TestRenderer {
 	renderMarksAsLines(testResults: TestResult | TestResult[]): string {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
-		return this.#renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
+		return renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
 			const mark = this.renderMarkAsSingleWord(testResult);
 			const name = this.renderNameOnOneLine(testResult);
 
@@ -329,8 +329,8 @@ export class TestRenderer {
 	/**
 	 * @returns {string} The color-coded status of the test.
 	 */
-	renderStatusAsSingleWord(testCaseResult: TestCaseResult) {
-		return TestRenderer.#DESCRIPTION_RENDERING[testCaseResult.status];
+	renderStatusAsSingleWord(status: TestStatusValue) {
+		return TestRenderer.#DESCRIPTION_RENDERING[status];
 	}
 
 	renderStatusWithMultiLineDetails(testCaseResult: TestCaseResult): string {
@@ -361,18 +361,6 @@ export class TestRenderer {
 		}
 	}
 
-	#renderMultipleResults<T>(
-		testResults: T | T[],
-		separator: string,
-		expectedType: Function,   // eslint-disable-line @typescript-eslint/no-unsafe-function-type
-		renderFn: (testResult: T) => string,
-	): string {
-		if (!Array.isArray(testResults)) testResults = [ testResults ];
-		testResults.forEach((result, i) => ensure.type(result, expectedType, `testResult[${i}]`));
-
-		return testResults.map(result => renderFn(result)).join(separator);
-	}
-
 }
 
 function normalizeNameOld(testResult: TestResult) {
@@ -389,4 +377,16 @@ function showTestDetail(testResult: TestCaseResult) {
 	const allBeforeAfterSkipped = beforeAfter.every(result => result.status === TestStatus.skip);
 
 	return !(allBeforeAfterPass || (allBeforeAfterSkipped && testResult._status === TestStatus.skip));
+}
+
+function renderMultipleResults<T>(
+	testResults: T | T[],
+	separator: string,
+	expectedType: TypeDescriptor,
+	renderFn: (testResult: T) => string,
+): string {
+	if (!Array.isArray(testResults)) testResults = [ testResults ];
+	testResults.forEach((result, i) => ensure.type(result, expectedType, `testResult[${i}]`));
+
+	return testResults.map(result => renderFn(result)).join(separator);
 }
