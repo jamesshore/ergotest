@@ -396,7 +396,7 @@ export class TestSuite implements Test {
 			const it = this._allChildrenSkipped || beforeAllFailed
 				? RunResult.skip({ name, filename: runOptions.filename })
 				: await runTestFnAsync(name, before.fnAsync, before.options.timeout, runOptions);
-			const result = TestResult.testCase({ it });
+			const result = TestCaseResult.create({ it });
 
 			if (!isSuccess(result)) beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
@@ -433,7 +433,7 @@ export class TestSuite implements Test {
 			const it = this._allChildrenSkipped || beforeAllFailed
 				? RunResult.skip({ name, filename: runOptions.filename })
 				: await runTestFnAsync(name, after.fnAsync, after.options.timeout, runOptions);
-			const result = TestResult.testCase({ it });
+			const result = TestCaseResult.create({ it });
 
 			runOptions.onTestCaseResult(result);
 			afterAllResults.push(result);
@@ -566,7 +566,7 @@ class TestCase implements Test {
 			afterEach.push(result);
 		}
 
-		const result = TestResult.testCase({ mark: this._mark, beforeEach, afterEach, it });
+		const result = TestCaseResult.create({ mark: this._mark, beforeEach, afterEach, it });
 
 		options.onTestCaseResult(result);
 		return result;
@@ -598,7 +598,7 @@ class FailureTestCase extends TestCase {
 			error: this._error,
 			renderError: options.renderError,
 		});
-		const result = TestResult.testCase({ mark: TestMark.none, it });
+		const result = TestCaseResult.create({ mark: TestMark.none, it });
 
 		options.onTestCaseResult(result);
 		return await result;

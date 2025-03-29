@@ -1,6 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import {
-	assert,
+	afterAll,
+	afterEach,
+	assert, beforeAll,
 	beforeEach,
 	createFail,
 	createPass,
@@ -11,7 +13,7 @@ import {
 	it,
 } from "../util/tests.js";
 import { AssertionError } from "node:assert";
-import { RunResult, TestMark, TestResult, TestStatus } from "./test_result.js";
+import { RunResult, TestCaseResult, TestMark, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";
 
 export default describe(() => {
@@ -337,7 +339,7 @@ export default describe(() => {
 			check({ message: "my message" }, "{ message: 'my message' }");
 
 			function check(error: unknown, expected: string) {
-				const result = TestResult.testCase({ it: RunResult.fail({ name: [], error }) });
+				const result = TestCaseResult.create({ it: RunResult.fail({ name: [], error }) });
 				assert.equal(result.errorMessage, expected);
 			}
 		});

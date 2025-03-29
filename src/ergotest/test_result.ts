@@ -66,28 +66,6 @@ export type RenderErrorFn = (names: string[], error: unknown, filename?: string)
  */
 export abstract class TestResult {
 
-	static testCase({
-		mark = TestMark.none,
-		beforeEach = [],
-		afterEach = [],
-		it,
-	}: {
-		mark?: TestMarkValue
-		beforeEach?: RunResult[],
-		afterEach?: RunResult[],
-		it: RunResult,
-	}): TestCaseResult {
-		ensure.signature(arguments, [[ undefined, {
-			mark: [ undefined, String ],
-			beforeEach: [ undefined, Array ],
-			afterEach: [ undefined, Array ],
-			it: RunResult,
-		}]]);
-
-		return new TestCaseResult({ mark, beforeEach, afterEach, it });
-
-	}
-
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {objects} serializedTestResult The serialized test result.
@@ -461,6 +439,32 @@ export class TestSuiteResult extends TestResult {
  */
 export class TestCaseResult extends TestResult {
 
+	private readonly _mark: TestMarkValue;
+	private _beforeEach: RunResult[];
+	private _afterEach: RunResult[];
+	private readonly _it: RunResult;
+
+	static create({
+		mark = TestMark.none,
+		beforeEach = [],
+		afterEach = [],
+		it,
+	}: {
+		mark?: TestMarkValue
+		beforeEach?: RunResult[],
+		afterEach?: RunResult[],
+		it: RunResult,
+	}): TestCaseResult {
+		ensure.signature(arguments, [[ undefined, {
+			mark: [ undefined, String ],
+			beforeEach: [ undefined, Array ],
+			afterEach: [ undefined, Array ],
+			it: RunResult,
+		}]]);
+
+		return new TestCaseResult({ mark, beforeEach, afterEach, it });
+	}
+
 	/**
 	 * For use by {@link TestRunner}. Converts a serialized test result back into a TestResult instance.
 	 * @param {object} serializedResult The serialized test result.
@@ -486,11 +490,6 @@ export class TestCaseResult extends TestResult {
 			it: RunResult.deserialize(it),
 		});
 	}
-
-	private readonly _mark: TestMarkValue;
-	private _beforeEach: RunResult[];
-	private _afterEach: RunResult[];
-	private readonly _it: RunResult;
 
 	/** Internal use only. (Use {@link TestResult} factory methods instead.) */
 	constructor(

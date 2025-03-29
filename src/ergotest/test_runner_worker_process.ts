@@ -41,7 +41,7 @@ async function runWorkerAsync(
 		process.on("uncaughtException", (error) => {
 			const errorResult = TestSuiteResult.create({
 				tests: [
-					TestResult.testCase({
+					TestCaseResult.create({
 						it: RunResult.fail({ name: "Unhandled error in tests", error, renderError }),
 					})
 				],

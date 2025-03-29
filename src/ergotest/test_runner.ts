@@ -145,7 +145,7 @@ function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) =>
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
 		const errorResult = TestSuiteResult.create({
 			tests: [
-				TestResult.testCase({
+				TestCaseResult.create({
 					it: RunResult.fail({ name: "Test runner watchdog", error: "Detected infinite loop in tests", renderError }),
 				}),
 			],

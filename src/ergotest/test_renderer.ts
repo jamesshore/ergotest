@@ -226,7 +226,7 @@ export class TestRenderer {
 		}
 
 		function renderResult(result: RunResult | TestCaseResult) {
-			if (result instanceof RunResult) result = TestResult.testCase({ it: result });
+			if (result instanceof RunResult) result = TestCaseResult.create({ it: result });
 
 			const status = self.renderStatusAsSingleWord(result);
 			const name = self.renderNameOnOneLine(result);
@@ -257,7 +257,7 @@ export class TestRenderer {
 			const chevrons = headerColor(`»»» `);
 			const beforeAfter = [ ...testResult.beforeEach, ...testResult.afterEach ];
 			const details = self.#renderMultipleResults(beforeAfter, `\n\n`, RunResult, detail => {
-				const testCase = TestResult.testCase({ it: detail });
+				const testCase = TestCaseResult.create({ it: detail });
 				const status = self.renderStatusWithMultiLineDetails(testCase);
 				const finalName = normalizeName(detail.name).pop() as string;
 
