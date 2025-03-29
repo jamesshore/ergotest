@@ -4,7 +4,7 @@ import * as ensure from "../util/ensure.js";
 import {
 	RunResult,
 	TestCaseResult,
-	TestMark,
+	TestMark, TestMarkValue,
 	TestResult,
 	TestStatus, TestStatusValue,
 	TestSuiteResult,
@@ -286,7 +286,7 @@ export class TestRenderer {
 		ensure.signature(arguments, [[ TestSuiteResult, TestCaseResult, Array ]]);
 
 		return renderMultipleResults(testResults, "\n", TestResult, (testResult: TestResult) => {
-			const mark = this.renderMarkAsSingleWord(testResult);
+			const mark = this.renderMarkAsSingleWord(testResult.mark);
 			const name = this.renderNameOnOneLine(testResult.name, testResult.filename);
 
 			if (mark === "") return "";
@@ -344,7 +344,7 @@ export class TestRenderer {
 	}
 
 	/**
-	 * @param { RunResult } status The result to render
+	 * @param { RunResult } status The result to render.
 	 * @returns { string } The color-coded status, including error and timeout details where appropriate.
 	 */
 	renderStatusWithMultiLineDetails(runResult: RunResult): string {
@@ -364,21 +364,18 @@ export class TestRenderer {
 	}
 
 	/**
+	 * @param { TestMarkValue } mark The mark.
 	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
 	 */
-	renderMarkAsSingleWord(testResult: TestResult) {
-		switch (testResult.mark) {
+	renderMarkAsSingleWord(mark: TestMarkValue) {
+		switch (mark) {
 			case TestMark.none: return "(no mark)";
 			case TestMark.skip: return Colors.brightCyan(".skip");
 			case TestMark.only: return Colors.brightCyan(".only");
-			default: ensure.unreachable(`Unrecognized test mark: ${testResult.mark}`);
+			default: ensure.unreachable(`Unrecognized test mark: ${mark}`);
 		}
 	}
 
-}
-
-function DELETEME_normalizeName(testResult: TestResult) {
-	return testResult.name.length === 0 ? [ "(no name)" ] : [ ...testResult.name ];
 }
 
 function normalizeName(name: string[]): string[] {

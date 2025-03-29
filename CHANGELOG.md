@@ -28,7 +28,7 @@ To Document:
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Move TestResult.suite() --> TestSuiteResult.create()
 * Add TestCaseResult.create()
-* Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails()
+* Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
 * Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
@@ -39,8 +39,6 @@ To Document:
 
 TO DO:
 * IN PROGRESS: Factor out RunResult
-  * Revise TestRenderer to more specific types where possible (including RunResult instead of TestResult)
-  * Delete TestRenderer.DELETEME function
   * Split up large files
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
 * Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?

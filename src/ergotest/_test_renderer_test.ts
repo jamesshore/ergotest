@@ -378,11 +378,11 @@ export default describe(() => {
 				assert.equal(renderAsMultipleLines(result),
 					renderer.renderNameOnMultipleLines(["my name"]) + "\n\n"
 					+ headerColor("»»» ") + headerColor("before") + "\n" + renderer.renderNameOnOneLine(["before"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(before) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(before.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("after") + "\n" + renderer.renderNameOnOneLine(["after"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(after) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(after.it) + "\n\n"
 					+ headerColor("»»» ") + headerColor("the test itself") + "\n" + renderer.renderNameOnOneLine(["my name"]) + "\n\n"
-					+ renderer.renderStatusWithMultiLineDetails(result) + "\n\n"
+					+ renderer.renderStatusWithMultiLineDetails(result.it) + "\n\n"
 					+ headerColor("«««")
 				);
 			});
@@ -552,13 +552,13 @@ export default describe(() => {
 	describe("single-word marks", () => {
 
 		it("renders all marks", () => {
-			assert.equal(render(createPass({ mark: TestMark.none })), "(no mark)");
-			assert.equal(render(createPass({ mark: TestMark.skip })), Colors.brightCyan(".skip"));
-			assert.equal(render(createPass({ mark: TestMark.only })), Colors.brightCyan(".only"));
+			assert.equal(render(TestMark.none), "(no mark)");
+			assert.equal(render(TestMark.skip), Colors.brightCyan(".skip"));
+			assert.equal(render(TestMark.only), Colors.brightCyan(".only"));
 		});
 
-		function render(result: TestCaseResult): string {
-			return TestRenderer.create().renderMarkAsSingleWord(result);
+		function render(mark: TestMarkValue): string {
+			return TestRenderer.create().renderMarkAsSingleWord(mark);
 		}
 
 	});
