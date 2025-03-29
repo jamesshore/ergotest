@@ -44,8 +44,8 @@ export interface SerializedTestSuiteResult {
 export interface SerializedTestCaseResult {
 	type: "TestCaseResult";
 	mark: TestMarkValue;
-	beforeEach: RunResult[];
-	afterEach: RunResult[];
+	beforeEach: SerializedRunResult[];
+	afterEach: SerializedRunResult[];
 	it: SerializedRunResult;
 }
 
