@@ -245,7 +245,7 @@ export class TestRenderer {
 
 		const self = this;
 		return renderMultipleResults(testCaseResults, "\n\n\n", TestCaseResult, (testResult: TestCaseResult) => {
-			const name = this.renderNameOnMultipleLines(testResult);
+			const name = this.renderNameOnMultipleLines(testResult.name, testResult.filename);
 
 			if (showTestDetail(testResult)) {
 				return renderDetail(testResult);
@@ -269,7 +269,7 @@ export class TestRenderer {
 					+ status;
 			});
 
-			return self.renderNameOnMultipleLines(testResult) + "\n\n"
+			return self.renderNameOnMultipleLines(testResult.name, testResult.filename) + "\n\n"
 				+ details + "\n\n"
 				+ chevrons + headerColor("the test itself") + "\n"
 				+ self.renderNameOnOneLine(testResult.name, testResult.filename) + "\n\n"
@@ -298,7 +298,8 @@ export class TestRenderer {
 	/**
 	 * @param { string[] } name The name to render.
 	 * @param { string? } [filename] The filename to render.
-	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line. Only the filename is rendered; the rest of the path is ignored.
+	 * @returns {string} The name of the test, including parent suites and filename, rendered as a single line. Only the
+	 *   filename is rendered; the rest of the path is ignored.
 	 */
 	renderNameOnOneLine(name: string[], filename?: string) {
 		ensure.signature(arguments, [ Array, [ undefined, String ]]);
@@ -312,18 +313,20 @@ export class TestRenderer {
 	}
 
 	/**
+	 * @param { string[] } name The name to render.
+	 * @param { string? } [filename] The filename to render.	 *
 	 * @returns {string} The name of the test, including parent suites and filename, with the suites and filename
-	 *   rendered on a separate line.
+	 *   rendered on a separate line. Only the filename is rendered; the rest of the path is ignored.
 	 */
-	renderNameOnMultipleLines(testResult: TestResult): string {
-		ensure.signature(arguments, [ TestResult ]);
+	renderNameOnMultipleLines(name: string[], filename?: string): string {
+		ensure.signature(arguments, [ Array, [ undefined, String ] ]);
 
-		const name = DELETEME_normalizeName(testResult);
+		name = normalizeName(name);
 
 		const suites = name.slice(0, name.length - 1);
 		const test = name[name.length - 1];
 
-		if (testResult.filename !== undefined) suites.unshift(path.basename(testResult.filename));
+		if (filename !== undefined) suites.unshift(path.basename(filename));
 
 		const suitesName = suites.length > 0
 			? headerColor(suites[0]) + suites.slice(1).map(name => ` » ${name}`).join("") + "\n" + headerColor("» ")
