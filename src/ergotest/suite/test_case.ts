@@ -2,8 +2,8 @@
 import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
-import { ItFn, ItOptions } from "./test_suite.js";
-import { BeforeAfterDefinition } from "./runnable_function.js";
+import { ItFn, ItOptions } from "../test_api.js";
+import { BeforeAfterDefinition } from "./before_after.js";
 
 export class TestCase implements Test {
 

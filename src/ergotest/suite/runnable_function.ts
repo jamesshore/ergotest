@@ -1,38 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { Milliseconds, RecursiveRunOptions } from "./test.js";
 import { RunResult } from "../results/test_result.js";
-import { ItFn, ItOptions } from "../test_api.js";
-
-export type BeforeAfterDefinition = { name?: string[], options: ItOptions, fnAsync: ItFn };
-
-export class RunnableFunction {
-
-	private _name: string[];
-	private _options: ItOptions;
-	private _fn: ItFn;
-
-	static create(name: string[], options: ItOptions, fn: ItFn) {
-		return new RunnableFunction(name, options, fn);
-	}
-
-	constructor(name: string[], options: ItOptions, fn: ItFn) {
-		this._name = name;
-		this._options = options;
-		this._fn = fn;
-	}
-
-	get name() {
-		return this._name;
-	}
-
-	get options() {
-		return this._options;
-	}
-
-	get fn() {
-		return this._fn;
-	}
-}
+import { ItFn } from "../test_api.js";
 
 
 export async function runTestFnAsync(

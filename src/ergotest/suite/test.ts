@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { RenderErrorFn, TestCaseResult, TestMarkValue, TestResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
-import { ItFn, ItOptions, TestConfig } from "./test_suite.js";
-import { BeforeAfterDefinition } from "./runnable_function.js";
+import { TestConfig } from "./test_suite.js";
+import { BeforeAfterDefinition } from "./before_after.js";
 
 export interface RecursiveRunOptions {
 	name: string[];

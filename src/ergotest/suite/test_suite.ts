@@ -11,7 +11,8 @@ import {
 	TestSuiteResult,
 } from "../results/test_result.js";
 import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
-import { BeforeAfterDefinition, runTestFnAsync } from "./runnable_function.js";
+import { BeforeAfterDefinition } from "./before_after.js";
+import { runTestFnAsync } from "./runnable_function.js";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 

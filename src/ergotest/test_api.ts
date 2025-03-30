@@ -3,9 +3,8 @@ import { TestMark, TestMarkValue } from "./results/test_result.js";
 import * as ensure from "../util/ensure.js";
 import { FailureTestCase, TestCase } from "./suite/test_case.js";
 import { Milliseconds, Test } from "./suite/test.js";
-import { BeforeAfterDefinition } from "./suite/runnable_function.js";
-import { TestOptions, TestSuite } from "./suite/test_suite.js";
-import { BeforeAfter } from "./suite/before_after.js";
+import { TestSuite } from "./suite/test_suite.js";
+import { BeforeAfter, BeforeAfterDefinition } from "./suite/before_after.js";
 
 export interface DescribeOptions {
 	timeout?: Milliseconds,
