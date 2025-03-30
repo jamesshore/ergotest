@@ -6,15 +6,24 @@ export type BeforeAfterDefinition = { name?: string[], options: ItOptions, fnAsy
 
 
 export class BeforeAfter implements BeforeAfterDefinition {
-	public name?: string[];
+	public name: string[];
 	public options: ItOptions;
 	public fnAsync: ItFn;
 
-	static create({ options, fnAsync }: { options: ItOptions, fnAsync: ItFn }) {
-		return new BeforeAfter(options, fnAsync);
+	static create({
+		name,
+		options = {},
+		fnAsync
+	}: {
+		name: string[],
+		options?: ItOptions,
+		fnAsync: ItFn,
+	}) {
+		return new BeforeAfter(name, options, fnAsync);
 	}
 
-	constructor(options: ItOptions, fnAsync: ItFn) {
+	constructor(name: string[], options: ItOptions, fnAsync: ItFn) {
+		this.name = name;
 		this.options = options;
 		this.fnAsync = fnAsync;
 	}

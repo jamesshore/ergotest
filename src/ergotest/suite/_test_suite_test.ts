@@ -1,8 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import {
-	afterAll,
 	assert,
-	beforeAll,
 	createFail,
 	createPass,
 	createSkip,
@@ -340,8 +338,8 @@ export default describe(() => {
 
 			assert.equal(await suite.runAsync(), createSuite({
 				filename,
-				beforeAll: [ createPass({ name: "beforeAll() #1", filename }) ],
-				afterAll: [ createFail({ name: "afterAll() #1", error: ERROR, filename }) ],
+				beforeAll: [ createPass({ name: "beforeAll()", filename }) ],
+				afterAll: [ createFail({ name: "afterAll()", error: ERROR, filename }) ],
 				tests: [ createPass({
 					name: "test",
 					filename,
@@ -651,19 +649,19 @@ export default describe(() => {
 				createSuite({
 					name: "parent",
 					beforeAll: [
-						createPass({ name: [ "parent", "beforeAll() #1" ]}),
+						createPass({ name: [ "parent", "beforeAll()" ]}),
 						createPass({ name: [ "parent", "beforeAll() #2" ]}),
 					],
 					afterAll: [
-						createPass({ name: [ "parent", "afterAll() #1" ]}),
+						createPass({ name: [ "parent", "afterAll()" ]}),
 						createPass({ name: [ "parent", "afterAll() #2" ]}),
 					],
 					tests: [
 						createPass({ name: [ "parent", "test 1" ] }),
 						createSuite({
 							name: [ "parent", "child" ],
-							beforeAll: [ createPass({ name: [ "parent", "child", "beforeAll() #1" ]}) ],
-							afterAll: [ createPass({ name: [ "parent", "child", "afterAll() #1" ]}) ],
+							beforeAll: [ createPass({ name: [ "parent", "child", "beforeAll()" ]}) ],
+							afterAll: [ createPass({ name: [ "parent", "child", "afterAll()" ]}) ],
 							tests: [ createPass({ name: [ "parent", "child", "test 2" ] }) ],
 						}),
 					],
@@ -801,11 +799,11 @@ export default describe(() => {
 
 				assert.equal(await suite.runAsync(), createSuite({
 					beforeAll: [
-						createSkip({ name: "beforeAll() #1", mark: "none" }),
+						createSkip({ name: "beforeAll()", mark: "none" }),
 						createSkip({ name: "beforeAll() #2", mark: "none" }),
 					],
 					afterAll: [
-						createSkip({ name: "afterAll() #1", mark: "none" }),
+						createSkip({ name: "afterAll()", mark: "none" }),
 						createSkip({ name: "afterAll() #2", mark: "none" }),
 					],
 					tests: [
@@ -822,7 +820,7 @@ export default describe(() => {
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
-					afterAll: [ createPass({ name: "afterAll() #1" }) ],
+					afterAll: [ createPass({ name: "afterAll()" }) ],
 					tests: [ createFail({ name: "test", error: ERROR }) ],
 				}));
 			});
@@ -835,7 +833,7 @@ export default describe(() => {
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
-					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					beforeAll: [ createFail({ name: "beforeAll()", error: ERROR }) ],
 					tests: [
 						createSkip({ name: "test 1" }),
 						createSkip({ name: "test 2" }),
@@ -854,7 +852,7 @@ export default describe(() => {
 
 				assert.equal(await suite.runAsync(), createSuite({
 					beforeAll: [
-						createPass({ name: "beforeAll() #1" }),
+						createPass({ name: "beforeAll()" }),
 						createPass({ name: "beforeAll() #2" }),
 						createFail({ name: "beforeAll() #3", error: ERROR }),
 						createSkip({ name: "beforeAll() #4" }),
@@ -872,9 +870,9 @@ export default describe(() => {
 				});
 
 				assert.equal(await suite.runAsync(), createSuite({
-					beforeAll: [ createFail({ name: "beforeAll() #1", error: ERROR }) ],
+					beforeAll: [ createFail({ name: "beforeAll()", error: ERROR }) ],
 					afterAll: [
-						createSkip({ name: "afterAll() #1" }),
+						createSkip({ name: "afterAll()" }),
 						createSkip({ name: "afterAll() #2" }),
 					],
 					tests: [ createSkip({ name: "test" }) ],
@@ -892,7 +890,7 @@ export default describe(() => {
 
 				assert.equal(await suite.runAsync(), createSuite({
 					afterAll: [
-						createPass({ name: "afterAll() #1" }),
+						createPass({ name: "afterAll()" }),
 						createPass({ name: "afterAll() #2" }),
 						createFail({ name: "afterAll() #3", error: ERROR }),
 						createPass({ name: "afterAll() #4" }),
@@ -1173,8 +1171,8 @@ export default describe(() => {
 			await clock.tickUntilTimersExpireAsync();
 
 			assert.equal(await actualPromise, createSuite({
-				beforeAll: [ createTimeout({ name: "beforeAll() #1", timeout: DEFAULT_TIMEOUT }) ],
-				afterAll: [ createSkip({ name: "afterAll() #1" }) ],
+				beforeAll: [ createTimeout({ name: "beforeAll()", timeout: DEFAULT_TIMEOUT }) ],
+				afterAll: [ createSkip({ name: "afterAll()" }) ],
 				tests: [ createSkip({ name: "my test" }) ],
 			}));
 			assert.equal(itTime, null, "it() should not run");
@@ -1204,8 +1202,8 @@ export default describe(() => {
 
 			assert.dotEquals(await actualPromise,
 				createSuite({
-					beforeAll: [ createPass({ name: "beforeAll() #1" }) ],
-					afterAll: [ createTimeout({ name: "afterAll() #1", timeout: DEFAULT_TIMEOUT })],
+					beforeAll: [ createPass({ name: "beforeAll()" }) ],
+					afterAll: [ createTimeout({ name: "afterAll()", timeout: DEFAULT_TIMEOUT })],
 					tests: [
 						createPass({ name: "test 1" }),
 						createPass({ name: "test 2" }),
@@ -1796,9 +1794,9 @@ export default describe(() => {
 
 			await suite.runAsync({ onTestCaseResult });
 			assert.equal(testResults, [
-				createPass({ name: "beforeAll() #1" }),
+				createPass({ name: "beforeAll()" }),
 				createPass({ name: "my test" }),
-				createPass({ name: "afterAll() #1" }),
+				createPass({ name: "afterAll()" }),
 			]);
 		});
 

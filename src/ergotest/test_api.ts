@@ -194,14 +194,14 @@ class ContextStack {
 		this.#ensureInsideDescribe("beforeAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
-		this.#top.beforeAll(options, fnAsync);
+		this.#top.beforeAll(this.#fullName(), options, fnAsync);
 	}
 
 	afterAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
 		this.#ensureInsideDescribe("afterAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
-		this.#top.afterAll(options, fnAsync);
+		this.#top.afterAll(this.#fullName(), options, fnAsync);
 	}
 
 	beforeEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
@@ -226,7 +226,7 @@ class ContextStack {
 		return this._context[this._context.length - 1];
 	}
 
-	#fullName(name: string) {
+	#fullName(name = "") {
 		const topName = this._context.length === 0 ? [] : this.#top.name;
 		return name === "" ? topName : [ ...topName, name ];
 	}
@@ -238,10 +238,10 @@ class TestSuiteBuilder {
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;
 	private readonly _tests: Test[] = [];
-	private readonly _beforeAll: BeforeAfterDefinition[] = [];
-	private readonly _afterAll: BeforeAfterDefinition[] = [];
-	private readonly _beforeEach: BeforeAfterDefinition[] = [];
-	private readonly _afterEach: BeforeAfterDefinition[] = [];
+	private readonly _beforeAll: BeforeAfter[] = [];
+	private readonly _afterAll: BeforeAfter[] = [];
+	private readonly _beforeEach: BeforeAfter[] = [];
+	private readonly _afterEach: BeforeAfter[] = [];
 
 	constructor(name: string[], mark: TestMarkValue, timeout?: Milliseconds) {
 		this._name = name;
@@ -261,12 +261,14 @@ class TestSuiteBuilder {
 		this._tests.push(TestCase.create({ name, mark, options, fnAsync }));
 	}
 
-	beforeAll(options: ItOptions, fnAsync: ItFn) {
-		this._beforeAll.push(BeforeAfter.create({ options, fnAsync }));
+	beforeAll(parentName: string[], options: ItOptions, fnAsync: ItFn) {
+		const name = this.#beforeAfterName(parentName, this._beforeAll, "beforeAll()");
+		this._beforeAll.push(BeforeAfter.create({ name, options, fnAsync }));
 	}
 
-	afterAll(options: ItOptions, fnAsync: ItFn) {
-		this._afterAll.push(BeforeAfter.create({ options, fnAsync }));
+	afterAll(parentName: string[], options: ItOptions, fnAsync: ItFn) {
+		const name = this.#beforeAfterName(parentName, this._afterAll, "afterAll()");
+		this._afterAll.push(BeforeAfter.create({ name, options, fnAsync }));
 	}
 
 	beforeEach(options: ItOptions, fnAsync: ItFn) {
@@ -288,6 +290,11 @@ class TestSuiteBuilder {
 			afterEach: this._afterEach,
 			tests: this._tests,
 		});
+	}
+
+	#beforeAfterName(parentName: string[], beforeAfterArray: BeforeAfter[], baseName: string) {
+		const number = beforeAfterArray.length === 0 ? "" : ` #${beforeAfterArray.length + 1}`;
+		return [ ...parentName, baseName + number];
 	}
 }
 

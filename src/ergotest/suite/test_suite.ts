@@ -169,7 +169,7 @@ export class TestSuite implements Test {
 		const beforeAllResults: TestCaseResult[] = [];
 		let beforeAllFailed = false;
 		for await (const before of this._beforeAll) {
-			const name = [ ...runOptions.name, `beforeAll() #${beforeAllResults.length + 1}`];
+			const name = before.name;
 
 			const it = this._allChildrenSkipped || beforeAllFailed
 				? RunResult.skip({ name, filename: runOptions.filename })
@@ -206,7 +206,7 @@ export class TestSuite implements Test {
 
 		const afterAllResults: TestCaseResult[] = [];
 		for await (const after of this._afterAll) {
-			const name = [ ...runOptions.name, `afterAll() #${afterAllResults.length + 1}`];
+			const name = after.name;
 
 			const it = this._allChildrenSkipped || beforeAllFailed
 				? RunResult.skip({ name, filename: runOptions.filename })
