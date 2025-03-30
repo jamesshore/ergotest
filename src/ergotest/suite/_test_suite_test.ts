@@ -1505,12 +1505,16 @@ export default describe(() => {
 				renderer: CUSTOM_RENDERER_PATH,
 			};
 
-			const suite = describe_sut.only("my suite");
+			const suite = describe_sut("parent", () => {
+				describe_sut.only("my suite");
+			});
 			const result = await suite.runAsync(options);
 
 			assert.dotEquals(result,
-				createSuite({ name: "my suite", mark: TestMark.only, tests: [
-					createFail({ name: "my suite", error: "Test suite is marked '.only', but it has no body" }),
+				createSuite({ name: "parent", tests: [
+					createSuite({ name: [ "parent", "my suite" ], mark: TestMark.only, tests: [
+						createFail({ name: [ "parent", "my suite" ], error: "Test suite is marked '.only', but it has no body" }),
+					]}),
 				]}),
 			);
 			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
@@ -1521,21 +1525,24 @@ export default describe(() => {
 				renderer: CUSTOM_RENDERER_PATH,
 			};
 
-			const suite = describe_sut("my suite", () => {
-				it_sut.only("my test");
+			const suite = describe_sut("parent", () => {
+				describe_sut("my suite", () => {
+					it_sut.only("my test");
+				});
 			});
-			const result = await suite.runAsync(options);
 
-			assert.dotEquals(result,
-				createSuite({ name: "my suite", tests: [
-					createFail({
-						name: [ "my suite", "my test" ],
-						error: "Test is marked '.only', but it has no body",
-						mark: TestMark.only,
-					}),
+			assert.dotEquals(await suite.runAsync(options),
+				createSuite({ name: "parent", tests: [
+					createSuite({ name: [ "parent", "my suite" ], tests: [
+						createFail({
+							name: [ "parent", "my suite", "my test" ],
+							error: "Test is marked '.only', but it has no body",
+							mark: TestMark.only,
+						}),
+					]}),
 				]}),
 			);
-			assert.equal(result.allTests()[0].errorRender, "custom rendering", "should use custom renderer");
+			assert.equal((await suite.runAsync(options)).allTests()[0].errorRender, "custom rendering", "should use custom renderer");
 		});
 
 	});

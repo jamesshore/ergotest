@@ -59,7 +59,7 @@ export class TestSuite implements Test {
 		afterEach = [],
 		tests = [],
 	}: {
-		name: string[],
+		name?: string[],
 		mark?: TestMarkValue,
 		timeout?: Milliseconds,
 		beforeAll?: BeforeAfterDefinition[],

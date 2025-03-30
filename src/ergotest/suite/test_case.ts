@@ -7,7 +7,7 @@ import { BeforeAfterDefinition } from "./before_after.js";
 
 export class TestCase implements Test {
 
-	protected _name: string;
+	protected _name: string[];
 	private _timeout?: Milliseconds;
 	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
@@ -16,25 +16,18 @@ export class TestCase implements Test {
 		name,
 		mark = TestMark.none,
 		options = {},
-		fnAsync,
+		fnAsync = undefined,
 	}: {
-		name: string,
+		name: string[],
 		mark?: TestMarkValue,
 		options?: ItOptions,
 		fnAsync?: ItFn,
 	}): TestCase {
-		ensure.signature(arguments, [{
-			name: String,
-			mark: [ undefined, String ],
-			options: [ undefined, { timeout: [ undefined, Number ] } ],
-			fnAsync: [ undefined, Function ],
-		}]);
-
 		return new TestCase(name, options.timeout, fnAsync, mark);
 	}
 
 	constructor(
-		name: string,
+		name: string[],
 		timeout: Milliseconds | undefined,
 		testFn: ItFn | undefined,
 		mark: TestMarkValue
@@ -65,8 +58,7 @@ export class TestCase implements Test {
 		parentAfterEach: BeforeAfterDefinition[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
-		const name = [ ...options.name ];
-		name.push(this._name !== "" ? this._name : "(unnamed)");
+		const name = this._name;
 		options = { ...options, name };
 
 		let skipTest = this._isSkipped(parentMark);
@@ -154,7 +146,7 @@ export class FailureTestCase extends TestCase {
 	private _filename?: string;
 	private _error: unknown;
 
-	constructor(name: string, error: unknown, filename?: string) {
+	constructor(name: string[], error: unknown, filename?: string) {
 		super(name, undefined, undefined, TestMark.none);
 
 		this._filename = filename;

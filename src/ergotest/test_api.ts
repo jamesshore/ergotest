@@ -139,10 +139,10 @@ class ContextStack {
 			String,
 		]);
 		const { name, options, fn } = decipherDescribeParameters(optionalName, optionalOptions, optionalFn);
-		const fullName = name === "" ? this.#topName : [ ...this.#topName, name ];
+		const fullName = this.#fullName(name);
 
 		const suite = fn === undefined
-			? createSkippedSuite(name, fullName, mark)
+			? createSkippedSuite(fullName, mark)
 			: runDescribeBlock(this._context, fullName, mark, fn);
 
 		if (this._context.length !== 0) this.#top.addSuite(suite);
@@ -160,17 +160,17 @@ class ContextStack {
 			return builder.toTestSuite();
 		}
 
-		function createSkippedSuite(name: string, fullName: string[], mark: TestMarkValue) {
+		function createSkippedSuite(name: string[], mark: TestMarkValue) {
 			if (mark === TestMark.only) {
 				return TestSuite.create({
-					name: fullName,
+					name,
 					mark,
 					tests: [ new FailureTestCase(name, "Test suite is marked '.only', but it has no body") ],
 				});
 			}
 			else {
 				return TestSuite.create({
-					name: fullName,
+					name,
 					mark: TestMark.skip,
 				});
 			}
@@ -185,8 +185,9 @@ class ContextStack {
 	) {
 		this.#ensureInsideDescribe("it");
 		const { options, fnAsync } = decipherItParameters(name, optionalOptions, possibleFnAsync);
+		if (name === "") name = "(unnamed)";
 
-		this.#top.it(name, mark, options, fnAsync);
+		this.#top.it(this.#fullName(name), mark, options, fnAsync);
 	}
 
 	beforeAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
@@ -225,9 +226,9 @@ class ContextStack {
 		return this._context[this._context.length - 1];
 	}
 
-	get #topName() {
-		if (this._context.length === 0) return [];
-		else return this.#top.name;
+	#fullName(name: string) {
+		const topName = this._context.length === 0 ? [] : this.#top.name;
+		return name === "" ? topName : [ ...topName, name ];
 	}
 
 }
@@ -242,7 +243,7 @@ class TestSuiteBuilder {
 	private readonly _beforeEach: BeforeAfterDefinition[] = [];
 	private readonly _afterEach: BeforeAfterDefinition[] = [];
 
-	constructor(name = [], mark: TestMarkValue = TestMark.none, timeout?: Milliseconds) {
+	constructor(name: string[], mark: TestMarkValue, timeout?: Milliseconds) {
 		this._name = name;
 		this._mark = mark;
 		this._timeout = timeout;
@@ -256,7 +257,7 @@ class TestSuiteBuilder {
 		this._tests.push(suite);
 	}
 
-	it(name: string, mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {
+	it(name: string[], mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {
 		this._tests.push(TestCase.create({ name, mark, options, fnAsync }));
 	}
 

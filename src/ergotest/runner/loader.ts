@@ -45,6 +45,6 @@ export async function fromModulesAsync(moduleFilenames: string[]): Promise<TestS
 	}
 
 	function createFailure(name: string, error: unknown, filename?: string) {
-		return new TestSuite("", TestMark.none, { tests: [ new FailureTestCase(name, error, filename) ] });
+		return TestSuite.create({ tests: [ new FailureTestCase([ name ], error, filename) ] });
 	}
 }
