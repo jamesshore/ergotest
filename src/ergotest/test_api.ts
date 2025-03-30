@@ -1,10 +1,26 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { DescribeFn, DescribeOptions, ItFn, ItOptions, TestSuite } from "./suite/test_suite.js";
 import { TestMark, TestMarkValue } from "./results/test_result.js";
 import * as ensure from "../util/ensure.js";
-import { describe2, TestContext } from "./suite/test_context.js";
+import { FailureTestCase, TestCase } from "./suite/test_case.js";
+import { Milliseconds, Test } from "./suite/test.js";
+import { BeforeAfterDefinition } from "./suite/runnable_function.js";
+import { TestOptions, TestSuite } from "./suite/test_suite.js";
 
-const testContext: TestContext[] = [];
+export interface DescribeOptions {
+	timeout?: Milliseconds,
+}
+
+export interface ItOptions {
+	timeout?: Milliseconds,
+}
+
+export type DescribeFn = () => void;
+
+export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
+
+interface TestParameters {
+	getConfig: <T>(key: string) => T,
+}
 
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
@@ -22,7 +38,7 @@ export function describe(
 	optionalOptions?: DescribeOptions | DescribeFn,
 	fn?: DescribeFn,
 ) {
-	return createSuite(optionalName, optionalOptions, fn, TestMark.none);
+	return testContext.describe(optionalName, optionalOptions, fn, TestMark.none);
 }
 
 describe.skip = function(
@@ -30,7 +46,7 @@ describe.skip = function(
 	optionalOptions?: DescribeOptions | DescribeFn,
 	fn?: DescribeFn,
 ) {
-	return createSuite(optionalName, optionalOptions, fn, TestMark.skip);
+	return testContext.describe(optionalName, optionalOptions, fn, TestMark.skip);
 };
 
 describe.only = function(
@@ -38,7 +54,7 @@ describe.only = function(
 	optionalOptions?: DescribeOptions | DescribeFn,
 	fn?: DescribeFn,
 ) {
-	return createSuite(optionalName, optionalOptions, fn, TestMark.only);
+	return testContext.describe(optionalName, optionalOptions, fn, TestMark.only);
 };
 
 /**
@@ -50,15 +66,15 @@ describe.only = function(
  *   skipped.
  */
 export function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.none);
+	testContext.it(name, optionalOptions, fnAsync, TestMark.none);
 }
 
 it.skip = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.skip);
+	testContext.it(name, optionalOptions, fnAsync, TestMark.skip);
 };
 
 it.only = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("it").it(name, optionalOptions, fnAsync, TestMark.only);
+	testContext.it(name, optionalOptions, fnAsync, TestMark.only);
 };
 
 /**
@@ -69,7 +85,7 @@ it.only = function it(name: string, optionalOptions?: ItOptions | ItFn, fnAsync?
  * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
  */
 export function beforeAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("beforeAll").beforeAll(optionalOptions, fnAsync);
+	testContext.beforeAll(optionalOptions, fnAsync);
 }
 
 /**
@@ -80,7 +96,7 @@ export function beforeAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
 export function afterAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("afterAll").afterAll(optionalOptions, fnAsync);
+	testContext.afterAll(optionalOptions, fnAsync);
 }
 
 /**
@@ -91,7 +107,7 @@ export function afterAll(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
 export function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("beforeEach").beforeEach(optionalOptions, fnAsync);
+	testContext.beforeEach(optionalOptions, fnAsync);
 }
 
 /**
@@ -102,22 +118,274 @@ export function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
 export function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
-	currentContext("afterEach").afterEach(optionalOptions, fnAsync);
+	testContext.afterEach(optionalOptions, fnAsync);
 }
 
-function createSuite(
-	optionalName: string | DescribeOptions | DescribeFn | undefined,
-	optionalOptions: DescribeOptions | DescribeFn | undefined,
-	fn: DescribeFn | undefined,
-	mark: TestMarkValue,
-): TestSuite {
-	return testContext.length === 0 ?
-		describe2(optionalName, optionalOptions, fn, mark, testContext) :
-		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
+
+class TestContext {
+	private readonly _context: ContextFrame[] = [];
+
+	constructor() {
+		this._context = [ new ContextFrame() ];
+	}
+
+	describe(
+		optionalName: string | DescribeOptions | DescribeFn | undefined,
+		optionalOptions: DescribeOptions | DescribeFn | undefined,
+		optionalFn: DescribeFn | undefined,
+		mark: TestMarkValue,
+	) {
+		const DescribeOptionsType = { timeout: Number };
+		ensure.signature(arguments, [
+			[ undefined, DescribeOptionsType, String, Function ],
+			[ undefined, DescribeOptionsType, Function ],
+			[ undefined, Function ],
+			String,
+		]);
+		const { name, options, fn } = decipherDescribeParameters(optionalName, optionalOptions, optionalFn);
+
+		const suite = fn === undefined
+			? createSkippedSuite(name, mark)
+			: runDescribeBlock(this._context, name, mark, fn);
+
+		this.#top.addSuite(suite);
+		return suite;
+
+		function runDescribeBlock(context: ContextFrame[], name: string, mark: TestMarkValue, fn: DescribeFn) {
+			const frame = new ContextFrame(name, mark, options.timeout);
+			context.push(frame);
+			try {
+				fn();
+				return frame.toTestSuite();
+			}
+			finally {
+				context.pop();
+			}
+		}
+
+		function createSkippedSuite(name: string, mark: TestMarkValue) {
+			if (mark === TestMark.only) {
+				return TestSuite.create({
+					name,
+					mark,
+					tests: [ new FailureTestCase(name, "Test suite is marked '.only', but it has no body") ],
+				});
+			}
+			else {
+				return TestSuite.create({
+					name,
+					mark: TestMark.skip,
+				});
+			}
+		}
+	}
+
+	it(
+		name: string,
+		optionalOptions: ItOptions | ItFn | undefined,
+		possibleFnAsync: ItFn | undefined,
+		mark: TestMarkValue
+	) {
+		this.#ensureInsideDescribe("it");
+		const { options, fnAsync } = decipherItParameters(name, optionalOptions, possibleFnAsync);
+
+		this.#top.it(name, mark, options, fnAsync);
+	}
+
+	beforeAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+		this.#ensureInsideDescribe("beforeAll");
+		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
+
+		this.#top.beforeAll(options, fnAsync);
+	}
+
+	afterAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+		this.#ensureInsideDescribe("afterAll");
+		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
+
+		this.#top.afterAll(options, fnAsync);
+	}
+
+	beforeEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+		this.#ensureInsideDescribe("beforeEach");
+		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
+
+		this.#top.beforeEach(options, fnAsync);
+	}
+
+	afterEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+		this.#ensureInsideDescribe("afterEach");
+		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
+
+		this.#top.afterEach(options, fnAsync);
+	}
+
+	#ensureInsideDescribe(functionName: string) {
+		ensure.that(this._context.length > 1, `${functionName}() must be run inside describe()`);
+	}
+
+	get #top() {
+		return this._context[this._context.length - 1];
+	}
+
 }
 
-function currentContext(functionName: string) {
-	ensure.that(testContext.length > 0, `${functionName}() must be run inside describe()`);
+class ContextFrame {
+	private readonly _name: string;
+	private readonly _mark: TestMarkValue;
+	private readonly _timeout?: Milliseconds;
+	private readonly _tests: Test[] = [];
+	private readonly _beforeAll: BeforeAfterDefinition[] = [];
+	private readonly _afterAll: BeforeAfterDefinition[] = [];
+	private readonly _beforeEach: BeforeAfterDefinition[] = [];
+	private readonly _afterEach: BeforeAfterDefinition[] = [];
 
-	return testContext[testContext.length - 1];
+	constructor(name = "", mark: TestMarkValue = TestMark.none, timeout?: Milliseconds) {
+		this._name = name;
+		this._mark = mark;
+		this._timeout = timeout;
+	}
+
+	addSuite(suite: TestSuite) {
+		this._tests.push(suite);
+	}
+
+	it(name: string, mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {
+		this._tests.push(TestCase.create({ name, mark, options, fnAsync }));
+	}
+
+	beforeAll(options: ItOptions, fnAsync: ItFn) {
+		this._beforeAll.push({ options, fnAsync });
+	}
+
+	afterAll(options: ItOptions, fnAsync: ItFn) {
+		this._afterAll.push({ options, fnAsync });
+	}
+
+	beforeEach(options: ItOptions, fnAsync: ItFn) {
+		this._beforeEach.push({ options, fnAsync });
+	}
+
+	afterEach(options: ItOptions, fnAsync: ItFn) {
+		this._afterEach.push({ options, fnAsync });
+	}
+
+	toTestSuite(): TestSuite {
+		return TestSuite.create({
+			name: this._name,
+			mark: this._mark,
+			timeout: this._timeout,
+			beforeAll: this._beforeAll,
+			afterAll: this._afterAll,
+			beforeEach: this._beforeEach,
+			afterEach: this._afterEach,
+			tests: this._tests,
+		});
+	}
 }
+
+function decipherDescribeParameters(
+	nameOrOptionsOrDescribeFn: string | DescribeOptions | DescribeFn | undefined,
+	optionsOrDescribeFn: DescribeOptions | DescribeFn | undefined,
+	possibleDescribeFn: DescribeFn | undefined,
+) {
+	let name: string;
+	let options: DescribeOptions | undefined;
+	let fn: DescribeFn | undefined;
+
+	switch (typeof nameOrOptionsOrDescribeFn) {
+		case "string":
+			name = nameOrOptionsOrDescribeFn;
+			break;
+		case "object":
+			options = nameOrOptionsOrDescribeFn;
+			break;
+		case "function":
+			fn = nameOrOptionsOrDescribeFn;
+			break;
+		case "undefined":
+			break;
+		default:
+			ensure.unreachable(`Unknown typeof for nameOrOptionsOrSuiteFn: ${typeof nameOrOptionsOrDescribeFn}`);
+	}
+	switch (typeof optionsOrDescribeFn) {
+		case "object":
+			ensure.that(options === undefined, "Received two options parameters");
+			options = optionsOrDescribeFn;
+			break;
+		case "function":
+			ensure.that(fn === undefined, "Received two suite function parameters");
+			fn = optionsOrDescribeFn;
+			break;
+		case "undefined":
+			break;
+		default:
+			ensure.unreachable(`Unknown typeof for optionsOrSuiteFn: ${typeof optionsOrDescribeFn}`);
+	}
+	if (possibleDescribeFn !== undefined) {
+		ensure.that(fn === undefined, "Received two suite function parameters");
+		fn = possibleDescribeFn;
+	}
+
+	name ??= "";
+	options ??= {};
+
+	return { name, options, fn };
+}
+
+function decipherBeforeAfterParameters(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
+	ensure.signature(arguments, [
+		[ { timeout: Number }, Function ],
+		[ undefined, Function ],
+	]);
+
+	let options: ItOptions;
+	let fnAsync: ItFn;
+
+	if (possibleFnAsync === undefined) {
+		options = {};
+		fnAsync = optionalOptions as ItFn;
+	}
+	else {
+		options = optionalOptions as ItOptions;
+		fnAsync = possibleFnAsync;
+	}
+
+	return { options, fnAsync };
+}
+
+function decipherItParameters(
+	name: string,
+	optionsOrTestFn?: ItOptions | ItFn,
+	possibleTestFn?: ItFn,
+) {
+	ensure.signature(arguments, [
+		String,
+		[ undefined, { timeout: [ undefined, Number ]}, Function ],
+		[ undefined, Function ],
+	]);
+
+	let options = {};
+	let fnAsync;
+
+	switch (typeof optionsOrTestFn) {
+		case "object":
+			options = optionsOrTestFn;
+			break;
+		case "function":
+			fnAsync = optionsOrTestFn;
+			break;
+		case "undefined":
+			break;
+		default:
+			ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
+	}
+	if (possibleTestFn !== undefined) {
+		ensure.that(fnAsync === undefined, "Received two test function parameters");
+		fnAsync = possibleTestFn;
+	}
+
+	return { options, fnAsync };
+}
+
+const testContext = new TestContext();

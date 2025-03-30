@@ -40,6 +40,7 @@ To Document:
 
 TO DO:
 * Split up large files
+  * Extract BeforeAfter class in suite folder 
   * Update package.json
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)

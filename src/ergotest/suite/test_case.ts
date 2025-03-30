@@ -2,7 +2,7 @@
 import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
-import { ItFn, TestOptions } from "./test_suite.js";
+import { ItFn, ItOptions } from "./test_suite.js";
 import { BeforeAfterDefinition } from "./runnable_function.js";
 
 export class TestCase implements Test {
@@ -12,40 +12,25 @@ export class TestCase implements Test {
 	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
 
-	static create(
+	static create({
+		name,
+		mark = TestMark.none,
+		options = {},
+		fnAsync,
+	}: {
 		name: string,
-		optionsOrTestFn: TestOptions | ItFn | undefined,
-		possibleTestFn: ItFn | undefined,
-		mark: TestMarkValue,
-	) {
-		ensure.signature(arguments, [
-			String,
-			[ undefined, { timeout: [ undefined, Number ]}, Function ],
-			[ undefined, Function ],
-			String
-		]);
+		mark?: TestMarkValue,
+		options?: ItOptions,
+		fnAsync?: ItFn,
+	}): TestCase {
+		ensure.signature(arguments, [{
+			name: String,
+			mark: [ undefined, String ],
+			options: [ undefined, { timeout: [ undefined, Number ] } ],
+			fnAsync: [ undefined, Function ],
+		}]);
 
-		let timeout;
-		let testFn;
-
-		switch (typeof optionsOrTestFn) {
-			case "object":
-				timeout = optionsOrTestFn.timeout;
-				break;
-			case "function":
-				testFn = optionsOrTestFn;
-				break;
-			case "undefined":
-				break;
-			default:
-				ensure.unreachable(`Unknown typeof optionsOrTestFn: ${typeof optionsOrTestFn}`);
-		}
-		if (possibleTestFn !== undefined) {
-			ensure.that(testFn === undefined, "Received two test function parameters");
-			testFn = possibleTestFn;
-		}
-
-		return new TestCase(name, timeout, testFn, mark);
+		return new TestCase(name, options.timeout, fnAsync, mark);
 	}
 
 	constructor(

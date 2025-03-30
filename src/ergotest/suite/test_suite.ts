@@ -11,7 +11,7 @@ import {
 	TestSuiteResult,
 } from "../results/test_result.js";
 import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
-import { BeforeAfterDefinition, RunnableFunction, runTestFnAsync } from "./runnable_function.js";
+import { BeforeAfterDefinition, runTestFnAsync } from "./runnable_function.js";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
@@ -25,22 +25,6 @@ export interface TestOptions {
 	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
 	renderer?: string,
 	clock?: Clock,
-}
-
-export interface DescribeOptions {
-	timeout?: Milliseconds,
-}
-
-export interface ItOptions {
-	timeout?: Milliseconds,
-}
-
-export type DescribeFn = () => void;
-
-export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
-
-interface TestParameters {
-	getConfig: <T>(key: string) => T,
 }
 
 /**

@@ -1337,6 +1337,26 @@ export default describe(() => {
 			assert.equal(actual.count().timeout, 0);
 		});
 
+		it("inherits parent suite's timeout even when suite is marked 'skip'", async () => {
+			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 2;
+
+			const clock = await Clock.createNullAsync();
+			const notQuiteTimeoutFn = async () => {
+				await clock.waitAsync(NEW_TIMEOUT - 1);
+			};
+
+			const suite = describe_sut.skip({ timeout: NEW_TIMEOUT }, () => {
+				it_sut.only("my test", notQuiteTimeoutFn);
+			});
+
+			const actualPromise = suite.runAsync({ clock });
+			await clock.tickUntilTimersExpireAsync();
+
+			const actual = await actualPromise;
+			assert.equal(actual.count().timeout, 0);
+
+		});
+
 		it("allows nested suites to override parent suite's timeout", async () => {
 			const NEW_TIMEOUT = DEFAULT_TIMEOUT * 10;
 
