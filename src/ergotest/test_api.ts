@@ -139,37 +139,38 @@ class ContextStack {
 			String,
 		]);
 		const { name, options, fn } = decipherDescribeParameters(optionalName, optionalOptions, optionalFn);
+		const fullName = name === "" ? this.#topName : [ ...this.#topName, name ];
 
 		const suite = fn === undefined
-			? createSkippedSuite(name, mark)
-			: runDescribeBlock(this._context, name, mark, fn);
+			? createSkippedSuite(name, fullName, mark)
+			: runDescribeBlock(this._context, fullName, mark, fn);
 
 		if (this._context.length !== 0) this.#top.addSuite(suite);
 		return suite;
 
-		function runDescribeBlock(context: TestSuiteBuilder[], name: string, mark: TestMarkValue, fn: DescribeFn) {
-			const builder = new TestSuiteBuilder(name, mark, options.timeout);
+		function runDescribeBlock(context: TestSuiteBuilder[], fullName: string[], mark: TestMarkValue, fn: DescribeFn) {
+			const builder = new TestSuiteBuilder(fullName, mark, options.timeout);
 			context.push(builder);
 			try {
 				fn();
-				return builder.toTestSuite();
 			}
 			finally {
 				context.pop();
 			}
+			return builder.toTestSuite();
 		}
 
-		function createSkippedSuite(name: string, mark: TestMarkValue) {
+		function createSkippedSuite(name: string, fullName: string[], mark: TestMarkValue) {
 			if (mark === TestMark.only) {
 				return TestSuite.create({
-					name,
+					name: fullName,
 					mark,
 					tests: [ new FailureTestCase(name, "Test suite is marked '.only', but it has no body") ],
 				});
 			}
 			else {
 				return TestSuite.create({
-					name,
+					name: fullName,
 					mark: TestMark.skip,
 				});
 			}
@@ -224,10 +225,15 @@ class ContextStack {
 		return this._context[this._context.length - 1];
 	}
 
+	get #topName() {
+		if (this._context.length === 0) return [];
+		else return this.#top.name;
+	}
+
 }
 
 class TestSuiteBuilder {
-	private readonly _name: string;
+	private readonly _name: string[];
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;
 	private readonly _tests: Test[] = [];
@@ -236,10 +242,14 @@ class TestSuiteBuilder {
 	private readonly _beforeEach: BeforeAfterDefinition[] = [];
 	private readonly _afterEach: BeforeAfterDefinition[] = [];
 
-	constructor(name = "", mark: TestMarkValue = TestMark.none, timeout?: Milliseconds) {
+	constructor(name = [], mark: TestMarkValue = TestMark.none, timeout?: Milliseconds) {
 		this._name = name;
 		this._mark = mark;
 		this._timeout = timeout;
+	}
+
+	public get name() {
+		return this._name;
 	}
 
 	addSuite(suite: TestSuite) {

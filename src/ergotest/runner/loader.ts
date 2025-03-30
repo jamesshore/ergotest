@@ -15,7 +15,7 @@ export async function fromModulesAsync(moduleFilenames: string[]): Promise<TestS
 	ensure.signature(arguments, [ Array ]);
 
 	const suites = await Promise.all(moduleFilenames.map(filename => loadModuleAsync(filename)));
-	return new TestSuite("", TestMark.none, { tests: suites });
+	return TestSuite.create({ tests: suites });
 
 	async function loadModuleAsync(filename: string): Promise<TestSuite> {
 		const errorName = `error when importing ${path.basename(filename)}`;

@@ -33,7 +33,7 @@ export interface TestOptions {
  */
 export class TestSuite implements Test {
 
-	private _name: string;
+	private _name: string[];
 	private _mark: TestMarkValue;
 	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
@@ -50,7 +50,7 @@ export class TestSuite implements Test {
 	}
 
 	static create({
-		name,
+		name = [],
 		mark = TestMark.none,
 		timeout,
 		beforeAll = [],
@@ -59,7 +59,7 @@ export class TestSuite implements Test {
 		afterEach = [],
 		tests = [],
 	}: {
-		name: string,
+		name: string[],
 		mark?: TestMarkValue,
 		timeout?: Milliseconds,
 		beforeAll?: BeforeAfterDefinition[],
@@ -72,7 +72,7 @@ export class TestSuite implements Test {
 	}
 
 	/** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
-	constructor(name: string, mark: TestMarkValue, {
+	constructor(name: string[], mark: TestMarkValue, {
 		tests = [],
 		beforeAll = [],
 		afterAll = [],
@@ -160,11 +160,10 @@ export class TestSuite implements Test {
 	) {
 		runOptions = {
 			...runOptions,
-			name: [ ...runOptions.name ],
+			name: this._name,
 			filename: this._filename ?? runOptions.filename,
 			timeout: this._timeout ?? runOptions.timeout
 		};
-		if (this._name !== "") runOptions.name.push(this._name);
 		const resultOptions = { filename: runOptions.filename, mark: this._mark };
 
 		const beforeAllResults: TestCaseResult[] = [];
