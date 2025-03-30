@@ -2,31 +2,33 @@
 import { Milliseconds, RecursiveRunOptions } from "./test.js";
 import { RunResult } from "../results/test_result.js";
 import { ItFn } from "../test_api.js";
+import { ParentData } from "./test_suite.js";
 
 
 export async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
 	testTimeout: Milliseconds | undefined,
-	{ clock, filename, timeout, config, renderError }: RecursiveRunOptions,
+	runOptions: RecursiveRunOptions,
+	parentData: ParentData,
 ): Promise<RunResult> {
-	const getConfig = <T>(name: string) => {
-		if (config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
-		return config[name] as T;
-	};
+	const timeout = testTimeout ?? parentData.timeout;
 
-	timeout = testTimeout ?? timeout;
-
-	return await clock.timeoutAsync(timeout, async () => {
+	return await runOptions.clock.timeoutAsync(timeout, async () => {
 		try {
 			await fn({ getConfig });
-			return RunResult.pass({ name, filename });
+			return RunResult.pass({ name, filename: parentData.filename });
 		}
 		catch (error) {
-			return RunResult.fail({ name, filename, error, renderError });
+			return RunResult.fail({ name, filename: parentData.filename, error, renderError: runOptions.renderError });
 		}
 	}, async () => {
-		return await RunResult.timeout({ name, filename, timeout });
+		return await RunResult.timeout({ name, filename: parentData.filename, timeout: parentData.timeout });
 	});
+
+	function getConfig<T>(name: string) {
+		if (runOptions.config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
+		return runOptions.config[name] as T;
+	}
 }
 

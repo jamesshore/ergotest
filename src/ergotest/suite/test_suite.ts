@@ -28,6 +28,14 @@ export interface TestOptions {
 	clock?: Clock,
 }
 
+export interface ParentData {
+	filename?: string;
+	mark: TestMarkValue;
+	timeout: Milliseconds;
+	beforeEach: BeforeAfter[];
+	afterEach: BeforeAfter[];
+}
+
 /**
  * A simple but full-featured test runner.
  */
@@ -52,7 +60,7 @@ export class TestSuite implements Test {
 	static create({
 		name = [],
 		mark = TestMark.none,
-		timeout,
+		timeout = undefined,
 		beforeAll = [],
 		afterAll = [],
 		beforeEach = [],
@@ -68,25 +76,20 @@ export class TestSuite implements Test {
 		afterEach?: BeforeAfter[],
 		tests?: Test[],
 	}) {
-		return new TestSuite(name, mark, { timeout, beforeAll, afterAll, beforeEach, afterEach, tests });
+		return new TestSuite(name, mark, timeout, beforeAll, afterAll, beforeEach, afterEach, tests);
 	}
 
 	/** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
-	constructor(name: string[], mark: TestMarkValue, {
-		tests = [],
-		beforeAll = [],
-		afterAll = [],
-		beforeEach = [],
-		afterEach = [],
-		timeout,
-	}: {
-		tests?: Test[],
-		beforeAll?: BeforeAfter[],
-		afterAll?: BeforeAfter[],
-		beforeEach?: BeforeAfter[],
-		afterEach?: BeforeAfter[],
-		timeout?: Milliseconds,
-	}) {
+	constructor(
+		name: string[],
+		mark: TestMarkValue,
+		timeout: Milliseconds,
+		beforeAll: BeforeAfter[],
+		afterAll: BeforeAfter[],
+		beforeEach: BeforeAfter[],
+		afterEach: BeforeAfter[],
+		tests: Test[],
+	) {
 		this._name = name;
 		this._mark = mark;
 		this._tests = tests;
@@ -127,14 +130,16 @@ export class TestSuite implements Test {
 			clock: [ undefined, Clock ],
 		}]]);
 
-		return await this._recursiveRunAsync(TestMark.only, [], [], {
+		return await this._recursiveRunAsync({
 			clock,
 			config,
 			onTestCaseResult,
-			name: [],
-			filename: this._filename,
-			timeout: this._timeout ?? timeout ?? DEFAULT_TIMEOUT_IN_MS,
 			renderError: await importRendererAsync(renderer),
+		}, {
+			mark: TestMark.only,
+			timeout: this._timeout ?? timeout,
+			beforeEach: [],
+			afterEach: [],
 		});
 	}
 
@@ -152,26 +157,29 @@ export class TestSuite implements Test {
 	}
 
 	/** @private */
-	async _recursiveRunAsync(
-		parentMark: TestMarkValue,
-		parentBeforeEach: BeforeAfter[],
-		parentAfterEach: BeforeAfter[],
-		runOptions: RecursiveRunOptions,
-	) {
-		runOptions = {
-			...runOptions,
-			name: this._name,
-			filename: this._filename ?? runOptions.filename,
-			timeout: this._timeout ?? runOptions.timeout
+	async _recursiveRunAsync(runOptions: RecursiveRunOptions, parentData: ParentData) {
+
+		const beforeEach = [ ...parentData.beforeEach, ...this._beforeEach ];
+		const afterEach = [ ...this._afterEach, ...parentData.afterEach ];
+
+		let inheritedMark = this._mark;
+		if (inheritedMark === TestMark.none) inheritedMark = parentData.mark;
+		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
+
+		const thisData = {
+			filename: this._filename ?? parentData.filename,
+			mark: inheritedMark,
+			timeout: this._timeout ?? parentData.timeout,
+			beforeEach,
+			afterEach,
 		};
-		const resultOptions = { filename: runOptions.filename, mark: this._mark };
 
 		const beforeAllResults: TestCaseResult[] = [];
 		let beforeAllFailed = false;
 		for await (const before of this._beforeAll) {
 			const it = this._allChildrenSkipped || beforeAllFailed
-				? RunResult.skip({ name: before.name, filename: runOptions.filename })
-				: await runTestFnAsync(before.name, before.fnAsync, before.options.timeout, runOptions);
+				? RunResult.skip({ name: before.name, filename: thisData.filename })
+				: await runTestFnAsync(before.name, before.fnAsync, before.options.timeout, runOptions, thisData);
 			const result = TestCaseResult.create({ it });
 
 			if (!isSuccess(result)) beforeAllFailed = true;
@@ -180,24 +188,20 @@ export class TestSuite implements Test {
 		}
 
 
-		let inheritedMark = this._mark;
-		if (inheritedMark === TestMark.none) inheritedMark = parentMark;
-		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 		if (beforeAllFailed) inheritedMark = TestMark.skip;
+		thisData.mark = inheritedMark;
 
-		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
-		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
 
 		const testResults = [];
 		for await (const test of this._tests) {
-			testResults.push(await test._recursiveRunAsync(inheritedMark, beforeEach, afterEach, runOptions));
+			testResults.push(await test._recursiveRunAsync(runOptions, thisData));
 		}
 
 		const afterAllResults: TestCaseResult[] = [];
 		for await (const after of this._afterAll) {
 			const it = this._allChildrenSkipped || beforeAllFailed
-				? RunResult.skip({ name: after.name, filename: runOptions.filename })
-				: await runTestFnAsync(after.name, after.fnAsync, after.options.timeout, runOptions);
+				? RunResult.skip({ name: after.name, filename: thisData.filename })
+				: await runTestFnAsync(after.name, after.fnAsync, after.options.timeout, runOptions, thisData);
 			const result = TestCaseResult.create({ it });
 
 			runOptions.onTestCaseResult(result);
@@ -205,11 +209,12 @@ export class TestSuite implements Test {
 		}
 
 		return TestSuiteResult.create({
-			name: runOptions.name,
+			name: this._name,
+			filename: thisData.filename,
+			mark: this._mark,
 			tests: testResults,
 			beforeAll: beforeAllResults,
 			afterAll: afterAllResults,
-			...resultOptions,
 		});
 	}
 
