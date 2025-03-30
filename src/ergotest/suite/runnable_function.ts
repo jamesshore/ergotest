@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { Milliseconds, RunOptions } from "./test.js";
-import { RunResult } from "../results/test_result.js";
+import { RunResult, TestMark } from "../results/test_result.js";
 import { ItFn } from "../test_api.js";
 import { RunData } from "./test_suite.js";
 

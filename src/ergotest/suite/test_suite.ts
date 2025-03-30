@@ -162,20 +162,9 @@ export class TestSuite implements Test {
 	async _runAsyncInternal(runOptions: RunOptions, parentData: RunData) {
 		const runData = this.#consolidateData(parentData);
 
-		let beforeAllResults = await this.#runBeforeAllAsync(runOptions, runData);
-
+		const beforeAllResults = await this.#runBeforeAfterAllAsync(this._beforeAll, true, runOptions, runData);
 		const testResults = await this.#runTestsAsync(runOptions, runData);
-
-		const afterAllResults: TestCaseResult[] = [];
-		for await (const after of this._afterAll) {
-			const it = this._allChildrenSkipped || runData.beforeAllFailed
-				? RunResult.skip({ name: after.name, filename: runData.filename })
-				: await runTestFnAsync(after.name, after.fnAsync, after.options.timeout, runOptions, runData);
-			const result = TestCaseResult.create({ it });
-
-			runOptions.onTestCaseResult(result);
-			afterAllResults.push(result);
-		}
+		const afterAllResults = await this.#runBeforeAfterAllAsync(this._afterAll, false, runOptions, runData);
 
 		return TestSuiteResult.create({
 			name: this._name,
@@ -195,20 +184,25 @@ export class TestSuite implements Test {
 		return testResults;
 	}
 
-	async #runBeforeAllAsync(runOptions: RunOptions, runData: RunData) {
-		const beforeAllResults: TestCaseResult[] = [];
+	async #runBeforeAfterAllAsync(
+		beforeAfter: BeforeAfter[],
+		isBeforeAll: boolean,
+		runOptions: RunOptions,
+		runData: RunData
+	) {
+		const results: TestCaseResult[] = [];
 
-		for await (const before of this._beforeAll) {
+		for await (const test of beforeAfter) {
 			const it = this._allChildrenSkipped || runData.beforeAllFailed
-				? RunResult.skip({ name: before.name, filename: runData.filename })
-				: await runTestFnAsync(before.name, before.fnAsync, before.options.timeout, runOptions, runData);
+				? RunResult.skip({ name: test.name, filename: runData.filename })
+				: await runTestFnAsync(test.name, test.fnAsync, test.options.timeout, runOptions, runData);
 			const result = TestCaseResult.create({ it });
 
-			if (!isSuccess(result)) runData.beforeAllFailed = true;
+			if (isBeforeAll && !isSuccess(result)) runData.beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
-			beforeAllResults.push(result);
+			results.push(result);
 		}
-		return beforeAllResults;
+		return results;
 	}
 
 	#consolidateData(parentData: RunData): RunData {
