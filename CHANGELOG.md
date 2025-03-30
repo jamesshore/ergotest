@@ -43,6 +43,7 @@ TO DO:
   * Extract BeforeAfter class in suite folder
     * Remove pass-through of name in runOptions
     * Refactor runOptions --> parentSettings (or something)
+    * Ensure FailureTestCase handles filename properly
   * Modify TestResult factories to only take name arrays?
   * Update package.json
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.

@@ -5,6 +5,7 @@ import * as ensure from "../../util/ensure.js";
 import { ItFn, ItOptions } from "../test_api.js";
 import { RunData } from "./test_suite.js";
 import { runTestFnAsync } from "./runnable_function.js";
+import { BeforeAfter } from "./before_after.js";
 
 export class TestCase implements Test {
 
@@ -54,53 +55,63 @@ export class TestCase implements Test {
 
 	/** @private */
 	async _runAsyncInternal(
-		options: RunOptions,
+		runOptions: RunOptions,
 		parentData: RunData,
 	): Promise<TestCaseResult> {
-		const name = this._name;
-		options = { ...options };
+		const runData = this.#consolidateData(parentData);
 
-		let skipTest = this._isSkipped(parentData.mark) || parentData.skipAll;
-		const beforeEach = [];
-		for await (const before of parentData.beforeEach) {
-			ensure.defined(before.name, "before.name");
-			const result = skipTest
-				? RunResult.skip({ name: before.name!, filename: parentData.filename })
-				: await runTestFnAsync(before.name!, before.fnAsync, before.options.timeout, options, parentData);
-			if (!isSuccess(result)) skipTest = true;
-			beforeEach.push(result);
-		}
-
-		let it;
-		if (this._testFn === undefined && this._mark === TestMark.only) {
-			it = RunResult.fail({
-				name,
-				filename: parentData.filename,
-				error: "Test is marked '.only', but it has no body",
-				renderError: options.renderError,
-			});
-		}
-		else if (skipTest) {
-			it = RunResult.skip({ name: this._name, filename: parentData.filename });
-		}
-		else {
-			it = await runTestFnAsync(this._name, this._testFn!, this._timeout, options, parentData);
-		}
-
-		const afterEach = [];
-		for await (const after of parentData.afterEach) {
-			ensure.defined(after.name, "after.name");
-			const result = skipTest
-				? RunResult.skip({ name: after.name!, filename: parentData.filename })
-				: await runTestFnAsync(after.name!, after.fnAsync, after.options.timeout, options, parentData);
-			afterEach.push(result);
-		}
+		const beforeEach = await this.#runBeforeAfterEachAsync(runData.beforeEach, true, runOptions, runData);
+		const it = await this.#runTestAsync(runData, runOptions);
+		const afterEach = await this.#runBeforeAfterEachAsync(runData.afterEach, false, runOptions, runData);
 
 		const result = TestCaseResult.create({ mark: this._mark, beforeEach, afterEach, it });
-
-		options.onTestCaseResult(result);
+		runOptions.onTestCaseResult(result);
 		return result;
 	}
+
+	async #runTestAsync(runData: RunData, runOptions: RunOptions) {
+		if (this._testFn === undefined && this._mark === TestMark.only) {
+			return RunResult.fail({
+				name: this._name,
+				filename: runData.filename,
+				error: "Test is marked '.only', but it has no body",
+				renderError: runOptions.renderError,
+			});
+		}
+		else if (runData.skipAll) {
+			return RunResult.skip({ name: this._name, filename: runData.filename });
+		}
+		else {
+			return await runTestFnAsync(this._name, this._testFn!, this._timeout, runOptions, runData);
+		}
+	}
+
+	async #runBeforeAfterEachAsync(
+		beforeAfter: BeforeAfter[],
+		isBeforeEach: boolean,
+		runOptions: RunOptions,
+		runData: RunData
+	) {
+		const results = [];
+		for await (const test of beforeAfter) {
+			const result = await test.runBeforeAfterEachAsync(runOptions, runData);
+			if (isBeforeEach && !isSuccess(result)) runData.skipAll = true;
+			results.push(result);
+		}
+		return results;
+	}
+
+	#consolidateData(parentData: RunData): RunData {
+		return {
+			filename: parentData.filename,
+			mark: this._mark === TestMark.none ? parentData.mark : this._mark,
+			timeout: this._timeout ?? parentData.timeout,
+			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
+			beforeEach: parentData.beforeEach,
+			afterEach: parentData.afterEach,
+		};
+	}
+
 }
 
 

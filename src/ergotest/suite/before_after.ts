@@ -3,7 +3,7 @@
 import { ItFn, ItOptions } from "../test_api.js";
 import { RunOptions } from "./test.js";
 import { RunData } from "./test_suite.js";
-import { RunResult } from "../results/test_result.js";
+import { RunResult, TestCaseResult } from "../results/test_result.js";
 import { runTestFnAsync } from "./runnable_function.js";
 
 export class BeforeAfter {
@@ -39,6 +39,19 @@ export class BeforeAfter {
 
 	get fnAsync(): ItFn {
 		return this._fnAsync;
+	}
+
+	async runBeforeAfterAllAsync(runOptions: RunOptions, runData: RunData) {
+		const result = TestCaseResult.create({
+			it: await this._runAsyncInternal(runOptions, runData),
+		});
+
+		runOptions.onTestCaseResult(result);
+		return result;
+	}
+
+	async runBeforeAfterEachAsync(runOptions: RunOptions, runData: RunData) {
+		return await this._runAsyncInternal(runOptions, runData);
 	}
 
 	async _runAsyncInternal(runOptions: RunOptions, runData: RunData) {

@@ -193,12 +193,8 @@ export class TestSuite implements Test {
 		const results: TestCaseResult[] = [];
 
 		for await (const test of beforeAfter) {
-			const result = TestCaseResult.create({
-				it: await test._runAsyncInternal(runOptions, runData),
-			});
+			const result = await test.runBeforeAfterAllAsync(runOptions, runData);
 			if (isBeforeAll && !isSuccess(result)) runData.skipAll = true;
-
-			runOptions.onTestCaseResult(result);
 			results.push(result);
 		}
 		return results;
