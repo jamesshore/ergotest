@@ -32,7 +32,7 @@ export interface RunData {
 	filename?: string;
 	mark: TestMarkValue;
 	timeout: Milliseconds;
-	beforeAllFailed: boolean;
+	skipAll: boolean;
 	beforeEach: BeforeAfter[];
 	afterEach: BeforeAfter[];
 }
@@ -84,7 +84,7 @@ export class TestSuite implements Test {
 	constructor(
 		name: string[],
 		mark: TestMarkValue,
-		timeout: Milliseconds,
+		timeout: Milliseconds | undefined,
 		beforeAll: BeforeAfter[],
 		afterAll: BeforeAfter[],
 		beforeEach: BeforeAfter[],
@@ -139,7 +139,7 @@ export class TestSuite implements Test {
 		}, {
 			mark: TestMark.only,
 			timeout: this._timeout ?? timeout,
-			beforeAllFailed: false,
+			skipAll: false,
 			beforeEach: [],
 			afterEach: [],
 		});
@@ -193,12 +193,11 @@ export class TestSuite implements Test {
 		const results: TestCaseResult[] = [];
 
 		for await (const test of beforeAfter) {
-			const it = this._allChildrenSkipped || runData.beforeAllFailed
-				? RunResult.skip({ name: test.name, filename: runData.filename })
-				: await runTestFnAsync(test.name, test.fnAsync, test.options.timeout, runOptions, runData);
-			const result = TestCaseResult.create({ it });
+			const result = TestCaseResult.create({
+				it: await test._runAsyncInternal(runOptions, runData),
+			});
+			if (isBeforeAll && !isSuccess(result)) runData.skipAll = true;
 
-			if (isBeforeAll && !isSuccess(result)) runData.beforeAllFailed = true;
 			runOptions.onTestCaseResult(result);
 			results.push(result);
 		}
@@ -217,7 +216,7 @@ export class TestSuite implements Test {
 			filename: this._filename ?? parentData.filename,
 			mark: inheritedMark,
 			timeout: this._timeout ?? parentData.timeout,
-			beforeAllFailed: parentData.beforeAllFailed,
+			skipAll: parentData.skipAll || this._isSkipped(),
 			beforeEach,
 			afterEach,
 		};

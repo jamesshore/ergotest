@@ -60,7 +60,7 @@ export class TestCase implements Test {
 		const name = this._name;
 		options = { ...options };
 
-		let skipTest = this._isSkipped(parentData.mark) || parentData.beforeAllFailed;
+		let skipTest = this._isSkipped(parentData.mark) || parentData.skipAll;
 		const beforeEach = [];
 		for await (const before of parentData.beforeEach) {
 			ensure.defined(before.name, "before.name");
