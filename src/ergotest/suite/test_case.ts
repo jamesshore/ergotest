@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
+import { Milliseconds, RunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
 import { ItFn, ItOptions } from "../test_api.js";
-import { ParentData } from "./test_suite.js";
+import { RunData } from "./test_suite.js";
 import { runTestFnAsync } from "./runnable_function.js";
 
 export class TestCase implements Test {
@@ -53,14 +53,14 @@ export class TestCase implements Test {
 	}
 
 	/** @private */
-	async _recursiveRunAsync(
-		options: RecursiveRunOptions,
-		parentData: ParentData,
+	async _runAsyncInternal(
+		options: RunOptions,
+		parentData: RunData,
 	): Promise<TestCaseResult> {
 		const name = this._name;
 		options = { ...options };
 
-		let skipTest = this._isSkipped(parentData.mark);
+		let skipTest = this._isSkipped(parentData.mark) || parentData.beforeAllFailed;
 		const beforeEach = [];
 		for await (const before of parentData.beforeEach) {
 			ensure.defined(before.name, "before.name");
@@ -124,9 +124,9 @@ export class FailureTestCase extends TestCase {
 		this._error = error;
 	}
 
-	override async _recursiveRunAsync(
-		runOptions: RecursiveRunOptions,
-		parentData: ParentData,
+	override async _runAsyncInternal(
+		runOptions: RunOptions,
+		parentData: RunData,
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({
 			name: this._name,

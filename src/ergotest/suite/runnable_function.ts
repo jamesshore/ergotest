@@ -1,16 +1,16 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { Milliseconds, RecursiveRunOptions } from "./test.js";
+import { Milliseconds, RunOptions } from "./test.js";
 import { RunResult } from "../results/test_result.js";
 import { ItFn } from "../test_api.js";
-import { ParentData } from "./test_suite.js";
+import { RunData } from "./test_suite.js";
 
 
 export async function runTestFnAsync(
 	name: string[],
 	fn: ItFn,
 	testTimeout: Milliseconds | undefined,
-	runOptions: RecursiveRunOptions,
-	parentData: ParentData,
+	runOptions: RunOptions,
+	parentData: RunData,
 ): Promise<RunResult> {
 	const timeout = testTimeout ?? parentData.timeout;
 

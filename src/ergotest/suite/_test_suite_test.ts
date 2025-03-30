@@ -841,6 +841,28 @@ export default describe(() => {
 				);
 			});
 
+			it("doesn't run tests when beforeAll() fails, even if a test is marked .only", async () => {
+				const suite = describe_sut(() => {
+					beforeAll_sut(FAIL_FN);
+					it_sut.only("test 1", PASS_FN);
+					describe_sut.only("child", () => {
+						it_sut.only("test 2", PASS_FN);
+					});
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					beforeAll: [ createFail({ name: "beforeAll()", error: ERROR }) ],
+					tests: [
+						createSkip({ name: "test 1", mark: TestMark.only }),
+						createSuite({
+							name: "child",
+							mark: TestMark.only,
+							tests: [ createSkip({ name: [ "child", "test 2" ], mark: TestMark.only }) ],
+						}),
+					]}),
+				);
+			});
+
 			it("stops running beforeAll() functions if one fails", async () => {
 				const suite = describe_sut(() => {
 					beforeAll_sut(PASS_FN);
