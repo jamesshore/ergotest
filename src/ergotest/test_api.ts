@@ -5,6 +5,7 @@ import { FailureTestCase, TestCase } from "./suite/test_case.js";
 import { Milliseconds, Test } from "./suite/test.js";
 import { BeforeAfterDefinition } from "./suite/runnable_function.js";
 import { TestOptions, TestSuite } from "./suite/test_suite.js";
+import { BeforeAfter } from "./suite/before_after.js";
 
 export interface DescribeOptions {
 	timeout?: Milliseconds,
@@ -122,12 +123,8 @@ export function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn) {
 }
 
 
-class TestContext {
-	private readonly _context: ContextFrame[] = [];
-
-	constructor() {
-		this._context = [ new ContextFrame() ];
-	}
+class ContextStack {
+	private readonly _context: TestSuiteBuilder[] = [];
 
 	describe(
 		optionalName: string | DescribeOptions | DescribeFn | undefined,
@@ -148,15 +145,15 @@ class TestContext {
 			? createSkippedSuite(name, mark)
 			: runDescribeBlock(this._context, name, mark, fn);
 
-		this.#top.addSuite(suite);
+		if (this._context.length !== 0) this.#top.addSuite(suite);
 		return suite;
 
-		function runDescribeBlock(context: ContextFrame[], name: string, mark: TestMarkValue, fn: DescribeFn) {
-			const frame = new ContextFrame(name, mark, options.timeout);
-			context.push(frame);
+		function runDescribeBlock(context: TestSuiteBuilder[], name: string, mark: TestMarkValue, fn: DescribeFn) {
+			const builder = new TestSuiteBuilder(name, mark, options.timeout);
+			context.push(builder);
 			try {
 				fn();
-				return frame.toTestSuite();
+				return builder.toTestSuite();
 			}
 			finally {
 				context.pop();
@@ -221,7 +218,7 @@ class TestContext {
 	}
 
 	#ensureInsideDescribe(functionName: string) {
-		ensure.that(this._context.length > 1, `${functionName}() must be run inside describe()`);
+		ensure.that(this._context.length > 0, `${functionName}() must be run inside describe()`);
 	}
 
 	get #top() {
@@ -230,7 +227,7 @@ class TestContext {
 
 }
 
-class ContextFrame {
+class TestSuiteBuilder {
 	private readonly _name: string;
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;
@@ -255,19 +252,19 @@ class ContextFrame {
 	}
 
 	beforeAll(options: ItOptions, fnAsync: ItFn) {
-		this._beforeAll.push({ options, fnAsync });
+		this._beforeAll.push(BeforeAfter.create({ options, fnAsync }));
 	}
 
 	afterAll(options: ItOptions, fnAsync: ItFn) {
-		this._afterAll.push({ options, fnAsync });
+		this._afterAll.push(BeforeAfter.create({ options, fnAsync }));
 	}
 
 	beforeEach(options: ItOptions, fnAsync: ItFn) {
-		this._beforeEach.push({ options, fnAsync });
+		this._beforeEach.push(BeforeAfter.create({ options, fnAsync }));
 	}
 
 	afterEach(options: ItOptions, fnAsync: ItFn) {
-		this._afterEach.push({ options, fnAsync });
+		this._afterEach.push(BeforeAfter.create({ options, fnAsync }));
 	}
 
 	toTestSuite(): TestSuite {
@@ -388,4 +385,4 @@ function decipherItParameters(
 	return { options, fnAsync };
 }
 
-const testContext = new TestContext();
+const testContext = new ContextStack();
