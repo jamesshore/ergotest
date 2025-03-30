@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import * as ensure from "../util/ensure.js";
+import * as ensure from "../../util/ensure.js";
 import {
 	RunResult,
 	TestCaseResult,
@@ -9,12 +9,12 @@ import {
 	TestStatus, TestStatusValue,
 	TestSuiteResult,
 } from "./test_result.js";
-import { ColorFn, Colors } from "../infrastructure/colors.js";
+import { ColorFn, Colors } from "../../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
 import util from "node:util";
-import { SourceMap } from "../infrastructure/source_map.js";
-import { TypeDescriptor } from "../util/type.js";
+import { SourceMap } from "../../infrastructure/source_map.js";
+import { TypeDescriptor } from "../../util/type.js";
 
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;

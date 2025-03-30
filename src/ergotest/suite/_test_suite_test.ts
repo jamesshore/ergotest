@@ -10,7 +10,7 @@ import {
 	createTimeout,
 	describe,
 	it,
-} from "../util/tests.js";
+} from "../../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
 	afterAll as afterAll_sut,
@@ -19,16 +19,17 @@ import {
 	beforeEach as beforeEach_sut,
 	describe as describe_sut,
 	it as it_sut,
-} from "./test_api.js";
-import { Clock } from "../infrastructure/clock.js";
-import { TestCaseResult, TestMark, TestResult, TestStatus } from "./test_result.js";
+} from "../test_api.js";
+import { Clock } from "../../infrastructure/clock.js";
+import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
+import { fromModulesAsync } from "../runner/loader.js";
 // dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
 // dependency: ./_module_no_export.js
-// dependency: ./_renderer_custom.js
-// dependency: ./_renderer_no_export.js
-// dependency: ./_renderer_not_function.js
+// dependency: ../_renderer_custom.js
+// dependency: ../_renderer_no_export.js
+// dependency: ../_renderer_not_function.js
 // dependency: _test_renderer/_renderer_in_node_modules.js
 
 // Tests for my test library. (How meta.)
@@ -37,9 +38,9 @@ const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
 const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 
-const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_custom.js");
-const NO_EXPORT_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_no_export.js");
-const NOT_FUNCTION_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_not_function.js");
+const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_custom.js");
+const NO_EXPORT_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_no_export.js");
+const NOT_FUNCTION_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_not_function.js");
 const NODE_MODULES_RENDERER_NAME = "_test_renderer/_renderer_in_node_modules.js";
 
 const IRRELEVANT_NAME = "irrelevant name";
@@ -55,7 +56,7 @@ export default describe(() => {
 	describe("test modules", () => {
 
 		it("creates test suite from a module (and sets filename on result)", async () => {
-			const suite = await TestSuite.fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
 
 			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
 			assert.dotEquals(await suite.runAsync(),
@@ -67,7 +68,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module isn't an absolute path", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "./_module_passes.js" ]);
+			const suite = await fromModulesAsync([ "./_module_passes.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
 			assert.equal(result.name, [ "error when importing _module_passes.js" ]);
@@ -77,7 +78,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module doesn't exist", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "/no_such_module.js" ]);
+			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
 			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
@@ -87,7 +88,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module fails to require()", async () => {
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
 			assert.equal(result.name, [ "error when importing _module_throws.js" ]);
@@ -97,7 +98,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
-			const suite = await TestSuite.fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
 			assert.equal(result.name, [ "error when importing _module_no_export.js" ]);
@@ -116,7 +117,7 @@ export default describe(() => {
 				renderer: CUSTOM_RENDERER_PATH,
 			};
 
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync(options)).allTests()[0];
 
 			await assert.equal(result.errorRender, "custom rendering");
@@ -127,7 +128,7 @@ export default describe(() => {
 				renderer: NODE_MODULES_RENDERER_NAME,
 			};
 
-			const suite = await TestSuite.fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync(options)).allTests()[0];
 
 			await assert.equal(result.errorRender, "node_modules rendering");
@@ -1775,7 +1776,7 @@ export default describe(() => {
 		});
 
 		it("runs notify function if module fails to require()", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "./_module_throws.js" ]);
+			const suite = await fromModulesAsync([ "./_module_throws.js" ]);
 
 			let testResult: TestCaseResult;
 			function onTestCaseResult(result: TestCaseResult) {
@@ -1787,7 +1788,7 @@ export default describe(() => {
 		});
 
 		it("runs notify function if module doesn't export a test suite", async () => {
-			const suite = await TestSuite.fromModulesAsync([ "./_module_no_export.js" ]);
+			const suite = await fromModulesAsync([ "./_module_no_export.js" ]);
 
 			let testResult: TestCaseResult;
 

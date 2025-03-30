@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
-import * as ensure from "../util/ensure.js";
+import * as ensure from "../../util/ensure.js";
 import util from "node:util";
 import { renderError as renderErrorFn, TestRenderer } from "./test_renderer.js";
 

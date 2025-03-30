@@ -1,9 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { assert, describe, it, beforeEach, createSuite, createPass, createFail } from "../util/tests.js";
-import { TestRunner } from "./test_runner.js";
+import { TestRunner } from "./runner/test_runner.js";
 import path from "node:path";
-import { TestSuite } from "./test_suite.js";
-import { RunResult, TestMarkValue, TestResult, TestSuiteResult } from "./test_result.js";
+import { TestSuite } from "./suite/test_suite.js";
+import { RunResult, TestMarkValue, TestResult, TestSuiteResult } from "./results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../infrastructure/clock.js";
 

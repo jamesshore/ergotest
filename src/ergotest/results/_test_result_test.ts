@@ -11,7 +11,7 @@ import {
 	createTimeout,
 	describe,
 	it,
-} from "../util/tests.js";
+} from "../../util/tests.js";
 import { AssertionError } from "node:assert";
 import { RunResult, TestCaseResult, TestMark, TestResult, TestStatus } from "./test_result.js";
 import { renderError, TestRenderer } from "./test_renderer.js";

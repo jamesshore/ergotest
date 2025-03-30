@@ -7,7 +7,7 @@ import {
 	createSuite, createTimeout,
 	describe,
 	it,
-} from "../util/tests.js";
+} from "../../util/tests.js";
 import { renderDiff, renderError, renderStack, TestRenderer } from "./test_renderer.js";
 import { AssertionError } from "node:assert";
 import {
@@ -16,11 +16,11 @@ import {
 	TestMarkValue,
 	TestResult, TestStatus, TestStatusValue,
 } from "./test_result.js";
-import { Colors } from "../infrastructure/colors.js";
+import { Colors } from "../../infrastructure/colors.js";
 import util from "node:util";
-import { describe as describe_sut, it as it_sut } from "./test_api.js";
+import { describe as describe_sut, it as it_sut } from "../test_api.js";
 import path from "node:path";
-import { SourceMap } from "../infrastructure/source_map.js";
+import { SourceMap } from "../../infrastructure/source_map.js";
 
 const headerColor = Colors.brightWhite.bold;
 

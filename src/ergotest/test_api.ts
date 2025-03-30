@@ -1,7 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { DescribeFn, DescribeOptions, ItFn, ItOptions, TestContext, TestSuite } from "./test_suite.js";
-import { TestMark, TestMarkValue } from "./test_result.js";
+import { DescribeFn, DescribeOptions, ItFn, ItOptions, TestSuite } from "./suite/test_suite.js";
+import { TestMark, TestMarkValue } from "./results/test_result.js";
 import * as ensure from "../util/ensure.js";
+import { describe2, TestContext } from "./suite/test_context.js";
 
 const testContext: TestContext[] = [];
 
@@ -111,7 +112,7 @@ function createSuite(
 	mark: TestMarkValue,
 ): TestSuite {
 	return testContext.length === 0 ?
-		TestSuite.create(optionalName, optionalOptions, fn, mark, testContext) :
+		describe2(optionalName, optionalOptions, fn, mark, testContext) :
 		currentContext("describe").describe(optionalName, optionalOptions, fn, mark);
 }
 
