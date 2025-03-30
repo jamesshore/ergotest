@@ -4,7 +4,7 @@ import * as ensure from "../util/ensure.js";
 import { FailureTestCase, TestCase } from "./suite/test_case.js";
 import { Milliseconds, Test } from "./suite/test.js";
 import { TestSuite } from "./suite/test_suite.js";
-import { BeforeAfter, BeforeAfterDefinition } from "./suite/before_after.js";
+import { BeforeAfter } from "./suite/before_after.js";
 
 export interface DescribeOptions {
 	timeout?: Milliseconds,
@@ -208,14 +208,14 @@ class ContextStack {
 		this.#ensureInsideDescribe("beforeEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
-		this.#top.beforeEach(options, fnAsync);
+		this.#top.beforeEach(this.#fullName(), options, fnAsync);
 	}
 
 	afterEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
 		this.#ensureInsideDescribe("afterEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
-		this.#top.afterEach(options, fnAsync);
+		this.#top.afterEach(this.#fullName(), options, fnAsync);
 	}
 
 	#ensureInsideDescribe(functionName: string) {
@@ -271,12 +271,14 @@ class TestSuiteBuilder {
 		this._afterAll.push(BeforeAfter.create({ name, options, fnAsync }));
 	}
 
-	beforeEach(options: ItOptions, fnAsync: ItFn) {
-		this._beforeEach.push(BeforeAfter.create({ options, fnAsync }));
+	beforeEach(parentName: string[], options: ItOptions, fnAsync: ItFn) {
+		const name = this.#beforeAfterName(parentName, this._beforeEach, "beforeEach()");
+		this._beforeEach.push(BeforeAfter.create({ name, options, fnAsync }));
 	}
 
-	afterEach(options: ItOptions, fnAsync: ItFn) {
-		this._afterEach.push(BeforeAfter.create({ options, fnAsync }));
+	afterEach(parentName: string[], options: ItOptions, fnAsync: ItFn) {
+		const name = this.#beforeAfterName(parentName, this._afterEach, "afterEach()");
+		this._afterEach.push(BeforeAfter.create({ name, options, fnAsync }));
 	}
 
 	toTestSuite(): TestSuite {

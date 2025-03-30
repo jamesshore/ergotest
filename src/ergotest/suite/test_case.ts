@@ -3,7 +3,7 @@ import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
 import { ItFn, ItOptions } from "../test_api.js";
-import { BeforeAfterDefinition } from "./before_after.js";
+import { BeforeAfter } from "./before_after.js";
 
 export class TestCase implements Test {
 
@@ -54,8 +54,8 @@ export class TestCase implements Test {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEach: BeforeAfterDefinition[],
-		parentAfterEach: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfter[],
+		parentAfterEach: BeforeAfter[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const name = this._name;
@@ -155,8 +155,8 @@ export class FailureTestCase extends TestCase {
 
 	override async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		beforeEachFns: BeforeAfterDefinition[],
-		afterEachFns: BeforeAfterDefinition[],
+		beforeEachFns: BeforeAfter[],
+		afterEachFns: BeforeAfter[],
 		options: RecursiveRunOptions,
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({

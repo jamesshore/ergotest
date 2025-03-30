@@ -2,7 +2,7 @@
 import { RenderErrorFn, TestCaseResult, TestMarkValue, TestResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { TestConfig } from "./test_suite.js";
-import { BeforeAfterDefinition } from "./before_after.js";
+import { BeforeAfter } from "./before_after.js";
 
 export interface RecursiveRunOptions {
 	name: string[];
@@ -17,8 +17,8 @@ export interface RecursiveRunOptions {
 export interface Test {
 	_recursiveRunAsync: (
 		parentMark: TestMarkValue,
-		parentBeforeEachFns: BeforeAfterDefinition[],
-		parentAfterEachFns: BeforeAfterDefinition[],
+		parentBeforeEachFns: BeforeAfter[],
+		parentAfterEachFns: BeforeAfter[],
 		options: RecursiveRunOptions,
 	) => Promise<TestResult> | TestResult;
 	_isDotOnly: () => boolean,

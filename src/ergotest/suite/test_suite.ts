@@ -11,8 +11,8 @@ import {
 	TestSuiteResult,
 } from "../results/test_result.js";
 import { Milliseconds, RecursiveRunOptions, Test } from "./test.js";
-import { BeforeAfterDefinition } from "./before_after.js";
 import { runTestFnAsync } from "./runnable_function.js";
+import { BeforeAfter } from "./before_after.js";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
@@ -38,10 +38,10 @@ export class TestSuite implements Test {
 	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
 	private _allChildrenSkipped: boolean;
-	private _beforeAll: BeforeAfterDefinition[];
-	private _afterAll: BeforeAfterDefinition[];
-	private _beforeEach: BeforeAfterDefinition[];
-	private _afterEach: BeforeAfterDefinition[];
+	private _beforeAll: BeforeAfter[];
+	private _afterAll: BeforeAfter[];
+	private _beforeEach: BeforeAfter[];
+	private _afterEach: BeforeAfter[];
 	private _timeout?: Milliseconds;
 	private _filename?: string;
 
@@ -62,10 +62,10 @@ export class TestSuite implements Test {
 		name?: string[],
 		mark?: TestMarkValue,
 		timeout?: Milliseconds,
-		beforeAll?: BeforeAfterDefinition[],
-		afterAll?: BeforeAfterDefinition[],
-		beforeEach?: BeforeAfterDefinition[],
-		afterEach?: BeforeAfterDefinition[],
+		beforeAll?: BeforeAfter[],
+		afterAll?: BeforeAfter[],
+		beforeEach?: BeforeAfter[],
+		afterEach?: BeforeAfter[],
 		tests?: Test[],
 	}) {
 		return new TestSuite(name, mark, { timeout, beforeAll, afterAll, beforeEach, afterEach, tests });
@@ -81,10 +81,10 @@ export class TestSuite implements Test {
 		timeout,
 	}: {
 		tests?: Test[],
-		beforeAll?: BeforeAfterDefinition[],
-		afterAll?: BeforeAfterDefinition[],
-		beforeEach?: BeforeAfterDefinition[],
-		afterEach?: BeforeAfterDefinition[],
+		beforeAll?: BeforeAfter[],
+		afterAll?: BeforeAfter[],
+		beforeEach?: BeforeAfter[],
+		afterEach?: BeforeAfter[],
 		timeout?: Milliseconds,
 	}) {
 		this._name = name;
@@ -154,8 +154,8 @@ export class TestSuite implements Test {
 	/** @private */
 	async _recursiveRunAsync(
 		parentMark: TestMarkValue,
-		parentBeforeEach: BeforeAfterDefinition[],
-		parentAfterEach: BeforeAfterDefinition[],
+		parentBeforeEach: BeforeAfter[],
+		parentAfterEach: BeforeAfter[],
 		runOptions: RecursiveRunOptions,
 	) {
 		runOptions = {
@@ -169,11 +169,9 @@ export class TestSuite implements Test {
 		const beforeAllResults: TestCaseResult[] = [];
 		let beforeAllFailed = false;
 		for await (const before of this._beforeAll) {
-			const name = before.name;
-
 			const it = this._allChildrenSkipped || beforeAllFailed
-				? RunResult.skip({ name, filename: runOptions.filename })
-				: await runTestFnAsync(name, before.fnAsync, before.options.timeout, runOptions);
+				? RunResult.skip({ name: before.name, filename: runOptions.filename })
+				: await runTestFnAsync(before.name, before.fnAsync, before.options.timeout, runOptions);
 			const result = TestCaseResult.create({ it });
 
 			if (!isSuccess(result)) beforeAllFailed = true;
@@ -187,15 +185,6 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 		if (beforeAllFailed) inheritedMark = TestMark.skip;
 
-		this._beforeEach.forEach((beforeEach, i) => {
-			const number = i === 0 ? "" : ` #${i + 1}`;
-			beforeEach.name = [ ...runOptions.name, `beforeEach()${number}` ];
-		});
-		this._afterEach.forEach((afterEach, i) => {
-			const number = i === 0 ? "" : ` #${i + 1}`;
-			afterEach.name = [ ...runOptions.name, `afterEach()${number}` ];
-		});
-
 		const beforeEach = [ ...parentBeforeEach, ...this._beforeEach ];
 		const afterEach = [ ...this._afterEach, ...parentAfterEach ];
 
@@ -206,11 +195,9 @@ export class TestSuite implements Test {
 
 		const afterAllResults: TestCaseResult[] = [];
 		for await (const after of this._afterAll) {
-			const name = after.name;
-
 			const it = this._allChildrenSkipped || beforeAllFailed
-				? RunResult.skip({ name, filename: runOptions.filename })
-				: await runTestFnAsync(name, after.fnAsync, after.options.timeout, runOptions);
+				? RunResult.skip({ name: after.name, filename: runOptions.filename })
+				: await runTestFnAsync(after.name, after.fnAsync, after.options.timeout, runOptions);
 			const result = TestCaseResult.create({ it });
 
 			runOptions.onTestCaseResult(result);

@@ -2,11 +2,8 @@
 
 import { ItFn, ItOptions } from "../test_api.js";
 
-export type BeforeAfterDefinition = { name?: string[], options: ItOptions, fnAsync: ItFn };
-
-
-export class BeforeAfter implements BeforeAfterDefinition {
-	public name: string[];
+export class BeforeAfter {
+	private readonly _name: string[];
 	public options: ItOptions;
 	public fnAsync: ItFn;
 
@@ -23,8 +20,12 @@ export class BeforeAfter implements BeforeAfterDefinition {
 	}
 
 	constructor(name: string[], options: ItOptions, fnAsync: ItFn) {
-		this.name = name;
+		this._name = name;
 		this.options = options;
 		this.fnAsync = fnAsync;
+	}
+
+	get name() {
+		return this._name;
 	}
 }

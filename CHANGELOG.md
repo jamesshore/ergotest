@@ -41,7 +41,6 @@ To Document:
 TO DO:
 * Split up large files
   * Extract BeforeAfter class in suite folder
-    * Define BeforeAfter with full name
     * Remove pass-through of name in runOptions
   * Modify TestResult factories to only take name arrays?
   * Update package.json
