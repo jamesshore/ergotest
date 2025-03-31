@@ -2,7 +2,6 @@
 import { RenderErrorFn, TestCaseResult, TestMarkValue, TestResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { RunData, TestConfig } from "./test_suite.js";
-import { BeforeAfter } from "./before_after.js";
 
 export interface RunOptions {
 	clock: Clock,

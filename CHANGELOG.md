@@ -40,10 +40,9 @@ To Document:
 
 TO DO:
 * Split up large files
-  * Extract BeforeAfter class in suite folder
-    * Remove pass-through of name in runOptions
-    * Refactor runOptions --> parentSettings (or something)
-    * Ensure FailureTestCase handles filename properly
+  * Clean up results folder
+  * Clean up runner folder
+  * Ensure FailureTestCase handles filename properly--maybe get rid of it entirely?
   * Modify TestResult factories to only take name arrays?
   * Update package.json
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.

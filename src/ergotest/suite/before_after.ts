@@ -4,7 +4,7 @@ import { ItFn, ItOptions } from "../test_api.js";
 import { RunOptions } from "./test.js";
 import { RunData } from "./test_suite.js";
 import { RunResult, TestCaseResult } from "../results/test_result.js";
-import { Runnable, runTestFnAsync } from "./runnable_function.js";
+import { Runnable } from "./runnable.js";
 
 export class BeforeAfter extends Runnable {
 

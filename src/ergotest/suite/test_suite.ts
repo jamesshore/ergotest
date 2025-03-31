@@ -11,7 +11,6 @@ import {
 	TestSuiteResult,
 } from "../results/test_result.js";
 import { Milliseconds, RunOptions, Test } from "./test.js";
-import { runTestFnAsync } from "./runnable_function.js";
 import { BeforeAfter } from "./before_after.js";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
@@ -93,14 +92,14 @@ export class TestSuite implements Test {
 	) {
 		this._name = name;
 		this._mark = mark;
-		this._tests = tests;
-		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
-		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._mark));
+		this._timeout = timeout;
 		this._beforeAll = beforeAll;
 		this._afterAll = afterAll;
 		this._beforeEach = beforeEach;
 		this._afterEach = afterEach;
-		this._timeout = timeout;
+		this._tests = tests;
+		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
+		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._mark));
 	}
 
 	/**
@@ -160,7 +159,7 @@ export class TestSuite implements Test {
 
 	/** @private */
 	async _runAsyncInternal(runOptions: RunOptions, parentData: RunData) {
-		const runData = this.#consolidateData(parentData);
+		const runData = this.#consolidateRunData(parentData);
 
 		const beforeAllResults = await this.#runBeforeAfterAllAsync(this._beforeAll, true, runOptions, runData);
 		const testResults = await this.#runTestsAsync(runOptions, runData);
@@ -200,7 +199,7 @@ export class TestSuite implements Test {
 		return results;
 	}
 
-	#consolidateData(parentData: RunData): RunData {
+	#consolidateRunData(parentData: RunData): RunData {
 		const beforeEach = [ ...parentData.beforeEach, ...this._beforeEach ];
 		const afterEach = [ ...this._afterEach, ...parentData.afterEach ];
 
@@ -220,7 +219,7 @@ export class TestSuite implements Test {
 }
 
 
-function isSuccess(result: TestCaseResult | RunResult) {
+function isSuccess(result: TestCaseResult) {
 	return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
 

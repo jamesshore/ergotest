@@ -4,14 +4,13 @@ import { RunResult, TestMark } from "../results/test_result.js";
 import { ItFn, ItOptions } from "../test_api.js";
 import { RunData } from "./test_suite.js";
 
-
 export class Runnable {
 
 	private readonly _name: string[];
 	private readonly _options: ItOptions;
-	private readonly _fnAsync: ItFn;
+	private readonly _fnAsync?: ItFn;
 
-	constructor(name: string[], options: ItOptions, fnAsync: ItFn) {
+	constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined) {
 		this._name = name;
 		this._options = options;
 		this._fnAsync = fnAsync;
@@ -25,7 +24,7 @@ export class Runnable {
 		return this._options;
 	}
 
-	get fnAsync(): ItFn {
+	get fnAsync(): ItFn | undefined {
 		return this._fnAsync;
 	}
 
@@ -33,11 +32,18 @@ export class Runnable {
 		runOptions: RunOptions,
 		runData: RunData,
 	): Promise<RunResult> {
-		const timeout = this._options.timeout ?? runData.timeout;
+		const fnAsync = this._fnAsync;
+		if (runData.skipAll || fnAsync === undefined) {
+			return RunResult.skip({
+				name: this._name,
+				filename: runData.filename
+			});
+		}
 
+		const timeout = this._options.timeout ?? runData.timeout;
 		return await runOptions.clock.timeoutAsync(timeout, async () => {
 			try {
-				await this._fnAsync({ getConfig });
+				await fnAsync({ getConfig });
 				return RunResult.pass({
 					name: this._name,
 					filename: runData.filename
@@ -65,32 +71,5 @@ export class Runnable {
 		}
 	}
 
-}
-
-export async function runTestFnAsync(
-	name: string[],
-	fn: ItFn,
-	testTimeout: Milliseconds | undefined,
-	runOptions: RunOptions,
-	parentData: RunData,
-): Promise<RunResult> {
-	const timeout = testTimeout ?? parentData.timeout;
-
-	return await runOptions.clock.timeoutAsync(timeout, async () => {
-		try {
-			await fn({ getConfig });
-			return RunResult.pass({ name, filename: parentData.filename });
-		}
-		catch (error) {
-			return RunResult.fail({ name, filename: parentData.filename, error, renderError: runOptions.renderError });
-		}
-	}, async () => {
-		return await RunResult.timeout({ name, filename: parentData.filename, timeout: parentData.timeout });
-	});
-
-	function getConfig<T>(name: string) {
-		if (runOptions.config[name] === undefined) throw new Error(`No test config found for name '${name}'`);
-		return runOptions.config[name] as T;
-	}
 }
 

@@ -1,17 +1,14 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { Milliseconds, RunOptions, Test } from "./test.js";
+import { RunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
 import { ItFn, ItOptions } from "../test_api.js";
 import { RunData } from "./test_suite.js";
-import { runTestFnAsync } from "./runnable_function.js";
+import { Runnable } from "./runnable.js";
 import { BeforeAfter } from "./before_after.js";
 
-export class TestCase implements Test {
+export class TestCase extends Runnable implements Test {
 
-	protected _name: string[];
-	private _timeout?: Milliseconds;
-	private _testFn?: ItFn;
 	private _mark: TestMarkValue;
 
 	static create({
@@ -25,20 +22,19 @@ export class TestCase implements Test {
 		options?: ItOptions,
 		fnAsync?: ItFn,
 	}): TestCase {
-		return new TestCase(name, options.timeout, fnAsync, mark);
+		return new TestCase(name, options, fnAsync, mark);
 	}
 
 	constructor(
 		name: string[],
-		timeout: Milliseconds | undefined,
-		testFn: ItFn | undefined,
+		options: ItOptions,
+		fnAsync: ItFn | undefined,
 		mark: TestMarkValue
 	) {
-		this._name = name;
-		this._timeout = timeout;
-		this._testFn = testFn;
+		super(name, options, fnAsync);
+
 		this._mark = mark;
-		if (testFn === undefined && mark === TestMark.none) this._mark = TestMark.skip;
+		if (fnAsync === undefined && mark === TestMark.none) this._mark = TestMark.skip;
 	}
 
 	/** @private */
@@ -50,7 +46,7 @@ export class TestCase implements Test {
 	/** @private */
 	_isSkipped(parentMark: TestMarkValue): boolean {
 		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
-		return inheritedMark === TestMark.skip || this._testFn === undefined;
+		return inheritedMark === TestMark.skip || this.fnAsync === undefined;
 	}
 
 	/** @private */
@@ -58,7 +54,7 @@ export class TestCase implements Test {
 		runOptions: RunOptions,
 		parentData: RunData,
 	): Promise<TestCaseResult> {
-		const runData = this.#consolidateData(parentData);
+		const runData = this.#consolidateRunData(parentData);
 
 		const beforeEach = await this.#runBeforeAfterEachAsync(runData.beforeEach, true, runOptions, runData);
 		const it = await this.#runTestAsync(runData, runOptions);
@@ -70,20 +66,16 @@ export class TestCase implements Test {
 	}
 
 	async #runTestAsync(runData: RunData, runOptions: RunOptions) {
-		if (this._testFn === undefined && this._mark === TestMark.only) {
+		if (this.fnAsync === undefined && this._mark === TestMark.only) {
 			return RunResult.fail({
-				name: this._name,
+				name: this.name,
 				filename: runData.filename,
 				error: "Test is marked '.only', but it has no body",
 				renderError: runOptions.renderError,
 			});
 		}
-		else if (runData.skipAll) {
-			return RunResult.skip({ name: this._name, filename: runData.filename });
-		}
-		else {
-			return await runTestFnAsync(this._name, this._testFn!, this._timeout, runOptions, runData);
-		}
+
+		return await this._runTestFnAsync(runOptions, runData);
 	}
 
 	async #runBeforeAfterEachAsync(
@@ -101,11 +93,11 @@ export class TestCase implements Test {
 		return results;
 	}
 
-	#consolidateData(parentData: RunData): RunData {
+	#consolidateRunData(parentData: RunData): RunData {
 		return {
 			filename: parentData.filename,
 			mark: this._mark === TestMark.none ? parentData.mark : this._mark,
-			timeout: this._timeout ?? parentData.timeout,
+			timeout: parentData.timeout,
 			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
 			beforeEach: parentData.beforeEach,
 			afterEach: parentData.afterEach,
@@ -129,7 +121,7 @@ export class FailureTestCase extends TestCase {
 	private _error: unknown;
 
 	constructor(name: string[], error: unknown, filename?: string) {
-		super(name, undefined, undefined, TestMark.none);
+		super(name, {}, undefined, TestMark.none);
 
 		this._filename = filename;
 		this._error = error;
@@ -140,7 +132,7 @@ export class FailureTestCase extends TestCase {
 		parentData: RunData,
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({
-			name: this._name,
+			name: this.name,
 			filename: this._filename,
 			error: this._error,
 			renderError: runOptions.renderError,
