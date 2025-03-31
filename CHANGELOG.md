@@ -28,6 +28,7 @@ To Document:
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Move TestResult.suite() --> TestSuiteResult.create()
 * Add TestCaseResult.create()
+* TestCaseResult.equals() considers beforeEach/afterEach (and they must be in same order)
 * Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
 * Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
@@ -39,9 +40,12 @@ To Document:
 
 TO DO:
 * Split up large files
+  * Clean up results folder
+  * Clean up runner folder
+  * Ensure FailureTestCase handles filename properly--maybe get rid of it entirely?
+  * Modify TestResult factories to only take name arrays?
+  * Update package.json
 * Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
-* Delete isPass(), isSkip(), etc. methods? If we don't, should we add or move them to RunResult?
-* Rename TestCaseResult.status to .consolidatedStatus? If we do, should we add TestSuiteResult.consolidatedStatus?
 * before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

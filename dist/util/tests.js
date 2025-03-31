@@ -1,4 +1,4 @@
-import { RunResult, TestCaseResult, TestSuiteResult } from "../ergotest/test_result.js";
+import { RunResult, TestCaseResult, TestSuiteResult } from "../ergotest/results/test_result.js";
 export * from "ergotest";
 export function createSuite({ name = [], tests = [], beforeAll = undefined, afterAll = undefined, filename = undefined, mark = undefined } = {}) {
     return TestSuiteResult.create({
