@@ -1,6 +1,6 @@
 import { RunResult, TestCaseResult, TestMarkValue, TestResult, TestStatusValue, TestSuiteResult } from "./test_result.js";
 import { AssertionError } from "node:assert";
-import { SourceMap } from "../infrastructure/source_map.js";
+import { SourceMap } from "../../infrastructure/source_map.js";
 /**
  * Converts an error into a detailed description of a test failure. Intended to be used with {@link TestOptions}
  * rather than called directly.

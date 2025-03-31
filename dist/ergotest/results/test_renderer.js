@@ -1,11 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import * as ensure from "../util/ensure.js";
+import * as ensure from "../../util/ensure.js";
 import { RunResult, TestCaseResult, TestMark, TestResult, TestStatus, TestSuiteResult } from "./test_result.js";
-import { Colors } from "../infrastructure/colors.js";
+import { Colors } from "../../infrastructure/colors.js";
 import path from "node:path";
 import { AssertionError } from "node:assert";
 import util from "node:util";
-import { SourceMap } from "../infrastructure/source_map.js";
+import { SourceMap } from "../../infrastructure/source_map.js";
 const headerColor = Colors.brightWhite.bold;
 const highlightColor = Colors.brightWhite;
 const stackHighlightColor = Colors.brightYellow.bold;
@@ -367,4 +367,4 @@ function renderMultipleResults(testResults, separator, expectedType, renderFn) {
     return testResults.map((result)=>renderFn(result)).join(separator);
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_renderer.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_renderer.js.map

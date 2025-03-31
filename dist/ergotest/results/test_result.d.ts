@@ -242,7 +242,8 @@ export declare class TestCaseResult extends TestResult {
      */
     get filename(): string | undefined;
     /**
-     * @returns {TestStatusValue} Whether this test passed, failed, etc.
+     * @returns {TestStatusValue} Whether this test passed, failed, etc., taking into account the status of beforeEach()
+     *   and afterEach() results.
      */
     get status(): TestStatusValue;
     /**
@@ -250,11 +251,11 @@ export declare class TestCaseResult extends TestResult {
      */
     get mark(): TestMarkValue;
     /**
-     * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
+     * @returns { RunResult[] } The beforeEach() blocks for this test.
      */
     get beforeEach(): RunResult[];
     /**
-     * @returns { TestCaseResult[] } The afterEach() blocks for this test.
+     * @returns { RunResult[] } The afterEach() blocks for this test.
      */
     get afterEach(): RunResult[];
     /**
@@ -443,6 +444,7 @@ export declare class RunResult {
      * @throws {Error} Throws an error if this test didn't time out.
      */
     get timeout(): number;
+    equals(that: RunResult): boolean;
     /**
      * Convert this result into a bare object later deserialization.
      * @returns {object} The serialized object.

@@ -1,8 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { RunResult, TestCaseResult, TestSuiteResult } from "./test_result.js";
-import { Clock } from "../infrastructure/clock.js";
+import { importRendererAsync } from "../suite/test_suite.js";
+import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_result.js";
+import { Clock } from "../../infrastructure/clock.js";
 import process from "node:process";
+import { fromModulesAsync } from "./loader.js";
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 main();
 function main() {
@@ -40,7 +41,7 @@ async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config,
             });
             sendFinalResult(errorResult, cancelKeepAliveFn);
         });
-        const suite = await TestSuite.fromModulesAsync(modulePaths);
+        const suite = await fromModulesAsync(modulePaths);
         const result = await suite.runAsync({
             timeout,
             config,
@@ -80,4 +81,4 @@ function send(message) {
     process.send(message);
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_runner_worker_process.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/runner/test_runner_worker_process.js.map

@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import * as ensure from "../util/ensure.js";
+import * as ensure from "../../util/ensure.js";
 import util from "node:util";
 import { renderError as renderErrorFn, TestRenderer } from "./test_renderer.js";
 export const TestStatus = {
@@ -403,7 +403,8 @@ export const TestMark = {
         return this._it.filename;
     }
     /**
-	 * @returns {TestStatusValue} Whether this test passed, failed, etc.
+	 * @returns {TestStatusValue} Whether this test passed, failed, etc., taking into account the status of beforeEach()
+	 *   and afterEach() results.
 	 */ get status() {
         const consolidatedBefore = this._beforeEach.reduce(consolidateRunResult, TestStatus.pass);
         const consolidatedBeforeAndAfter = this._afterEach.reduce(consolidateRunResult, consolidatedBefore);
@@ -425,12 +426,12 @@ export const TestMark = {
         return this._mark;
     }
     /**
-	 * @returns { TestCaseResult[] } The beforeEach() blocks for this test.
+	 * @returns { RunResult[] } The beforeEach() blocks for this test.
 	 */ get beforeEach() {
         return this._beforeEach;
     }
     /**
-	 * @returns { TestCaseResult[] } The afterEach() blocks for this test.
+	 * @returns { RunResult[] } The afterEach() blocks for this test.
 	 */ get afterEach() {
         return this._afterEach;
     }
@@ -548,11 +549,20 @@ export const TestMark = {
     }
     equals(that) {
         if (!(that instanceof TestCaseResult)) return false;
-        if (this._it.status !== that._it.status) return false;
-        const sameName = util.isDeepStrictEqual(this._it.name, that._it.name);
-        const sameError = this._it.status !== TestStatus.fail || this._it.errorMessage === that._it.errorMessage;
-        const sameTimeout = this._it.status !== TestStatus.timeout || this._it.timeout === that._it.timeout;
-        return sameName && sameError && this._it.status === that._it.status && this._mark === that._mark && sameTimeout && this.filename === that.filename;
+        const sameMark = this._mark === that._mark;
+        const sameIt = this._it.equals(that._it);
+        const sameBeforeEach = compareRunResults(this._beforeEach, that._beforeEach);
+        const sameAfterEach = compareRunResults(this._afterEach, that._afterEach);
+        return sameMark && sameIt && sameBeforeEach && sameAfterEach;
+        function compareRunResults(thisResults, thatResults) {
+            if (thisResults.length !== thatResults.length) return false;
+            for(let i = 0; i < thisResults.length; i++){
+                const thisResult = thisResults[i];
+                const thatResult = thatResults[i];
+                if (!thisResult.equals(thatResult)) return false;
+            }
+            return true;
+        }
     }
 }
 /**
@@ -783,6 +793,15 @@ export const TestMark = {
         ensure.that(this.status === TestStatus.timeout, "Attempted to retrieve timeout from a test that didn't time out");
         return this._timeout;
     }
+    equals(that) {
+        if (!(that instanceof RunResult)) return false;
+        const sameStatus = this._status === that._status;
+        const sameFilename = this.filename === that.filename;
+        const sameName = util.isDeepStrictEqual(this._name, that._name);
+        const sameError = this.status !== TestStatus.fail || this._errorMessage === that._errorMessage;
+        const sameTimeout = this._status !== TestStatus.timeout || this._timeout === that._timeout;
+        return sameName && sameFilename && sameStatus && sameError && sameTimeout;
+    }
     /**
 	 * Convert this result into a bare object later deserialization.
 	 * @returns {object} The serialized object.
@@ -807,4 +826,4 @@ function ensureValidMarks(marks) {
     });
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_result.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_result.js.map

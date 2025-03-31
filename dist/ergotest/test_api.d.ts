@@ -1,4 +1,16 @@
-import { DescribeFn, DescribeOptions, ItFn, ItOptions, TestSuite } from "./test_suite.js";
+import { Milliseconds } from "./suite/test.js";
+import { TestSuite } from "./suite/test_suite.js";
+export interface DescribeOptions {
+    timeout?: Milliseconds;
+}
+export interface ItOptions {
+    timeout?: Milliseconds;
+}
+export type DescribeFn = () => void;
+export type ItFn = (testUtilities: TestParameters) => Promise<void> | void;
+interface TestParameters {
+    getConfig: <T>(key: string) => T;
+}
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
@@ -60,3 +72,4 @@ export declare function beforeEach(optionalOptions: ItOptions | ItFn, fnAsync?: 
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
  */
 export declare function afterEach(optionalOptions: ItOptions | ItFn, fnAsync?: ItFn): void;
+export {};

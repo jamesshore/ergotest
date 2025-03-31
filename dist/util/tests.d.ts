@@ -1,4 +1,4 @@
-import { RunResult, TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "../ergotest/test_result.js";
+import { RunResult, TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "../ergotest/results/test_result.js";
 export * from "ergotest";
 export declare function createSuite({ name, tests, beforeAll, afterAll, filename, mark, }?: {
     name?: string | string[];

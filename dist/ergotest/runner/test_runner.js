@@ -1,10 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import * as ensure from "../util/ensure.js";
-import { importRendererAsync, TestSuite } from "./test_suite.js";
-import { RunResult, TestCaseResult, TestSuiteResult } from "./test_result.js";
+import * as ensure from "../../util/ensure.js";
+import { importRendererAsync, TestSuite } from "../suite/test_suite.js";
+import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_result.js";
 import child_process from "node:child_process";
 import path from "node:path";
-import { Clock } from "../infrastructure/clock.js";
+import { Clock } from "../../infrastructure/clock.js";
+import { fromModulesAsync } from "./loader.js";
 // dependency: ./test_runner_worker_process.js
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
@@ -57,7 +58,7 @@ const TEST_OPTIONS_TYPE = {
                 TEST_OPTIONS_TYPE
             ]
         ]);
-        const suite = await TestSuite.fromModulesAsync(modulePaths);
+        const suite = await fromModulesAsync(modulePaths);
         return await suite.runAsync(options);
     }
     /**
@@ -160,4 +161,4 @@ async function killWorkerProcess(worker) {
     });
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/test_runner.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/runner/test_runner.js.map

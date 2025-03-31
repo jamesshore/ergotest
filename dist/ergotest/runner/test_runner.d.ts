@@ -1,6 +1,6 @@
-import { TestOptions } from "./test_suite.js";
-import { SerializedTestCaseResult, SerializedTestSuiteResult, TestSuiteResult } from "./test_result.js";
-import { Clock } from "../infrastructure/clock.js";
+import { TestOptions } from "../suite/test_suite.js";
+import { SerializedTestCaseResult, SerializedTestSuiteResult, TestSuiteResult } from "../results/test_result.js";
+import { Clock } from "../../infrastructure/clock.js";
 /** For internal use only. */
 export interface WorkerInput {
     modulePaths: string[];
