@@ -151,7 +151,7 @@ export class TestSuiteResult extends TestResult {
 		filename,
 		mark = TestMark.none
 	}: {
-		name?: string | string[],
+		name?: string[],
 		tests?: TestResult[],
 		beforeAll?: TestCaseResult[],
 		afterAll?: TestCaseResult[],
@@ -167,7 +167,6 @@ export class TestSuiteResult extends TestResult {
 			mark: [ undefined, String ]
 		}]]);
 
-		if (!Array.isArray(name)) name = [ name ];
 		return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
 	}
 
@@ -761,11 +760,11 @@ export class RunResult {
 		name,
 		filename,
 	}: {
-		name: string | string[],
+		name: string[],
 		filename?: string,
 	}): RunResult {
 		ensure.signature(arguments, [[ undefined, {
-			name: [ String, Array ],
+			name: Array,
 			filename: [ undefined, String ],
 		}]]);
 
@@ -788,20 +787,18 @@ export class RunResult {
 			error,
 			renderError = renderErrorFn,
 		}: {
-			name: string | string[],
+			name: string[],
 			filename?: string,
 			error: unknown,
 			renderError?: RenderErrorFn
 		},
 	): RunResult {
 		ensure.signature(arguments, [[ undefined, {
-			name: [ String, Array ],
+			name: Array,
 			filename: [ undefined, String ],
 			error: ensure.ANY_TYPE,
 			renderError: [ undefined, Function ],
 		}]]);
-
-		if (!Array.isArray(name)) name = [ name ];
 
 		let errorMessage: string;
 		if (error instanceof Error) errorMessage = error.message ?? "";
@@ -824,12 +821,12 @@ export class RunResult {
 			name,
 			filename,
 		}: {
-			name: string | string[],
+			name: string[],
 			filename?: string,
 		}
 	): RunResult {
 		ensure.signature(arguments, [[ undefined, {
-			name: [ String, Array ],
+			name: Array,
 			filename: [ undefined, String ],
 			mark: [ undefined, String ]
 		}]]);
@@ -850,13 +847,13 @@ export class RunResult {
 			filename,
 			timeout,
 		}: {
-			name: string | string[],
+			name: string[],
 			filename?: string,
 			timeout: number,
 		},
 	): RunResult {
 		ensure.signature(arguments, [[ undefined, {
-			name: [ String, Array ],
+			name: Array,
 			filename: [ undefined, String ],
 			timeout: Number,
 		}]]);
@@ -895,14 +892,14 @@ export class RunResult {
 		errorRender,
 		timeout,
 	}: {
-		name: string | string[],
+		name: string[],
 		filename?: string,
 		status: TestStatusValue,
 		errorMessage?: string,
 		errorRender?: unknown,
 		timeout?: number
 	}) {
-		this._name = Array.isArray(name) ? name : [ name ];
+		this._name = name;
 		this._filename = filename;
 		this._status = status;
 		this._errorMessage = errorMessage;

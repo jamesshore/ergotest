@@ -268,12 +268,12 @@ export default describe(() => {
 
 		it("has optional beforeEach and afterEach results", () => {
 			const beforeEach = [
-				RunResult.pass({ name: "my_pass" }),
-				RunResult.fail({ name: "my_fail", error: "my_error" })
+				RunResult.pass({ name: [ "my_pass" ] }),
+				RunResult.fail({ name: [ "my_fail" ], error: "my_error" })
 			];
 			const afterEach = [
-				RunResult.timeout({ name: "my_timeout", timeout: 99 }),
-				RunResult.skip({ name: "my_skip"})
+				RunResult.timeout({ name: [ "my_timeout" ], timeout: 99 }),
+				RunResult.skip({ name: [ "my_skip" ]})
 			];
 
 			const pass = createPass({ beforeEach, afterEach });
