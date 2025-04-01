@@ -17,7 +17,7 @@ import {
 	beforeEach as beforeEach_sut,
 	describe as describe_sut,
 	it as it_sut,
-} from "../test_api.js";
+} from "./test_api.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
