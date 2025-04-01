@@ -60,14 +60,11 @@ In this document **(the bold entries are all you need)**:
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
   * [RenderErrorFn](#rendererrorfn)
-* [TestSuite](#testsuite)
-  * [TestSuite.fromModulesAsync()](#testsuitefrommodulesasync)
-  * [testSuite.runAsync()](#testsuiterunasync)
   
 
 ## Start Here
 
-> **The Golden Rule:** Instantiate Ergotest classes by calling `TheClass.create()`, *not* `new TheClass()`! Constructors are reserved for internal use only in this codebase.
+> **The Golden Rule:** Don't use constructors to instantiate Ergotest classes. Constructors are reserved for internal use only in this codebase.
 
 There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
 
@@ -207,7 +204,7 @@ Use `options` to provide configuration data to the tests and otherwise customize
 
 ## TestOptions
 
-* import { TestOptions } from "ergotest/test_suite.js"
+* import { TestOptions } from "ergotest/test_api.js"
 
 You can configure test runs with this interface. Provide an object with these optional parameters:
 
@@ -682,43 +679,3 @@ See the [Reporting API](reporting_api.md) for more about custom error rendering.
 [Back to top](#automation-api)
 
 
----
-
-
-## TestSuite
-
-* import { TestSuite } from "ergotest/test_suite.js"
-
-You’re very unlikely to use this class directly, but I’ve included it for completeness. To create a `TestSuite`, call [describe()](test_api.md#describe).
-
-[Back to top](#automation-api)
-
-
-## TestSuite.fromModulesAsync()
-
-* TestSuite.fromModulesAsync(moduleFilenames: string[]): Promise\<TestSuite\>
-
-> **Warning:** It’s probably better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
-
-Import the modules in `modulePaths` in the current process and groups them into a single suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
-
-The modules will *not* be reloaded if they have been loaded before, even if they have changed.
-
-If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
-
-> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
-
-[Back to top](#automation-api)
-
-
-## testSuite.runAsync()
-
-* testSuite.runAsync(options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
-
-> **Warning:** It's probably better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
-
-Run the tests in the test suite. (See the [test API](test_api.md) for details.) Does *not* detect infinite loops or uncaught exceptions.
-
-Use `options` to provide configuration data to the tests and otherwise customize your test run.
-
-[Back to top](#automation-api)

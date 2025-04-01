@@ -15,7 +15,6 @@ Links to other documentation:
 
 To Document:
 * Explicitly document data model?
-* Add TestResult.testCase
 * TestResult.suite signature change
 * TestResult.pass signature change and move to RunResult
 * TestResult.fail signature change and move to RunResult
@@ -38,9 +37,15 @@ To Document:
 * Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
 * Change in rendering: renderAsMultipleLines() breaks out beforeEach / afterEach
 * Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name); it previously highlighted everything
+* Remove TestSuite from documentation
 
 TO DO:
 * Update documentation
+  * Revise TestSuiteResult
+  * Revise TestCaseResult
+  * Add RunResult to test_api.md
+  * Add "TestResult factories" section
+  * Export TestRenderer and TestRunner from index.js?
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
