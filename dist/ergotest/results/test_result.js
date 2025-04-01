@@ -84,9 +84,6 @@ export const TestMark = {
                 }
             ]
         ]);
-        if (!Array.isArray(name)) name = [
-            name
-        ];
         return new TestSuiteResult(name, tests, beforeAll, afterAll, mark, filename);
     }
     /**
@@ -585,10 +582,7 @@ export const TestMark = {
             [
                 undefined,
                 {
-                    name: [
-                        String,
-                        Array
-                    ],
+                    name: Array,
                     filename: [
                         undefined,
                         String
@@ -615,10 +609,7 @@ export const TestMark = {
             [
                 undefined,
                 {
-                    name: [
-                        String,
-                        Array
-                    ],
+                    name: Array,
                     filename: [
                         undefined,
                         String
@@ -631,9 +622,6 @@ export const TestMark = {
                 }
             ]
         ]);
-        if (!Array.isArray(name)) name = [
-            name
-        ];
         let errorMessage;
         if (error instanceof Error) errorMessage = error.message ?? "";
         else if (typeof error === "string") errorMessage = error;
@@ -659,10 +647,7 @@ export const TestMark = {
             [
                 undefined,
                 {
-                    name: [
-                        String,
-                        Array
-                    ],
+                    name: Array,
                     filename: [
                         undefined,
                         String
@@ -691,10 +676,7 @@ export const TestMark = {
             [
                 undefined,
                 {
-                    name: [
-                        String,
-                        Array
-                    ],
+                    name: Array,
                     filename: [
                         undefined,
                         String
@@ -743,9 +725,7 @@ export const TestMark = {
     /**
 	 * @private
 	 */ constructor({ name, filename, status, errorMessage, errorRender, timeout }){
-        this._name = Array.isArray(name) ? name : [
-            name
-        ];
+        this._name = name;
         this._filename = filename;
         this._status = status;
         this._errorMessage = errorMessage;

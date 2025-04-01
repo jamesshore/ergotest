@@ -109,7 +109,7 @@ export declare class TestSuiteResult extends TestResult {
      * @returns {TestSuiteResult} The result.
      */
     static create({ name, tests, beforeAll, afterAll, filename, mark }?: {
-        name?: string | string[];
+        name?: string[];
         tests?: TestResult[];
         beforeAll?: TestCaseResult[];
         afterAll?: TestCaseResult[];
@@ -354,7 +354,7 @@ export declare class RunResult {
      * @returns {RunResult} The result.
      */
     static pass({ name, filename, }: {
-        name: string | string[];
+        name: string[];
         filename?: string;
     }): RunResult;
     /**
@@ -367,7 +367,7 @@ export declare class RunResult {
      * @returns {RunResult} The result.
      */
     static fail({ name, filename, error, renderError, }: {
-        name: string | string[];
+        name: string[];
         filename?: string;
         error: unknown;
         renderError?: RenderErrorFn;
@@ -379,7 +379,7 @@ export declare class RunResult {
      * @returns {RunResult} The result.
      */
     static skip({ name, filename, }: {
-        name: string | string[];
+        name: string[];
         filename?: string;
     }): RunResult;
     /**
@@ -390,7 +390,7 @@ export declare class RunResult {
      * @returns {TestCaseResult} The result.
      */
     static timeout({ name, filename, timeout, }: {
-        name: string | string[];
+        name: string[];
         filename?: string;
         timeout: number;
     }): RunResult;
@@ -405,7 +405,7 @@ export declare class RunResult {
      * @private
      */
     constructor({ name, filename, status, errorMessage, errorRender, timeout, }: {
-        name: string | string[];
+        name: string[];
         filename?: string;
         status: TestStatusValue;
         errorMessage?: string;

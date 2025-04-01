@@ -1,6 +1,9 @@
 import { RunResult, TestCaseResult, TestSuiteResult } from "../ergotest/results/test_result.js";
 export * from "ergotest";
 export function createSuite({ name = [], tests = [], beforeAll = undefined, afterAll = undefined, filename = undefined, mark = undefined } = {}) {
+    if (!Array.isArray(name)) name = [
+        name
+    ];
     return TestSuiteResult.create({
         name,
         tests,
@@ -11,6 +14,9 @@ export function createSuite({ name = [], tests = [], beforeAll = undefined, afte
     });
 }
 export function createPass({ name = [], beforeEach = [], afterEach = [], filename = undefined, mark = undefined } = {}) {
+    if (!Array.isArray(name)) name = [
+        name
+    ];
     return TestCaseResult.create({
         mark,
         beforeEach: beforeEach.map((each)=>{
@@ -26,6 +32,9 @@ export function createPass({ name = [], beforeEach = [], afterEach = [], filenam
     });
 }
 export function createFail({ name = [], error = "irrelevant error", renderError = undefined, beforeEach = [], afterEach = [], filename = undefined, mark = undefined } = {}) {
+    if (!Array.isArray(name)) name = [
+        name
+    ];
     return TestCaseResult.create({
         mark,
         beforeEach: beforeEach.map((each)=>{
@@ -43,6 +52,9 @@ export function createFail({ name = [], error = "irrelevant error", renderError 
     });
 }
 export function createSkip({ name = [], beforeEach = [], afterEach = [], filename = undefined, mark = undefined } = {}) {
+    if (!Array.isArray(name)) name = [
+        name
+    ];
     return TestCaseResult.create({
         mark,
         beforeEach: beforeEach.map((each)=>{
@@ -58,6 +70,9 @@ export function createSkip({ name = [], beforeEach = [], afterEach = [], filenam
     });
 }
 export function createTimeout({ name = [], timeout = 42, beforeEach = [], afterEach = [], filename = undefined, mark = undefined } = {}) {
+    if (!Array.isArray(name)) name = [
+        name
+    ];
     return TestCaseResult.create({
         mark,
         beforeEach: beforeEach.map((each)=>{

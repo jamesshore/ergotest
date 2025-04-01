@@ -1,8 +1,8 @@
-import { RunOptions, Test } from "./test.js";
 import { TestCaseResult, TestMarkValue } from "../results/test_result.js";
-import { ItFn, ItOptions } from "../test_api.js";
-import { RunData } from "./test_suite.js";
+import { RunData, RunOptions } from "./test_suite.js";
 import { Runnable } from "./runnable.js";
+import { Test } from "./test.js";
+import { ItFn, ItOptions } from "./test_api.js";
 export declare class TestCase extends Runnable implements Test {
     #private;
     private _mark;

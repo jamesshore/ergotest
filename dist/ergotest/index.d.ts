@@ -1,2 +1,2 @@
 export * as assert from "./assert.js";
-export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "./test_api.js";
+export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "./tests/test_api.js";
