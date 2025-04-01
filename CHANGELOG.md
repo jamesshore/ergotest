@@ -11,35 +11,88 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
-## v0.12.x: WIP (data model, which will enable 0.13.x performance tracking)
+## v0.12.x: Automation API revision (BREAKING CHANGE)
 
-To Document:
-* Explicitly document data model?
-* TestResult.suite signature change
-* TestResult.pass signature change and move to RunResult
-* TestResult.fail signature change and move to RunResult
-* TestResult.skip signature change and move to RunResult
-* TestResult.timeout signature change and move to RunResult
-* TestRenderer.renderError() signature change
-* Add TestSuiteResult.beforeAll & afterAll
-* Add TestCaseResult.beforeEach & afterEach
-* Add RunResult
-* TestSuiteResult.children --> TestSuiteResult.tests rename
-* Move TestResult.suite() --> TestSuiteResult.create()
-* Add TestCaseResult.create()
-* Signature change: TestResult factories require name to be string array
-* TestCaseResult.equals() considers beforeEach/afterEach (and they must be in same order)
-* Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
-* Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
-* Change in behavior: beforeAll() and afterAll() failures no longer result in failing TestCaseResults. Instead, they show up in TestSuiteResult.beforeAll or .afterAll
-* Change in behavior: beforeAll() and afterAll() are picked up by allTests(), allMatchingTests(), and allMatchingMarks() (as 'not marked')
-* Change in behavior: Runs all afterAll() blocks even if one fails 
-* Change in rendering: renderAsSingleLines() breaks out beforeEach / afterEach
-* Change in rendering: renderAsMultipleLines() breaks out beforeEach / afterEach
-* Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name); it previously highlighted everything
-* Remove TestSuite from documentation
+The automation API has been overhauled to handle edge cases involving before/after functions. I've taken the opportunity to clean up some rough edges. Although this is a breaking change, it won't affect you unless your code directly manipulates test results.
+
+This release overhauls the test results data model. Previously, it looked like this:
+
+```
++-----------> TestResult
+|           *    /_\
+|                 |
+|        +--------+--------+
+|        |                 |
++- TestSuiteResult  TestCaseResult
+```
+
+A TestSuiteResult contained TestResults, which could either be more TestSuiteResults or TestCaseResults. TestCaseResults specified if the test passed, failed, etc.
+
+The problem with this model is that it didn't have a way of distinguishing between the results of a before/after function (such as `beforeAll()` and `afterEach()`) and the results of a test. There are a few edge cases where tests could have multiple results: for example, if a test failed and its afterEach() function timed out. The new data model handles that case:
+
+```
++--------------------> TestResult
+|                   *     /_\
+|                          |
+|           +--------------+---------------+
+|           |                              |
+|  +-----------------+            +-----------------+               
+|  | TestSuiteResult |            | TestCaseResult  |             
+|  +-----------------+         *  +-----------------+
+|  |   beforeAll   --|----------> | beforeEach    --|--------+     
+|  |   afterAll    --|----------> | afterEach     --|-----+  |      
++--|-- tests         |         *  | it            --|--+  |  |
+   +-----------------+            +-----------------+  |  |  |
+                                                       |1 |* |*
+                                                       v  v  v
+                                                 +-----------------+            
+                                                 | RunResult       |          
+                                                 +-----------------+
+```
+
+In the new model, TestSuiteResult contains TestResults, as before, but it also contains 0..n `beforeAll` and `afterAll` results, which are TestCaseResults. TestCaseResults contain RunResults—1 for `it` and 0..n for `beforeEach` and `afterEach`—which represent the results of running the `it()`, `beforeEach()`, and `afterEach()`. TestCaseResults no longer have their own status; instead, they consolidate the results of the individual RunResults. You can inspect each result separately, and the built-in renderers will display each result separately when it's appropriate.
+
+This has changed the behavior of the tests:
+
+* Before, afterAll() and afterEach() blocks would stop running if one of them failed. Now they all run even if one fails.
+* beforeAll() and afterAll() are treated like tests:
+  * They trigger onTestCaseResult after they run
+  * They're included in the default result renderer
+  * They're returned by allTests(), allMatchingTests(), and allMatchingMarks() when appropriate
+* beforeEach() and afterEach() are rendered by renderAsSingleLines() and renderAsMultipleLines() when appropriate
+* renderNameOnMultipleLines() now only highlights the first part of the name (usually the filename) and the last part (the test name); previously, it highlighted the whole name
+
+There are a lot of changes to the details of the automation API:
+
+* Added TestSuiteResult.beforeAll
+* Added TestSuiteResult.afterAll
+* Renamed TestSuiteResult.children to TestSuiteResult.tests 
+* Added TestCaseResult.beforeEach
+* Added TestCaseResult.afterEach
+* Added TestCaseResult.it
+* Removed TestCaseResult.isPass()
+* Removed TestCaseResult.isSkip()
+* Removed TestCaseResult.isFail()
+* Removed TestCaseResult.isTimeout()
+* Added RunResult
+* Changed TestRenderer signatures:
+  * renderError()
+  * renderStatusAsSingleWord()
+  * renderNameOnOneLine()
+  * renderNameOnMultipleLines()
+  * renderStatusWithMultiLineDetails()
+  * renderMarkAsSingleWord()
+* Replaced TestResult factories with new methods and signatures:
+  * TestSuiteResult.create()
+  * TestCaseResult.create()
+  * RunResult.pass()
+  * RunResult.skip()
+  * RunResult.fail()
+  * RunResult.timeout()
+* Removed TestSuite from the documentation; it's now for internal use only
 
 TO DO:
+* Delete isPass() etc.
 * Update documentation
   * Revise TestSuiteResult
   * Revise TestCaseResult
