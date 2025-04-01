@@ -1,24 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
-import { Milliseconds, Test } from "./test.js";
 import { TestMark, TestMarkValue } from "../results/test_result.js";
 import { TestSuite } from "./test_suite.js";
 import { FailureTestCase, TestCase } from "./test_case.js";
 import { BeforeAfter } from "./before_after.js";
-
-export interface DescribeOptions {
-	timeout?: Milliseconds,
-}
-
-export interface ItOptions {
-	timeout?: Milliseconds,
-}
-
-export type DescribeFn = () => void;
-
-export type ItFn = (testUtilities: {
-	getConfig: <T>(key: string) => T,
-}) => Promise<void> | void;
+import { DescribeFn, DescribeOptions, ItFn, ItOptions, Milliseconds } from "./test_api.js";
+import { Test } from "./test.js";
 
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];

@@ -1,8 +1,37 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { TestMark } from "../results/test_result.js";
-import { ApiContext, DescribeFn, DescribeOptions, ItFn, ItOptions } from "./api_context.js";
+import { RenderErrorFn, TestCaseResult, TestMark } from "../results/test_result.js";
+import { Clock } from "../../infrastructure/clock.js";
+import { TestConfig } from "./test_suite.js";
+import { ApiContext } from "./api_context.js";
 
 const context = new ApiContext();
+
+
+export interface TestOptions {
+	timeout?: Milliseconds,
+	config?: TestConfig,
+	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,
+	renderer?: string,
+	clock?: Clock,
+}
+
+export type Milliseconds = number;
+
+
+export interface DescribeOptions {
+	timeout?: Milliseconds,
+}
+
+export interface ItOptions {
+	timeout?: Milliseconds,
+}
+
+export type DescribeFn = () => void;
+
+export type ItFn = (testUtilities: {
+	getConfig: <T>(key: string) => T,
+}) => Promise<void> | void;
+
 
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
