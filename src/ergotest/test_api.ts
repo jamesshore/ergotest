@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { TestMark } from "./results/test_result.js";
-import { ApiContext, DescribeFn, DescribeOptions, ItFn, ItOptions } from "./test_api/api_context.js";
+import { ApiContext, DescribeFn, DescribeOptions, ItFn, ItOptions } from "./tests/api_context.js";
 
 const context = new ApiContext();
 

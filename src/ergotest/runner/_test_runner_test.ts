@@ -2,7 +2,7 @@
 import { assert, beforeEach, createFail, createPass, createSuite, describe, it } from "../../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
-import { TestSuite } from "../test_api/test_suite.js";
+import { TestSuite } from "../tests/test_suite.js";
 import { TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";

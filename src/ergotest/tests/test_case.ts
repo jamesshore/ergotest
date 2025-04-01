@@ -2,10 +2,10 @@
 import { RunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
-import { ItFn, ItOptions } from "../test_api.js";
 import { RunData } from "./test_suite.js";
 import { Runnable } from "./runnable.js";
 import { BeforeAfter } from "./before_after.js";
+import { ItFn, ItOptions } from "./api_context.js";
 
 export class TestCase extends Runnable implements Test {
 
