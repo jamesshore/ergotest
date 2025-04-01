@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 
 import * as ensure from "../../util/ensure.js";
-import { importRendererAsync, TestConfig, TestOptions, TestSuite } from "../suite/test_suite.js";
+import { importRendererAsync, TestConfig, TestOptions, TestSuite } from "../test_api/test_suite.js";
 import {
 	RenderErrorFn, RunResult,
 	SerializedTestCaseResult,
