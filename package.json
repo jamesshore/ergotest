@@ -14,12 +14,11 @@
   ],
   "exports": {
     ".": "./dist/ergotest/index.js",
+    "./assert.js": "./dist/ergotest/assert.js",
+    "./test_api.js": "./dist/ergotest/tests/test_api.js",
     "./test_runner.js": "./dist/ergotest/runner/test_runner.js",
-    "./test_runner.d.ts": "./dist/ergotest/runner/test_runner.d.ts",
     "./test_result.js": "./dist/ergotest/results/test_result.js",
-    "./test_result.d.ts": "./dist/ergotest/results/test_result.d.ts",
-    "./test_renderer.js": "./dist/ergotest/results/test_renderer.js",
-    "./test_renderer.d.ts": "./dist/ergotest/results/test_renderer.d.ts"
+    "./test_renderer.js": "./dist/ergotest/results/test_renderer.js"
   },
   "engines": {
     "node": ">=22.11.0"

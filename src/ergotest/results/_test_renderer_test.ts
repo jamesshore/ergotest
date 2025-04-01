@@ -18,7 +18,7 @@ import {
 } from "./test_result.js";
 import { Colors } from "../../infrastructure/colors.js";
 import util from "node:util";
-import { describe as describe_sut, it as it_sut } from "../test_api.js";
+import { describe as describe_sut, it as it_sut } from "../tests/test_api.js";
 import path from "node:path";
 import { SourceMap } from "../../infrastructure/source_map.js";
 

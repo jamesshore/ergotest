@@ -1,4 +1,4 @@
-import { TestSuite } from "../suite/test_suite.js";
+import { TestSuite } from "../tests/test_suite.js";
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
  * {@link TestSuite.create}.

@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { importRendererAsync } from "../suite/test_suite.js";
+import { importRendererAsync } from "../tests/test_suite.js";
 import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import process from "node:process";
@@ -43,7 +43,7 @@ async function runWorkerAsync(
 			const errorResult = TestSuiteResult.create({
 				tests: [
 					TestCaseResult.create({
-						it: RunResult.fail({ name: "Unhandled error in tests", error, renderError }),
+						it: RunResult.fail({ name: [ "Unhandled error in tests" ], error, renderError }),
 					})
 				],
 			});

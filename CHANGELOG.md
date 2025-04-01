@@ -28,6 +28,7 @@ To Document:
 * TestSuiteResult.children --> TestSuiteResult.tests rename
 * Move TestResult.suite() --> TestSuiteResult.create()
 * Add TestCaseResult.create()
+* Signature change: TestResult factories require name to be string array
 * TestCaseResult.equals() considers beforeEach/afterEach (and they must be in same order)
 * Change TestRenderer signatures: renderStatusAsSingleWord(), renderNameOnOneLine(), renderNameOnMultipleLines(), renderStatusWithMultiLineDetails(), renderMarkAsSingleWord()
 * Change in behavior: beforeAll() and afterAll() now notify upon completion (this is part of general behavior of treating beforeAll() and afterAll() like tests across the board)
@@ -39,14 +40,7 @@ To Document:
 * Change in rendering: renderNameOnMultipleLines() only highlights first name (usually filename) and last name (test name); it previously highlighted everything
 
 TO DO:
-* Split up large files
-  * Clean up results folder
-  * Clean up runner folder
-  * Ensure FailureTestCase handles filename properly--maybe get rid of it entirely?
-  * Modify TestResult factories to only take name arrays?
-  * Update package.json
-* Delete .equals() methods? If we don't, we need to add beforeEach and afterEach comparisons.
-* before / after shouldn't put number in name unless there's more than one (including first one, which is different than how beforeEach/afterEach currently work)
+* Update documentation
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 

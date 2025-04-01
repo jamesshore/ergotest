@@ -1,11 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { RunOptions, Test } from "./test.js";
 import { RunResult, TestCaseResult, TestMark, TestMarkValue, TestStatus } from "../results/test_result.js";
 import * as ensure from "../../util/ensure.js";
-import { ItFn, ItOptions } from "../test_api.js";
-import { RunData } from "./test_suite.js";
+import { RunData, RunOptions } from "./test_suite.js";
 import { Runnable } from "./runnable.js";
 import { BeforeAfter } from "./before_after.js";
+import { Test } from "./test.js";
+import { ItFn, ItOptions } from "./test_api.js";
 
 export class TestCase extends Runnable implements Test {
 

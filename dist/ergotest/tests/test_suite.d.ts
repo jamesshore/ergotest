@@ -1,16 +1,16 @@
 import { Clock } from "../../infrastructure/clock.js";
-import { TestCaseResult, TestMarkValue, TestSuiteResult } from "../results/test_result.js";
-import { Milliseconds, RunOptions, Test } from "./test.js";
+import { RenderErrorFn, TestCaseResult, TestMarkValue, TestSuiteResult } from "../results/test_result.js";
 import { BeforeAfter } from "./before_after.js";
+import { Test } from "./test.js";
+import { Milliseconds, TestOptions } from "./test_api.js";
 export interface TestConfig {
     [name: string]: unknown;
 }
-export interface TestOptions {
-    timeout?: Milliseconds;
-    config?: TestConfig;
-    onTestCaseResult?: (testCaseResult: TestCaseResult) => void;
-    renderer?: string;
-    clock?: Clock;
+export interface RunOptions {
+    clock: Clock;
+    onTestCaseResult: (testResult: TestCaseResult) => void;
+    config: TestConfig;
+    renderError?: RenderErrorFn;
 }
 export interface RunData {
     filename?: string;

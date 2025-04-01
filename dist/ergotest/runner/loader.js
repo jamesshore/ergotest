@@ -1,8 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
 import path from "node:path";
-import { FailureTestCase } from "../suite/test_case.js";
-import { TestSuite } from "../suite/test_suite.js";
+import { FailureTestCase } from "../tests/test_case.js";
+import { TestSuite } from "../tests/test_suite.js";
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
  * {@link TestSuite.create}.

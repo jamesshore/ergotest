@@ -2,8 +2,8 @@
 import * as ensure from "../../util/ensure.js";
 import { TestMark } from "../results/test_result.js";
 import path from "node:path";
-import { FailureTestCase } from "../suite/test_case.js";
-import { TestSuite } from "../suite/test_suite.js";
+import { FailureTestCase } from "../tests/test_case.js";
+import { TestSuite } from "../tests/test_suite.js";
 
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using

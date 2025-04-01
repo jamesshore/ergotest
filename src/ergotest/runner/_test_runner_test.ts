@@ -1,13 +1,15 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, describe, it, beforeEach, createSuite, createPass, createFail } from "../util/tests.js";
-import { TestRunner } from "./runner/test_runner.js";
+import { assert, beforeEach, createFail, createPass, createSuite, describe, it } from "../../util/tests.js";
+import { TestRunner } from "./test_runner.js";
 import path from "node:path";
-import { TestSuite } from "./suite/test_suite.js";
-import { RunResult, TestMarkValue, TestResult, TestSuiteResult } from "./results/test_result.js";
+import { TestSuite } from "../tests/test_suite.js";
+import { TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
-import { Clock } from "../infrastructure/clock.js";
+import { Clock } from "../../infrastructure/clock.js";
+// dependency: ../_renderer_custom.js
 
-const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "./_renderer_custom.js");
+const INDEX_PATH = path.resolve(import.meta.dirname, "../index.js");
+const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_custom.js");
 
 export default describe(() => {
 
@@ -227,7 +229,7 @@ export default describe(() => {
 
 	async function writeTestModuleAsync(testSourceCode: string, variableDefinition = "") {
 		await fs.writeFile(TEST_MODULE_PATH, `
-			import { assert, describe, it } from ` + `"${(path.resolve(import.meta.dirname, "./index.js"))}";
+			import { assert, describe, it } from ` + `"${INDEX_PATH}";
 			
 			${variableDefinition}
 			

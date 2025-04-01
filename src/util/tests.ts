@@ -17,6 +17,7 @@ export function createSuite({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
+	if (!Array.isArray(name)) name = [ name ];
 	return TestSuiteResult.create({ name, tests, beforeAll, afterAll, filename, mark });
 }
 
@@ -33,6 +34,7 @@ export function createPass({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
+	if (!Array.isArray(name)) name = [ name ];
 	return TestCaseResult.create({
 		mark,
 		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
@@ -58,6 +60,7 @@ export function createFail({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
+	if (!Array.isArray(name)) name = [ name ];
 	return TestCaseResult.create({
 		mark,
 		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
@@ -79,6 +82,7 @@ export function createSkip({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
+	if (!Array.isArray(name)) name = [ name ];
 	return TestCaseResult.create({
 		mark,
 		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
@@ -102,6 +106,7 @@ export function createTimeout({
 	filename?: string,
 	mark?: TestMarkValue,
 } = {}) {
+	if (!Array.isArray(name)) name = [ name ];
 	return TestCaseResult.create({
 		mark,
 		beforeEach: beforeEach.map(each => { return each instanceof RunResult ? each : each.it; }),
