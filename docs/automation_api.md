@@ -42,15 +42,15 @@ In this document **(the bold entries are all you need)**:
   * [testCaseResult.name](#testcaseresultname)
   * [testCaseResult.status](#testcaseresultstatus)
   * [testCaseResult.mark](#testcaseresultmark)
-  * [testCaseResult.errorMessage](#testcaseresulterrormessage)
-  * [testCaseResult.errorRender](#testcaseresulterrorrender)
-  * [testCaseResult.timeout](#testcaseresulttimeout)
   * **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter)**
   * **[testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline)**
   * **[testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines)**
   * [testCaseResult.equals()](#testcaseresultequals)
   * [TestCaseResult.create()](#testcaseresultcreate)
 * [RunResult](#runresult)
+  * [runResult.errorMessage](#runresulterrormessage)
+  * [runResult.errorRender](#runresulterrorrender)
+  * [runResult.timeout](#runresulttimeout)
   * [RunResult.pass()](#runresultpass)
   * [RunResult.fail()](#runresultfail)
   * [RunResult.skip()](#runresultskip)
@@ -313,7 +313,6 @@ The name of the suite and all its parent suites, with the outermost suite first.
 
 Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suites with no function body are considered to be marked `.skip`.
 
-
 [Back to top](#automation-api)
 
 
@@ -323,12 +322,16 @@ Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suit
 
 The results of this suite's [beforeAll()](test_api.md#beforeall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
 
+[Back to top](#automation-api)
+
 
 ## testSuiteResult.afterAll
 
 * testSuiteResult.afterAll: [TestCaseResult](#testcaseresult)[]
 
 The results of this suite's [beforeAll()](test_api.md#afterall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
+
+[Back to top](#automation-api)
 
 
 ## testSuiteResult.tests
@@ -413,7 +416,7 @@ Find all the test case *and* test suite results, in this suite and its sub-suite
 
 If you want all the test results that were marked, use [testSuiteResult.allMarkedResults()](#testsuiteresultallmarkedresults) instead. 
 
-> **Note:** If you request results without marks, you will also get results for [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach), which are *TestCaseResults* that never have marks.
+> **Note:** If you request results without marks, you will also get results for [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall), which are *TestCaseResults* that never have marks.
 
 
 [Back to top](#automation-api)
@@ -461,7 +464,9 @@ A factory method for creating [TestSuiteResult](#testsuiteresult)s. You aren't l
 * import { TestCaseResult } from "ergotest/test_result.js"
 * extends [TestResult](#testresult)
 
-`TestCaseResult` instances represent the result of running a single test. You’ll get them from [TestSuiteResult](#testsuiteresult), typically by calling [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests).
+_TestCaseResult_ instances represent the result of running a single [it()](test_api.md#it), [beforeAll()](test_api.md#beforeall), or [afterAll()](test_api.md#afterall) function. You’ll get them from [TestSuiteResult](#testsuiteresult), typically by calling [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests).
+
+_TestCaseResults_ represent a complete test run, including all associated [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach) functions. The results of each function are found in [RunResult](#runresult)s found in _TestCaseResult's_ properties.  
 
 [Back to top](#automation-api)
 
@@ -470,7 +475,10 @@ A factory method for creating [TestSuiteResult](#testsuiteresult)s. You aren't l
 
 * testCaseResult.filename?: string
 
-If this test was loaded from a module, which most will be, this property contains the absolute path of the module. Otherwise, it’s undefined. 
+If this test was loaded from a module, which most will be, this property contains the absolute path of the module. Otherwise, it’s undefined.
+
+This is a convenience method for accessing [testCaseResult.it.filename](RunResult.filename). The filenames in [testCaseResult.beforeEach](#testcaseresultbeforeeach) and [testCaseResult.afterEach](#testcaseresultaftereach) are ignored.
+
 
 [Back to top](#automation-api)
 
@@ -483,6 +491,8 @@ The name of the test and all its parent suites, with the outermost suite first. 
 
 All normal tests have a name, so there should be at least one name element, but it is technically possible to create a test case result with a name that’s an empty array. 
 
+This is a convenience method for accessing [testCaseResult.it.name](RunResult.name). The names in [testCaseResult.beforeEach](#testcaseresultbeforeeach) and [testCaseResult.afterEach](#testcaseresultaftereach) are ignored.
+
 [Back to top](#automation-api)
 
 
@@ -492,21 +502,59 @@ All normal tests have a name, so there should be at least one name element, but 
 
 Indicates whether the test was defined using `.skip`, `.only`, or neither. Tests with no function body are considered to be marked `.skip`.
 
+[Back to top](#automation-api)
+
 
 ## testCaseResult.status
 
 * testCaseResult.status: [TestStatus](#teststatus)
 
-Whether this test passed, failed, etc. 
+Whether this test passed, failed, etc.
 
-See also [testCaseResult.isPass()](#testcaseresultispass), [testCaseResult.isFail()](#testcaseresultisfail), [testCaseResult.isSkip()](#testcaseresultisskip), and [testCaseResult.isTimeout()](#testcaseresultistimeout) .
+This property consolidates the results of [testCaseResult.beforeEach](#testcaseresultbeforeeach), [testCaseResult.afterEach](#testcaseresultaftereach), and [testCaseResult.it](#testcaseresultit), as follows:
+
+* If any sub-result failed, the test case failed.
+* Otherwise, if any sub-result timed out, the test case timed out.
+* Otherwise, use the result of [testCaseResult.it](#testcaseresultit), which either be "pass" or "skip".
 
 [Back to top](#automation-api)
 
 
-## testCaseResult.errorMessage
+## testCaseResult.beforeEach
+
+* testCaseResult.beforeEach: [RunResult](#runresult)[]
+
+The results of every [beforeEach()](test_api.md#beforeeach) function associated with this test, including functions defined in parent suites.
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.afterEach
+
+* testCaseResult.afterEach: [RunResult](#runresult)[]
+
+The results of every [afterEach()](test_api.md#aftereach) function associated with this test, including functions defined in parent suites.
+
+[Back to top](#automation-api)
+
+
+## testCaseResult.it
+
+* testCaseResult.it: [RunResult](#runresult)
+
+The result of the [it()](test_api.md#aftereach) function associated with this test.
+
+[Back to top](#automation-api)
+
+
+# TBD - TestCaseResult.create()
+
+
+## runResult.errorMessage
 
 * testCaseResult.errorMessage?: string
+
+A convenience method for accessing [testCaseResult.it.errorMessage]
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
@@ -522,7 +570,25 @@ The nature of the error message depends on the type of the error.
 [Back to top](#automation-api)
 
 
-## testCaseResult.errorRender
+## runResult.errorMessage
+
+* runResult.errorMessage?: string
+
+> **Warning:** Visual changes to the output of this method are not considered breaking changes.
+
+If this test failed, contains the error message. Throws an exception if the test didn't fail.
+
+The nature of the error message depends on the type of the error.
+
+* If the error was an instance of `Error`, as is usually the case, this contains `error.message`.
+* If the error was an instance of `Error`, but `error.message` was undefined, this contains `""`. 
+* If the error was a string, this contains that string.
+* In all other cases, this contains the results of calling `util.inspect()` with infinite depth on the error. 
+
+[Back to top](#automation-api)
+
+
+## runResult.errorRender
 
 * testCaseResult.errorRender?: unknown
 
@@ -535,7 +601,7 @@ The error rendering depends on the renderer provided to the test runner in [Test
 [Back to top](#automation-api)
 
 
-## testCaseResult.timeout
+## runResult.timeout
 
 * testCaseResult.timeout?: number
 
@@ -673,7 +739,7 @@ Create a passing test result.
 
 * TestResult.fail(name: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
-Create a failing test result, where `error` is the reason for the failure. The `error` will not be stored; instead, it will be used to set the [errorMessage](#testcaseresulterrormessage) and [errorRender](#testcaseresulterrorrender) properties. If `renderError` is provided, its return value will be used to set the [errorRender](#testcaseresulterrorrender) property; otherwise, Ergotest's built-in [renderError()](reporting_api.md#rendererror) will be used. 
+Create a failing test result, where `error` is the reason for the failure. The `error` will not be stored; instead, it will be used to set the [errorMessage](#runresulterrormessage) and [errorRender](#runresulterrorrender) properties. If `renderError` is provided, its return value will be used to set the [errorRender](#runresulterrorrender) property; otherwise, Ergotest's built-in [renderError()](reporting_api.md#rendererror) will be used. 
 
 [Back to top](#automation-api)
 

@@ -74,6 +74,9 @@ It's also changed the automation API, although not the commonly-used parts of it
 * Removed TestCaseResult.isSkip()
 * Removed TestCaseResult.isFail()
 * Removed TestCaseResult.isTimeout()
+* Moved TestCaseResult.errorMessage to RunResult
+* Moved TestCaseResult.errorRender to RunResult
+* Moved TestCaseResult.timeout to RunResult
 * Added RunResult
 * Changed TestRenderer signatures:
   * renderError()
@@ -94,6 +97,7 @@ It's also changed the automation API, although not the commonly-used parts of it
 
 TO DO:
 * Delete isPass() etc.
+* Remove TestCaseResult.errorMessage, .errorRender, and .timeout
 * Update documentation
   * Revise TestSuiteResult
   * Revise TestCaseResult
@@ -123,8 +127,8 @@ The following property on [TestCaseResult](docs/automation_api.md#testcaseresult
 
 It has been replaced with the following properties:
 
-* [testCaseResult.errorMessage](docs/automation_api.md#testcaseresulterrormessage)
-* [testCaseResult.errorRender](docs/automation_api.md#testcaseresulterrorrender)
+* [testCaseResult.errorMessage](docs/automation_api.md#runresulterrormessage)
+* [testCaseResult.errorRender](docs/automation_api.md#runresulterrorrender)
 
 A `renderer` option has been added to [TestOptions](docs/automation_api.md#testoptions). It allows you to customize the rendering of errors. This is an additive, non-breaking change for these APIs:
 
