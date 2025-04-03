@@ -233,17 +233,17 @@ Use [options](#testoptions) to provide configuration data to the tests and other
 
 > **Warning:** It's typically better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
 
-Import the modules in `modulePaths` in the current process and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
+Import the modules in _modulePaths_ in the current process and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _modulePaths_ must be absolute paths.
 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed. As a result, this method is only suitable for automation that exits back to the command line after running the tests.
 
 Does *not* detect infinite loops or uncaught exceptions.
 
-If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
+If any of the _modulePaths_ fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
 
 > **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
-Use `options` to provide configuration data to the tests and otherwise customize your test run.
+Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run.
 
 [Back to top](#automation-api)
 
@@ -264,13 +264,13 @@ You can configure test runs with this interface. Provide an object with these op
   * Defaults to two seconds.
 
 * **onTestCaseResult?: (testCaseResult: TestCaseResult) => void**
-  * Every time an _it(), beforeAll(),_ or _afterAll()_ function completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes. It’s not called for _beforeEach()_ or _afterEach()_ either.
+  * Every time an _it(), beforeAll(),_ or _afterAll()_ function completes, this function is called with the result.
   * Defaults to a no-op.
 
 * **renderer?: string**
-  * The path to a module for custom error rendering. Must be an absolute path or a path to `node_modules`.
-  * The module must export a function named `renderError()` of the type [RenderErrorFn](#rendererrorfn).
   * See the [Reporting API](reporting_api.md) for details.
+  * The path to a module for custom error rendering. Must be an absolute path or a path to `node_modules`.
+  * The module must export a function named _renderError()_ of the type [RenderErrorFn](#rendererrorfn). 
   * Defaults to the [built-in error renderer](reporting_api.md#rendererror).
 
 [Back to top](#automation-api)
@@ -284,7 +284,7 @@ You can configure test runs with this interface. Provide an object with these op
 * import { TestSuiteResult } from "ergotest/test_result.js"
 * extends [TestResult](#testresult)
 
-`TestSuiteResult` instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s, which correspond to [describe()](test_api.md#describe)), and [TestCaseResult](#testcaseresult)s, which correspond to [it()](test_api.md#it)). See the [test API documentation](test_api.md) for more about writing tests with `describe()` and `it()`. 
+`TestSuiteResult` instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s, which correspond to [describe()](test_api.md#describe); [TestCaseResult](#testcaseresult)s, which correspond to [it()](test_api.md#it), [beforeAll()](test_api.md#beforeall), and [afterAll()](test_api.md#afterall); and [RunResult](#runresult)s, which correspond to the actual results of executing test functions. See the [data model](#data-model) for details. 
 
 [Back to top](#automation-api)
 
@@ -317,11 +317,25 @@ Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suit
 [Back to top](#automation-api)
 
 
+## testSuiteResult.beforeAll
+
+* testSuiteResult.beforeAll: [TestCaseResult](#testcaseresult)[]
+
+The results of this suite's [beforeAll()](test_api.md#beforeall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
+
+
+## testSuiteResult.afterAll
+
+* testSuiteResult.afterAll: [TestCaseResult](#testcaseresult)[]
+
+The results of this suite's [beforeAll()](test_api.md#afterall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
+
+
 ## testSuiteResult.tests
 
-* testSuiteResult.children: [TestResult](#testresult)[]
+* testSuiteResult.tests: [TestResult](#testresult)[]
 
-This suite’s direct children, which can either be [TestSuiteResult](#testsuiteresult) or [TestCaseResult](#testcaseresult) instances. It’s possible for a suite to have no children.
+This suite’s direct children, which can either be [TestSuiteResult](#testsuiteresult)s or [TestCaseResult](#testcaseresult)s instances. It’s possible for a suite to have no children.
 
 [Back to top](#automation-api)
 
@@ -334,7 +348,7 @@ This suite’s direct children, which can either be [TestSuiteResult](#testsuite
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render this suite as a nicely formatted string. The rendering consists of three parts:
+Render this suite as a nicely formatted and colored string. The rendering consists of three parts:
 
 * A summary list of marked suites and tests, for ease of finding `.only` and `.skip` marks
 * A detailed list of test failures and timeouts
@@ -353,6 +367,8 @@ If `elapsedMs` is defined, the summary will include the average amount of time r
 
 A summary of this suite’s results. Includes a count of each type of test case result and the total number. Only counts  [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
+> **Note:** The results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) are included in the count, but not the results of [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach), because those are rolled up into each individual test result.
+
 [Back to top](#automation-api)
 
 
@@ -360,7 +376,7 @@ A summary of this suite’s results. Includes a count of each type of test case 
 
 * testSuiteResult.allTests(): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results in this suite and its sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
+Find all the test results in this suite and its sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, including the results of [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach), but not [TestSuiteResult](#testsuiteresult)s.
 
 If you only want test results with a particular status (pass, fail, etc.), use [testSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests) instead.
 
@@ -371,7 +387,7 @@ If you only want test results with a particular status (pass, fail, etc.), use [
 
 * testSuiteResult.allMatchingTests(...statuses: [TestStatusValue](#teststatusvalue)[]): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results, in this suite and its sub-suites, that match any of the `statuses` and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
+Find all the test results, in this suite and its sub-suites, that match any of the _statuses_ and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, including the results of [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach), but not [TestSuiteResult](#testsuiteresult)s.
 
 If you want all test results from this suite and its sub-suites, use [testSuiteResult.allTests()](#testsuiteresultalltests) instead.
 
@@ -393,9 +409,12 @@ Only includes marked results. To get results without marks, or specific marks, u
 
 * testSuiteResult.allMatchingMarks(...marks: [TestMarkValue](#testmarkvalue)[]): [TestResult](#testresult)[]
 
-Find all the test case *and* test suite results, in this suite and its sub-suites, that match any of the `marks`, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
+Find all the test case *and* test suite results, in this suite and its sub-suites, that match any of the _marks_, and flatten them into a single array. Suites and tests without a body are considered to have been marked with `.skip`.
 
 If you want all the test results that were marked, use [testSuiteResult.allMarkedResults()](#testsuiteresultallmarkedresults) instead. 
+
+> **Note:** If you request results without marks, you will also get results for [beforeEach()](test_api.md#beforeeach) and [afterEach()](test_api.md#aftereach), which are *TestCaseResults* that never have marks.
+
 
 [Back to top](#automation-api)
 
@@ -406,7 +425,7 @@ If you want all the test results that were marked, use [testSuiteResult.allMarke
 
 Find all the files, in this suite and its sub-suites, that only had passing tests. Files with failed, timed out, or skipped tests are not included.
 
-This is useful for incremental builds. You can mark files that had passing tests as not needing to be re-run (until they change). 
+This is useful for incremental builds. You can avoid re-running files that had passing tests until they change. 
 
 [Back to top](#automation-api)
 
@@ -418,6 +437,20 @@ This is useful for incremental builds. You can mark files that had passing tests
 Determine if this suite’s result is equal to another test result. To be equal, they must have exactly the same results, including sub-suites, in the same order, with the same names, filenames, marks, error messages, and timeouts. However, error renders are ignored, which means that stack traces and other error details are ignored. 
 
 [Back to top](#automation-api)
+
+
+## TestSuiteResult.create()
+
+* TestSuiteResult.create(options: Options)
+
+A factory method for creating [TestSuiteResult](#testsuiteresult)s. You aren't likely to need this method. It takes the following parameters:
+
+* _name?: string[]:_ Same as [testSuiteResult.name](#testsuiteresultname). Defaults to an empty array.
+* _tests?: TestResult[]:_ Same as [testSuiteResult.tests](#testsuiteresulttests). Defaults to an empty array.
+* _beforeAll?: TestCaseResult[]:_ Same as [testSuiteResult.beforeAll](#testsuiteresultbeforeall). Defaults to an empty array.
+* _afterAll?: TestCaseResult[]:_ Same as [testSuiteResult.afterAll](#testsuiteresultafterall). Defaults to an empty array.
+* _filename?: string:_ Same as [testSuiteResult.filename](#testsuiteresultfilename). Defaults to _undefined_.
+* _mark?: TestMarkValue:_ Same as [testSuiteResult.mark](#testsuiteresultmark). Defaults to [TestMark.none](#testmark).
 
 
 ---
