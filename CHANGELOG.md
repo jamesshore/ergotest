@@ -62,7 +62,7 @@ This has changed the behavior of the tests:
 * beforeEach() and afterEach() are rendered by renderAsSingleLines() and renderAsMultipleLines() when appropriate
 * renderNameOnMultipleLines() now only highlights the first part of the name (usually the filename) and the last part (the test name); previously, it highlighted the whole name
 
-There are a lot of changes to the details of the automation API:
+It's also changed the automation API, although not the commonly-used parts of it:
 
 * Added TestSuiteResult.beforeAll
 * Added TestSuiteResult.afterAll
@@ -83,12 +83,13 @@ There are a lot of changes to the details of the automation API:
   * renderStatusWithMultiLineDetails()
   * renderMarkAsSingleWord()
 * Replaced TestResult factories with new methods and signatures:
-  * TestSuiteResult.create()
-  * TestCaseResult.create()
-  * RunResult.pass()
-  * RunResult.skip()
-  * RunResult.fail()
-  * RunResult.timeout()
+  * Moved TestResult.suite() to TestSuiteResult.create()
+  * Added TestCaseResult.create()
+  * Moved TestResult.pass() to RunResult.pass()
+  * Moved TestResult.skip() to RunResult.skip()
+  * Moved TestResult.fail() to RunResult.fail()
+  * Moved TestResult.timeout() to RunResult.timeout()
+  * Revised signatures for above methods
 * Removed TestSuite from the documentation; it's now for internal use only
 
 TO DO:
