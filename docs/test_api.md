@@ -17,8 +17,8 @@ In this document:
 
 * [**Example**](#example)
 * [**Start Here**](#start-here)
-* [describe()](#describe)
-* [it()](#it)
+* [**describe()**](#describe)
+* [**it()**](#it)
 * [beforeAll()](#beforeall)
 * [afterAll()](#afterall)
 * [beforeEach()](#beforeeach)
@@ -176,7 +176,6 @@ The remainder of this document describes the functions you’ll use in your test
 * describe(options?: [DescribeOptions](#describeoptions), fn?: () => void)
 * describe(fn?: () => void)
 * describe(name?: string)
-* describe()
 * describe.skip(...)
 * describe.only(...)
 
@@ -187,9 +186,6 @@ All parameters are optional, and later parameters (such as _fn_) can be included
 If you call `describe.skip()`, all the tests in that suite will be skipped. If you call `describe.only()`, all tests and suites that _aren’t_ marked `.only` will be skipped. These statuses can be overridden by using `.skip` or `.only` on a test or sub-suite.
 
 After the tests run, the result of this suite will be stored in a [TestSuiteResult](automation_api.md#testsuiteresult). The parent _TestSuiteResult_ of all your tests will be returned by the [TestRunner](automation_api.md#testrunner) you use to run the tests, and this suite's _TestSuiteResult_ will be found within that parent result.
-
-
-The _describe()_ function technically returns a TestSuite instance, but that's an internal implementation detail. Just export it using `export default` on the top-level _describe()_ call in your test module.
 
 
 ### DescribeOptions
@@ -209,7 +205,7 @@ Use the `timeout` option to change the timeout for tests in this suite and its s
 * it.only(...)
 * it.skip(...)
 
-Define an individual test. When the test suite runs, it will run each test’s _fn()_ in the order _it()_ was called.
+Define an individual test inside of [describe()](#describe). When the test suite runs, it will run _fn()_. If the suite contains multiple calls to _it()_, their _fn()_ parameters will be called in the order _it()_ was called.
 
 The _options_ and _fn_ parameters are optional, and _fn_ can be included even if _options_ is left out. If _fn_ is left out, the test will be skipped.
 
@@ -217,19 +213,21 @@ The _options_ and _fn_ parameters are optional, and _fn_ can be included even if
 
 If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-If you call `it.skip()`, this test will be skipped. If you call `test.only()` all other tests and suites that _aren't_ marked `.only` will be skipped.
+If you call `it.skip()`, this test will be skipped. If you call `it.only()` all other tests and suites that _aren't_ marked `.only` will be skipped.
 
-After the test runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). The _TestCaseResult_ will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s that contains this test. The test result will have one of the following statuses:
+After the test runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). The _TestCaseResult_ will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to this test’s _describe()_.
+
+The result will have one of the following statuses:
 
 * *Pass:* The function ran and exited normally.
 * *Skip:* The test was skipped.
 * *Fail:* The function threw an exception.
 * *Timeout:* The function took too long to complete. Use [ItOptions](#itoptions), [DescribeOptions](#describeoptions), or [TestOptions](automation_api.md#testoptions) to change the timeout. The default is two seconds. 
 
-> **Note:** Due to JavaScript limitations, the test will continue running after the timeout occurs. The test runner will continue with its next action as soon as possible after the timeout. This could lead to multiple before/after functions or tests running at the same time.
+For better failure messages, use an assertion library that throws Node's built-in `AssertionError`. You can use Ergotest's [built-in assertion library](assertion_api.md) or any other popular assertion library.
 
+> **Note:** Due to JavaScript limitations, the test will continue running after the timeout occurs. The test runner will continue with its next action as soon as possible after the timeout. This could lead to multiple tests or before/after functions running at the same time.
 
-You’ll typically make your tests fail by using an assertion library that throws `AssertionError`. You can use any library you like. For details about Ergotest’s built-in assertion library, see the [assertion API documentation](assertion_api.md).
 
 ### ItFunction
 
@@ -254,7 +252,9 @@ Use the _timeout_ option to change the timeout for this test. The default value 
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing. 
 
-After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s that contains it. The result will have one of the following statuses:
+After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_.
+
+The result will have one of the following statuses:
 
 * *Pass:* The function ran and exited normally.
 * *Skip:* The function was skipped.
@@ -267,7 +267,7 @@ If there are multiple _beforeAll()_ functions in a suite, they will run in the o
 
 If there are no tests in this suite or its sub-suites, or they’re all skipped, _fn()_ will not be run.
 
-If _fn()_ throws an exception or times out, the remainder of this suite will be skipped. No more _beforeAll(), afterAll(), beforeEach(), afterEach(),_ or _it()_ functions will run in this suite or any sub-suites. They will marked as "skipped" in the test results.
+If _fn()_ throws an exception or times out, the remainder of this suite will be skipped. No more _beforeAll(), afterAll(), beforeEach(), afterEach(),_ or _it()_ functions will run in this suite or any sub-suites, and they'll be marked as "skipped" in the test results.
 
 [Back to top](#test-api)
 
@@ -279,7 +279,9 @@ If _fn()_ throws an exception or times out, the remainder of this suite will be 
 
 Define a function to run immediately before running all the tests in this suite and its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s that contains it. The result will have one of the following statuses:
+After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_. 
+
+The result will have one of the following statuses:
 
 * *Pass:* The function ran and exited normally.
 * *Skip:* The function was skipped.
@@ -307,7 +309,9 @@ If _fn()_ throws an exception or times out, any remaining _afterAll()_ functions
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-Each time _beforeEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *beforeEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the test it corresponds to. The result will have one of the following statuses:
+Each time _beforeEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *beforeEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
+
+The result will have one of the following statuses:
 
 * *Pass:* The function ran and exited normally.
 * *Skip:* The function was skipped.
@@ -332,7 +336,9 @@ If _fn()_ throws an exception or times out, no _beforeEach()_, _afterEach()_, or
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-Each time _afterEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *afterEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the test it corresponds to.The result will have one of the following statuses:
+Each time _afterEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *afterEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
+
+The result will have one of the following statuses:
 
 * *Pass:* The function ran and exited normally.
 * *Skip:* The function was skipped.
@@ -341,11 +347,11 @@ Each time _afterEach()_ runs, the result will be stored in a [RunResult](automat
 
 > **Note:** Due to JavaScript limitations, _afterEach()_ will continue running after the timeout occurs. The test runner will continue with its next action as soon as possible after the timeout. This could lead to multiple before/after functions or tests running at the same time.
 
-If there are multiple `afterEach()` functions in a suite, they will run in the order `afterEach()` was called. If there are multiple nested suites, they will be run from the inside out. If there are [afterAll()](#afterall) functions in the suite, they will run last.
+If there are multiple _afterEach()_ functions in a suite, they will run in the order _afterEach()_ was called. If there are multiple nested suites, they will be run from the inside out. If there are [afterAll()](#afterall) functions in the suite, they will run last.
 
-If any tests throw an exception or time out, `fn()` will still be run for each test.
+If a test throws an exception or time out, _fn()_ will still be run.
 
-If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, `fn()` will not be run.
+If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, _fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, any remaining _afterEach()_ functions will still be run.
 
@@ -360,9 +366,9 @@ Passed into [it()](#it), [beforeAll()](#beforeAll), [beforeEach()](#beforeEach),
 
 Gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
 
-If no configuration object was defined, or if `key` doesn’t exist, `getConfig()` will throw an exception.
+If no configuration object was defined, or if _key_ doesn’t exist, _getConfig()_ will throw an exception.
 
-See [TestRunner](automation_api.md#testrunner) for information about how to define the configuration object.
+See [TestOpt](automation_api.md#testrunner) for information about how to define the configuration object.
 
 ### Example
 

@@ -218,7 +218,7 @@ You can configure test runs with this interface. Provide an object with these op
   * Defaults to two seconds.
 
 * **onTestCaseResult?: (testCaseResult: TestCaseResult) => void**
-  * Every time a test completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes.
+  * Every time an _it(), beforeAll(),_ or _afterAll()_ function completes, this function is called with the result. It’s only called when a test completes, not when a test suite completes. It’s not called for _beforeEach()_ or _afterEach()_ either.
   * Defaults to a no-op.
 
 * **renderer?: string**
