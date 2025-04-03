@@ -16,6 +16,8 @@ Links to other documentation:
 In this document **(the bold entries are all you need)**:
 
 * **[Start Here](#start-here)**
+  * [**Example**](#example)
+  * [Data Model](#datamodel)
 * [TestRunner](#testrunner)
   * **[TestRunner.create()](#testrunnercreate)**
   * **[testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync)**
@@ -25,7 +27,7 @@ In this document **(the bold entries are all you need)**:
   * [testSuiteResult.filename](#testsuiteresultfilename)
   * [testSuiteResult.name](#testsuiteresultname)
   * [testSuiteResult.mark](#testsuiteresultmark)
-  * [testSuiteResult.children](#testsuiteresultchildren)
+  * [testSuiteResult.tests](#testsuiteresulttests)
   * **[testSuiteResult.render()](#testsuiteresultrender)**
   * **[testSuiteResult.count()](#testsuiteresultcount)**
   * [testSuiteResult.allTests()](#testsuiteresultalltests)
@@ -34,6 +36,7 @@ In this document **(the bold entries are all you need)**:
   * [testSuiteResult.allMatchingMarks()](#testsuiteresultallmatchingmarks)
   * [testSuiteResult.allPassingFiles()](#testsuiteresultallpassingfiles)
   * [testSuiteResult.equals()](#testsuiteresultequals)
+  * [TestSuiteResult.create()](#testsuiteresultcreate)
 * [TestCaseResult](#testcaseresult)
   * [testCaseResult.filename](#testcaseresultfilename)
   * [testCaseResult.name](#testcaseresultname)
@@ -45,49 +48,56 @@ In this document **(the bold entries are all you need)**:
   * **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter)**
   * **[testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline)**
   * **[testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines)**
-  * [testCaseResult.isPass()](#testcaseresultispass)
-  * [testCaseResult.isFail()](#testcaseresultisfail)
-  * [testCaseResult.isSkip()](#testcaseresultisskip)
-  * [testCaseResult.isTimeout()](#testcaseresultistimeout)
-* [TestResult](#testresult)
-  * [TestResult.suite()](#testresultsuite)
-  * [TestResult.pass()](#testresultpass)
-  * [TestResult.fail()](#testresultfail)
-  * [TestResult.skip()](#testresultskip)
-  * [TestResult.timeout()](#testresulttimeout)
+  * [testCaseResult.equals()](#testcaseresultequals)
+  * [TestCaseResult.create()](#testcaseresultcreate)
+* [RunResult](#runresult)
+  * [RunResult.pass()](#runresultpass)
+  * [RunResult.fail()](#runresultfail)
+  * [RunResult.skip()](#runresultskip)
+  * [RunResult.timeout()](#runresulttimeout)
+* [Types](#types)
   * [TestStatus](#teststatus)
   * [TestStatusValue](#teststatusvalue)
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
   * [RenderErrorFn](#rendererrorfn)
+* [Result Factories](#testresult)
   
 
 ## Start Here
 
 > **The Golden Rule:** Don't use constructors to instantiate Ergotest classes. Constructors are reserved for internal use only in this codebase.
 
-There are six classes in Ergotest. The first three are all you really need to know about, and the bolded methods in the table of contents above are the only ones you’re likely to use. 
+There are six classes in Ergotest, but you only really need to know about three of them. The bolded methods in the table of contents above are the only ones you’re likely to use. The rest of this file is here for reference and advanced usage. 
 
 * ***TestRunner*** is how you run your tests.
-* ***TestSuiteResult*** has the results of your test run, and includes a convenient method for rendering the results.
-* ***TestCaseResult*** has the details of a single test, and it also has convenient rendering methods.
-* *TestRenderer* is how you create customized renderings, if you want to. See the [Reporting API](reporting_api.md) for details.
-* *TestResult* is the parent to `TestSuiteResult` and `TestCaseResult`, and  has factory methods for creating test results. You're not likely to need them. It's included only for completeness. 
-* *TestSuite* is mainly for internal use, and is included only for completeness. To create test suites, use [the test API](test_api.md).
+* ***TestSuiteResult*** has the results of your test run, and includes a convenient method for reporting the results.
+* ***TestCaseResult*** has the details of a single test, and it also has convenient reporting methods.
+* _RunResult_ has the details of running a single function, such as _it()_ or _beforeEach()_.
+* *TestRenderer* has tools for customizing result rendering. See the [Reporting API](reporting_api.md) for details.
 
-The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths which it runs in a child process.
+The best way to run your tests is to use [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It takes a list of test module paths, which it runs in a child process, and it returns a [TestSuiteResult](#testsuiteresult).
 
-The `runInChildProcessAsync()` method returns the results of the test run as a `TestSuiteResult` instance. You can render those results to a string by calling [TestSuiteResult.render()](#testsuiteresultrender). To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount)
-
-If you want more fine-grained control, you can use the methods and properties on `TestSuiteResult` and `TestCaseResult`. See the [Reporting API](reporting_api.md) for more rendering options.
+You can report on the test run by calling [TestSuiteResult.render()](#testsuiteresultrender) and writing the string it returns to the console. To learn the overall results of the test run, call [testSuiteResult.count()](#testsuiteresultcount).
 
 To see the results of the tests as they’re running, pass `onTestCaseResult` to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will be called with a `TestCaseResult`, which you can then render with the [testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines) methods.
+
+[Back to top](#automation-api)
+
+
+### Example
 
 Bringing it all together, here's an annotated version of a simple command-line interface for running tests:
 
 ```javascript
-import { TestRunner } from "ergotest/test_runner.js";
+import { TestRunner } from "ergotest";
 import path from "node:path";
+
+// This function will be called every time a test finishes running
+function reportProgress(testCase) {
+  // Write the test result as a dot, X, etc.
+  process.stdout.write(testCase.renderAsCharacter());
+}
 
 // Get the command-line arguments
 const args = process.argv.slice(2);
@@ -126,13 +136,49 @@ else if (count.skip > 0) {
 else {
   console.log("Tests passed :-)\n");
 }
-
-// This function is called every time a test finishes running
-function reportProgress(testCase) {
-  // Write the test result as a dot, X, etc.
-  process.stdout.write(testCase.renderAsCharacter());
-}
 ```
+
+
+### Data Model
+
+
+The test runner will give you a [TestSuiteResult](#testsuiteresult) when the tests finish running. Each _TestSuiteResult_ corresponds to a _describe()_ block, with the top-level _TestSuiteResult_ acting as a container for all your test files.
+
+```
++--------------------> TestResult
+|                   *     /_\
+|                          |
+|           +--------------+---------------+
+|           |                              |
+|  +-----------------+            +-----------------+               
+|  | TestSuiteResult |            | TestCaseResult  |             
+|  +-----------------+         *  +-----------------+
+|  |   beforeAll   --|----------> | beforeEach    --|--------+     
+|  |   afterAll    --|----------> | afterEach     --|-----+  |      
++--|-- tests         |         *  | it            --|--+  |  |
+   +-----------------+            +-----------------+  |  |  |
+                                                       |1 |* |*
+                                                       v  v  v
+                                                   +-------------+            
+                                                   |  RunResult  |          
+                                                   +-------------+
+```
+
+_TestSuiteResult_ has properties corresponding to the functions called inside _describe():_
+
+* [TestSuiteResult.beforeAll](#testsuiteresultbeforeall) is an array of [TestCaseResult](#testcaseresult)s corresponding to the [beforeAll()](test_api.md#beforeall) functions in the suite.
+* [TestSuiteResult.afterAll](#testsuiteresultbeforeall) is an array of [TestCaseResult](#testcaseresult)s corresponding to the [afterAll()](test_api.md#afterall) functions in the suite.
+* [TestSuiteResult.tests](#testsuiteresulttests) is an array of _TestSuiteResults_ and _TestCaseResults_ corresponding to the _describe()_ and _it()_ functions in the suite.
+
+> **Note:** You don't need to loop through all the properties of _TestSuiteResult_. The easiest way to use it is to call one of its convenience methods, such as [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests), which will automatically collate all the _TestCaseResults_ in the suite and its sub-suites.
+
+_TestCaseResult_ has properties corresponding to the functions related to running a test:
+
+* [TestCaseResult.beforeEach](#testcaseresultbeforeeach) is an array of [RunResult](#runresult)s corresponding to all the [beforeEach()](test_api.md#beforeeach) functions that ran before the test, regardless of which suite they were defined within.
+* [TestCaseResult.afterEach](#testcaseresultaftereach) is an array of [RunResult](#runresult)s corresponding to all the [afterEach()](test_api.md#aftereach) functions that ran after the test, regardless of which suite they were defined within.
+* [TestCaseResult.it](#testcaseresultit) is a single [RunResult](#runresult) corresponding to the [it()](test_api.md#it) function that ran the test itself.
+
+Results for [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) functions are contained in a [TestCaseResult](#testcaseresult), for ease of reporting, but the _TestCaseResult_ only has an _it_ result. The _beforeEach_ or _afterEach_ results are empty arrays.
 
 [Back to top](#automation-api)
 
@@ -142,7 +188,7 @@ function reportProgress(testCase) {
 
 ## TestRunner
 
-* import { TestRunner } from "ergotest/test_runner.js"
+* import { TestRunner } from "ergotest"
 
 Use the `TestRunner` class to run your tests.
 
@@ -162,19 +208,19 @@ Instantiate `TestRunner`.
 
 * testRunner.runInChildProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
 
-Spawn an isolated child process, import the modules in `modulePaths` inside that process, and run them as a single test suite. Requires each module to export a `TestSuite`. (See the [test API](test_api.md) for details.) The `modulePaths` must be absolute paths.
+Spawn an isolated child process, import the modules in _modulePaths_ inside that process, and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _modulePaths_ must be absolute paths.
 
-> **Note:** Although the child process is isolated from your test automation script, the tests all run in the same process. They run sequentially, not in parallel, and are not isolated from each other.
+> **Note:** Although the child process is isolated from your test automation script, and each test run gets a fresh child process, all the tests for a given test run are in the same process. They run sequentially, not in parallel, and are not isolated from each other.
 
 The test modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
 
 If the tests enter an infinite loop or throw an uncaught exception, a test watchdog will kill the tests and generate a corresponding test failure.
 
-If any of the `modulePaths` fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
+If any of the _modulePaths_ fail to load, the remaining modules will still run. The failed modules will have a corresponding test failure in the test results.
 
 > **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
 
-Use `options` to provide configuration data to the tests and otherwise customize your test run.
+Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run.
 
 > **Warning:** Because the tests run in a child process, any configuration information you provide will be serialized. Only bare objects, arrays, and primitive data can be provided; class instances will not work.
 
@@ -271,7 +317,7 @@ Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suit
 [Back to top](#automation-api)
 
 
-## testSuiteResult.children
+## testSuiteResult.tests
 
 * testSuiteResult.children: [TestResult](#testresult)[]
 
@@ -572,7 +618,7 @@ The parent class for [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#t
 [Back to top](#automation-api)
 
 
-## TestResult.suite()
+## TestSuiteResult.create()
 
 * TestResult.suite(name: string | string[], children: [TestResult](#testresult)[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestSuiteResult](#testsuiteresult)
 
@@ -581,7 +627,7 @@ Create a test result for a suite of tests.
 [Back to top](#automation-api)
 
 
-## TestResult.pass()
+## RunResult.pass()
 
 * TestResult.pass(name: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 
@@ -590,7 +636,7 @@ Create a passing test result.
 [Back to top](#automation-api)
 
 
-## TestResult.fail()
+## RunResult.fail()
 
 * TestResult.fail(name: string | string[], error: unknown, filename?: string, mark?: [TestMarkValue](#testmarkvalue), renderError?: [RenderErrorFn](#rendererrorfn)): [TestCaseResult](#testcaseresult)
 
@@ -599,7 +645,7 @@ Create a failing test result, where `error` is the reason for the failure. The `
 [Back to top](#automation-api)
 
 
-## TestResult.skip()
+## RunResult.skip()
 
 * TestResult.skip(name: string | string[], filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 
@@ -608,7 +654,7 @@ Create a skipped test result.
 [Back to top](#automation-api)
 
 
-## TestResult.timeout()
+## RunResult.timeout()
 
 * TestResult.pass(name: string | string[], timeout: number, filename?: string, mark?: [TestMarkValue](#testmarkvalue)): [TestCaseResult](#testcaseresult)
 

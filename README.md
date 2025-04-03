@@ -119,7 +119,7 @@ export default describe(() => {
 Use Ergotest's API to run tests from your automated build. For now, create a simple `build.js` file:
 
 ```javascript
-import { TestRunner } from "ergotest/test_runner.js";
+import { TestRunner } from "ergotest";
 import path from "node:path";
 
 const args = process.argv.slice(2);
