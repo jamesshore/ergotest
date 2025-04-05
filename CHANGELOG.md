@@ -96,14 +96,11 @@ It's also changed the automation API, although not the commonly-used parts of it
 * Removed TestSuite from the documentation; it's now for internal use only
 
 TO DO:
-* Delete isPass() etc.
 * Remove TestCaseResult.errorMessage, .errorRender, and .timeout
+* Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, RunResult from index.js
+* Test watchdog failures (module load, child processes) should call onTestCaseResult.
 * Update documentation
-  * Revise TestSuiteResult
-  * Revise TestCaseResult
-  * Add RunResult to test_api.md
-  * Add "TestResult factories" section
-  * Export TestRenderer and TestRunner from index.js?
+  * Revise TestRenderer
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
