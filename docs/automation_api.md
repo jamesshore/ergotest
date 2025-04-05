@@ -65,7 +65,6 @@ In this document **(the bold entries are all you need)**:
   * [TestMark](#testmark)
   * [TestMarkValue](#testmarkvalue)
   * [RenderErrorFn](#rendererrorfn)
-* [Result Factories](#testresult)
   
 
 ## Start Here
@@ -819,9 +818,16 @@ A factory method for creating passing [RunResult](#runresult) instances. You are
 ---
 
 
+## TestResult
+
+* import { TestResult } from "ergotest"
+
+The abstract parent class of [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).
+
+
 ## TestStatus
 
-* import { TestStatus } from "ergotest/test_result.js"
+* import { TestStatus } from "ergotest"
 
 An “enum” object with the following options:
 
@@ -835,7 +841,7 @@ An “enum” object with the following options:
 
 ## TestStatusValue
 
-* import { TestStatusValue } from "ergotest/test_result.js"
+* import { TestStatusValue } from "ergotest"
 
 A type for the possible values of [TestStatus](#teststatus).
 
@@ -844,7 +850,7 @@ A type for the possible values of [TestStatus](#teststatus).
 
 ## TestMark
 
-* import { TestMark } from "ergotest/test_result.js"
+* import { TestMark } from "ergotest"
 
 An “enum” object with the following options:
 
@@ -857,7 +863,7 @@ An “enum” object with the following options:
 
 ## TestMarkValue
 
-* import { TestStatus } from "ergotest/test_result.js"
+* import { TestMarkValue } from "ergotest"
 
 A type for the possible values of [TestMark](#testmark).
 
@@ -866,7 +872,7 @@ A type for the possible values of [TestMark](#testmark).
 
 ## RenderErrorFn
 
-* import { RenderErrorFn } from "ergotest/test_result.js"
+* import { RenderErrorFn } from "ergotest"
 * (name: string[], error: unknown, mark: TestMarkValue, filename?: string) => unknown;
 
 A type for custom error rendering. It takes the following parameters: 

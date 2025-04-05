@@ -97,9 +97,9 @@ It's also changed the automation API, although not the commonly-used parts of it
 
 TO DO:
 * Remove TestCaseResult.errorMessage, .errorRender, and .timeout
-* Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, RunResult from index.js
+* Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, TestResult, RunResult, TestStatus, TestStatusValue, TestMark, TestMarkValue, RenderErrorFn from index.js
 * Test watchdog failures (module load, child processes) should call onTestCaseResult.
-* Update changelog
+* Finalize changelog
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
