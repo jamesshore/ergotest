@@ -41,8 +41,8 @@ Most people can ignore the reporting API. The [automation API](automation_api.md
 
 Reporting is split into two parts in Ergotest:
 
-* _Result rendering_, which converts a test result into a string. Your build makes this happen. 
-* _Error rendering_, which converts an error object into a string and sets the [testCaseResult.errorRender](automation_api.md#runresulterrorrender) property. Ergotest makes this happen when a test fails.
+* _Result rendering_, which converts a test result into a string. Your build calls these functions. 
+* _Error rendering_, which converts an error object into a string and sets the [testCaseResult.errorRender](automation_api.md#runresulterrorrender) property. Ergotest calls this function automatically when a test fails.
 
 
 ### Customizing result rendering
@@ -90,8 +90,8 @@ class EmojiRenderer extends TestRenderer {
   static create() {
     return new EmojiRenderer();
   }
-  renderStatusAsSingleWord(testCaseResult: TestCaseResult) {
-    switch (testCaseResult.status) {
+  renderStatusAsSingleWord(status: TestStatusValue) {
+    switch (status) {
       case TestStatus.pass: return "✅";
       case TestStatus.skip: return "⏩";
       case TestStatus.fail: return "❌";
@@ -151,7 +151,7 @@ The worker process will import your custom module and call its `renderError()` f
 
 If you want to completely customize your output, you can create your own result renderer and error renderers. It's convenient to put them in the same file. Here's an example of a build that outputs [TAP (Test Anything Protocol)](https://testanything.org/):
 
-> **Warning:** This is just an example. It's not meant to be an accurate or complete implementation of TAP.
+> **Warning:** This is just an example. It's not meant to be an accurate or complete implementation of TAP. In particular, it doesn't display error messages when _beforeEach()_ or _afterEach()_ fail.
 
 ```typescript
 // build.js - The build file
@@ -201,9 +201,9 @@ export function renderTap(suite: TestSuiteResult) {
     const name = test.name().pop() ?? "(no name)";
     
     result += `${ok} ${i} - ${name} # ${test.status.toUpperCase()}\n`;
-    if (test.isFail()) {
+    if (test.it.status === TestStatus.fail) {
       // test.errorRender has the result of calling renderError()
-      result += test.errorRender;
+      result += test.it.errorRender;
     }
   });
   
@@ -214,7 +214,7 @@ export function renderTap(suite: TestSuiteResult) {
 [Back to top](#reporting-api)
 
 
-
+---
 
 
 ## TestRenderer
@@ -259,7 +259,7 @@ If `elapsedMs` is defined, the summary will include the average amount of time r
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render `testCaseResults` as consecutive color-coded characters representing the tests’ statuses, as follows:
+Render the results as consecutive color-coded characters representing the tests’ statuses, as follows:
 
 * *pass:* normal-colored `.`
 * *fail:* red inverse `X`
@@ -275,7 +275,9 @@ Render `testCaseResults` as consecutive color-coded characters representing the 
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render `testCaseResults` as a series of consecutive lines containing the test status and name. Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline). 
+Render the results as a series of color-coded lines, each containing the test's status and name. If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered as an indented separate line.
+
+Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline). 
 
 [Back to top](#reporting-api)
 
@@ -286,7 +288,9 @@ Render `testCaseResults` as a series of consecutive lines containing the test st
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render `testCaseResults` as detailed explanations of each result, each separated by two blank lines. Under the covers, this calls [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines) and [testRenderer.renderStatusWithMultiLineDetails()](#testrendererrenderstatuswithmultilinedetails).
+Render the results with detailed explanations of each result, each separated by two blank lines. If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered in its full detail.  
+
+Under the covers, this calls [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines) and [testRenderer.renderStatusWithMultiLineDetails()](#testrendererrenderstatuswithmultilinedetails).
 
 [Back to top](#reporting-api)
 
@@ -297,7 +301,7 @@ Render `testCaseResults` as detailed explanations of each result, each separated
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render `testResults` as a series of consecutive lines containing the test mark and name. Under the covers, this calls [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline).
+Render _testResults_ as a series of consecutive lines containing the test mark and name. Under the covers, this calls [testRenderer.renderMarkAsSingleWord()](#testrendererrendermarkassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline).
 
 
 [Back to top](#reporting-api)
@@ -305,35 +309,35 @@ Render `testResults` as a series of consecutive lines containing the test mark a
 
 ## testRenderer.renderNameOnOneLine()
 
-* testRenderer.renderNameOnOneLine(testResult: [TestResult](#testresult)): string
+* testRenderer.renderNameOnOneLine(name: string[], filename?: string): string
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-If the test or suite has a filename, that’s rendered first in bold bright white. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons (` » `). 
+If _filename_ is defined, that’s rendered first in bold bright white. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons (` » `). 
 
 [Back to top](#reporting-api)
 
 
 ## testRenderer.renderNameOnMultipleLines()
 
-* testRenderer.renderNameOnMultipleLines(testResult: [TestResult](#testresult)): string
+* testRenderer.renderNameOnMultipleLines(name: string[], filename?: string): string
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-If the test or suite has a filename, that’s rendered first. Next comes the name of the outermost suites down to the parent suite, from left to right, separated by chevrons (` » `). Finally, the name of test result is rendered on the following line.
+If _filename_ is defined, that’s rendered first. Next comes the elements of the _name_ array separated by chevrons (` » `). The final name (typically the test result) is rendered on the following line.
 
-The whole string is rendered in bold bright white.
+The first name (typically the filename) and the last name (typically the test name) are rendered in bold bright white.
 
 [Back to top](#reporting-api)
 
 
 ## testRenderer.renderMarkAsSingleWord()
 
-* testRenderer.renderMarkAsSingleWord(testResult: [TestResult](#testresult)): string
+* testRenderer.renderMarkAsSingleWord(mark: [TestMarkValue](automation_api.md#testmarkvalue)): string
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Renders the mark of the test or suite as a color-coded string, as follows:
+Renders _mark_ as a color-coded string, as follows:
 
 * *no mark:* `(no mark)` in default color
 * *.only:* `.only` in bright cyan
@@ -345,7 +349,7 @@ Renders the mark of the test or suite as a color-coded string, as follows:
 
 ## testRenderer.renderStatusAsSingleWord()
 
-* testRenderer.renderMarkAsSingleWord(testCaseResult: [TestCaseResult](#testcaseresult)): string
+* testRenderer.renderMarkAsSingleWord(status: [TestStatusValue](automation_api.md#teststatusvalue)): string
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
@@ -368,7 +372,7 @@ Renders the status of the test as a color-coded string, as follows:
 Renders the status of the test with all its details, as follows:
 
 * *pass:* `passed` in green
-* *fail:* The contents of [testCaseResult.errorRender](automation_api.md#runresulterrorrender)
+* *fail:* The contents of [testCaseResult.errorRender](automation_api.md#runresulterrorrender) (typically [renderError()](#rendererror))
 * *skip:* `skipped` in bright cyan
 * *timeout:* `Timed out after ###ms` in purple
 
@@ -381,17 +385,17 @@ Renders the status of the test with all its details, as follows:
 ## renderError()
 
 * import { renderError } from "ergotest/test_renderer.js"
-* renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown
+* renderError(name: string[], error: unknown, filename?: string): unknown
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
 Renders an error into a color-coded, human-readable explanation.  
  
-If `error.stack` is defined, it renders the stack trace by calling [renderStack()](#renderstack). Then, if `error.message` is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
+If _error.stack_ is defined, it renders the stack trace by calling [renderStack()](#renderstack). Then, if _error.message_ is defined, it adds a blank line, renders the name of the test in bright white—without suite names—followed by the error message in red on a separate line. 
 
-If `error.stack` isn’t defined, it just converts `error` to a string and renders it in red.
+If _error.stack_ isn’t defined, it just converts _error_ to a string and renders it in red.
 
-Finally, if `error` is an `AssertionError`, it adds a blank line and renders the expected and actual results by calling [renderDiff()](#renderdiff).
+Finally, if _error_ is an _AssertionError_, it adds a blank line and renders the expected and actual results by calling [renderDiff()](#renderdiff).
 
 [Back to top](#reporting-api)
 
@@ -403,9 +407,9 @@ Finally, if `error` is an `AssertionError`, it adds a blank line and renders the
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Renders an error by calling `util.inspect()` with infinite depth. If the error is an `AssertionError`, only the stack is rendered; otherwise, the entire error is rendered.
+Renders an error by calling `util.inspect()` with infinite depth. If the error is an _AssertionError_, only the stack is rendered; otherwise, the entire error is rendered.
 
-If `filename` is provided, highlights any items in the stack trace that reference the test’s filename by adding an arrow (`-->`) and coloring them bold bright white.
+If _filename_ is provided, highlights any items in the stack trace that reference the test’s filename by adding an arrow (`-->`) and coloring them bold bright white.
 
 [Back to top](#reporting-api)
 

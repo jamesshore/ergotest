@@ -578,7 +578,7 @@ This is a convenience method. For more control over rendering, use the [Reportin
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render this test as a single color-coded line containing its status and name. If the test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered as a separate line.
+Render this test as a single color-coded line containing its status and name. If the test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered as an indented separate line.
 
 This is a convenience method. For more control over rendering, use the [Reporting API](reporting_api.md) instead.
 

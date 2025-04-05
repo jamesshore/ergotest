@@ -99,8 +99,7 @@ TO DO:
 * Remove TestCaseResult.errorMessage, .errorRender, and .timeout
 * Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, RunResult from index.js
 * Test watchdog failures (module load, child processes) should call onTestCaseResult.
-* Update documentation
-  * Revise TestRenderer
+* Update changelog
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
