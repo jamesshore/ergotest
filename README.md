@@ -19,9 +19,9 @@ Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running
 I built Ergotest because I wanted a tool I could automate easily. Compared to other testing tools, Ergotest is:
 
 * Designed for automation, with an easy-to-use automation API
-* Simple to understand, with thorough documentation
-* Small and easy to audit, with no dependencies
-* Very fast
+* Thoroughly documented and easy to understand
+* Small and dependency-free (easy to audit!)
+* Straightforward, reliable, and fast
 
 Despite its size, Ergotest is a modern test library with support for all the most important features:
 
@@ -37,12 +37,12 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
 
-Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests real-worldScript code in about half a second. 
+Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests real-world TypeScript code in about half a second. 
 
 
 ## Wait for v1.0?
 
-Although Ergotest is battle-tested, I'm still refining the API. It’s possible there will be some breaking API changes, although they shouldn't be significant. Until v1.0 is released, everything is subject to change, so you might want to wait.
+Although Ergotest is battle-tested, I'm still refining the API. It’s possible there will be some breaking API changes, although they shouldn't be significant. The test API is stable and very unlikely to change. Even so, until v1.0 is released, everything is subject to change. You might want to wait.
 
 
 ## Example Tests
@@ -77,7 +77,7 @@ Other than that, Ergotest is designed for experienced practitioners using test-d
 * **no test coverage**
 * **no benchmarking**
 
-Ergotest is designed to be run using the API, not from the command line. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
+Ergotest is designed to be run using its API, not from the command line. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
 
 
 ## Installation
