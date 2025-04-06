@@ -16,6 +16,10 @@ Links to other documentation:
 In this document:
 
 * **[Start Here](#start-here)**
+  * [Using Ergotest's built-in rendering functions](#using-ergotests-built-in-rendering-functions)
+  * [Customizing Ergotest’s built-in rendering functions](#customizing-ergotests-built-in-rendering-functions)
+  * [Customizing error rendering](#customizing-error-rendering)
+  * [Writing your own renderer](#writing-your-own-renderer)
 * [TestRenderer](#testrenderer)
   * [TestRenderer.create()](#testrunnercreate)
   * [testRenderer.renderSummary()](#testrendererrendersummary)
@@ -179,7 +183,7 @@ const result = await testRunner.runInChildProcessAsync(files, options);
 Ergotest will import your custom module and call _renderError()_ every time a test fails. It stores the result of that call in [TestCaseResult.errorRender](automation_api.md#runresulterrorrender). Ergotest's built-in rendering functions, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender) and [TestRenderer](#testrenderer), will use the result automatically.
 
 
-### Writing your own renderers
+### Writing your own renderer
 
 For maximum control, you can ignore [TestRenderer](#testrenderer) and write your own renderer using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
 
@@ -256,7 +260,7 @@ export function renderTap(suite: TestSuiteResult) {
 
 * import { TestRenderer } from "ergotest/test_renderer.js"
 
-`TestRenderer` is a utility class for converting test results into strings. For most people, the `renderXxx()` convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Customizing result rendering](#customizing-result-rendering) above.
+`TestRenderer` is a utility class for converting test results into strings. For most people, the _renderXxx()_ convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Start Here](#start-here) above.
 
 [Back to top](#reporting-api)
 
@@ -265,7 +269,7 @@ export function renderTap(suite: TestSuiteResult) {
 
 * TestRenderer.create(): TestRenderer
 
-Create a `TestRenderer` instance.
+Create a _TestRenderer_ instance.
 
 [Back to top](#reporting-api)
 
@@ -276,14 +280,14 @@ Create a `TestRenderer` instance.
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Convert a `testSuiteResult` into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded and rendered in the following order:
+Convert a [testSuiteResult](automation_api.md#testsuiteresult) into a single line containing the number of tests that passed, failed, etc.. If there were no tests for a particular status, that status is left out. The statuses are color-coded and rendered in the following order:
 
 * *failed:* bright red
 * *timed out:* purple
 * *skipped:* cyan
 * *passed:* green
 
-If `elapsedMs` is defined, the summary will include the average amount of time required for each test in grey. This is a simple division operation; it’s up to you to determine the elapsed time correctly.
+If _elapsedMs_ is defined, the summary will include the average amount of time required for each test in grey. This is a simple division operation; it’s up to you to determine the elapsed time correctly.
 
 [Back to top](#reporting-api)
 
@@ -310,7 +314,9 @@ Render the results as consecutive color-coded characters representing the tests�
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render the results as a series of color-coded lines, each containing the test's status and name. If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered as an indented separate line.
+Render the results as a series of color-coded lines, each containing the test's status and name.
+
+If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each sub-result will be rendered on an additional line, indented under the top-level test result with an arrow (`  -->  `).
 
 Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword) and [testRenderer.renderNameOnOneLine()](#testrendererrendernameononeline). 
 
@@ -323,7 +329,9 @@ Under the covers, this calls [testRenderer.renderStatusAsSingleWord()](#testrend
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render the results with detailed explanations of each result, each separated by two blank lines. If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each _beforeEach()_ and _afterEach()_ result will also be rendered in its full detail.  
+Render the results with detailed explanations of each result, each separated by two blank lines.
+
+If a test has unusual [beforeEach()](#testcaseresultbeforeeach) or [afterEach()](#testcaseresultaftereach) results (for example, if one of them failed), each sub-result will be rendered in its full detail, with the test name indented with three chevrons (`»»» `). After the final sub-result, an additional line with inverse chevrons will be rendered (`«««`).
 
 Under the covers, this calls [testRenderer.renderNameOnMultipleLines()](#testrendererrendernameonmultiplelines) and [testRenderer.renderStatusWithMultiLineDetails()](#testrendererrenderstatuswithmultilinedetails).
 
@@ -348,7 +356,14 @@ Render _testResults_ as a series of consecutive lines containing the test mark a
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-If _filename_ is defined, that’s rendered first in bold bright white. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons (` » `). 
+If _filename_ is defined, that’s rendered first. Next comes the names of the outermost suites down to the name of the the result, from left to right, separated by chevrons.
+
+```
+my_file.ts » my suite » my test
+```
+
+The filename, if it exists, is rendered in bold bright white.
+
 
 [Back to top](#reporting-api)
 
@@ -359,9 +374,14 @@ If _filename_ is defined, that’s rendered first in bold bright white. Next com
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-If _filename_ is defined, that’s rendered first. Next comes the elements of the _name_ array separated by chevrons (` » `). The final name (typically the test result) is rendered on the following line.
+If _filename_ is defined, that’s rendered first. Next comes the elements of the _name_ array separated by chevrons (` » `). The final name (typically the test result) is rendered on the following line with a chevron in front.
 
-The first name (typically the filename) and the last name (typically the test name) are rendered in bold bright white.
+```
+my_file.ts » my suite
+» my test
+```
+
+The first element (typically the filename) and the last element (typically the test name) are rendered in bold bright white.
 
 [Back to top](#reporting-api)
 
@@ -407,9 +427,11 @@ Renders the status of the test as a color-coded string, as follows:
 Renders the status of the test with all its details, as follows:
 
 * *pass:* `passed` in green
-* *fail:* The contents of [testCaseResult.errorRender](automation_api.md#runresulterrorrender) (typically [renderError()](#rendererror))
+* *fail:* The contents of [testCaseResult.errorRender](automation_api.md#runresulterrorrender) (typically generated by [renderError()](#rendererror))
 * *skip:* `skipped` in bright cyan
 * *timeout:* `Timed out after ###ms` in purple
+
+Despite the name of this method, only the _fail_ case results in multiple lines being rendered.
 
 [Back to top](#reporting-api)
 
@@ -444,7 +466,7 @@ Finally, if _error_ is an _AssertionError_, it adds a blank line and renders the
 
 Renders an error by calling `util.inspect()` with infinite depth. If the error is an _AssertionError_, only the stack is rendered; otherwise, the entire error is rendered.
 
-If _filename_ is provided, highlights any items in the stack trace that reference the test’s filename by adding an arrow (`-->`) and coloring them bold bright white.
+If _filename_ is provided, any lines in the stack trace that reference the test’s filename are highlighted by adding an arrow (`-->`) and coloring them bold bright yellow.
 
 [Back to top](#reporting-api)
 
@@ -456,11 +478,11 @@ If _filename_ is provided, highlights any items in the stack trace that referenc
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Renders the `expected` and `actual` values of `error` as consecutive lines, with highlighting to make comparing the results easier. If `error` doesn’t have `expected` and `actual` values, returns an empty string.
+Renders the _error.expected_ and _error.actual_ as consecutive lines, with highlighting to make comparing the results easier. If they're undefined, returns an empty string.
 
-Renders `expected:` first in green, followed by the expected value in the default color. It’s converted to a string by calling `util.inspect()` with infinite depth.
+The expected value starts with the string `expected: ` in green, followed by _error.expected_ in the default color. It’s converted to a string by calling `util.inspect()` with infinite depth. 
 
-Then it renders `actual:  ` in red on the following line, with padding after the colon to make the results line up, followed by the actual value in the default color. This is also converted to a string by calling `util.inspect()`.
+The actual value starts with the string `actual:  ` in red, with padding after the colon to make the results line up, followed by _error.actual_ in the default color. This is also converted to a string by calling `util.inspect()`.
 
 If the rendered values are more than one line, the strings are compared line by line. Any lines that are different are highlighted by coloring them bold bright yellow.
 
