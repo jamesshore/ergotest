@@ -31,7 +31,7 @@ export class Runnable {
 		return this._fnAsync;
 	}
 
-	async runTestFnAsync(
+	async runAsync(
 		runOptions: RunOptions,
 		runData: RunData,
 	): Promise<RunResult> {

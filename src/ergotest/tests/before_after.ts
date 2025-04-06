@@ -17,16 +17,16 @@ export class BeforeAfter {
 		options?: ItOptions,
 		fnAsync: ItFn,
 	}) {
-		return new BeforeAfter(name, options, fnAsync);
+		return new BeforeAfter(Runnable.create(name, options, fnAsync));
 	}
 
-	constructor(name: string[], options: ItOptions, fnAsync: ItFn) {
-		this._runnable = Runnable.create(name, options, fnAsync);
+	constructor(runnable: Runnable) {
+		this._runnable = runnable;
 	}
 
 	async runBeforeAfterAllAsync(runOptions: RunOptions, runData: RunData) {
 		const result = TestCaseResult.create({
-			it: await this._runnable.runTestFnAsync(runOptions, runData),
+			it: await this._runnable.runAsync(runOptions, runData),
 		});
 		runOptions.onTestCaseResult(result);
 
@@ -34,6 +34,6 @@ export class BeforeAfter {
 	}
 
 	async runBeforeAfterEachAsync(runOptions: RunOptions, runData: RunData) {
-		return await this._runnable.runTestFnAsync(runOptions, runData);
+		return await this._runnable.runAsync(runOptions, runData);
 	}
 }
