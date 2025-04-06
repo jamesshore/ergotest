@@ -7,26 +7,21 @@ import { TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { fromModulesAsync } from "./loader.js";
+import * as test from "node:test";
 // dependency: ../_renderer_custom.js
-// dependency: ./_module_passes.js
-// dependency: ./_module_throws.js
-// dependency: ./_module_no_export.js
 
 const INDEX_PATH = path.resolve(import.meta.dirname, "../index.js");
 const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_custom.js");
 
-const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
-const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
-const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
-
 export default describe(() => {
 
-	let TEST_MODULE_PATH: string;
+	let testModulePath: string;
+	let nonce = 1;
 
 	beforeEach(async ({ getConfig }) => {
 		const testDir = getConfig<string>("scratchDir");
 
-		TEST_MODULE_PATH = `${testDir}/_test_runner_module.js`;
+		testModulePath = `${testDir}/_test_runner_module_${nonce++}.js`;
 		await deleteTempFilesAsync(testDir);
 	});
 
@@ -34,25 +29,26 @@ export default describe(() => {
 	describe("module loader", () => {
 
 		it("creates test suite from a module (and sets filename on result)", async () => {
-			const suite = await fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
+			await writeTestModuleAsync("");
+			const suite = await fromModulesAsync([ testModulePath, testModulePath ]);
 
-			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
+			const testCaseResult = createPass({ name: "test", filename: testModulePath });
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({ tests: [
-					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
-					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
+					createSuite({ tests: [ testCaseResult ], filename: testModulePath }),
+					createSuite({ tests: [ testCaseResult ], filename: testModulePath }),
 				]}),
 			);
 		});
 
 		it("fails gracefully if module isn't an absolute path", async () => {
-			const suite = await fromModulesAsync([ "./_module_passes.js" ]);
+			const suite = await fromModulesAsync([ "./arbitrary_module.js" ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.equal(result.name, [ "error when importing _module_passes.js" ]);
+			assert.equal(result.name, [ "error when importing arbitrary_module.js" ]);
 			assert.isUndefined(result.filename);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "Test module filenames must use absolute paths: ./_module_passes.js");
+			assert.equal(result.errorMessage, "Test module filenames must use absolute paths: ./arbitrary_module.js");
 		});
 
 		it("fails gracefully if module doesn't exist", async () => {
@@ -65,26 +61,40 @@ export default describe(() => {
 			assert.equal(result.errorMessage, `Test module not found: /no_such_module.js`);
 		});
 
-		it("BUG: it doesn't think an import failure means the module doesn't exist");
+		it.skip("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
+			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from './no_such_module.js'");
 
-		it("fails gracefully if module fails to require()", async () => {
-			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await fromModulesAsync([ testModulePath ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.equal(result.name, [ "error when importing _module_throws.js" ]);
-			assert.equal(result.filename, THROWS_MODULE_PATH);
+			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
+			assert.equal(result.filename, testModulePath);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "my require error");
+			assert.equal(result.errorMessage, `TBD`);
+		});
+
+		it("fails gracefully if module throws an exception while being loaded", async () => {
+			await fs.writeFile(testModulePath, "throw new Error('my import error')");
+
+			const suite = await fromModulesAsync([ testModulePath ]);
+			const result = (await suite.runAsync()).allTests()[0];
+
+			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
+			assert.equal(result.filename, testModulePath);
+			assert.equal(result.status, TestStatus.fail);
+			assert.equal(result.errorMessage, "my import error");
 		});
 
 		it("fails gracefully if module doesn't export a test suite", async () => {
-			const suite = await fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
+			await fs.writeFile(testModulePath, "");
+
+			const suite = await fromModulesAsync([ testModulePath ]);
 			const result = (await suite.runAsync()).allTests()[0];
 
-			assert.equal(result.name, [ "error when importing _module_no_export.js" ]);
-			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
+			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
+			assert.equal(result.filename, testModulePath);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
+			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${testModulePath}`);
 		});
 
 	});
@@ -97,7 +107,7 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
-			const results = await runner.runInCurrentProcessAsync([ TEST_MODULE_PATH ], { config: myConfig });
+			const results = await runner.runInCurrentProcessAsync([ testModulePath ], { config: myConfig });
 
 			assertFailureMessage(results, "my_config");
 		});
@@ -113,11 +123,11 @@ export default describe(() => {
 			const { runner } = await createAsync();
 			await writeTestModuleAsync(`// passes`);
 
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const results = await runner.runInChildProcessAsync([ testModulePath ]);
 
 			const expectedResult = createSuite({ tests: [
-				createSuite({ filename: TEST_MODULE_PATH, tests: [
-					createPass({ name: "test", filename: TEST_MODULE_PATH })
+				createSuite({ filename: testModulePath, tests: [
+					createPass({ name: "test", filename: testModulePath })
 				]}),
 			]});
 
@@ -129,7 +139,7 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { config: myConfig });
+			const results = await runner.runInChildProcessAsync([ testModulePath ], { config: myConfig });
 
 			assertFailureMessage(results, "my_config");
 		});
@@ -138,7 +148,7 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`throw new Error();`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], {
+			const results = await runner.runInChildProcessAsync([ testModulePath ], {
 				renderer: CUSTOM_RENDERER_PATH,
 			});
 
@@ -152,10 +162,10 @@ export default describe(() => {
 			const onTestCaseResult = (result: TestResult) => progress.push(result);
 
 			await writeTestModuleAsync(`// passes`);
-			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], { onTestCaseResult });
+			await runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
 
 			assert.equal(progress, [
-				createPass({ name: "test", filename: TEST_MODULE_PATH }),
+				createPass({ name: "test", filename: testModulePath }),
 			]);
 		});
 
@@ -163,10 +173,10 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
-			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			await runner.runInChildProcessAsync([ testModulePath ]);
 
 			await writeTestModuleAsync(`throw new Error("module was not cached");`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const results = await runner.runInChildProcessAsync([ testModulePath ]);
 
 			assertFailureMessage(results, "module was not cached");
 		});
@@ -175,10 +185,10 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`global._test_runner_test = true;`);
-			await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			await runner.runInChildProcessAsync([ testModulePath ]);
 
 			await writeTestModuleAsync(`throw new Error("global should be undefined: " + global._test_runner_test);`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const results = await runner.runInChildProcessAsync([ testModulePath ]);
 
 			assertFailureMessage(results, "global should be undefined: undefined");
 		});
@@ -190,7 +200,7 @@ export default describe(() => {
 				process.chdir(".");
 				throw new Error("process.chdir() should execute without error");
 			`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ]);
+			const results = await runner.runInChildProcessAsync([ testModulePath ]);
 
 			assertFailureMessage(results, "process.chdir() should execute without error");
 		});
@@ -202,7 +212,7 @@ export default describe(() => {
 			const { runner } = await createAsync();
 
 			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
-			const results = await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
+			const results = await runner.runInChildProcessAsync([ testModulePath ], options);
 
 			assert.dotEquals(results, createSuite({ tests: [
 				createFail({ name: "Unhandled error in tests", error: new Error("my error") }),
@@ -217,7 +227,7 @@ export default describe(() => {
 			const { runner, clock } = await createAsync();
 
 			await writeTestModuleAsync(`while (true);`);
-			const resultsPromise = runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options);
+			const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], options);
 
 			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
 			const results = await resultsPromise;
@@ -236,7 +246,7 @@ export default describe(() => {
 			await writeTestModuleAsync(`// passes`);
 
 			await assert.errorAsync(
-				() => runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options),
+				() => runner.runInChildProcessAsync([ testModulePath ], options),
 				/Renderer module not found/,
 			);
 		});
@@ -274,7 +284,7 @@ export default describe(() => {
 					}
 				`
 			);
-			const result = getTestResult(await runner.runInChildProcessAsync([ TEST_MODULE_PATH ], options));
+			const result = getTestResult(await runner.runInChildProcessAsync([ testModulePath ], options));
 
 			// This assertion is vulnerable to changes in util.inspect()'s rendering algorithm
 			assert.equal(result.errorRender,
@@ -295,7 +305,7 @@ export default describe(() => {
 	}
 
 	async function writeTestModuleAsync(testSourceCode: string, variableDefinition = "") {
-		await fs.writeFile(TEST_MODULE_PATH, `
+		await fs.writeFile(testModulePath, `
 			import { assert, describe, it } from ` + `"${INDEX_PATH}";
 			
 			${variableDefinition}
