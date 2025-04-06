@@ -58,11 +58,14 @@ export default describe(() => {
 			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
 			assert.equal(result.filename, "/no_such_module.js");
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Test module not found: /no_such_module.js`);
+			assert.equal(
+				result.errorMessage,
+				`Cannot find module '/no_such_module.js' imported from ${path.resolve(import.meta.dirname, "./loader.js")}`
+			);
 		});
 
-		it.skip("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
-			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from './no_such_module.js'");
+		it("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
+			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from '/no_such_module.js'");
 
 			const suite = await fromModulesAsync([ testModulePath ]);
 			const result = (await suite.runAsync()).allTests()[0];
@@ -70,7 +73,7 @@ export default describe(() => {
 			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
 			assert.equal(result.filename, testModulePath);
 			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `TBD`);
+			assert.equal(result.errorMessage, `Cannot find module '/no_such_module.js' imported from ${testModulePath}`);
 		});
 
 		it("fails gracefully if module throws an exception while being loaded", async () => {
