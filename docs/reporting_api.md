@@ -37,59 +37,82 @@ In this document:
 
 > **The Golden Rule:** Don't use constructors to instantiate Ergotest classes. Constructors are reserved for internal use only in this codebase.
 
-Most people can ignore the reporting API. The [automation API](automation_api.md) is enough for most uses. But if you want even more customization, this document has what you need.
+**This document is for advanced users** who want to customize their test output. For basic usage, see the [automation API](automation_api.md) documentation instead.
 
 Reporting is split into two parts in Ergotest:
 
-* _Result rendering_, which converts a test result into a string. Your build calls these functions. 
-* _Error rendering_, which converts an error object into a string and sets the [testCaseResult.errorRender](automation_api.md#runresulterrorrender) property. Ergotest calls this function automatically when a test fails.
+* _Result rendering_, which converts test results into strings. Your build calls these functions. 
+* _Error rendering_, which converts errors into strings and sets the [testCaseResult.errorRender](automation_api.md#runresulterrorrender) property. Ergotest calls this function automatically when tests fail.
+
+You can use Ergotest's built-in rendering functions as-is, override part of their behavior, or write your own rendering functions. 
 
 
-### Customizing result rendering
+### Using Ergotest's built-in rendering functions
 
-Most people only use result rendering. For example, the example in the [Automation API documentation](automation_api.md#start-here) uses `result.render()` to output the overall test results and `testCase.renderAsCharacter()` to output progress:
+The [Automation API](automation_api.md#start-here) includes convenience methods, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender), that render the results of a test suite. If you don't like its default rendering, you can use the automation API and the rendering API to customize the results without a lot of extra work.
 
-```javascript
-import { TestRunner } from "ergotest/test_runner.js";
+For example, [testSuiteResult.render()](automation_api.md#testsuiteresultrender) displays a summary list of marked suites and tests, a detailed list of test failures and timeouts, and a summary of the test results. If you only wanted to display detailed results for test failures, and summary results for timeouts, you could use the automation API and rendering API as follows:
 
-// ... (see the automation API documentation for the full example)
+```typescript
+import { TestRunner, TestRenderer } from "ergotest";
 
-const result = await testRunner.runInChildProcessAsync(files, { 
-  onTestCaseResult: reportProgress, 
-});
-console.log("\n" + result.render("\n") + "\n");
+// ... (running the tests is the same as the automation API example)
 
-function reportProgress(testCase) {
-  process.stdout.write(testCase.renderAsCharacter());
+const result = await testRunner.runInChildProcessAsync(files, { onTestCaseResult });
+
+// Use the automation API to get the different types of tests
+const failedTests = result.allMatchingTests(TestStatus.fail);
+const timedOutTests = results.allMatchingTests(TestStatus.timeout); 
+
+// Create the renderer
+const renderer = TestRenderer.create();
+
+// Check for existence of timed-out tests so we don't write blank lines
+if (timedOutTests.length > 0) {
+  // Display one line for each timed-out test
+  console.log("\n" + renderer.renderAsSingleLines(timedOutTests));
+}
+
+// Check for existence of failed tests so we don't write blank lines 
+if (failedTests.length > 0) {
+  // Display the failed tests in detail
+  console.log("\n" + renderer.renderAsMultipleLines(failedTests));
 }
 ```
 
-If you want to have more fine-grained control over your test output, use the [TestRenderer](#testrenderer) class. It allows you to pick and choose what you'd like to report.
+Each rendering API returns a color-coded string. Some rendering functions include newlines within the string, but they never start or end with a newline, so you have to add separators yourself.
 
-For example, the default [testSuiteResult.render()](automation_api.md#testsuiteresultrender) method displays skipped tests, timeouts, failures a summary of test counts, and more. If you only want to display failed tests and nothing else, you could do this:
 
-```javascript
-// Run the tests
-const result = await testRunner.runInChildProcessAsync(/* ... */);
+### Customizing Ergotest’s built-in rendering functions
 
-// Get the failed tests from the test results
-const failedTests = result.allMatchingTests(TestStatus.fail);
+If you like the output of the rendering API, but want to customize specific behavior, subclass [TestRenderer](#testrenderer) and override its helper methods.  The API documentation describes the helper methods in detail, including when they're called, so you can know which ones to override.
 
-// Display failed tests
-const renderer = TestRenderer.create();
-console.log(renderer.renderAsMultipleLines(failedTests));
-```
-
-Of course, for the maximum control possible, you can ignore `TestRenderer` entirely and write your own rendering using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
-
-For a happy middle ground between control and reuse, consider subclassing `TestRenderer` and overriding specific methods. For example, if you like how [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) works, but you want it to display emojis for status, override [testRenderer.renderStatusAsSingleWord](#testrendererrenderstatusassingleword)():
+For example, [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) displays the result of a test on a single line, like this (except color-coded and highlighted):
 
 ```typescript
+pass my_file.js » my suite » does a thing
+```
+
+It also has some complicated logic to handle the case when [beforeEach()](test_api.md#beforeeach) or [afterEach()](test_api.md#aftereach) fail:
+
+```typescript
+failed my_file.js » my suite » does a thing
+  -->  pass the test itself
+  -->  pass my_file.js » my suite » beforeEach()
+  -->  failed my_file.js » my suite » afterEach()
+```
+
+If you didn't want to reimplement all that logic, but you wanted to use emojis for the status, you could subclass [TestRenderer](#testrenderer) and override [testRenderer.renderStatusAsSingleWord()](#testrendererrenderstatusassingleword), like this:
+
+```typescript
+import { TestRunner, TestRenderer } from "ergotest";
+
 // Define a custom renderer
 class EmojiRenderer extends TestRenderer {
   static create() {
     return new EmojiRenderer();
   }
+	
   renderStatusAsSingleWord(status: TestStatusValue) {
     switch (status) {
       case TestStatus.pass: return "✅";
@@ -102,15 +125,25 @@ class EmojiRenderer extends TestRenderer {
   }
 }
 
-// Run the tests
-const result = await testRunner.runInChildProcessAsync(/* ... */);
-
-// Get the individual test results
-const tests = result.allTests();
-
-// Display test results
+// Create the custom renderer
 const renderer = EmojiRenderer.create();
-console.log(renderer.renderAsSingleLines(tests));
+
+// This function will be called every time a test finishes running
+function onTestCaseResult(testCase) {
+  // Output the test result using the new renderer
+  console.log(renderer.renderAsSingleLines(testCase));
+}
+
+// ... (running the tests is the same as the automation API example)
+```
+
+This will result in the same output as before, but with the status rendering changed:
+
+```typescript
+❌ my_file.js » my suite » does a thing
+  -->  ✅ the test itself
+  -->  ✅ my_file.js » my suite » beforeEach()
+  -->  ❌ my_file.js » my suite » afterEach()
 ```
 
 See the [TestRenderer](#testrenderer) documentation for details about how each method works and what other methods they call.
@@ -118,14 +151,13 @@ See the [TestRenderer](#testrenderer) documentation for details about how each m
 
 ### Customizing error rendering
 
-The test results don’t include the error object that caused a test to fail. That's because Ergotest runs its tests in a worker process, by default, and serializing error objects across the process boundary can result in data loss. As a result, errors have to be handled inside the worker process.
+Error rendering is special. Errors are rendered to strings as soon as they fail, rather than afterward like the rest of the rendering API, because Ergotest runs tests in a worker process by default. Errors have to be rendered inside the worker process to avoid data loss.
 
 To customize how errors are rendered, create a module that exports a `renderError()` function. It needs to have a signature matching the [RenderErrorFn](automation_api.md#rendererrorfn) type:
 
-* `renderError(names: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown;`
+renderError(names: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown;
 * _names:_ Same as [testCaseResult.name](automation_api.md#testcaseresultname).
-* _error:_ The error that caused the test to fail. Although it's usually an `Error` instance, it could be any data type, including a string.
-* _mark:_ Same as [testCaseResult.mark](automation_api.md#testcaseresultmark).
+* _error:_ The error that caused the test to fail. Although it's usually an _Error_ instance, it could be any data type, including a string.
 * _filename:_ Same as [testCaseResult.filename](automation_api.md#testcaseresultfilename).
 
 Next, provide the path of the module in your [TestOptions](automation_api.md#testoptions]). It needs to either be an absolute path or the name of a node module. You can use `path.resolve()` to figure out the absolute path:
@@ -144,14 +176,16 @@ const result = await testRunner.runInChildProcessAsync(files, options);
 // ...
 ```
 
-The worker process will import your custom module and call its `renderError()` function every time a test fails. It stores the result of that call in [TestCaseResult.errorRender](automation_api.md#runresulterrorrender). Ergotest's built-in rendering functions, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender) and [TestRenderer](#testrenderer), will use the result automatically.
+Ergotest will import your custom module and call _renderError()_ every time a test fails. It stores the result of that call in [TestCaseResult.errorRender](automation_api.md#runresulterrorrender). Ergotest's built-in rendering functions, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender) and [TestRenderer](#testrenderer), will use the result automatically.
 
 
-### Total customization
+### Writing your own renderers
 
-If you want to completely customize your output, you can create your own result renderer and error renderers. It's convenient to put them in the same file. Here's an example of a build that outputs [TAP (Test Anything Protocol)](https://testanything.org/):
+For maximum control, you can ignore [TestRenderer](#testrenderer) and write your own renderer using the properties on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult).  
 
-> **Warning:** This is just an example. It's not meant to be an accurate or complete implementation of TAP. In particular, it doesn't display error messages when _beforeEach()_ or _afterEach()_ fail.
+Here's an example of a renderer that outputs [TAP (Test Anything Protocol)](https://testanything.org/):
+
+> **Warning:** This is just an example. It's not meant to be an accurate or complete implementation of TAP. In particular, it doesn't handle the edge cases that occur when _beforeEach()_ or _afterEach()_ fail.
 
 ```typescript
 // build.js - The build file
@@ -176,7 +210,8 @@ console.log(renderTap(result));
 import { TestMarkValue, TestStatus } from "ergotest/test_result.js";
 import util from "node:util";
 
-// called by Ergotest when a test fails
+// Called by Ergotest when a test fails
+// The output of this function is stored in testCaseResult.errorRender
 export function renderError(name: string[], error: unknown, mark: TestMarkValue, filename?: string) {
   let result = "  ---\n";
   result += "  error: " + util.inspect(error, { depth: Infinity }) + "\n";
@@ -188,7 +223,7 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
   return result;
 }
 
-// called by the build
+// Called by the last line of the build file above
 export function renderTap(suite: TestSuiteResult) {
   const { total } = suite.count();
   const tests = suite.allTests();
