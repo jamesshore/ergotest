@@ -1,11 +1,13 @@
 import { TestCaseResult, TestMarkValue } from "../results/test_result.js";
 import { RunData, RunOptions } from "./test_suite.js";
-import { Runnable } from "./runnable.js";
 import { Test } from "./test.js";
 import { ItFn, ItOptions } from "./test_api.js";
-export declare class TestCase extends Runnable implements Test {
+export declare class TestCase implements Test {
     #private;
-    private _mark;
+    protected readonly _name: string[];
+    private readonly _mark;
+    private readonly _fnAsync?;
+    private readonly _runnable;
     static create({ name, mark, options, fnAsync, }: {
         name: string[];
         mark?: TestMarkValue;

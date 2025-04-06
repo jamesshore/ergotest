@@ -1,27 +1,24 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { RunResult, TestCaseResult } from "../results/test_result.js";
+import { TestCaseResult } from "../results/test_result.js";
 import { Runnable } from "./runnable.js";
-export class BeforeAfter extends Runnable {
+export class BeforeAfter {
+    _runnable;
     static create({ name, options = {}, fnAsync }) {
-        return new BeforeAfter(name, options, fnAsync);
+        return new BeforeAfter(Runnable.create(name, options, fnAsync));
+    }
+    constructor(runnable){
+        this._runnable = runnable;
     }
     async runBeforeAfterAllAsync(runOptions, runData) {
         const result = TestCaseResult.create({
-            it: await this._runAsyncInternal(runOptions, runData)
+            it: await this._runnable.runAsync(runOptions, runData)
         });
         runOptions.onTestCaseResult(result);
         return result;
     }
     async runBeforeAfterEachAsync(runOptions, runData) {
-        return await this._runAsyncInternal(runOptions, runData);
-    }
-    async _runAsyncInternal(runOptions, runData) {
-        if (runData.skipAll) return RunResult.skip({
-            name: this.name,
-            filename: runData.filename
-        });
-        return await this._runTestFnAsync(runOptions, runData);
+        return await this._runnable.runAsync(runOptions, runData);
     }
 }
 
-//# sourceMappingURL=before_after.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/tests/before_after.js.map

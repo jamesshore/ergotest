@@ -1,4 +1,4 @@
-import { TestRunner } from "ergotest/test_runner.js";
+import { TestRunner } from "ergotest";
 import path from "node:path";
 
 const args = process.argv.slice(2);

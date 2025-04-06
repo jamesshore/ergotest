@@ -267,6 +267,7 @@ export const TestMark = {
 	 * @returns {TestCount} A summary count of this suite's results. Includes a count of each type of test result and the
 	 *   total number of tests.
 	 */ count() {
+        ensure.signature(arguments, []);
         const count = {
             [TestStatus.pass]: 0,
             [TestStatus.fail]: 0,
@@ -285,6 +286,7 @@ export const TestMark = {
 	 * @returns {SerializedTestSuiteResult} The serialized object.
 	 * @see TestResult.deserialize
 	 */ serialize() {
+        ensure.signature(arguments, []);
         return {
             type: "TestSuiteResult",
             name: this._name,
@@ -296,6 +298,9 @@ export const TestMark = {
         };
     }
     equals(that) {
+        ensure.signature(arguments, [
+            ensure.ANY_TYPE
+        ]);
         if (!(that instanceof TestSuiteResult)) return false;
         if (this._mark !== that._mark) return false;
         if (!compareTestResults(this._tests, that._tests)) return false;
@@ -806,4 +811,4 @@ function ensureValidMarks(marks) {
     });
 }
 
-//# sourceMappingURL=test_result.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_result.js.map

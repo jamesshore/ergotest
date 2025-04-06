@@ -1,24 +1,27 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { RunResult, TestCaseResult, TestMark, TestStatus } from "../results/test_result.js";
-import * as ensure from "../../util/ensure.js";
 import { Runnable } from "./runnable.js";
-export class TestCase extends Runnable {
+export class TestCase {
+    _name;
     _mark;
+    _fnAsync;
+    _runnable;
     static create({ name, mark = TestMark.none, options = {}, fnAsync = undefined }) {
         return new TestCase(name, options, fnAsync, mark);
     }
     constructor(name, options, fnAsync, mark){
-        super(name, options, fnAsync);
+        this._name = name;
+        this._fnAsync = fnAsync;
+        this._runnable = Runnable.create(name, options, fnAsync);
         this._mark = mark;
         if (fnAsync === undefined && mark === TestMark.none) this._mark = TestMark.skip;
     }
     /** @private */ _isDotOnly() {
-        ensure.signature(arguments, []);
         return this._mark === TestMark.only;
     }
     /** @private */ _isSkipped(parentMark) {
         const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
-        return inheritedMark === TestMark.skip || this.fnAsync === undefined;
+        return inheritedMark === TestMark.skip || this._fnAsync === undefined;
     }
     /** @private */ async _runAsyncInternal(runOptions, parentData) {
         const runData = this.#consolidateRunData(parentData);
@@ -35,15 +38,15 @@ export class TestCase extends Runnable {
         return result;
     }
     async #runTestAsync(runData, runOptions) {
-        if (this.fnAsync === undefined && this._mark === TestMark.only) {
+        if (this._fnAsync === undefined && this._mark === TestMark.only) {
             return RunResult.fail({
-                name: this.name,
+                name: this._name,
                 filename: runData.filename,
                 error: "Test is marked '.only', but it has no body",
                 renderError: runOptions.renderError
             });
         }
-        return await this._runTestFnAsync(runOptions, runData);
+        return await this._runnable.runAsync(runOptions, runData);
     }
     async #runBeforeAfterEachAsync(beforeAfter, isBeforeEach, runOptions, runData) {
         const results = [];
@@ -78,7 +81,7 @@ export class FailureTestCase extends TestCase {
     }
     async _runAsyncInternal(runOptions, parentData) {
         const it = RunResult.fail({
-            name: this.name,
+            name: this._name,
             filename: this._filename,
             error: this._error,
             renderError: runOptions.renderError
@@ -92,4 +95,4 @@ export class FailureTestCase extends TestCase {
     }
 }
 
-//# sourceMappingURL=test_case.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/tests/test_case.js.map

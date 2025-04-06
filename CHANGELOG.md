@@ -110,7 +110,6 @@ It's also resulted in these **breaking changes**, partially because I took advan
 * Removed TestSuite from the documentation; it's now for internal use only
 
 TO DO:
-* Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, TestResult, RunResult, TestStatus, TestStatusValue, TestMark, TestMarkValue, RenderErrorFn from index.js
 * Test watchdog failures (module load, child processes) should call onTestCaseResult.
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()

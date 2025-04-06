@@ -109,6 +109,7 @@ const summaryColor = Colors.brightWhite.dim;
 }
 export class TestRenderer {
     static create() {
+        ensure.signature(arguments, []);
         return new TestRenderer();
     }
     // can't use a normal constant due to a circular dependency between TestResult and TestRenderer
@@ -307,12 +308,18 @@ export class TestRenderer {
 	 * @param { TestStatusValue } status The status to render.
 	 * @returns {string} The color-coded status.
 	 */ renderStatusAsSingleWord(status) {
+        ensure.signature(arguments, [
+            String
+        ]);
         return TestRenderer.#DESCRIPTION_RENDERING[status];
     }
     /**
 	 * @param { RunResult } status The result to render.
 	 * @returns { string } The color-coded status, including error and timeout details where appropriate.
 	 */ renderStatusWithMultiLineDetails(runResult) {
+        ensure.signature(arguments, [
+            RunResult
+        ]);
         switch(runResult.status){
             case TestStatus.pass:
             case TestStatus.skip:
@@ -331,6 +338,9 @@ export class TestRenderer {
 	 * @param { TestMarkValue } mark The mark.
 	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
 	 */ renderMarkAsSingleWord(mark) {
+        ensure.signature(arguments, [
+            String
+        ]);
         switch(mark){
             case TestMark.none:
                 return "(no mark)";
@@ -367,4 +377,4 @@ function renderMultipleResults(testResults, separator, expectedType, renderFn) {
     return testResults.map((result)=>renderFn(result)).join(separator);
 }
 
-//# sourceMappingURL=test_renderer.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_renderer.js.map
