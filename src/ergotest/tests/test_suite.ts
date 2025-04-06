@@ -119,7 +119,7 @@ export class TestSuite implements Test {
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
 		onTestCaseResult = () => {},
-		renderer,
+		renderer = undefined,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [[ undefined, {

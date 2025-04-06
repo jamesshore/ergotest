@@ -1,13 +1,22 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { assert, beforeEach, createFail, createPass, createSuite, describe, it, TestStatus } from "../../util/tests.js";
+import {
+	assert,
+	beforeEach,
+	createFail,
+	createPass,
+	createSuite,
+	describe,
+	it,
+	TestStatus,
+} from "../../util/tests.js";
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "../tests/test_suite.js";
-import { TestResult, TestSuiteResult } from "../results/test_result.js";
+import { TestResult, TestSuiteResult, TestCaseResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { fromModulesAsync } from "./loader.js";
-import * as test from "node:test";
+
 // dependency: ../_renderer_custom.js
 
 const INDEX_PATH = path.resolve(import.meta.dirname, "../index.js");
@@ -98,6 +107,18 @@ export default describe(() => {
 			assert.equal(result.filename, testModulePath);
 			assert.equal(result.status, TestStatus.fail);
 			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${testModulePath}`);
+		});
+
+		it("triggers onTestCaseResult when module load fails", async () => {
+			let result: TestCaseResult | undefined;
+			function onTestCaseResult(_result: TestCaseResult) {
+				result = _result;
+			}
+
+			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+			await suite.runAsync({ onTestCaseResult });
+
+			assert.equal(result?.filename, "/no_such_module.js");
 		});
 
 	});
