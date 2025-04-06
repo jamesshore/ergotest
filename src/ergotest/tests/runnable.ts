@@ -9,6 +9,10 @@ export class Runnable {
 	private readonly _options: ItOptions;
 	private readonly _fnAsync?: ItFn;
 
+	static create(name: string[], options: ItOptions, fnAsync?: ItFn) {
+		return new Runnable(name, options, fnAsync);
+	}
+
 	constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined) {
 		this._name = name;
 		this._options = options;
@@ -27,7 +31,7 @@ export class Runnable {
 		return this._fnAsync;
 	}
 
-	async _runTestFnAsync(
+	async runTestFnAsync(
 		runOptions: RunOptions,
 		runData: RunData,
 	): Promise<RunResult> {

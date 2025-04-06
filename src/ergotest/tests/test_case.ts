@@ -75,7 +75,7 @@ export class TestCase extends Runnable implements Test {
 			});
 		}
 
-		return await this._runTestFnAsync(runOptions, runData);
+		return await this.runTestFnAsync(runOptions, runData);
 	}
 
 	async #runBeforeAfterEachAsync(
