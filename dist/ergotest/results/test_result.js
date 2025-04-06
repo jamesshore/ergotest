@@ -531,7 +531,7 @@ export const TestMark = {
         else return [];
     }
     /**
-	 * Convert this result into a bare object later deserialization.
+	 * Convert this result into a bare object for later deserialization.
 	 * @returns {object} The serialized object.
 	 * @see TestResult.deserialize
 	 */ serialize() {
@@ -806,4 +806,4 @@ function ensureValidMarks(marks) {
     });
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_result.js.map
+//# sourceMappingURL=test_result.js.map

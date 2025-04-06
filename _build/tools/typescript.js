@@ -109,7 +109,7 @@ export default class TypeScript {
 					report.debug(`\n    Source Map: ${sourceMapFile}`);
 
 					const { code, map } = await swc.transformFile(sourceFile, config);
-					const sourceMapLink = `\n//# sourceMappingURL=${sourceMapFile}\n`;
+					const sourceMapLink = `\n//# sourceMappingURL=${path.basename(sourceMapFile)}\n`;
 
 					await this._fileSystem.writeTextFileAsync(compiledFile, code + sourceMapLink);
 					await this._fileSystem.writeTextFileAsync(sourceMapFile, map);

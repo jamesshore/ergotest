@@ -2,4 +2,4 @@
 export * as assert from "./assert.js";
 export { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "./tests/test_api.js";
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/index.js.map
+//# sourceMappingURL=index.js.map

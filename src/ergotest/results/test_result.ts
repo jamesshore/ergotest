@@ -694,7 +694,7 @@ export class TestCaseResult extends TestResult {
 	}
 
 	/**
-	 * Convert this result into a bare object later deserialization.
+	 * Convert this result into a bare object for later deserialization.
 	 * @returns {object} The serialized object.
 	 * @see TestResult.deserialize
 	 */

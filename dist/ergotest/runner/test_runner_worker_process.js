@@ -83,4 +83,4 @@ function send(message) {
     process.send(message);
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/runner/test_runner_worker_process.js.map
+//# sourceMappingURL=test_runner_worker_process.js.map

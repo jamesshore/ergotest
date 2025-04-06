@@ -163,4 +163,4 @@ function isStruct(type) {
     return !prototype || prototype.constructor === Object;
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/util/type.js.map
+//# sourceMappingURL=type.js.map

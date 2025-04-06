@@ -18,14 +18,15 @@ Ergotest (pronounced *air-go-test)* is a Node.js library for writing and running
 
 I built Ergotest because I wanted a tool I could automate easily. Compared to other testing tools, Ergotest is:
 
-* Simple to understand, with thorough documentation
 * Designed for automation, with an easy-to-use automation API
-* Small and easy to audit, with no dependencies
-* Very fast
+* Thoroughly documented and easy to understand
+* Small and dependency-free (easy to audit!)
+* Straightforward, reliable, and fast
 
 Despite its size, Ergotest is a modern test library with support for all the most important features:
 
 * Supports TypeScript, JavaScript, and ES Modules
+* TypeScript types and JSDoc documentation
 * `describe()` for test suites, `it()` for tests (easily renamed, if you wish)
 * `beforeAll()`, `afterAll()`, `beforeEach()`, `afterEach()`
 * `.only` and `.skip` to select tests; they work across files and nest cleanly
@@ -35,14 +36,13 @@ Despite its size, Ergotest is a modern test library with support for all the mos
 * Timeouts, infinite loop detection, and uncaught exception detection
 * Test isolation using child processes
 * Concise, readable test output that's easy to customize
-* TypeScript types and JSDoc documentation
 
-Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests my TypeScript code in about 0.2 seconds. 
+Ergotest works particularly well with [Automatopia](https://github.com/jamesshore/automatopia). Together, they provide sophisticated build automation that automatically lints, compiles, and tests real-world TypeScript code in about half a second. 
 
 
 ## Wait for v1.0?
 
-Although Ergotest is battle-tested, I'm still refining the API. It’s possible there will be some breaking API changes, although they shouldn't be significant. Until v1.0 is released, everything is subject to change, so you might want to wait.
+Although Ergotest is battle-tested, I'm still refining the API. It’s possible there will be some breaking API changes, although they shouldn't be significant. The test API is stable and very unlikely to change. Even so, until v1.0 is released, everything is subject to change. You might want to wait.
 
 
 ## Example Tests
@@ -77,7 +77,7 @@ Other than that, Ergotest is designed for experienced practitioners using test-d
 * **no test coverage**
 * **no benchmarking**
 
-Ergotest also doesn't include a command-line tool. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
+Ergotest is designed to be run using its API, not from the command line. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
 
 
 ## Installation
@@ -119,7 +119,7 @@ export default describe(() => {
 Use Ergotest's API to run tests from your automated build. For now, create a simple `build.js` file:
 
 ```javascript
-import { TestRunner } from "ergotest/test_runner.js";
+import { TestRunner } from "ergotest";
 import path from "node:path";
 
 const args = process.argv.slice(2);

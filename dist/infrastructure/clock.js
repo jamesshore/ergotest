@@ -209,4 +209,4 @@ async function nullGlobalsAsync({ now = FAKE_START_TIME } = {}) {
     };
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/infrastructure/clock.js.map
+//# sourceMappingURL=clock.js.map

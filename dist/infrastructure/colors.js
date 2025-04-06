@@ -49,4 +49,4 @@ function colorFn(color) {
     }
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/infrastructure/colors.js.map
+//# sourceMappingURL=colors.js.map
