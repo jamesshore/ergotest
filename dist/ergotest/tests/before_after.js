@@ -24,4 +24,4 @@ export class BeforeAfter extends Runnable {
     }
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/tests/before_after.js.map
+//# sourceMappingURL=before_after.js.map

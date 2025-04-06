@@ -329,7 +329,7 @@ export declare class TestCaseResult extends TestResult {
     allTests(): TestCaseResult[];
     allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
     /**
-     * Convert this result into a bare object later deserialization.
+     * Convert this result into a bare object for later deserialization.
      * @returns {object} The serialized object.
      * @see TestResult.deserialize
      */
