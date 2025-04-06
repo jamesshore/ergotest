@@ -11,24 +11,52 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
-## v0.12.x: Automation API revision (BREAKING CHANGE)
+## v0.12.x: Before/after edge case improvements (BREAKING CHANGE)
 
-The automation API has been overhauled to handle edge cases involving before/after functions. I've taken the opportunity to clean up some rough edges. Although this is a breaking change, it won't affect you unless your code directly manipulates test results.
+* **0.12.0, 6 Apr 2025:** Edge cases involving failed _beforeAll()_, _afterAll()_, _beforeEach()_ or _afterEach()_ functions are now handled cleanly. Although this is a breaking change, it won't affect most users.
+
+Previously, tests could only have one result. When a before/after function failed, the failure was treated as the test's only result. This resulted in data loss when both a test and its _after_ functions failed. It also meant that no more _after_ functions would run if one of them failed.
+
+Now before/after failures are handled cleanly. _beforeAll()_ and _afterAll()_ are reported as separate test cases. If a _beforeAll()_ function fails, all the corresponding tests will be reported as having been skipped. If an _afterAll()_ function fails, all the remaining _afterAll()_ functions will still run.
+
+If _beforeEach()_ or _afterEach()_ fail, the reporter will now break out each individual result, showing the actual result of the test as well as each _beforeEach()_ and _afterEach()_ function. If an _afterEach()_ function fails, all the remaining _afterEach()_ functions will still run.
+
+This change has required an overhaul of the [automation API](docs/automation_api.md) and revisions to the [reporting API](docs/reporting_api.md). Fortunately, these changes only affect advanced users. Normal use cases are unaffected.
+
+### Reporting API changes
+
+* [testRenderer.renderAsSingleLines()](docs/reporting_api.md#testrendererrenderassinglelines) breaks out _beforeEach()_ and _afterEach()_ results when one of them fails.
+
+* [testRenderer.renderAsMultipleLines()](docs/reporting_api.md#testrendererrenderasmultiplelines) breaks out _beforeEach()_ and _afterEach()_ results when one of them fails. 
+
+I've also taken this opportunity to [improve the "Start Here" documentation](docs/reporting_api.md#start-here) and clean up the API. These are **breaking changes**:
+
+* [RenderErrorFn](docs/automation_api.md#rendererrorfn) and [renderError()](docs/reporting_api.md#rendererror) no longer take a _mark_ parameter.
+* [renderNameOnOneLine()](docs/reporting_api.md#testrendererrendernameononeline) takes _(name: string[], filename?: string])_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
+* [renderNameOnMultipleLines()](docs/reporting_api.md#testrendererrendernameonmultiplelines) takes _(name: string[], filename?: string])_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
+* [renderMarkAsSingleWord()](docs/reporting_api.md#testrendererrendermarkassingleword) takes a [mark: TestMarkValue](docs/automation_api.md#testmarkvalue) parameter instead of a [result: TestResult](docs/automation_api.md#testresult) parameter. 
+* [renderStatusAsSingleWord()](docs/reporting_api.md#testrendererrenderstatusassingleword) takes a [status: TestStatusValue](docs/automation_api.md#teststatusvalue) parameter instead of a [result: TestCaseResult](docs/automation_api.md#testcaseresult) parameter. 
+
+### Automation API changes
 
 This release overhauls the test results data model. Previously, it looked like this:
 
 ```
-+-----------> TestResult
-|           *    /_\
-|                 |
-|        +--------+--------+
-|        |                 |
-+- TestSuiteResult  TestCaseResult
++--------------------> TestResult
+|                   *     /_\
+|                          |
+|           +--------------+---------------+
+|           |                              |
+|  +-----------------+            +-----------------+               
+|  | TestSuiteResult |            | TestCaseResult  |             
+|  +-----------------+            +-----------------+
++--|-- children      |
+   +-----------------+            
 ```
 
-A TestSuiteResult contained TestResults, which could either be more TestSuiteResults or TestCaseResults. TestCaseResults specified if the test passed, failed, etc.
+_TestSuiteResult_ contained _TestResults,_ which could either be more _TestSuiteResults_ or _TestCaseResults._ _TestCaseResult_ specified if the test passed, failed, etc. Before/after results were shoehorned in as needed.
 
-The problem with this model is that it didn't have a way of distinguishing between the results of a before/after function (such as `beforeAll()` and `afterEach()`) and the results of a test. There are a few edge cases where tests could have multiple results: for example, if a test failed and its afterEach() function timed out. The new data model handles that case:
+The new data model accounts for before/after results explicitly:
 
 ```
 +--------------------> TestResult
@@ -39,59 +67,44 @@ The problem with this model is that it didn't have a way of distinguishing betwe
 |  +-----------------+            +-----------------+               
 |  | TestSuiteResult |            | TestCaseResult  |             
 |  +-----------------+         *  +-----------------+
-|  |   beforeAll   --|----------> | beforeEach    --|--------+     
-|  |   afterAll    --|----------> | afterEach     --|-----+  |      
-+--|-- tests         |         *  | it            --|--+  |  |
+|  |   beforeAll   --|----------> |   beforeEach  --|--------+     
+|  |   afterAll    --|----------> |   afterEach   --|-----+  |      
++--|-- tests         |         *  |   it          --|--+  |  |
    +-----------------+            +-----------------+  |  |  |
                                                        |1 |* |*
                                                        v  v  v
-                                                 +-----------------+            
-                                                 | RunResult       |          
-                                                 +-----------------+
+                                                   +-------------+            
+                                                   |  RunResult  |          
+                                                   +-------------+
 ```
 
-In the new model, TestSuiteResult contains TestResults, as before, but it also contains 0..n `beforeAll` and `afterAll` results, which are TestCaseResults. TestCaseResults contain RunResults—1 for `it` and 0..n for `beforeEach` and `afterEach`—which represent the results of running the `it()`, `beforeEach()`, and `afterEach()`. TestCaseResults no longer have their own status; instead, they consolidate the results of the individual RunResults. You can inspect each result separately, and the built-in renderers will display each result separately when it's appropriate.
+In the new model, _TestSuiteResult_ contains _TestResults_, as before, but it also contains 0..n _beforeAll_ and _afterAll_ results, which are _TestCaseResults_. _TestCaseResults_ contain _RunResults_—one for _it_ and 0..n for _beforeEach_ and _afterEach_—which represent the results of running the _it()_, _beforeEach()_, and _afterEach()_ functions respectively. TestCaseResults no longer have their own status; instead, they consolidate the results of the individual RunResults. You can inspect each result separately, and the built-in renderers will display each result separately when it's appropriate.
 
-This has changed the behavior of the tests:
+This has resulted in the following **non-breaking changes**:
 
-* Before, afterAll() and afterEach() blocks would stop running if one of them failed. Now they all run even if one fails.
-* beforeAll() and afterAll() are treated like tests:
-  * They trigger onTestCaseResult after they run
-  * They're included in the default result renderer
-  * They're returned by allTests(), allMatchingTests(), and allMatchingMarks() when appropriate
-* beforeEach() and afterEach() are rendered by renderAsSingleLines() and renderAsMultipleLines() when appropriate
-* renderNameOnMultipleLines() now only highlights the first part of the name (usually the filename) and the last part (the test name); previously, it highlighted the whole name
+* [TestSuiteResult](docs/automation_api.md#testsuiteresult):
+  * Added [testSuiteResult.beforeAll](docs/automation_api.md#testsuiteresultbeforeall)
+  * Added [testSuiteResult.afterAll](docs/automation_api.md#testsuiteresultafterall)
+* [TestCaseResult](docs/automation_api.md#testcaseresult):
+  * Added [testCaseResult.beforeEach](docs/automation_api.md#testcaseresultbeforeeach)
+  * Added [testCaseResult.afterEach](docs/automation_api.md#testcaseresultaftereach)
+  * Added [testCaseResult.it](docs/automation_api.md#testcaseresultit)
+  * [testCaseResult.status](docs/automation_api.md#testcaseresultstatus) consolidates results of _beforeEach()_, _afterEach()_, and _it()_.
+* Added [RunResult](docs/automation_api.md#runresult)
 
-It's also changed the automation API, although not the commonly-used parts of it:
+It's also resulted in these **breaking changes**, partially because I took advantage of the opportunity to do some cleanup: 
 
-* Added TestSuiteResult.beforeAll
-* Added TestSuiteResult.afterAll
-* Renamed TestSuiteResult.children to TestSuiteResult.tests 
-* Added TestCaseResult.beforeEach
-* Added TestCaseResult.afterEach
-* Added TestCaseResult.it
-* Removed TestCaseResult.isPass()
-* Removed TestCaseResult.isSkip()
-* Removed TestCaseResult.isFail()
-* Removed TestCaseResult.isTimeout()
-* Moved TestCaseResult.errorMessage to RunResult
-* Moved TestCaseResult.errorRender to RunResult
-* Moved TestCaseResult.timeout to RunResult
-* Added RunResult
-* Changed TestRenderer signatures:
-  * renderError()
-  * renderStatusAsSingleWord()
-  * renderNameOnOneLine()
-  * renderNameOnMultipleLines()
-  * renderStatusWithMultiLineDetails()
-  * renderMarkAsSingleWord()
+* Renamed testSuiteResult.children to [testSuiteResult.tests](docs/automation_api.md#testsuiteresulttests) 
+* Moved testCaseResult.errorMessage to [runResult.errorMessage](docs/automation_api.md#runresulterrormessage)
+* Moved testCaseResult.errorRender to [runResult.errorRender](docs/automation_api.md#runresulterrorrender)
+* Moved testCaseResult.timeout to [runResult.timeout](docs/automation_api.md#runresulttimeout)
 * Replaced TestResult factories with new methods and signatures:
-  * Moved TestResult.suite() to TestSuiteResult.create()
-  * Added TestCaseResult.create()
-  * Moved TestResult.pass() to RunResult.pass()
-  * Moved TestResult.skip() to RunResult.skip()
-  * Moved TestResult.fail() to RunResult.fail()
-  * Moved TestResult.timeout() to RunResult.timeout()
+  * Moved TestResult.suite() to [TestSuiteResult.create()](docs/automation_api.md#testsuiteresultcreate)
+  * Added [TestCaseResult.create()](docs/automation_api.md#testcaseresultcreate)
+  * Moved TestResult.pass() to [RunResult.pass()](docs/automation_api.md#runresultpass)
+  * Moved TestResult.skip() to [RunResult.skip()](docs/automation_api.md#runresultskip)
+  * Moved TestResult.fail() to [RunResult.fail()](docs/automation_api.md#runresultfail)
+  * Moved TestResult.timeout() to [RunResult.timeout()](docs/automation_api.md#runresulttimeout)
   * Revised signatures for above methods
 * Removed TestSuite from the documentation; it's now for internal use only
 
@@ -103,12 +116,12 @@ TO DO:
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
-* **0.11.0, 10 Mar 2024:** The [assert.fail()](docs/assertion_api.md#assertfail) assertion now takes optional `actual` and `expected` parameters. If present, they will be included in the error rendering.
+* **0.11.0, 10 Mar 2025:** The [assert.fail()](docs/assertion_api.md#assertfail) assertion now takes optional `actual` and `expected` parameters. If present, they will be included in the error rendering.
 
 
 ## v0.10.x: Better stack trace highlighting, including TypeScript support
 
-* **0.10.0, 15 Feb 2024:** When a test fails, the error message previously highlighted the test's stack frames in bright white. Now they're highlighted in bright yellow for better visibility. In addition, the highlighting supports source maps, which means they now work with TypeScript code.
+* **0.10.0, 15 Feb 2025:** When a test fails, the error message previously highlighted the test's stack frames in bright white. Now they're highlighted in bright yellow for better visibility. In addition, the highlighting supports source maps, which means they now work with TypeScript code.
 
 
 ## v0.9.x: Improve error rendering (minor breaking change)

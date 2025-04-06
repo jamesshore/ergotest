@@ -158,9 +158,9 @@ The test runner will give you a [TestSuiteResult](#testsuiteresult) when the tes
 |  +-----------------+            +-----------------+               
 |  | TestSuiteResult |            | TestCaseResult  |             
 |  +-----------------+         *  +-----------------+
-|  |   beforeAll   --|----------> | beforeEach    --|--------+     
-|  |   afterAll    --|----------> | afterEach     --|-----+  |      
-+--|-- tests         |         *  | it            --|--+  |  |
+|  |   beforeAll   --|----------> |   beforeEach  --|--------+     
+|  |   afterAll    --|----------> |   afterEach   --|-----+  |      
++--|-- tests         |         *  |   it          --|--+  |  |
    +-----------------+            +-----------------+  |  |  |
                                                        |1 |* |*
                                                        v  v  v
