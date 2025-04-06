@@ -375,6 +375,8 @@ export class TestSuiteResult extends TestResult {
 	 *   total number of tests.
 	 */
 	count(): TestCount {
+		ensure.signature(arguments, []);
+
 		const count = {
 			[TestStatus.pass]: 0,
 			[TestStatus.fail]: 0,
@@ -397,6 +399,8 @@ export class TestSuiteResult extends TestResult {
 	 * @see TestResult.deserialize
 	 */
 	serialize(): SerializedTestSuiteResult {
+		ensure.signature(arguments, []);
+
 		return {
 			type: "TestSuiteResult",
 			name: this._name,
@@ -409,6 +413,8 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	equals(that: TestResult): boolean {
+		ensure.signature(arguments, [ ensure.ANY_TYPE ]);
+
 		if (!(that instanceof TestSuiteResult)) return false;
 		if (this._mark !== that._mark) return false;
 
@@ -609,6 +615,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isPass(): boolean {
 		ensure.signature(arguments, []);
+
 		return this.status === TestStatus.pass;
 	}
 
@@ -617,6 +624,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isFail(): boolean {
 		ensure.signature(arguments, []);
+
 		return this.status === TestStatus.fail;
 	}
 
@@ -625,6 +633,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isSkip(): boolean {
 		ensure.signature(arguments, []);
+
 		return this.status === TestStatus.skip;
 	}
 
@@ -633,6 +642,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	isTimeout(): boolean {
 		ensure.signature(arguments, []);
+
 		return this.status === TestStatus.timeout;
 	}
 
@@ -683,6 +693,7 @@ export class TestCaseResult extends TestResult {
 	 */
 	allTests(): TestCaseResult[] {
 		ensure.signature(arguments, []);
+
 		return [ this ];
 	}
 
