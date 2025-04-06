@@ -132,7 +132,7 @@ async function runTestsInWorkerProcessAsync(
 
 		importRendererAsync(renderer)
 			.then((renderError) => {
-				const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
+				const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError, onTestCaseResult);
 				worker.on("message", message => {
 					handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
 				});
@@ -142,16 +142,21 @@ async function runTestsInWorkerProcessAsync(
 	return result;
 }
 
-function detectInfiniteLoops(clock: Clock, resolve: (result: TestSuiteResult) => void, renderError?: RenderErrorFn) {
+function detectInfiniteLoops(
+	clock: Clock,
+	resolve: (result: TestSuiteResult) => void,
+	renderError: RenderErrorFn | undefined,
+	onTestCaseResult: (result: TestCaseResult) => void,
+) {
 	const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
-		const errorResult = TestSuiteResult.create({
-			tests: [
-				TestCaseResult.create({
-					it: RunResult.fail({ name: [ "Test runner watchdog" ], error: "Detected infinite loop in tests", renderError }),
-				}),
-			],
+		const testCaseResult = TestCaseResult.create({
+			it: RunResult.fail({ name: [ "Test runner watchdog" ], error: "Detected infinite loop in tests", renderError }),
 		});
-		resolve(errorResult);
+		const testSuiteResult = TestSuiteResult.create({
+			tests: [ testCaseResult ],
+		});
+		onTestCaseResult(testCaseResult);
+		resolve(testSuiteResult);
 	});
 	return { aliveFn, cancelFn };
 }

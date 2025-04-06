@@ -244,7 +244,7 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
-		it("handles infinite loops", async () => {
+		it("detects infinite loops", async () => {
 			const options = {
 				renderer: CUSTOM_RENDERER_PATH,
 			};
@@ -252,7 +252,6 @@ export default describe(() => {
 
 			await writeTestModuleAsync(`while (true);`);
 			const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], options);
-
 			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
 			const results = await resultsPromise;
 
@@ -260,6 +259,22 @@ export default describe(() => {
 				createFail({ name: "Test runner watchdog", error: "Detected infinite loop in tests" }),
 			]}));
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
+		});
+
+		it("triggers onTestCaseResult with infinite loop failure", async () => {
+			let result: TestCaseResult | undefined;
+			function onTestCaseResult(_result: TestCaseResult) {
+				result = _result;
+			}
+
+			const { runner, clock } = await createAsync();
+
+			await writeTestModuleAsync(`while (true);`);
+			const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
+			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+			await resultsPromise;
+
+			assert.equal(result?.status, TestStatus.fail);
 		});
 
 		it("fails fast if custom renderer doesn't load", async () => {
