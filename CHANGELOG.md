@@ -27,14 +27,13 @@ This change has required an overhaul of the [automation API](docs/automation_api
 ### Reporting API changes
 
 * [testRenderer.renderAsSingleLines()](docs/reporting_api.md#testrendererrenderassinglelines) breaks out _beforeEach()_ and _afterEach()_ results when one of them fails.
-
 * [testRenderer.renderAsMultipleLines()](docs/reporting_api.md#testrendererrenderasmultiplelines) breaks out _beforeEach()_ and _afterEach()_ results when one of them fails. 
 
 I've also taken this opportunity to [improve the "Start Here" documentation](docs/reporting_api.md#start-here) and clean up the API. These are **breaking changes**:
 
 * [RenderErrorFn](docs/automation_api.md#rendererrorfn) and [renderError()](docs/reporting_api.md#rendererror) no longer take a _mark_ parameter.
-* [renderNameOnOneLine()](docs/reporting_api.md#testrendererrendernameononeline) takes _(name: string[], filename?: string])_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
-* [renderNameOnMultipleLines()](docs/reporting_api.md#testrendererrendernameonmultiplelines) takes _(name: string[], filename?: string])_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
+* [renderNameOnOneLine()](docs/reporting_api.md#testrendererrendernameononeline) takes _(name: string[], filename?: string)_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
+* [renderNameOnMultipleLines()](docs/reporting_api.md#testrendererrendernameonmultiplelines) takes _(name: string[], filename?: string)_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
 * [renderMarkAsSingleWord()](docs/reporting_api.md#testrendererrendermarkassingleword) takes a [mark: TestMarkValue](docs/automation_api.md#testmarkvalue) parameter instead of a [result: TestResult](docs/automation_api.md#testresult) parameter. 
 * [renderStatusAsSingleWord()](docs/reporting_api.md#testrendererrenderstatusassingleword) takes a [status: TestStatusValue](docs/automation_api.md#teststatusvalue) parameter instead of a [result: TestCaseResult](docs/automation_api.md#testcaseresult) parameter. 
 * [renderStatusWithMultiLineDetails()](docs/reporting_api.md#testrendererrenderstatuswithmultilinedetails) takes a [runResult: RunResult](docs/automation_api.md#runresult) parameter instead of a [result: TestCaseResult](docs/automation_api.md#testcaseresult) parameter. 
@@ -80,7 +79,7 @@ The new data model accounts for before/after results explicitly:
                                                    +-------------+
 ```
 
-In the new model, _TestSuiteResult_ contains _TestResults_, as before, but it also contains 0..n _beforeAll_ and _afterAll_ results, which are _TestCaseResults_. _TestCaseResults_ contain _RunResults_—one for _it_ and 0..n for _beforeEach_ and _afterEach_—which represent the results of running the _it()_, _beforeEach()_, and _afterEach()_ functions respectively. TestCaseResults no longer have their own status; instead, they consolidate the results of the individual RunResults. You can inspect each result separately, and the built-in renderers will display each result separately when it's appropriate.
+In the new model, _TestSuiteResult_ contains _TestResults_, as before, but it also contains 0..n _beforeAll_ and _afterAll_ results, which are _TestCaseResults_. _TestCaseResults_ contain _RunResults_—one for _it_ and 0..n for _beforeEach_ and _afterEach_—which represent the results of running the _it()_, _beforeEach()_, and _afterEach()_ functions respectively. _TestCaseResults_ no longer have their own status; instead, they consolidate the results of the individual RunResults. You can inspect each result separately, and the built-in renderers will display each result separately when it's appropriate.
 
 This has resulted in the following **non-breaking changes**:
 
@@ -94,7 +93,7 @@ This has resulted in the following **non-breaking changes**:
   * [testCaseResult.status](docs/automation_api.md#testcaseresultstatus) consolidates results of _beforeEach()_, _afterEach()_, and _it()_.
 * Added [RunResult](docs/automation_api.md#runresult)
 
-It's also resulted in these **breaking changes**, partially because I took advantage of the opportunity to do some cleanup: 
+It's also resulted in these **breaking changes**, partly because I took advantage of the opportunity to do some cleanup: 
 
 * Renamed testSuiteResult.children to [testSuiteResult.tests](docs/automation_api.md#testsuiteresulttests) 
 * Moved testCaseResult.errorMessage to [runResult.errorMessage](docs/automation_api.md#runresulterrormessage)

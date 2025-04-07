@@ -55,7 +55,7 @@ You can use Ergotest's built-in rendering functions as-is, override part of thei
 
 The [Automation API](automation_api.md#start-here) includes convenience methods, such as [testSuiteResult.render()](automation_api.md#testsuiteresultrender), that render the results of a test suite. If you don't like its default rendering, you can use the automation API and the rendering API to customize the results without a lot of extra work.
 
-For example, [testSuiteResult.render()](automation_api.md#testsuiteresultrender) displays a summary list of marked suites and tests, a detailed list of test failures and timeouts, and a summary of the test results. If you only wanted to display detailed results for test failures, and summary results for timeouts, you could use the automation API and rendering API as follows:
+For example, [testSuiteResult.render()](automation_api.md#testsuiteresultrender) displays a summary list of marked suites and tests, a detailed list of test failures and timeouts, and a summary of the test results. If you only wanted to display detailed results for test failures and summary results for timeouts, you could use the automation API and reporting API as follows:
 
 ```typescript
 import { TestRunner, TestRenderer } from "ergotest";
