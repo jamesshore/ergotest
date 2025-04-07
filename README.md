@@ -80,13 +80,13 @@ Other than that, Ergotest is designed for experienced practitioners using test-d
 Ergotest is designed to be run using its API, not from the command line. You're expected to integrate it into your automated build. If you don’t have an automated build, try [Automatopia](https://github.com/jamesshore/automatopia), or use the starting point provided below. 
 
 
-## Installation
+## Quick Start
+
+### Installation
 
 ```shell
 npm install --save-dev ergotest 
 ```
-
-## Quick Start
 
 ### 1. Isolate Ergotest
 
