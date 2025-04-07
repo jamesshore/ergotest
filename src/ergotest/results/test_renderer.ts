@@ -128,6 +128,8 @@ export function renderDiff(error: AssertionError): string {
 export class TestRenderer {
 
 	static create() {
+		ensure.signature(arguments, []);
+
 		return new TestRenderer();
 	}
 
@@ -340,6 +342,8 @@ export class TestRenderer {
 	 * @returns {string} The color-coded status.
 	 */
 	renderStatusAsSingleWord(status: TestStatusValue) {
+		ensure.signature(arguments, [ String ]);
+
 		return TestRenderer.#DESCRIPTION_RENDERING[status];
 	}
 
@@ -348,6 +352,8 @@ export class TestRenderer {
 	 * @returns { string } The color-coded status, including error and timeout details where appropriate.
 	 */
 	renderStatusWithMultiLineDetails(runResult: RunResult): string {
+		ensure.signature(arguments, [ RunResult ]);
+
 		switch (runResult.status) {
 			case TestStatus.pass:
 			case TestStatus.skip:
@@ -368,6 +374,8 @@ export class TestRenderer {
 	 * @returns {string} The color-coded mark of the test result (.only, etc.), or "" if the test result wasn't marked.
 	 */
 	renderMarkAsSingleWord(mark: TestMarkValue) {
+		ensure.signature(arguments, [ String ]);
+
 		switch (mark) {
 			case TestMark.none: return "(no mark)";
 			case TestMark.skip: return Colors.brightCyan(".skip");

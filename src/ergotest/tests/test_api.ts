@@ -1,5 +1,5 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { RenderErrorFn, TestCaseResult, TestMark } from "../results/test_result.js";
+import { TestCaseResult, TestMark } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { TestConfig } from "./test_suite.js";
 import { ApiContext } from "./api_context.js";

@@ -47,7 +47,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
 	 *   return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @param {Clock} [clock] Internal use only.
 	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
-	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, renderer, clock = Clock.create() } = {}) {
+	 */ async runAsync({ timeout = DEFAULT_TIMEOUT_IN_MS, config = {}, onTestCaseResult = ()=>{}, renderer = undefined, clock = Clock.create() } = {}) {
         ensure.signature(arguments, [
             [
                 undefined,

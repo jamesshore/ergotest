@@ -36,6 +36,7 @@ I've also taken this opportunity to [improve the "Start Here" documentation](doc
 * [renderNameOnMultipleLines()](docs/reporting_api.md#testrendererrendernameonmultiplelines) takes _(name: string[], filename?: string])_ parameters instead of a [result: TestResult](docs/automation_api.md#testresult) parameter.
 * [renderMarkAsSingleWord()](docs/reporting_api.md#testrendererrendermarkassingleword) takes a [mark: TestMarkValue](docs/automation_api.md#testmarkvalue) parameter instead of a [result: TestResult](docs/automation_api.md#testresult) parameter. 
 * [renderStatusAsSingleWord()](docs/reporting_api.md#testrendererrenderstatusassingleword) takes a [status: TestStatusValue](docs/automation_api.md#teststatusvalue) parameter instead of a [result: TestCaseResult](docs/automation_api.md#testcaseresult) parameter. 
+* [renderStatusWithMultiLineDetails()](docs/reporting_api.md#testrendererrenderstatuswithmultilinedetails) takes a [runResult: RunResult](docs/automation_api.md#runresult) parameter instead of a [result: TestCaseResult](docs/automation_api.md#testcaseresult) parameter. 
 
 ### Automation API changes
 
@@ -107,12 +108,6 @@ It's also resulted in these **breaking changes**, partially because I took advan
   * Moved TestResult.timeout() to [RunResult.timeout()](docs/automation_api.md#runresulttimeout)
   * Revised signatures for above methods
 * Removed TestSuite from the documentation; it's now for internal use only
-
-TO DO:
-* Remove TestCaseResult.errorMessage, .errorRender, and .timeout
-* Export TestRenderer, TestRunner, TestSuiteResult, TestCaseResult, TestResult, RunResult, TestStatus, TestStatusValue, TestMark, TestMarkValue, RenderErrorFn from index.js
-* Test watchdog failures (module load, child processes) should call onTestCaseResult.
-* Finalize changelog
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 

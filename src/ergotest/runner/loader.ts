@@ -34,13 +34,7 @@ export async function fromModulesAsync(moduleFilenames: string[]): Promise<TestS
 			}
 		}
 		catch(err) {
-			const code = (err as { code: string })?.code;
-			if (code === "ERR_MODULE_NOT_FOUND") {
-				return createFailure(errorName, `Test module not found: ${filename}`, filename);
-			}
-			else {
-				return createFailure(errorName, err, filename);
-			}
+			return createFailure(errorName, err, filename);
 		}
 	}
 

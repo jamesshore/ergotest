@@ -22,9 +22,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
 import { fromModulesAsync } from "../runner/loader.js";
-// dependency: ./_module_passes.js
 // dependency: ./_module_throws.js
-// dependency: ./_module_no_export.js
 // dependency: ../_renderer_custom.js
 // dependency: ../_renderer_no_export.js
 // dependency: ../_renderer_not_function.js
@@ -32,9 +30,7 @@ import { fromModulesAsync } from "../runner/loader.js";
 
 // Tests for my test library. (How meta.)
 
-const SUCCESS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_passes.js");
 const THROWS_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_throws.js");
-const NO_EXPORT_MODULE_PATH = path.resolve(import.meta.dirname, "./_module_no_export.js");
 
 const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_custom.js");
 const NO_EXPORT_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_no_export.js");
@@ -50,62 +46,6 @@ const FAIL_FN = () => { throw ERROR; };
 
 
 export default describe(() => {
-
-	describe("test modules", () => {
-
-		it("creates test suite from a module (and sets filename on result)", async () => {
-			const suite = await fromModulesAsync([ SUCCESS_MODULE_PATH, SUCCESS_MODULE_PATH ]);
-
-			const testCaseResult = createPass({ name: "passes", filename: SUCCESS_MODULE_PATH });
-			assert.dotEquals(await suite.runAsync(),
-				createSuite({ tests: [
-					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
-					createSuite({ tests: [ testCaseResult ], filename: SUCCESS_MODULE_PATH }),
-				]}),
-			);
-		});
-
-		it("fails gracefully if module isn't an absolute path", async () => {
-			const suite = await fromModulesAsync([ "./_module_passes.js" ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing _module_passes.js" ]);
-			assert.isUndefined(result.filename);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "Test module filenames must use absolute paths: ./_module_passes.js");
-		});
-
-		it("fails gracefully if module doesn't exist", async () => {
-			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
-			assert.equal(result.filename, "/no_such_module.js");
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Test module not found: /no_such_module.js`);
-		});
-
-		it("fails gracefully if module fails to require()", async () => {
-			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing _module_throws.js" ]);
-			assert.equal(result.filename, THROWS_MODULE_PATH);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "my require error");
-		});
-
-		it("fails gracefully if module doesn't export a test suite", async () => {
-			const suite = await fromModulesAsync([ NO_EXPORT_MODULE_PATH ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing _module_no_export.js" ]);
-			assert.equal(result.filename, NO_EXPORT_MODULE_PATH);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${NO_EXPORT_MODULE_PATH}`);
-		});
-
-	});
 
 
 	describe("custom rendering", () => {

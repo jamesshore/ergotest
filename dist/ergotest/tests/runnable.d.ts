@@ -5,9 +5,10 @@ export declare class Runnable {
     private readonly _name;
     private readonly _options;
     private readonly _fnAsync?;
+    static create(name: string[], options: ItOptions, fnAsync?: ItFn): Runnable;
     constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined);
     get name(): string[];
     get options(): ItOptions;
     get fnAsync(): ItFn | undefined;
-    _runTestFnAsync(runOptions: RunOptions, runData: RunData): Promise<RunResult>;
+    runAsync(runOptions: RunOptions, runData: RunData): Promise<RunResult>;
 }

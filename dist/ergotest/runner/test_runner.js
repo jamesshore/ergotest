@@ -102,7 +102,7 @@ async function runTestsInWorkerProcessAsync(worker, clock, modulePaths, { timeou
             if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
         });
         importRendererAsync(renderer).then((renderError)=>{
-            const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError);
+            const { aliveFn, cancelFn } = detectInfiniteLoops(clock, resolve, renderError, onTestCaseResult);
             worker.on("message", (message)=>{
                 handleMessage(message, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
             });
@@ -110,22 +110,24 @@ async function runTestsInWorkerProcessAsync(worker, clock, modulePaths, { timeou
     });
     return result;
 }
-function detectInfiniteLoops(clock, resolve, renderError) {
+function detectInfiniteLoops(clock, resolve, renderError, onTestCaseResult) {
     const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, ()=>{
-        const errorResult = TestSuiteResult.create({
+        const testCaseResult = TestCaseResult.create({
+            it: RunResult.fail({
+                name: [
+                    "Test runner watchdog"
+                ],
+                error: "Detected infinite loop in tests",
+                renderError
+            })
+        });
+        const testSuiteResult = TestSuiteResult.create({
             tests: [
-                TestCaseResult.create({
-                    it: RunResult.fail({
-                        name: [
-                            "Test runner watchdog"
-                        ],
-                        error: "Detected infinite loop in tests",
-                        renderError
-                    })
-                })
+                testCaseResult
             ]
         });
-        resolve(errorResult);
+        onTestCaseResult(testCaseResult);
+        resolve(testSuiteResult);
     });
     return {
         aliveFn,

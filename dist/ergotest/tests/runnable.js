@@ -4,6 +4,9 @@ export class Runnable {
     _name;
     _options;
     _fnAsync;
+    static create(name, options, fnAsync) {
+        return new Runnable(name, options, fnAsync);
+    }
     constructor(name, options, fnAsync){
         this._name = name;
         this._options = options;
@@ -18,7 +21,7 @@ export class Runnable {
     get fnAsync() {
         return this._fnAsync;
     }
-    async _runTestFnAsync(runOptions, runData) {
+    async runAsync(runOptions, runData) {
         const fnAsync = this._fnAsync;
         if (runData.skipAll || fnAsync === undefined) {
             return RunResult.skip({

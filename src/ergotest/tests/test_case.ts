@@ -7,9 +7,12 @@ import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
 import { ItFn, ItOptions } from "./test_api.js";
 
-export class TestCase extends Runnable implements Test {
+export class TestCase implements Test {
 
-	private _mark: TestMarkValue;
+	protected readonly _name: string[];
+	private readonly _mark: TestMarkValue;
+	private readonly _fnAsync?: ItFn;
+	private readonly _runnable: Runnable;
 
 	static create({
 		name,
@@ -31,7 +34,9 @@ export class TestCase extends Runnable implements Test {
 		fnAsync: ItFn | undefined,
 		mark: TestMarkValue
 	) {
-		super(name, options, fnAsync);
+		this._name = name;
+		this._fnAsync = fnAsync;
+		this._runnable = Runnable.create(name, options, fnAsync);
 
 		this._mark = mark;
 		if (fnAsync === undefined && mark === TestMark.none) this._mark = TestMark.skip;
@@ -39,14 +44,13 @@ export class TestCase extends Runnable implements Test {
 
 	/** @private */
 	_isDotOnly(): boolean {
-		ensure.signature(arguments, []);
 		return this._mark === TestMark.only;
 	}
 
 	/** @private */
 	_isSkipped(parentMark: TestMarkValue): boolean {
 		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
-		return inheritedMark === TestMark.skip || this.fnAsync === undefined;
+		return inheritedMark === TestMark.skip || this._fnAsync === undefined;
 	}
 
 	/** @private */
@@ -66,16 +70,16 @@ export class TestCase extends Runnable implements Test {
 	}
 
 	async #runTestAsync(runData: RunData, runOptions: RunOptions) {
-		if (this.fnAsync === undefined && this._mark === TestMark.only) {
+		if (this._fnAsync === undefined && this._mark === TestMark.only) {
 			return RunResult.fail({
-				name: this.name,
+				name: this._name,
 				filename: runData.filename,
 				error: "Test is marked '.only', but it has no body",
 				renderError: runOptions.renderError,
 			});
 		}
 
-		return await this._runTestFnAsync(runOptions, runData);
+		return await this._runnable.runAsync(runOptions, runData);
 	}
 
 	async #runBeforeAfterEachAsync(
@@ -132,7 +136,7 @@ export class FailureTestCase extends TestCase {
 		parentData: RunData,
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({
-			name: this.name,
+			name: this._name,
 			filename: this._filename,
 			error: this._error,
 			renderError: runOptions.renderError,
