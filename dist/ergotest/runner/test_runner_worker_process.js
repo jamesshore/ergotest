@@ -28,20 +28,22 @@ async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config,
     try {
         const renderError = await importRendererAsync(renderer);
         process.on("uncaughtException", (error)=>{
-            const errorResult = TestSuiteResult.create({
+            const testCaseResult = TestCaseResult.create({
+                it: RunResult.fail({
+                    name: [
+                        "Unhandled error in tests"
+                    ],
+                    error,
+                    renderError
+                })
+            });
+            const testSuiteResult = TestSuiteResult.create({
                 tests: [
-                    TestCaseResult.create({
-                        it: RunResult.fail({
-                            name: [
-                                "Unhandled error in tests"
-                            ],
-                            error,
-                            renderError
-                        })
-                    })
+                    testCaseResult
                 ]
             });
-            sendFinalResult(errorResult, cancelKeepAliveFn);
+            sendProgress(testCaseResult);
+            sendFinalResult(testSuiteResult, cancelKeepAliveFn);
         });
         const suite = await fromModulesAsync(modulePaths);
         const result = await suite.runAsync({
