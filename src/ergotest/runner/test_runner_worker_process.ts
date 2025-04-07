@@ -40,14 +40,14 @@ async function runWorkerAsync(
 		const renderError = await importRendererAsync(renderer);
 
 		process.on("uncaughtException", (error) => {
-			const errorResult = TestSuiteResult.create({
-				tests: [
-					TestCaseResult.create({
-						it: RunResult.fail({ name: [ "Unhandled error in tests" ], error, renderError }),
-					})
-				],
+			const testCaseResult = TestCaseResult.create({
+				it: RunResult.fail({ name: [ "Unhandled error in tests" ], error, renderError }),
 			});
-			sendFinalResult(errorResult, cancelKeepAliveFn);
+			const testSuiteResult = TestSuiteResult.create({
+				tests: [ testCaseResult ],
+			});
+			sendProgress(testCaseResult);
+			sendFinalResult(testSuiteResult, cancelKeepAliveFn);
 		});
 
 		const suite = await fromModulesAsync(modulePaths);

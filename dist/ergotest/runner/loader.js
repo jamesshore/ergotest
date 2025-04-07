@@ -30,12 +30,7 @@ import { TestSuite } from "../tests/test_suite.js";
                 return createFailure(errorName, `Test module doesn't export a test suite: ${filename}`, filename);
             }
         } catch (err) {
-            const code = err?.code;
-            if (code === "ERR_MODULE_NOT_FOUND") {
-                return createFailure(errorName, `Test module not found: ${filename}`, filename);
-            } else {
-                return createFailure(errorName, err, filename);
-            }
+            return createFailure(errorName, err, filename);
         }
     }
     function createFailure(name, error, filename) {

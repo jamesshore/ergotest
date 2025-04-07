@@ -811,4 +811,4 @@ function ensureValidMarks(marks) {
     });
 }
 
-//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/results/test_result.js.map
+//# sourceMappingURL=test_result.js.map

@@ -109,9 +109,6 @@ It's also resulted in these **breaking changes**, partially because I took advan
   * Revised signatures for above methods
 * Removed TestSuite from the documentation; it's now for internal use only
 
-TO DO:
-* Test watchdog failures (child processes) should call onTestCaseResult.
-
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
 * **0.11.0, 10 Mar 2025:** The [assert.fail()](docs/assertion_api.md#assertfail) assertion now takes optional `actual` and `expected` parameters. If present, they will be included in the error rendering.

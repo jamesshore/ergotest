@@ -244,6 +244,19 @@ export default describe(() => {
 			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 		});
 
+		it("triggers onTestCaseResult with uncaught promise rejection", async () => {
+			let results: TestCaseResult[] = [];
+			function onTestCaseResult(_result: TestCaseResult) {
+				results.push(_result);
+			}
+			const { runner } = await createAsync();
+
+			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
+			await runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
+
+			assert.equal(results.length, 2, "should have second failure for uncaught rejection");
+		});
+
 		it("detects infinite loops", async () => {
 			const options = {
 				renderer: CUSTOM_RENDERER_PATH,
@@ -266,7 +279,6 @@ export default describe(() => {
 			function onTestCaseResult(_result: TestCaseResult) {
 				result = _result;
 			}
-
 			const { runner, clock } = await createAsync();
 
 			await writeTestModuleAsync(`while (true);`);
