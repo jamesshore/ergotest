@@ -59,7 +59,7 @@ export interface SerializedRunResult {
 	timeout?: number;
 }
 
-export type RenderErrorFn = (names: string[], error: unknown, filename?: string) => unknown;
+export type RenderErrorFn = (name: string[], error: unknown, filename?: string) => unknown;
 
 /**
  * The result of a running a test. Can be a single test case or a suite of nested test results.

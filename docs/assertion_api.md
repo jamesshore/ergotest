@@ -156,10 +156,10 @@ To compare object references rather than contents, use [assert.notIdentity](#ass
 Examples:
 
 ```typescript
-assert.equal("abc", "abc");   // fails
-assert.equal("123", 123);     // passes
-assert.equal({ abc: 123 }, { abc: 123 });   // fails
-assert.equal({ abc: 123 }, { abc: "123" }); // passes
+assert.notEqual("abc", "abc");   // fails
+assert.notEqual("123", 123);     // passes
+assert.notEqual({ abc: 123 }, { abc: 123 });   // fails
+assert.notEqual({ abc: 123 }, { abc: "123" }); // passes
 ```
 
 [Back to top](#assertion-api)
@@ -269,15 +269,15 @@ Fails if `actual` is less than `min` or greater than `max`. Uses the `<` and `>`
 
 * assert.match(actual: string, expected: RegExp, message?: string)
 
-Checks to see if `actual` matches the `expected` regular expression. Fails if `actual` is not a string or `expected` is not a regular expression.
+Fails if `actual` doesn’t match the `expected` regular expression. Fails if `actual` is not a string or `expected` is not a regular expression.
 
 For better assertion errors when comparing large strings, consider using [assert.matchesGroup()](#assertmatchesgroup) instead.
 
 Examples:
 
 ```typescript
-assert.matches("abc", /b/);   // passes
-assert.matches("abc", /x/);   // fails
+assert.match("abc", /b/);   // passes
+assert.match("abc", /x/);   // fails
 ```
 
 [Back to top](#assertion-api)
@@ -287,7 +287,7 @@ assert.matches("abc", /x/);   // fails
 
 * assert.matchesGroup(actual: string, regex: RegExp, expectedMatch: string | null, message?: string)
 
-Executes `regex` against `actual` and compares the first capturing group against `expectedMatch`. Fails if they aren’t the same. To say the capturing group wasn’t found, provide `null` to `expectedMatch`.
+Executes `regex` against `actual` and compares the first capturing group against `expectedMatch`. Fails if they aren’t the same. To say the capturing group shouldn't be found, provide `null` to `expectedMatch`.
 
 This assertion is useful for comparing large strings. It allows you to extract just the piece you care about and compare it in isolation, leading to better assertion errors than [assert.match()](#assertmatch).
 

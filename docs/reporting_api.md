@@ -91,13 +91,13 @@ Each rendering API returns a color-coded string. Some rendering functions includ
 
 If you like the output of the rendering API, but want to customize specific behavior, subclass [TestRenderer](#testrenderer) and override its helper methods.  The API documentation describes the helper methods in detail, including when they're called, so you can know which ones to override.
 
-For example, [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) displays the result of a test on a single line, like this (except color-coded and highlighted):
+For example, [testRenderer.renderAsSingleLines()](#testrendererrenderassinglelines) displays the result of a test on a single line, like this (except in color):
 
 ```typescript
 pass my_file.js » my suite » does a thing
 ```
 
-It also has some complicated logic to handle the case when [beforeEach()](test_api.md#beforeeach) or [afterEach()](test_api.md#aftereach) fail:
+It also has some complicated logic to handle the case when [beforeEach()](test_api.md#beforeeach) or [afterEach()](test_api.md#aftereach) fail, which renders like this (in color):
 
 ```typescript
 failed my_file.js » my suite » does a thing
@@ -159,12 +159,12 @@ Error rendering is special. Errors are rendered to strings as soon as they fail,
 
 To customize how errors are rendered, create a module that exports a `renderError()` function. It needs to have a signature matching the [RenderErrorFn](automation_api.md#rendererrorfn) type:
 
-renderError(names: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown;
+renderError(names: string[], error: unknown, mark: TestMarkValue, filename?: string): unknown
 * _names:_ Same as [testCaseResult.name](automation_api.md#testcaseresultname).
 * _error:_ The error that caused the test to fail. Although it's usually an _Error_ instance, it could be any data type, including a string.
 * _filename:_ Same as [testCaseResult.filename](automation_api.md#testcaseresultfilename).
 
-Next, provide the path of the module in your [TestOptions](automation_api.md#testoptions]). It needs to either be an absolute path or the name of a node module. You can use `path.resolve()` to figure out the absolute path:
+Next, provide the path of the module in your [TestOptions](automation_api.md#testoptions]). It needs to be an absolute path or the name of a node module. You can use `path.resolve()` to figure out the absolute path:
 
 ```typescript
 import { TestRunner } from "ergotest/test_runner.js";
@@ -229,11 +229,10 @@ export function renderError(name: string[], error: unknown, mark: TestMarkValue,
 
 // Called by the last line of the build file above
 export function renderTap(suite: TestSuiteResult) {
-  const { total } = suite.count();
   const tests = suite.allTests();
 
   let result = "TAP version 14\n";
-  result += `1..${total}\n`;
+  result += `1..${tests.length}\n`;
 
   tests.forEach((test: TestCaseResult, i: number) => {
     const ok = (test.isPass() || test.isSkip) ? "ok" : "not ok";
@@ -260,7 +259,7 @@ export function renderTap(suite: TestSuiteResult) {
 
 * import { TestRenderer } from "ergotest/test_renderer.js"
 
-`TestRenderer` is a utility class for converting test results into strings. For most people, the _renderXxx()_ convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Start Here](#start-here) above.
+*TestRenderer* is a utility class for converting test results into strings. For most people, the _renderXxx()_ convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Start Here](#start-here) above.
 
 [Back to top](#reporting-api)
 
@@ -362,7 +361,7 @@ If _filename_ is defined, that’s rendered first. Next comes the names of the o
 my_file.ts » my suite » my test
 ```
 
-The filename, if it exists, is rendered in bold bright white.
+The filename, if defined, is rendered in bold bright white.
 
 
 [Back to top](#reporting-api)
