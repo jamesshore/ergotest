@@ -1,7 +1,7 @@
 {
   "name": "ergotest",
   "author": "James Shore <jshore@jamesshore.com> (https://www.jamesshore.com)",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "description": "A test runner with all the features you want, none of the complexity you don't, and no dependencies.",
   "type": "module",
   "files": [
