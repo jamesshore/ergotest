@@ -183,9 +183,7 @@ The test runner will give you a [TestSuiteResult](#testsuiteresult) when the tes
 * [afterEach()](test_api.md#aftereach) results are found in [TestCaseResult.afterEach](#testcaseresultaftereach). It has results for every _afterEach()_ associated with the test, including ones defined in parent suites.
 * The [it()](test_api.md#it) result is found in [TestCaseResult.it](#testcaseresultit).
 
-> **Note:** For ease of reporting, each [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) result is contained a [TestCaseResult](#testcaseresult). The details are in the [it](#testcaseresultit) property.
-
-The remainder of this document is intended to be used as a reference. It describes the classes, methods, and supporting types 
+The remainder of this document is intended to be used as a reference. It describes the classes, methods, and supporting types available to you.
 
 [Back to top](#automation-api)
 
