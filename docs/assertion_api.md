@@ -156,10 +156,10 @@ To compare object references rather than contents, use [assert.notIdentity](#ass
 Examples:
 
 ```typescript
-assert.equal("abc", "abc");   // fails
-assert.equal("123", 123);     // passes
-assert.equal({ abc: 123 }, { abc: 123 });   // fails
-assert.equal({ abc: 123 }, { abc: "123" }); // passes
+assert.notEqual("abc", "abc");   // fails
+assert.notEqual("123", 123);     // passes
+assert.notEqual({ abc: 123 }, { abc: 123 });   // fails
+assert.notEqual({ abc: 123 }, { abc: "123" }); // passes
 ```
 
 [Back to top](#assertion-api)
