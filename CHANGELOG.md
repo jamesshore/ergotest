@@ -15,6 +15,7 @@ Links to other documentation:
 
 * **0.12.0, 6 Apr 2025:** Edge cases involving failed _beforeAll()_, _afterAll()_, _beforeEach()_ or _afterEach()_ functions are now handled cleanly. Although this is a breaking change, it won't affect most users.
 * **0.12.1, 6 Apr 2025:** Export `test_suite.js` from `package.json` to prevent "The inferred type of 'default' cannot be named" TypeScript error from occurring on test modules.
+* **0.12.2, 18 Apr 2025:** Minor documentation fixes and improvements.
 
 Previously, tests could only have one result. When a before/after function failed, the failure was treated as the test's only result. This resulted in data loss when both a test and its _after_ functions failed. It also meant that no more _after_ functions would run if one of them failed.
 
