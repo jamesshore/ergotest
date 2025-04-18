@@ -325,7 +325,7 @@ Indicates whether the suite was defined using `.skip`, `.only`, or neither. Suit
 
 * testSuiteResult.beforeAll: [TestCaseResult](#testcaseresult)[]
 
-The results of this suite's [beforeAll()](test_api.md#beforeall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
+The results of this suite's [beforeAll()](test_api.md#beforeall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResults_ will be empty arrays.
 
 [Back to top](#automation-api)
 
@@ -334,7 +334,7 @@ The results of this suite's [beforeAll()](test_api.md#beforeall) functions. The 
 
 * testSuiteResult.afterAll: [TestCaseResult](#testcaseresult)[]
 
-The results of this suite's [beforeAll()](test_api.md#afterall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResult_ will be empty arrays.
+The results of this suite's [beforeAll()](test_api.md#afterall) functions. The [beforeEach](#testcaseresultbeforeeach) and [afterEach](#testcaseresultaftereach) properties of the _TestCaseResults_ will be empty arrays.
 
 [Back to top](#automation-api)
 
@@ -356,7 +356,7 @@ This suite’s direct children, which can either be [TestSuiteResult](#testsuite
 
 > **Warning:** Visual changes to the output of this method are not considered breaking changes.
 
-Render this suite as a nicely formatted and colored string. The rendering consists of three parts:
+Render this suite's results as a nicely formatted and colored string. The rendering consists of three parts:
 
 * A summary list of marked suites and tests, for ease of finding `.only` and `.skip` marks
 * A detailed list of test failures and timeouts
@@ -373,7 +373,7 @@ If _elapsedMs_ is defined, the summary will include the average amount of time r
 
 * testSuiteResult.count(): { pass: number, fail: number, skip: number, timeout: number, total: number }
 
-A summary of this suite’s results. Includes a count of each type of test case result and the total number. Only counts  [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
+A summary of this suite's results. Includes a count of each type of test case result and the total number. Only counts  [TestCaseResult](#testcaseresult)s, not [TestSuiteResult](#testsuiteresult)s.
 
 > **Note:** The results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) are included in the count.
 
