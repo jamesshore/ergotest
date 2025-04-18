@@ -287,7 +287,7 @@ assert.match("abc", /x/);   // fails
 
 * assert.matchesGroup(actual: string, regex: RegExp, expectedMatch: string | null, message?: string)
 
-Executes `regex` against `actual` and compares the first capturing group against `expectedMatch`. Fails if they aren’t the same. To say the capturing group wasn’t found, provide `null` to `expectedMatch`.
+Executes `regex` against `actual` and compares the first capturing group against `expectedMatch`. Fails if they aren’t the same. To say the capturing group shouldn't be found, provide `null` to `expectedMatch`.
 
 This assertion is useful for comparing large strings. It allows you to extract just the piece you care about and compare it in isolation, leading to better assertion errors than [assert.match()](#assertmatch).
 
