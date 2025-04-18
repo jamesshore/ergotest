@@ -286,7 +286,7 @@ You can configure test runs with this interface. Provide an object with these op
 
 ## TestSuiteResult
 
-* import { TestSuiteResult } from "ergotest/test_result.js"
+* import { TestSuiteResult } from "ergotest"
 * extends [TestResult](#testresult)
 
 _TestSuiteResult_ instances represent the results of running a test suite. You’ll typically get one by calling [TestRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It’s a nested tree of [TestSuiteResult](#testsuiteresult)s, which correspond to [describe()](test_api.md#describe); [TestCaseResult](#testcaseresult)s, which correspond to [it()](test_api.md#it), [beforeAll()](test_api.md#beforeall), and [afterAll()](test_api.md#afterall); and [RunResult](#runresult)s, which correspond to the results of individual test functions. See the [data model](#data-model) for details. 
@@ -471,7 +471,7 @@ A factory method for creating [TestSuiteResult](#testsuiteresult) instances. You
 
 ## TestCaseResult
 
-* import { TestCaseResult } from "ergotest/test_result.js"
+* import { TestCaseResult } from "ergotest"
 * extends [TestResult](#testresult)
 
 _TestCaseResult_ instances represent the result of running a single [it()](test_api.md#it), [beforeAll()](test_api.md#beforeall), or [afterAll()](test_api.md#afterall) function. You’ll get them from [TestSuiteResult](#testsuiteresult), typically by calling [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests).
@@ -688,7 +688,7 @@ A factory method for creating [TestCaseResult](#testcaseresult) instances. You a
 
 ## RunResult
 
-* import { RunResult } from "ergotest/test_result.js"
+* import { RunResult } from "ergotest"
 
 _RunResult_ instances represent the result of running an individual test function: either [it()](test_api.md#it), [beforeAll()](test_api.md#beforeall), [afterAll()](test_api.md#afterall), [beforeEach()](test_api.md#beforeEach), or [afterEach()](test_api.md#aftereach). You’ll get them from [testCaseResult.it](#testcaseresultit), [testCaseResult.beforeEach](#testcaseresultbeforeeach), or [testCaseResult.afterEach](#testcaseresultaftereach).
 
