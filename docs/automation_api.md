@@ -890,7 +890,7 @@ A type for the possible values of [TestMark](#testmark).
 
 A type for custom error rendering. It takes the following parameters: 
 
-* _names:_ Same as [testCaseResult.name](#testcaseresultname).
+* _name:_ Same as [testCaseResult.name](#testcaseresultname).
 * _error:_ The error that caused the test to fail. Although it's usually an `Error` instance, it could be any data type, including a string.
 * _mark:_ Same as [testCaseResult.mark](#testcaseresultmark).
 * _filename:_ Same as [testCaseResult.filename](#testcaseresultfilename).
