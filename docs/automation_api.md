@@ -384,7 +384,7 @@ A summary of this suite's results. Includes a count of each type of test case re
 
 * testSuiteResult.allTests(): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results in this suite and its sub-suites and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, including the results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall), but not [TestSuiteResult](#testsuiteresult)s.
+Find all the [TestCaseResult](#testcaseresult)s in this suite and its sub-suites and flatten them into a single array.
 
 If you only want test results with a particular status (pass, fail, etc.), use [testSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests) instead.
 
@@ -397,7 +397,7 @@ If you only want test results with a particular status (pass, fail, etc.), use [
 
 * testSuiteResult.allMatchingTests(...statuses: [TestStatusValue](#teststatusvalue)[]): [TestCaseResult](#testcaseresult)[]
 
-Find all the test results, in this suite and its sub-suites, that match any of the _statuses_ and flatten them into a single array. Only includes [TestCaseResult](#testcaseresult)s, including the results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall), but not [TestSuiteResult](#testsuiteresult)s.
+Find all the [TestCaseResult](#testcaseresult)s, in this suite and its sub-suites, that match any of the _statuses_ and flatten them into a single array.
 
 If you want all test results from this suite and its sub-suites, use [testSuiteResult.allTests()](#testsuiteresultalltests) instead.
 > **Note:** The results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) are included.
