@@ -80,13 +80,13 @@ There are five classes in Ergotest, but only the three bolded below are importan
 * _RunResult_ has the details of running a single function, such as _it()_ or _beforeEach()_.
 * *TestRenderer* allows you to customize your test reports. See the [Reporting API](reporting_api.md) for details.
 
-**To run your tests,** call [**TestRunner.create()**](#testrunnercreate) to create a test runner, then call [**testRunner.runInChildProcessAsync()**](#testrunnerruninchildprocessasync) to run your tests. It takes a list of test module paths, runs them in a child process, and returns a [TestSuiteResult](#testsuiteresult).
+**To run your tests,** call [**TestRunner.create()**](#testrunnercreate) to create a test runner, then call [**testRunner.runInChildProcessAsync()**](#testrunnerruninchildprocessasync) to run your tests. It takes an array of test module paths, runs them in a child process, and returns a [TestSuiteResult](#testsuiteresult).
 
 **To report the results of your test run,** call [**testSuiteResult.render()**](#testsuiteresultrender) on the _testSuiteResult_ you got from [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will return a string you can write to the console.
 
 **To learn the overall results of your test run,** call [**testSuiteResult.count()**](#testsuiteresultcount) on the _testSuiteResult_ you got from [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). It will give you an object with the number of tests that passed, failed, etc.
 
-**To report the progress of the tests while they’re running,** pass the **_onTestCaseResult_ callback** to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). The test runner will call your callback after every test and given a _TestCaseResult_. You can render the result with the **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline), or [testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines)**, depending on what kind of output you want, which will give you a string you can write to the console.
+**To report the progress of the tests while they’re running,** pass the **_onTestCaseResult_ callback** to [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync). The test runner will call your callback after every test and give it a _TestCaseResult_. You can render the result with the **[testCaseResult.renderAsCharacter()](#testcaseresultrenderascharacter), [testCaseResult.renderAsSingleLine()](#testcaseresultrenderassingleline),** or **[testCaseResult.renderAsMultipleLines()](#testcaseresultrenderasmultiplelines)**. They each give you a string you can write to the console.
 
 [Back to top](#automation-api)
 
