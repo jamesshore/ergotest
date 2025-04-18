@@ -277,7 +277,7 @@ If _fn()_ throws an exception or times out, the remainder of this suite will be 
 * afterAll(options: [ItOptions](#itoptions), fn: [ItFunction](#itfunction))
 * afterAll(fn: [ItFunction](#itfunction))
 
-Define a function to run immediately before running all the tests in this suite and its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
+Define a function to run immediately after running all the tests in this suite and its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
 After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_. 
 
