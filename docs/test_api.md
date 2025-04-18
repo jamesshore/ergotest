@@ -215,7 +215,7 @@ If _fn()_ returns a promise, the test runner will `await` that promise before co
 
 If you call `it.skip()`, this test will be skipped. If you call `it.only()` all other tests and suites that _aren't_ marked `.only` will be skipped.
 
-After the test runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). The _TestCaseResult_ will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to this test’s _describe()_.
+After the test runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). The _TestCaseResult_ will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult) corresponding to this test’s _describe()_.
 
 The result will have one of the following statuses:
 
@@ -252,7 +252,7 @@ Use the _timeout_ option to change the timeout for this test. The default value 
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing. 
 
-After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_.
+After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult) corresponding to the function's _describe()_.
 
 The result will have one of the following statuses:
 
@@ -295,7 +295,7 @@ If there are multiple _afterAll()_ functions in a suite, _fn()_ will run in the 
 
 If any tests throw an exception or time out, _fn()_ will still be run.
 
-If no tests in this suite or its sub-suites ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeAll) threw an exception, _fn()_ will not be run.
+If no tests in this suite or its sub-suites ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeAll) threw an exception—_fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, any remaining _afterAll()_ functions will still be run.
 
@@ -322,9 +322,9 @@ The result will have one of the following statuses:
 
 If there are multiple _beforeEach()_ functions in a suite, _fn()_ will be run in the order _beforeEach()_ was called. If there are multiple nested suites, they will run from the outside in. If there are [beforeAll()](#beforeall) functions in the suite, they will run first.
 
-If no tests in this suite or its sub-suites will be run—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) threw an exception, _fn()_ will not be run.
+If no tests in this suite or its sub-suites will be run—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) threw an exception—_fn()_ will not be run.
 
-If _fn()_ throws an exception or times out, no _beforeEach()_, _afterEach()_, or _it()_ functions related to the corresponding test will be run. They will marked as "skipped" in the test results. However, _beforeEach(), afterEach()_ and _it()_ functions will be still run again for any remaining tests.
+If _fn()_ throws an exception or times out, no more _beforeEach()_, _afterEach()_, or _it()_ functions related to the corresponding test will be run. They will marked as "skipped" in the test results. However, _beforeEach(), afterEach()_ and _it()_ functions will be still run again for any remaining tests.
 
 [Back to top](#test-api)
 
@@ -349,7 +349,7 @@ The result will have one of the following statuses:
 
 If there are multiple _afterEach()_ functions in a suite, they will run in the order _afterEach()_ was called. If there are multiple nested suites, they will be run from the inside out. If there are [afterAll()](#afterall) functions in the suite, they will run last.
 
-If a test throws an exception or time out, _fn()_ will still be run.
+If a test throws an exception or times out, _fn()_ will still be run.
 
 If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, _fn()_ will not be run.
 
@@ -364,16 +364,16 @@ If _fn()_ throws an exception or times out, any remaining _afterEach()_ function
 
 Passed into [it()](#it), [beforeAll()](#beforeAll), [beforeEach()](#beforeEach), [afterAll()](#afterAll), and [afterEach()](#afterEach).
 
-Gets the configuration value associated with `key`. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
+Gets the configuration value associated with *key*. This is useful for defining test-specific configuration, such as temporary file-system directories, connection strings, and so forth.
 
 If no configuration object was defined, or if _key_ doesn’t exist, _getConfig()_ will throw an exception.
 
-See [TestOpt](automation_api.md#testrunner) for information about how to define the configuration object.
+See [TestOptions](automation_api.md#testoptions) for information about how to define the configuration object.
 
 ### Example
 
 ```typescript
-import { assert, describe, it, beforeAll, beforeEach } from "ergotest";
+import { assert, describe, it, beforeEach } from "ergotest";
 import fs from "node:fs/promises";
 import { sut } from "./system_under_test.js";
 
@@ -395,7 +395,7 @@ export default describe(() => {
     await fs.rm(testDir, { recursive: true, force: true });
   });
 
-  it("reads and writes files", async () => {
+  it("writes files", async () => {
     await sut.writeFileAsync(`${testDir}/my_file`);
     const actual = await fs.readFile(`${testDir}/myFile`);
     
