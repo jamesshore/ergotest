@@ -269,15 +269,15 @@ Fails if `actual` is less than `min` or greater than `max`. Uses the `<` and `>`
 
 * assert.match(actual: string, expected: RegExp, message?: string)
 
-Checks to see if `actual` matches the `expected` regular expression. Fails if `actual` is not a string or `expected` is not a regular expression.
+Fails if `actual` doesn’t match the `expected` regular expression. Fails if `actual` is not a string or `expected` is not a regular expression.
 
 For better assertion errors when comparing large strings, consider using [assert.matchesGroup()](#assertmatchesgroup) instead.
 
 Examples:
 
 ```typescript
-assert.matches("abc", /b/);   // passes
-assert.matches("abc", /x/);   // fails
+assert.match("abc", /b/);   // passes
+assert.match("abc", /x/);   // fails
 ```
 
 [Back to top](#assertion-api)
