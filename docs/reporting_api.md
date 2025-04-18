@@ -259,7 +259,7 @@ export function renderTap(suite: TestSuiteResult) {
 
 * import { TestRenderer } from "ergotest/test_renderer.js"
 
-`TestRenderer` is a utility class for converting test results into strings. For most people, the _renderXxx()_ convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Start Here](#start-here) above.
+*TestRenderer* is a utility class for converting test results into strings. For most people, the _renderXxx()_ convenience methods on [TestSuiteResult](#testsuiteresult) and [TestCaseResult](#testcaseresult) are good enough. But if you want to have fine-grained control over your test output, use this class. For details, see [Start Here](#start-here) above.
 
 [Back to top](#reporting-api)
 
@@ -361,7 +361,7 @@ If _filename_ is defined, that’s rendered first. Next comes the names of the o
 my_file.ts » my suite » my test
 ```
 
-The filename, if it exists, is rendered in bold bright white.
+The filename, if defined, is rendered in bold bright white.
 
 
 [Back to top](#reporting-api)
