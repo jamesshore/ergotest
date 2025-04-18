@@ -798,7 +798,7 @@ A factory method for creating failing [RunResult](#runresult) instances. You are
 * _name: string[]:_ Same as [runResult.name](#runresultname).
 * _filename?: string:_ Same as [runResult.filename](#runresultfilename).
 * _error: unknown:_ The error that caused the failure. It will be used to generate [runResult.errorMessage](#runresulterrormessage) and [runResult.errorRender](#runresulterrorrender).
-* _renderError: [RenderErrorFn](#rendererrorfn):_ A function to convert _error_ into a string. The output of the function will be stored in [runResult.errorRender](#runresulterrorrender). 
+* _renderError?: [RenderErrorFn](#rendererrorfn):_ A function to convert _error_ into a string. The output of the function will be stored in [runResult.errorRender](#runresulterrorrender). Defaults to [renderError()](reporting_api.md#rendererror).
 
 [Back to top](#automation-api)
 
