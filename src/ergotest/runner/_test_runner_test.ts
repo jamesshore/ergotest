@@ -339,7 +339,8 @@ export default describe(() => {
 				assert.equal(notifications[0]?.status, TestStatus.fail, "should notify caller");
 			});
 
-			it.skip("detects early process exit", async () => {
+			it("detects early process exit", async () => {
+				process.exit(1);
 				let notifications: TestCaseResult[] = [];
 				function onTestCaseResult(result: TestCaseResult) {
 					notifications.push(result);

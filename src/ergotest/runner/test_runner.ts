@@ -108,25 +108,14 @@ export class TestRunner {
 
 class WorkerProcess {
 
+	private _clock: Clock;
 	private _worker!: ChildProcess;
 
-	constructor(private readonly _clock: Clock) {
+	constructor(clock: Clock) {
+		this._clock = clock;
 	}
 
-	async runAsync(modulePaths: string[], options: TestOptions): Promise<TestSuiteResult> {
-		this._worker = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
-
-		try {
-			const renderErrorFn = await importRendererAsync(options.renderer);
-			return await this.#runTestsInWorkerProcessAsync(renderErrorFn, modulePaths, options);
-		}
-		finally {
-			await this.#killWorkerProcess();
-		}
-	}
-
-	async #runTestsInWorkerProcessAsync(
-		renderError: RenderErrorFn,
+	async runAsync(
 		modulePaths: string[],
 		{
 			timeout,
@@ -134,63 +123,70 @@ class WorkerProcess {
 			onTestCaseResult = () => {},
 			renderer,
 		}: TestOptions,
+		): Promise<TestSuiteResult> {
+		this._worker = child_process.fork(WORKER_FILENAME, { serialization: "advanced", detached: false });
+
+		try {
+			const renderErrorFn = await importRendererAsync(renderer);
+			this._worker.send({ modulePaths, timeout, config, renderer });
+			return await this.#handleWorkerEvents(renderErrorFn, onTestCaseResult);
+		}
+		finally {
+			await this.#killWorkerProcess();
+		}
+	}
+
+	async #handleWorkerEvents(
+		renderError: RenderErrorFn,
+		onTestCaseResult: (testCaseResult: TestCaseResult) => void,
 	): Promise<TestSuiteResult> {
 		return await new Promise<TestSuiteResult>((resolve, reject) => {
-			const workerData = { modulePaths, timeout, config, renderer };
-			this._worker.send(workerData);
+			let workerIsDone = false;
 
-			this._worker.on("error", error => reject(error));
-			this._worker.on("close", code => {
-				if (code !== 0) reject(new Error(`Test worker exited with non-zero error code: ${code}`));
+			const { aliveFn, cancelFn } = this._clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
+				return resolve(createWatchdogFailureAndNotifyCaller(
+					"Detected infinite loop in tests",
+					renderError,
+					onTestCaseResult,
+				));
 			});
 
-			const { aliveFn, cancelFn } = this.#detectInfiniteLoops(this._clock, resolve, renderError, onTestCaseResult);
-			this._worker.on("message", message => {
-				this.#handleMessage(message as WorkerOutput, aliveFn, cancelFn, onTestCaseResult, resolve, reject);
+			this._worker.on("close", () => {
+				if (!workerIsDone) {
+					return resolve(createWatchdogFailureAndNotifyCaller(
+						"Tests exited early (probably by calling `process.exit()`)",
+						renderError,
+						onTestCaseResult,
+					));
+				}
+			});
+
+			this._worker.on("error", error => {
+				return reject(error);
+			});
+
+			this._worker.on("message", (message: WorkerOutput) => {
+				switch (message.type) {
+					case "keepalive":
+						aliveFn();
+						break;
+					case "progress":
+						onTestCaseResult(TestCaseResult.deserialize(message.result));
+						break;
+					case "fatal":
+						workerIsDone = true;
+						cancelFn();
+						return reject(new Error(message.message, { cause: message.err }));
+					case "complete":
+						workerIsDone = true;
+						cancelFn();
+						return resolve(TestSuiteResult.deserialize(message.result));
+					default:
+						// @ts-expect-error TypeScript thinks this is unreachable, but we check it just in case
+						ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
+				}
 			});
 		});
-	}
-
-	#detectInfiniteLoops(
-		clock: Clock,
-		resolve: (result: TestSuiteResult) => void,
-		renderError: RenderErrorFn | undefined,
-		onTestCaseResult: (result: TestCaseResult) => void,
-	) {
-		const { aliveFn, cancelFn } = clock.keepAlive(KEEPALIVE_TIMEOUT_IN_MS, () => {
-			const testSuiteResult = createWatchdogFailureAndNotifyCaller("Detected infinite loop in tests", renderError, onTestCaseResult);
-			resolve(testSuiteResult);
-		});
-		return { aliveFn, cancelFn };
-	}
-
-	#handleMessage(
-		message: WorkerOutput,
-		aliveFn: () => void,
-		cancelFn: () => void,
-		onTestCaseResult: (testResult: TestCaseResult) => void,
-		resolve: (result: TestSuiteResult) => void,
-		reject: (err: Error) => void,
-	) {
-		switch (message.type) {
-			case "keepalive":
-				aliveFn();
-				break;
-			case "progress":
-				onTestCaseResult(TestCaseResult.deserialize(message.result));
-				break;
-			case "fatal":
-				cancelFn();
-				reject(new Error(message.message, { cause: message.err }));
-				break;
-			case "complete":
-				cancelFn();
-				resolve(TestSuiteResult.deserialize(message.result));
-				break;
-			default:
-				// @ts-expect-error TypeScript thinks this is unreachable, but we check it just in case
-				ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
-		}
 	}
 
 	async #killWorkerProcess(): Promise<void> {
