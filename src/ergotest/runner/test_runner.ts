@@ -153,6 +153,7 @@ class WorkerProcess {
 
 			this._worker.on("close", () => {
 				if (!workerIsDone) {
+					prepareForWorkerExit();
 					return resolve(createWatchdogFailureAndNotifyCaller(
 						"Tests exited early (probably by calling `process.exit()`)",
 						renderError,
@@ -174,18 +175,21 @@ class WorkerProcess {
 						onTestCaseResult(TestCaseResult.deserialize(message.result));
 						break;
 					case "fatal":
-						workerIsDone = true;
-						cancelFn();
+						prepareForWorkerExit();
 						return reject(new Error(message.message, { cause: message.err }));
 					case "complete":
-						workerIsDone = true;
-						cancelFn();
+						prepareForWorkerExit();
 						return resolve(TestSuiteResult.deserialize(message.result));
 					default:
 						// @ts-expect-error TypeScript thinks this is unreachable, but we check it just in case
 						ensure.unreachable(`Unknown message type '${message.type}' from test runner: ${JSON.stringify(message)}`);
 				}
 			});
+
+			function prepareForWorkerExit() {
+				workerIsDone = true;
+				cancelFn();
+			}
 		});
 	}
 

@@ -12,7 +12,7 @@ import {
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "../tests/test_suite.js";
-import { TestResult, TestSuiteResult, TestCaseResult } from "../results/test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { fromModulesAsync } from "./loader.js";
@@ -340,7 +340,6 @@ export default describe(() => {
 			});
 
 			it("detects early process exit", async () => {
-				process.exit(1);
 				let notifications: TestCaseResult[] = [];
 				function onTestCaseResult(result: TestCaseResult) {
 					notifications.push(result);
@@ -359,6 +358,24 @@ export default describe(() => {
 				]}));
 				assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
 				assert.equal(notifications[0]?.status, TestStatus.fail, "should notify caller");
+			});
+
+			it("doesn't trigger infinite loop detection when process exits early", async () => {
+				let notifications: TestCaseResult[] = [];
+				function onTestCaseResult(result: TestCaseResult) {
+					notifications.push(result);
+				}
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+					onTestCaseResult,
+				};
+				const { runner, clock } = await createAsync();
+
+				await writeTestModuleAsync(`process.exit(0);`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], options);
+				await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+
+				assert.equal(notifications.length, 1, "should only have one error");
 			});
 
 		});
