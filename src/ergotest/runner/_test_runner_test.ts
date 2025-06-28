@@ -12,7 +12,7 @@ import {
 import { TestRunner } from "./test_runner.js";
 import path from "node:path";
 import { TestSuite } from "../tests/test_suite.js";
-import { TestResult, TestSuiteResult, TestCaseResult } from "../results/test_result.js";
+import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { fromModulesAsync } from "./loader.js";
@@ -143,205 +143,241 @@ export default describe(() => {
 
 	describe("child process", () => {
 
-		it("runs test modules", async () => {
-			const { runner } = await createAsync();
-			await writeTestModuleAsync(`// passes`);
+		describe("standard behavior", () => {
 
-			const results = await runner.runInChildProcessAsync([ testModulePath ]);
+			it("runs test modules", async () => {
+				const { runner } = await createAsync();
+				await writeTestModuleAsync(`// passes`);
 
-			const expectedResult = createSuite({ tests: [
-				createSuite({ filename: testModulePath, tests: [
-					createPass({ name: "test", filename: testModulePath })
-				]}),
-			]});
+				const results = await runner.runInChildProcessAsync([ testModulePath ]);
 
-			assert.equal(results, expectedResult);
-		});
+				const expectedResult = createSuite({ tests: [
+					createSuite({ filename: testModulePath, tests: [
+						createPass({ name: "test", filename: testModulePath })
+					]}),
+				]});
 
-		it("passes through config", async () => {
-			const myConfig = { myConfig: "my_config" };
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ], { config: myConfig });
-
-			assertFailureMessage(results, "my_config");
-		});
-
-		it("supports custom error rendering", async () => {
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`throw new Error();`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ], {
-				renderer: CUSTOM_RENDERER_PATH,
+				assert.equal(results, expectedResult);
 			});
 
-			assert.equal(getTestResult(results).errorRender, "custom rendering");
-		});
+			it("passes through config", async () => {
+				const myConfig = { myConfig: "my_config" };
+				const { runner } = await createAsync();
 
-		it("notifies caller of completed tests", async () => {
-			const { runner } = await createAsync();
+				await writeTestModuleAsync(`throw new Error(getConfig("myConfig"));`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], { config: myConfig });
 
-			const progress: TestResult[] = [];
-			const onTestCaseResult = (result: TestResult) => progress.push(result);
+				assertFailureMessage(results, "my_config");
+			});
 
-			await writeTestModuleAsync(`// passes`);
-			await runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
+			it("supports custom error rendering", async () => {
+				const { runner } = await createAsync();
 
-			assert.equal(progress, [
-				createPass({ name: "test", filename: testModulePath }),
-			]);
-		});
+				await writeTestModuleAsync(`throw new Error();`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], {
+					renderer: CUSTOM_RENDERER_PATH,
+				});
 
-		it("does not cache test modules from run to run", async () => {
-			const { runner } = await createAsync();
+				assert.equal(getTestResult(results).errorRender, "custom rendering");
+			});
 
-			await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
-			await runner.runInChildProcessAsync([ testModulePath ]);
+			it("notifies caller of completed tests", async () => {
+				const { runner } = await createAsync();
 
-			await writeTestModuleAsync(`throw new Error("module was not cached");`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ]);
+				const progress: TestResult[] = [];
+				const onTestCaseResult = (result: TestResult) => progress.push(result);
 
-			assertFailureMessage(results, "module was not cached");
-		});
+				await writeTestModuleAsync(`// passes`);
+				await runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
 
-		it("isolates tests", async () => {
-			const { runner } = await createAsync();
+				assert.equal(progress, [
+					createPass({ name: "test", filename: testModulePath }),
+				]);
+			});
 
-			await writeTestModuleAsync(`global._test_runner_test = true;`);
-			await runner.runInChildProcessAsync([ testModulePath ]);
+			it("renders custom objects", async () => {
+				// This test is a bit obscure. The issue is the test result object for failed tests previously stored the error
+				// object that caused the test failure in the test result. That caused information to be lost because the test
+				// result was being serialized from worker process to parent process, particularly in the 'expected' and 'actual'
+				// objects.
+				//
+				// The problem was fixed architecturally by having failed test results store an "error render", which
+				// is a serialized version of the error object--typically the human-readable string that will be displayed to the
+				// user.
+				//
+				// This test exists to prevent future maintainers from reversing that architectural decision. Storing the
+				// error object in the test result is cleaner from a design perspective, so it might be tempting to go back to
+				// that approach. Unfortunately, it doesn't work when you're serializing test results from worker process to
+				// parent process.
 
-			await writeTestModuleAsync(`throw new Error("global should be undefined: " + global._test_runner_test);`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ]);
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+				};
 
-			assertFailureMessage(results, "global should be undefined: undefined");
-		});
-
-		it("supports process.chdir(), which isn't allowed in Worker threads", async () => {
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`
-				process.chdir(".");
-				throw new Error("process.chdir() should execute without error");
-			`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ]);
-
-			assertFailureMessage(results, "process.chdir() should execute without error");
-		});
-
-		it("handles uncaught promise rejections", async () => {
-			const options = {
-				renderer: CUSTOM_RENDERER_PATH,
-			};
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
-			const results = await runner.runInChildProcessAsync([ testModulePath ], options);
-
-			assert.dotEquals(results, createSuite({ tests: [
-				createFail({ name: "Unhandled error in tests", error: new Error("my error") }),
-			]}));
-			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
-		});
-
-		it("triggers onTestCaseResult with uncaught promise rejection", async () => {
-			let results: TestCaseResult[] = [];
-			function onTestCaseResult(_result: TestCaseResult) {
-				results.push(_result);
-			}
-			const { runner } = await createAsync();
-
-			await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
-			await runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
-
-			assert.equal(results.length, 2, "should have second failure for uncaught rejection");
-		});
-
-		it("detects infinite loops", async () => {
-			const options = {
-				renderer: CUSTOM_RENDERER_PATH,
-			};
-			const { runner, clock } = await createAsync();
-
-			await writeTestModuleAsync(`while (true);`);
-			const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], options);
-			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
-			const results = await resultsPromise;
-
-			assert.dotEquals(results, createSuite({ tests: [
-				createFail({ name: "Test runner watchdog", error: "Detected infinite loop in tests" }),
-			]}));
-			assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
-		});
-
-		it("triggers onTestCaseResult with infinite loop failure", async () => {
-			let result: TestCaseResult | undefined;
-			function onTestCaseResult(_result: TestCaseResult) {
-				result = _result;
-			}
-			const { runner, clock } = await createAsync();
-
-			await writeTestModuleAsync(`while (true);`);
-			const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], { onTestCaseResult });
-			await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
-			await resultsPromise;
-
-			assert.equal(result?.status, TestStatus.fail);
-		});
-
-		it("fails fast if custom renderer doesn't load", async () => {
-			const options = {
-				renderer: "./no_such_renderer.js",
-			};
-			const { runner } = await createAsync();
-			await writeTestModuleAsync(`// passes`);
-
-			await assert.errorAsync(
-				() => runner.runInChildProcessAsync([ testModulePath ], options),
-				/Renderer module not found/,
-			);
-		});
-
-		it("renders custom objects", async () => {
-			// This test is a bit obscure. The issue is the test result object for failed tests previously stored the error
-			// object that caused the test failure in the test result. That caused information to be lost because the test
-			// result was being serialized from worker process to parent process, particularly in the 'expected' and 'actual'
-			// objects.
-			//
-			// The problem was fixed architecturally by having failed test results store an "error render", which
-			// is a serialized version of the error object--typically the human-readable string that will be displayed to the
-			// user.
-			//
-			// This test exists to prevent future maintainers from reversing that architectural decision. Storing the
-			// error object in the test result is cleaner from a design perspective, so it might be tempting to go back to
-			// that approach. Unfortunately, it doesn't work when you're serializing test results from worker process to
-			// parent process.
-
-			const options = {
-				renderer: CUSTOM_RENDERER_PATH,
-			};
-
-			const { runner } = await createAsync();
-			await writeTestModuleAsync(
-				`
-					assert.equal(new MyString("actual"), new MyString("expected"));
-				`,
-				`
-					class MyString extends String {
-						constructor(customField) {
-							super();
-							this._customField = customField;
+				const { runner } = await createAsync();
+				await writeTestModuleAsync(
+					`
+						assert.equal(new MyString("actual"), new MyString("expected"));
+					`,
+					`
+						class MyString extends String {
+							constructor(customField) {
+								super();
+								this._customField = customField;
+							}
 						}
-					}
-				`
-			);
-			const result = getTestResult(await runner.runInChildProcessAsync([ testModulePath ], options));
+					`
+				);
+				const result = getTestResult(await runner.runInChildProcessAsync([ testModulePath ], options));
 
-			// This assertion is vulnerable to changes in util.inspect()'s rendering algorithm
-			assert.equal(result.errorRender,
-				"custom rendering:\n" +
-				"expected: [String (MyString): ''] { _customField: 'expected' }\n" +
-				"actual: [String (MyString): ''] { _customField: 'actual' }\n");
+				// This assertion is vulnerable to changes in util.inspect()'s rendering algorithm
+				assert.equal(result.errorRender,
+					"custom rendering:\n" +
+					"expected: [String (MyString): ''] { _customField: 'expected' }\n" +
+					"actual: [String (MyString): ''] { _customField: 'actual' }\n");
+			});
+
+			it("fails fast if custom renderer doesn't load", async () => {
+				const options = {
+					renderer: "./no_such_renderer.js",
+				};
+				const { runner } = await createAsync();
+				await writeTestModuleAsync(`// passes`);
+
+				await assert.errorAsync(
+					() => runner.runInChildProcessAsync([ testModulePath ], options),
+					/Renderer module not found/,
+				);
+			});
+
+		});
+
+
+		describe("isolation", () => {
+
+			it("does not cache test modules from run to run", async () => {
+				const { runner } = await createAsync();
+
+				await writeTestModuleAsync(`throw new Error("module was cached, and shouldn't have been");`);
+				await runner.runInChildProcessAsync([ testModulePath ]);
+
+				await writeTestModuleAsync(`throw new Error("module was not cached");`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ]);
+
+				assertFailureMessage(results, "module was not cached");
+			});
+
+			it("does not keep variables from run to run", async () => {
+				const { runner } = await createAsync();
+
+				await writeTestModuleAsync(`global._test_runner_test = true;`);
+				await runner.runInChildProcessAsync([ testModulePath ]);
+
+				await writeTestModuleAsync(`throw new Error("global should be undefined: " + global._test_runner_test);`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ]);
+
+				assertFailureMessage(results, "global should be undefined: undefined");
+			});
+
+			it("supports process.chdir(), which isn't allowed in Worker threads", async () => {
+				const { runner } = await createAsync();
+
+				await writeTestModuleAsync(`
+					process.chdir(".");
+					throw new Error("process.chdir() should execute without error");
+				`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ]);
+
+				assertFailureMessage(results, "process.chdir() should execute without error");
+			});
+
+		});
+
+		describe("watchdog", () => {
+
+			it("detects uncaught promise rejections", async () => {
+				let notifications: TestCaseResult[] = [];
+				function onTestCaseResult(result: TestCaseResult) {
+					notifications.push(result);
+				}
+
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+					onTestCaseResult,
+				};
+				const { runner } = await createAsync();
+
+				await writeTestModuleAsync(`Promise.reject(new Error("my error"));`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], options);
+
+				assert.dotEquals(results, createSuite({ tests: [
+					createFail({ name: "Unhandled error in tests", error: new Error("my error") }),
+				]}));
+				assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
+			});
+
+			it("detects infinite loops", async () => {
+				let notifications: TestCaseResult[] = [];
+				function onTestCaseResult(result: TestCaseResult) {
+					notifications.push(result);
+				}
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+					onTestCaseResult,
+				};
+				const { runner, clock } = await createAsync();
+
+				await writeTestModuleAsync(`while (true);`);
+				const resultsPromise = runner.runInChildProcessAsync([ testModulePath ], options);
+				await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+				const results = await resultsPromise;
+
+				assert.dotEquals(results, createSuite({ tests: [
+					createFail({ name: "Test runner watchdog", error: "Detected infinite loop in tests" }),
+				]}));
+				assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
+				assert.equal(notifications[0]?.status, TestStatus.fail, "should notify caller");
+			});
+
+			it("detects early process exit", async () => {
+				let notifications: TestCaseResult[] = [];
+				function onTestCaseResult(result: TestCaseResult) {
+					notifications.push(result);
+				}
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+					onTestCaseResult,
+				};
+				const { runner } = await createAsync();
+
+				await writeTestModuleAsync(`process.exit(0);`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], options);
+
+				assert.dotEquals(results, createSuite({ tests: [
+					createFail({ name: "Test runner watchdog", error: "Tests exited early (probably by calling `process.exit()`)" }),
+				]}));
+				assert.equal(getTestResult(results).errorRender, "custom rendering", "should use custom renderer");
+				assert.equal(notifications[0]?.status, TestStatus.fail, "should notify caller");
+			});
+
+			it("doesn't trigger infinite loop detection when process exits early", async () => {
+				let notifications: TestCaseResult[] = [];
+				function onTestCaseResult(result: TestCaseResult) {
+					notifications.push(result);
+				}
+				const options = {
+					renderer: CUSTOM_RENDERER_PATH,
+					onTestCaseResult,
+				};
+				const { runner, clock } = await createAsync();
+
+				await writeTestModuleAsync(`process.exit(0);`);
+				const results = await runner.runInChildProcessAsync([ testModulePath ], options);
+				await clock.tickAsync(TestSuite.DEFAULT_TIMEOUT_IN_MS);
+
+				assert.equal(notifications.length, 1, "should only have one error");
+			});
+
 		});
 
 	});

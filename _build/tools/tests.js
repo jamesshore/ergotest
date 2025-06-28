@@ -92,7 +92,6 @@ export default class Tests {
 					report.debug("\n  " + testResult.renderAsSingleLine());
 					report.progress(testResult.renderAsCharacter());
 				},
-				renderer: "ergotest/test_renderer.js",
 			});
 			await this.#writeTimestampFilesAsync(testResult);
 
