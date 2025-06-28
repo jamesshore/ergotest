@@ -44,4 +44,4 @@ import { TestSuite } from "../tests/test_suite.js";
     }
 }
 
-//# sourceMappingURL=loader.js.map
+//# sourceMappingURL=/Users/jshore/Documents/Projects/ergotest/generated/src/ergotest/runner/loader.js.map
