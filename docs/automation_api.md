@@ -219,7 +219,7 @@ Spawn an isolated child process, import the modules in _modulePaths_ inside that
 
 The test modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
 
-If the tests enter an infinite loop or throw an uncaught exception, a test watchdog will kill the tests and generate a failed [TestCaseResult](#testcaseresult).
+If the tests enter an infinite loop, throw an uncaught exception, or exit early (such as by calling *process.exit()*), a test watchdog will kill the test run and generate a failed [TestCaseResult](#testcaseresult).
 
 If any of the _modulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
@@ -242,7 +242,7 @@ Import the modules in _modulePaths_ in the current process and run them as a sin
 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed. As a result, this method is only suitable for automation that exits back to the command line after running the tests.
 
-Does *not* detect infinite loops or uncaught exceptions.
+Does *not* detect infinite loops, uncaught exceptions, or early exits.
 
 If any of the _modulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
