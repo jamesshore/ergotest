@@ -13,6 +13,7 @@ Links to other documentation:
 
 ## v0.13.1: Bugfix: beforeAll() and afterAll() no longer run when they shouldn't
 
+* **0.13.2, 2 Aug 2025:** Fix broken links in changelog and readme
 * **0.13.1, 2 Aug 2025:** When _.skip_ and _.only_ were used, it was possible for _beforeAll()_ and _afterAll()_ to run even when none of their related tests ran. This has been fixed.
 
 This bug occurred because test suites didn't properly detect when their tests were skipped. There are two scenarios I'm aware of that triggered the bug:
