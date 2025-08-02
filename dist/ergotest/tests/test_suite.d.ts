@@ -29,7 +29,6 @@ export declare class TestSuite implements Test {
     private _mark;
     private _tests;
     private _hasDotOnlyChildren;
-    private _allChildrenSkipped;
     private _beforeAll;
     private _afterAll;
     private _beforeEach;
@@ -68,7 +67,7 @@ export declare class TestSuite implements Test {
     /** @private */
     _isDotOnly(): boolean;
     /** @private */
-    _isSkipped(): boolean;
+    _isSkipped(parentMark: TestMarkValue): boolean;
     /** @private */
     _runAsyncInternal(runOptions: RunOptions, parentData: RunData): Promise<TestSuiteResult>;
 }
