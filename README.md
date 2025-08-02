@@ -42,7 +42,7 @@ Ergotest works particularly well with [Automatopia](https://github.com/jamesshor
 
 ## Wait for v1.0?
 
-Ergotest is battle-tested and reliable. The test API that's used to write test is stable and very unlikely to change. However, I’m still refining the automation API that’s used to run tests. It’s possible there will be some breaking API changes, although they shouldn't be significant. Even so, until v1.0 is released, everything is subject to change. You might want to wait.
+Ergotest is battle-tested and reliable. The test API that's used to write tests is stable and very unlikely to change. However, I’m still refining the automation API that’s used to run tests. It’s possible there will be some breaking API changes, although they shouldn't be significant. Even so, until v1.0 is released, everything is subject to change. You might want to wait.
 
 
 ## Example Tests
