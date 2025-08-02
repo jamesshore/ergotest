@@ -11,7 +11,64 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
-## v0.13.x: Early exit detection
+## v0.13.1: Bugfix: beforeAll() and afterAll() no longer run when they shouldn't
+
+* **0.13.1, 2 Aug 2025:** When _.skip_ and _.only_ were used, it was possible for _beforeAll()_ and _afterAll()_ to run even when none of their related tests ran. This has been fixed.
+
+This bug occurred because test suites didn't properly detect when their tests were skipped. There are two scenarios I'm aware of that triggered the bug:
+
+### Scenario 1: Marking a test as .only
+
+Bug: When a test is marked `.only`, _beforeAll()_ and _afterAll()_ in unrelated suites would still run.
+
+Example:
+
+```typescript
+// File 1
+export default describe(() => {
+  beforeAll(() => {
+    // Bug: This beforeAll block would run
+    // (but it shouldn't, because all the suite's tests are skipped) 
+  });
+  it(() => {
+    // Correct: This test would be skipped
+    // (because another suite has a test marked with .only) 
+  });
+});
+
+// File 2
+export default describe(() => {
+  it.only(() => {
+    // Correct: This test would run
+    // (because it's marked with .only) 
+  });
+})
+```
+
+### Scenario 2: Skipping a test suite that has a sub-suite
+
+Bug: When a test suite is marked `.skip`, and it has a sub-suite, the suite's tests would be skipped, but _beforeAll()_ and _afterAll()_ would still run.
+
+Example:
+
+```typescript
+export default describe.skip(() => {
+  beforeAll(() => {
+    // Bug: This beforeAll block would run
+    // (but it shouldn't, because all the suite's tests are skipped) 
+  });
+  
+  describe(() => {
+    it(() => {
+      // Correct: This test would be skipped
+      // (because the grandparent suite is skipped)  
+    });
+  });
+});
+```
+
+
+## v0.13.0: Early exit detection
 
 * **0.13.0, 27 Jun 2025:** The [testRunner.runInChildProcessAsync()](docs/automation_api.md#testrunnerruninchildprocessasync) watchdog now detects when the tests exit early (typically by calling *process.exit()*) and generates a failed [TestCaseResult](#testcaseresult). Previously, the test run would hang.
 
