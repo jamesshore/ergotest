@@ -10,7 +10,6 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
     _mark;
     _tests;
     _hasDotOnlyChildren;
-    _allChildrenSkipped;
     _beforeAll;
     _afterAll;
     _beforeEach;
@@ -33,7 +32,6 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         this._afterEach = afterEach;
         this._tests = tests;
         this._hasDotOnlyChildren = this._tests.some((test)=>test._isDotOnly());
-        this._allChildrenSkipped = this._tests.every((test)=>test._isSkipped(this._mark));
     }
     /**
 	 * Run the tests in this suite.
@@ -94,8 +92,9 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
     /** @private */ _isDotOnly() {
         return this._mark === TestMark.only || this._hasDotOnlyChildren;
     }
-    /** @private */ _isSkipped() {
-        return this._allChildrenSkipped;
+    /** @private */ _isSkipped(parentMark) {
+        const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
+        return this._tests.every((test)=>test._isSkipped(inheritedMark));
     }
     /** @private */ async _runAsyncInternal(runOptions, parentData) {
         const runData = this.#consolidateRunData(parentData);
@@ -143,7 +142,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
             filename: this._filename ?? parentData.filename,
             mark: inheritedMark,
             timeout: this._timeout ?? parentData.timeout,
-            skipAll: parentData.skipAll || this._isSkipped(),
+            skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
             beforeEach,
             afterEach
         };

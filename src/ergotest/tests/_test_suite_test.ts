@@ -739,12 +739,12 @@ export default describe(() => {
 
 				assert.equal(await suite.runAsync(), createSuite({
 					beforeAll: [
-						createSkip({ name: "beforeAll()", mark: "none" }),
-						createSkip({ name: "beforeAll() #2", mark: "none" }),
+						createSkip({ name: "beforeAll()" }),
+						createSkip({ name: "beforeAll() #2" }),
 					],
 					afterAll: [
-						createSkip({ name: "afterAll()", mark: "none" }),
-						createSkip({ name: "afterAll() #2", mark: "none" }),
+						createSkip({ name: "afterAll()" }),
+						createSkip({ name: "afterAll() #2" }),
 					],
 					tests: [
 						createSkip({ name: "test 1", mark: "skip" }),
@@ -752,6 +752,31 @@ export default describe(() => {
 					],
 				}));
 			});
+
+			it("DEFECT: doesn't run beforeAll() and afterAll() when entire suite is skipped and sub-suite exists", async () => {
+				const suite = describe_sut.skip(() => {
+					beforeAll_sut(PASS_FN);
+					afterAll_sut(PASS_FN);
+					it_sut("test", PASS_FN);
+					describe_sut(() => {
+						it_sut("sub-test", PASS_FN);
+					});
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({
+					mark: "skip",
+					beforeAll: [ createSkip({ name: "beforeAll()" }) ],
+					afterAll: [ createSkip({ name: "afterAll()" }) ],
+					tests: [
+						createSkip({ name: "test" }),
+						createSuite({
+							tests: [ createSkip({ name: "sub-test" }) ],
+						}),
+					],
+				}));
+			});
+
+			it("doesn't run beforeAll() and afterAll() when children are skipped due to .only elsewhere");
 
 			it("runs afterAll() even when tests throw exception", async () => {
 				const suite = describe_sut(() => {

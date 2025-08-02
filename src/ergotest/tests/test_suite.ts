@@ -13,6 +13,7 @@ import {
 import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
 import { Milliseconds, TestOptions } from "./test_api.js";
+import util from "node:util";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
 
@@ -45,7 +46,6 @@ export class TestSuite implements Test {
 	private _mark: TestMarkValue;
 	private _tests: Test[];
 	private _hasDotOnlyChildren: boolean;
-	private _allChildrenSkipped: boolean;
 	private _beforeAll: BeforeAfter[];
 	private _afterAll: BeforeAfter[];
 	private _beforeEach: BeforeAfter[];
@@ -99,7 +99,6 @@ export class TestSuite implements Test {
 		this._afterEach = afterEach;
 		this._tests = tests;
 		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
-		this._allChildrenSkipped = this._tests.every(test => test._isSkipped(this._mark));
 	}
 
 	/**
@@ -153,8 +152,9 @@ export class TestSuite implements Test {
 	}
 
 	/** @private */
-	_isSkipped(): boolean {
-		return this._allChildrenSkipped;
+	_isSkipped(parentMark: TestMarkValue): boolean {
+		const inheritedMark = this._mark === TestMark.none ? parentMark : this._mark;
+		return this._tests.every(test => test._isSkipped(inheritedMark));
 	}
 
 	/** @private */
@@ -211,7 +211,7 @@ export class TestSuite implements Test {
 			filename: this._filename ?? parentData.filename,
 			mark: inheritedMark,
 			timeout: this._timeout ?? parentData.timeout,
-			skipAll: parentData.skipAll || this._isSkipped(),
+			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
 			beforeEach,
 			afterEach,
 		};
