@@ -753,7 +753,7 @@ export default describe(() => {
 				}));
 			});
 
-			it("DEFECT: doesn't run beforeAll() and afterAll() when entire suite is skipped and sub-suite exists", async () => {
+			it("BUG: doesn't run beforeAll() and afterAll() when entire suite is skipped and sub-suite exists", async () => {
 				const suite = describe_sut.skip(() => {
 					beforeAll_sut(PASS_FN);
 					afterAll_sut(PASS_FN);
@@ -776,7 +776,31 @@ export default describe(() => {
 				}));
 			});
 
-			it("doesn't run beforeAll() and afterAll() when children are skipped due to .only elsewhere");
+			it("BUG: doesn't run beforeAll() and afterAll() when children are skipped due to .only elsewhere", async () => {
+				const suite = describe_sut(() => {
+					describe_sut("suite 1", () => {
+						beforeAll_sut(PASS_FN);
+						afterAll_sut(PASS_FN);
+						it_sut("test 1", PASS_FN);
+					});
+					describe_sut("suite 2", () => {
+						it_sut.only("test 2", PASS_FN);
+					});
+				});
+
+				assert.equal(await suite.runAsync(), createSuite({ tests: [
+					createSuite({
+						name: "suite 1",
+						beforeAll: [ createSkip({ name: [ "suite 1", "beforeAll()" ]}) ],
+						afterAll: [ createSkip({ name: [ "suite 1", "afterAll()" ]}) ],
+						tests: [ createSkip({ name: [ "suite 1", "test 1" ]}) ],
+					}),
+					createSuite({
+						name: "suite 2",
+						tests: [ createPass({ name: [ "suite 2", "test 2" ], mark: TestMark.only }) ],
+					}),
+				]}));
+			});
 
 			it("runs afterAll() even when tests throw exception", async () => {
 				const suite = describe_sut(() => {
