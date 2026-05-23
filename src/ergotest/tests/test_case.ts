@@ -13,6 +13,7 @@ export class TestCase implements Test {
 	private readonly _mark: TestMarkValue;
 	private readonly _fnAsync?: ItFn;
 	private readonly _runnable: Runnable;
+	private _filename?: string;
 
 	static create({
 		name,
@@ -43,7 +44,10 @@ export class TestCase implements Test {
 	}
 
 	/** @private */
-	_setFilename(filename: string) { this._runnable._setFilename(filename); }
+	_setFilename(filename: string) {
+		if (this._filename === undefined) this._filename = filename;
+		this._runnable._setFilename(filename);
+	}
 
 	/** @private */
 	_isDotOnly(): boolean {
@@ -76,7 +80,7 @@ export class TestCase implements Test {
 		if (this._fnAsync === undefined && this._mark === TestMark.only) {
 			return RunResult.fail({
 				name: this._name,
-				filename: runData.filename,
+				filename: this._filename,
 				error: "Test is marked '.only', but it has no body",
 				renderError: runOptions.renderError,
 			});
@@ -102,7 +106,6 @@ export class TestCase implements Test {
 
 	#consolidateRunData(parentData: RunData): RunData {
 		return {
-			filename: parentData.filename,
 			mark: this._mark === TestMark.none ? parentData.mark : this._mark,
 			timeout: parentData.timeout,
 			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
@@ -124,13 +127,13 @@ function isSuccess(result: TestCaseResult | RunResult) {
 
 export class FailureTestCase extends TestCase {
 
-	private _filename?: string;
+	private _failureFilename?: string;
 	private _error: unknown;
 
 	constructor(name: string[], error: unknown, filename?: string) {
 		super(name, {}, undefined, TestMark.none);
 
-		this._filename = filename;
+		this._failureFilename = filename;
 		this._error = error;
 	}
 
@@ -140,7 +143,7 @@ export class FailureTestCase extends TestCase {
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({
 			name: this._name,
-			filename: this._filename,
+			filename: this._failureFilename,
 			error: this._error,
 			renderError: runOptions.renderError,
 		});

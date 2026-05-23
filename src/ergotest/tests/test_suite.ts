@@ -29,7 +29,6 @@ export interface RunOptions {
 }
 
 export interface RunData {
-	filename?: string;
 	mark: TestMarkValue;
 	timeout: Milliseconds;
 	skipAll: boolean;
@@ -174,7 +173,7 @@ export class TestSuite implements Test {
 
 		return TestSuiteResult.create({
 			name: this._name,
-			filename: runData.filename,
+			filename: this._filename,
 			mark: this._mark,
 			tests: testResults,
 			beforeAll: beforeAllResults,
@@ -215,7 +214,6 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 
 		return {
-			filename: this._filename ?? parentData.filename,
 			mark: inheritedMark,
 			timeout: this._timeout ?? parentData.timeout,
 			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
