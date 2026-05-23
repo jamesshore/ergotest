@@ -20,14 +20,18 @@ export async function fromModulesAsync(
 ): Promise<TestSuite> {
 	ensure.signature(arguments, [ Array, [ Array, undefined ] ]);
 
-	return await _createSuiteAsync(
+	const result = await _createSuiteAsync(
 		() => loadSetupAsync(setupModuleFilenames),
 		() => loadTestsAsync(testModuleFilenames)
 	);
+	result._setFilename(setupModuleFilenames[0]);
+	return result;
 }
 
-function loadSetupAsync(setupModuleFilenames: string[]) {
+async function loadSetupAsync(setupModuleFilenames: string[]) {
+	if (setupModuleFilenames.length === 0) return;
 
+	await import(setupModuleFilenames[0]);
 }
 
 async function loadTestsAsync(testModuleFilenames: string[]) {

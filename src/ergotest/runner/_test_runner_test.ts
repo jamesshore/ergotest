@@ -128,19 +128,33 @@ export default describe(() => {
 
 	describe("test setup", () => {
 
-		it.skip("defines global before/after functions", async () => {
+		it("defines global before/after functions", async () => {
 			await writeSetupModuleAsync(`
 				beforeAll(() => {});
+				afterAll(() => {});
+				beforeEach(() => {});
+				afterEach(() => {});
 			`);
 			await writeTestModuleAsync("");
 			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
 
-			const testCaseResult = createPass({ name: "test", filename: testModulePath });
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({
+					filename: setupModulePath,
 					beforeAll: [ createPass({ name: "beforeAll()", filename: setupModulePath }) ],
+					afterAll: [ createPass({ name: "afterAll()", filename: setupModulePath }) ],
 					tests: [
-						createSuite({ tests: [ testCaseResult ], filename: testModulePath }),
+						createSuite({
+							filename: testModulePath,
+							tests: [
+								createPass({
+									name: "test",
+									filename: testModulePath,
+									beforeEach: [ createPass({ name: "beforeEach()", filename: setupModulePath }) ],
+									afterEach: [ createPass({ name: "afterEach()", filename: setupModulePath }) ],
+								}),
+							],
+						}),
 					]
 				}),
 			);
@@ -433,7 +447,7 @@ export default describe(() => {
 	}
 
 	async function writeSetupModuleAsync(sourceCode: string) {
-		await fs.writeFile(testModulePath, `
+		await fs.writeFile(setupModulePath, `
 			import { beforeAll, afterAll, beforeEach, afterEach, describe, it } from ` + `"${INDEX_PATH}";
 			
 			${sourceCode}

@@ -15,6 +15,15 @@ export class ApiContext {
 		testsFnAsync: () => Promise<TestSuite[]>
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
+
+		this._context.push(builder);
+		try {
+			await setupFnAsync();
+		}
+		finally {
+			this._context.pop();
+		}
+
 		builder.setTests(await testsFnAsync());
 		return builder.toTestSuite();
 	}
