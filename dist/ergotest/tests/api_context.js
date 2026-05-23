@@ -6,6 +6,16 @@ import { FailureTestCase, TestCase } from "./test_case.js";
 import { BeforeAfter } from "./before_after.js";
 export class ApiContext {
     _context = [];
+    setup(name, timeout) {
+        const builder = new TestSuiteBuilder([
+            name
+        ], TestMark.none, timeout);
+        this._context.push(builder);
+        return builder;
+    }
+    endSetup() {
+        this._context.pop();
+    }
     describe(optionalName, optionalOptions, optionalFn, mark) {
         const DescribeOptionsType = {
             timeout: Number
@@ -100,7 +110,7 @@ export class ApiContext {
         ];
     }
 }
-class TestSuiteBuilder {
+export class TestSuiteBuilder {
     _name;
     _mark;
     _timeout;

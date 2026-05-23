@@ -3,6 +3,7 @@ import * as ensure from "../../util/ensure.js";
 import path from "node:path";
 import { FailureTestCase } from "../tests/test_case.js";
 import { TestSuite } from "../tests/test_suite.js";
+import { context } from "../tests/test_api.js";
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
  * {@link TestSuite.create}.
@@ -12,9 +13,10 @@ import { TestSuite } from "../tests/test_suite.js";
     ensure.signature(arguments, [
         Array
     ]);
-    const suites = await Promise.all(moduleFilenames.map((filename)=>loadModuleAsync(filename)));
-    return TestSuite.create({
-        tests: suites
+    const testSuites = await Promise.all(moduleFilenames.map((filename)=>loadModuleAsync(filename)));
+    return await extracted(testSuites, async ()=>{
+        await import(path.resolve(process.cwd(), "generated/src/_test_setup.js"));
+        return testSuites;
     });
     async function loadModuleAsync(filename) {
         const errorName = `error when importing ${path.basename(filename)}`;
@@ -41,6 +43,16 @@ import { TestSuite } from "../tests/test_suite.js";
                 ], error, filename)
             ]
         });
+    }
+}
+async function extracted(testSuites, fn) {
+    const builder = context.setup("setup");
+    try {
+        await fn();
+        builder._tests = testSuites;
+        return builder.toTestSuite();
+    } finally{
+        context.endSetup();
     }
 }
 

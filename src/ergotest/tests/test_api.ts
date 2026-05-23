@@ -4,7 +4,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { TestConfig } from "./test_suite.js";
 import { ApiContext } from "./api_context.js";
 
-const context = new ApiContext();
+export const context = new ApiContext();
 
 
 export interface TestOptions {

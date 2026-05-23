@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { TestMark } from "../results/test_result.js";
 import { ApiContext } from "./api_context.js";
-const context = new ApiContext();
+export const context = new ApiContext();
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass

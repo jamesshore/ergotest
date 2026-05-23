@@ -10,6 +10,16 @@ import { Test } from "./test.js";
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
+	setup(name: string, timeout: number) {
+		const builder = new TestSuiteBuilder([ name ], TestMark.none, timeout);
+		this._context.push(builder);
+		return builder;
+	}
+
+	endSetup() {
+		this._context.pop();
+	}
+
 	describe(
 		optionalName: string | DescribeOptions | DescribeFn | undefined,
 		optionalOptions: DescribeOptions | DescribeFn | undefined,
@@ -118,7 +128,7 @@ export class ApiContext {
 
 }
 
-class TestSuiteBuilder {
+export class TestSuiteBuilder {
 	private readonly _name: string[];
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;

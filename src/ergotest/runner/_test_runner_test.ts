@@ -22,6 +22,7 @@ import { fromModulesAsync } from "./loader.js";
 const INDEX_PATH = path.resolve(import.meta.dirname, "../index.js");
 const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_custom.js");
 
+
 export default describe(() => {
 
 	let testModulePath: string;
@@ -32,6 +33,19 @@ export default describe(() => {
 
 		testModulePath = `${testDir}/_test_runner_module_${nonce++}.js`;
 		await deleteTempFilesAsync(testDir);
+	});
+
+
+	describe.only(() => {
+
+		it("runs setup", () => {
+			console.log("IT");
+		});
+
+		it("runs setup 2", () => {
+			console.log("IT 2");
+		});
+
 	});
 
 

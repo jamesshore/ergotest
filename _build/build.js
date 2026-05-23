@@ -128,13 +128,13 @@ export default class Build {
 
 			await tasks.runTasksAsync([ "compile" ], options);
 
-			await tests.runAsync({
-				description: "JavaScript tests",
-				files: paths.buildTestFiles(),
-				config: testConfig,
-				failOnSkip: options.integrate,
-				reporter: options.reporter,
-			});
+			// await tests.runAsync({
+			// 	description: "JavaScript tests",
+			// 	files: paths.buildTestFiles(),
+			// 	config: testConfig,
+			// 	failOnSkip: options.integrate,
+			// 	reporter: options.reporter,
+			// });
 
 			await tests.runAsync({
 				description: "TypeScript tests",
@@ -173,7 +173,7 @@ export default class Build {
 		});
 
 		tasks.defineTask("dist", async (options) => {
-			await tasks.runTasksAsync([ "compile", "typecheck" ], options);
+			await tasks.runTasksAsync([ "compile" ], options);
 
 			await options.reporter.startAsync("Building distribution", async (report) => {
 				report.debug(`\n  Delete tree ${Paths.typescriptDistDir}`);

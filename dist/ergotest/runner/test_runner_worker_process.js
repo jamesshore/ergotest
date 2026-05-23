@@ -70,7 +70,7 @@ function sendFatalError(message, err, cancelKeepAliveFn) {
     cancelKeepAliveFn();
     send({
         type: "fatal",
-        message,
+        message: `${message}:\n---\n${err.stack}\n---\n`,
         err
     });
 }
