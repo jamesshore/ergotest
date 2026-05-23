@@ -32,16 +32,15 @@ export default describe(() => {
     // (but it shouldn't, because all the suite's tests are skipped) 
   });
   it(() => {
-    // Correct: This test would be skipped
-    // (because another suite has a test marked with .only) 
+    // This test would be skipped because another suite has a test
+    // marked with .only 
   });
 });
 
 // File 2
 export default describe(() => {
   it.only(() => {
-    // Correct: This test would run
-    // (because it's marked with .only) 
+    // This test would run because it's marked with .only 
   });
 })
 ```
@@ -61,8 +60,8 @@ export default describe.skip(() => {
   
   describe(() => {
     it(() => {
-      // Correct: This test would be skipped
-      // (because the grandparent suite is skipped)  
+      // This test would be skipped because the grandparent suite
+      // is skipped  
     });
   });
 });
@@ -172,6 +171,7 @@ It's also resulted in these **breaking changes**, partly because I took advantag
   * Moved TestResult.timeout() to [RunResult.timeout()](docs/automation_api.md#runresulttimeout)
   * Revised signatures for above methods
 * Removed TestSuite from the documentation; it's now for internal use only
+
 
 ## v0.11.x: Add optional 'actual' and 'expected' to assert.fail()
 
