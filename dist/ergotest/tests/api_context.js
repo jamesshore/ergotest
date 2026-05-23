@@ -6,10 +6,8 @@ import { FailureTestCase, TestCase } from "./test_case.js";
 import { BeforeAfter } from "./before_after.js";
 export class ApiContext {
     _context = [];
-    setup(name, timeout) {
-        const builder = new TestSuiteBuilder([
-            name
-        ], TestMark.none, timeout);
+    setup(timeout) {
+        const builder = new TestSuiteBuilder([], TestMark.none, timeout);
         this._context.push(builder);
         return builder;
     }

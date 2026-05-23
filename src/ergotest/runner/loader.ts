@@ -14,11 +14,14 @@ import { context } from "../tests/test_api.js";
 export async function fromModulesAsync(moduleFilenames: string[]): Promise<TestSuite> {
 	ensure.signature(arguments, [ Array ]);
 
+	const setupFilename = path.resolve(process.cwd(), "generated/src/_test_setup.js");
 	const testSuites = await Promise.all(moduleFilenames.map(filename => loadModuleAsync(filename)));
-	return await extracted(testSuites, async () => {
-		await import((path.resolve(process.cwd(), "generated/src/_test_setup.js")));
+	const result = await extracted(testSuites, async () => {
+		await import(setupFilename);
 		return testSuites;
 	});
+	result._setFilename(setupFilename);
+	return result;
 
 	async function loadModuleAsync(filename: string): Promise<TestSuite> {
 		const errorName = `error when importing ${path.basename(filename)}`;
@@ -47,7 +50,7 @@ export async function fromModulesAsync(moduleFilenames: string[]): Promise<TestS
 }
 
 async function extracted(testSuites, fn: () => Promise<void>) {
-	const builder = context.setup("setup");
+	const builder = context.setup();
 	try {
 		await fn();
 		builder._tests = testSuites;

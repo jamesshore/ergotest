@@ -13,11 +13,14 @@ import { context } from "../tests/test_api.js";
     ensure.signature(arguments, [
         Array
     ]);
+    const setupFilename = path.resolve(process.cwd(), "generated/src/_test_setup.js");
     const testSuites = await Promise.all(moduleFilenames.map((filename)=>loadModuleAsync(filename)));
-    return await extracted(testSuites, async ()=>{
-        await import(path.resolve(process.cwd(), "generated/src/_test_setup.js"));
+    const result = await extracted(testSuites, async ()=>{
+        await import(setupFilename);
         return testSuites;
     });
+    result._setFilename(setupFilename);
+    return result;
     async function loadModuleAsync(filename) {
         const errorName = `error when importing ${path.basename(filename)}`;
         if (!path.isAbsolute(filename)) {
@@ -46,7 +49,7 @@ import { context } from "../tests/test_api.js";
     }
 }
 async function extracted(testSuites, fn) {
-    const builder = context.setup("setup");
+    const builder = context.setup();
     try {
         await fn();
         builder._tests = testSuites;

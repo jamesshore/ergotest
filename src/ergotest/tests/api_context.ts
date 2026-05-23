@@ -10,8 +10,8 @@ import { Test } from "./test.js";
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
-	setup(name: string, timeout: number) {
-		const builder = new TestSuiteBuilder([ name ], TestMark.none, timeout);
+	setup(timeout: number) {
+		const builder = new TestSuiteBuilder([], TestMark.none, timeout);
 		this._context.push(builder);
 		return builder;
 	}

@@ -1,5 +1,7 @@
 import {
 	assert,
+	beforeAll,
+	afterAll,
 	beforeEach,
 	afterEach,
 	describe,
@@ -8,10 +10,21 @@ import {
 
 console.log("\nSETUP LOADED");
 
-afterEach(() => {
-	console.log("AFTER_EACH 1");
+beforeAll(() => {
+	console.log("BEFORE_ALL");
+});
+
+afterAll(() => {
+	console.log("AFTER_ALL");
+	assert.todo();
+});
+
+beforeEach(() => {
+	console.log("BEFORE_EACH");
+	assert.todo();
 });
 
 afterEach(() => {
-	console.log("AFTER_EACH 2");
+	console.log("AFTER_EACH");
+	// assert.todo();
 });
