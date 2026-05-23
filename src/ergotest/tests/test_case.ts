@@ -43,6 +43,9 @@ export class TestCase implements Test {
 	}
 
 	/** @private */
+	_setFilename(filename: string) { this._runnable._setFilename(filename); }
+
+	/** @private */
 	_isDotOnly(): boolean {
 		return this._mark === TestMark.only;
 	}

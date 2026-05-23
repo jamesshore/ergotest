@@ -22,6 +22,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
 import { fromModulesAsync } from "../runner/loader.js";
+import { FailureTestCase, TestCase } from "./test_case.js";
 // dependency: ./_module_throws.js
 // dependency: ../_renderer_custom.js
 // dependency: ../_renderer_no_export.js
@@ -413,25 +414,74 @@ export default describe(() => {
 				filename,
 				beforeAll: [ createPass({ name: "beforeAll()", filename }) ],
 				afterAll: [ createFail({ name: "afterAll()", error: ERROR, filename }) ],
-				tests: [ createPass({
-					name: "test",
-					filename,
-					beforeEach: [ createPass({ name: "beforeEach()", filename }) ],
-					afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
-				}), createSuite({
-					filename,
-					name: "child suite",
-					beforeAll: [ createPass({ name: [ "child suite", "beforeAll()" ], filename }) ],
-					tests: [ createPass({
-						name: [ "child suite", "child test" ],
+				tests: [
+					createPass({
+						name: "test",
 						filename,
-						beforeEach: [
-							createPass({ name: "beforeEach()", filename }),
-							createPass({ name: [ "child suite", "beforeEach()" ], filename })
-						],
+						beforeEach: [ createPass({ name: "beforeEach()", filename }) ],
 						afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
-					})],
-				})],
+					}), createSuite({
+						filename,
+						name: "child suite",
+						beforeAll: [ createPass({ name: [ "child suite", "beforeAll()" ], filename }) ],
+						tests: [
+							createPass({
+								name: [ "child suite", "child test" ],
+								filename,
+								beforeEach: [
+									createPass({ name: "beforeEach()", filename }),
+									createPass({ name: [ "child suite", "beforeEach()" ], filename }),
+								],
+								afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
+							}),
+						],
+					}),
+				],
+			}));
+		});
+
+		it("doesn't override filenames of child suites", async () => {
+			const parentFilename = "parent filename";
+			const childFilename = "child filename";
+
+			const childSuite = describe_sut("child suite", () => {
+				beforeAll_sut(PASS_FN);
+				beforeEach_sut(PASS_FN);
+				it_sut("child test", PASS_FN);
+			});
+			childSuite._setFilename(childFilename);
+
+			const parentSuite = TestSuite.create({
+				name: [ "parent suite" ],
+				tests: [
+					TestCase.create({ name: [ "parent suite", "parent test" ], fnAsync: () => {} }),
+					childSuite,
+				],
+			});
+			parentSuite._setFilename(parentFilename);
+
+			assert.equal(await parentSuite.runAsync(), createSuite({
+				name: "parent suite",
+				filename: parentFilename,
+				tests: [
+					createPass({ name: [ "parent suite", "parent test" ], filename: parentFilename }),
+					createSuite({
+						name: [ "child suite" ],
+						filename: childFilename,
+						beforeAll: [
+							createPass({ name: [ "child suite", "beforeAll()" ], filename: childFilename })
+						],
+						tests: [
+							createPass({
+								name: [ "child suite", "child test" ],
+								filename: childFilename,
+								beforeEach: [
+									createPass({ name: [ "child suite", "beforeEach()" ], filename: childFilename })
+								],
+							}),
+						],
+					}),
+				],
 			}));
 		});
 

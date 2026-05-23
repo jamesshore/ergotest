@@ -144,7 +144,14 @@ export class TestSuite implements Test {
 	}
 
 	/** @private */
-	_setFilename(filename: string) { this._filename = filename; }
+	_setFilename(filename: string) {
+		if (this._filename === undefined) this._filename = filename;
+		const allDirectChildren = [
+			...this._beforeAll, ...this._afterAll, ...this._beforeEach, ...this._afterEach, ...this._tests,
+		];
+
+		allDirectChildren.forEach(test => test._setFilename(filename));
+	}
 
 	/** @private */
 	_isDotOnly(): boolean {
