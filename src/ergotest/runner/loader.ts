@@ -58,5 +58,5 @@ async function loadModuleAsync(filename: string): Promise<TestSuite> {
 }
 
 function createFailure(name: string, error: unknown, filename?: string) {
-	return TestSuite.create({ tests: [ new FailureTestCase([ name ], error, filename) ] });
+	return TestSuite.create({ tests: [ new FailureTestCase([ name ], error) ] });
 }

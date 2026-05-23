@@ -130,11 +130,13 @@ export class FailureTestCase extends TestCase {
 	private _failureFilename?: string;
 	private _error: unknown;
 
-	constructor(name: string[], error: unknown, filename?: string) {
+	constructor(name: string[], error: unknown) {
 		super(name, {}, undefined, TestMark.none);
-
-		this._failureFilename = filename;
 		this._error = error;
+	}
+
+	override _setFilename(filename: string) {
+		if (this._failureFilename === undefined) this._failureFilename = filename;
 	}
 
 	override async _runAsyncInternal(
