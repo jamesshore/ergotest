@@ -4,7 +4,7 @@ import { TestMark } from "../results/test_result.js";
 import path from "node:path";
 import { FailureTestCase } from "../tests/test_case.js";
 import { TestSuite } from "../tests/test_suite.js";
-import { _createSuiteAsync } from "../tests/test_api.js";
+import { _loadSuiteAsync } from "../tests/test_api.js";
 
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
@@ -20,7 +20,7 @@ export async function fromModulesAsync(
 ): Promise<TestSuite> {
 	ensure.signature(arguments, [ Array, [ Array, undefined ] ]);
 
-	const result = await _createSuiteAsync(setupModuleFilenames, testModuleFilenames, loadSetupAsync, loadTestsAsync);
+	const result = await _loadSuiteAsync(setupModuleFilenames, testModuleFilenames, loadSetupAsync, loadTestAsync);
 	return result;
 }
 
@@ -33,8 +33,8 @@ async function loadSetupAsync(setupModulePath: string) {
 	// }
 }
 
-async function loadTestsAsync(testModuleFilenames: string[]) {
-	return await Promise.all(testModuleFilenames.map(filename => loadModuleAsync(filename)));
+async function loadTestAsync(testModuleFilename: string): Promise<TestSuite> {
+	return await loadModuleAsync(testModuleFilename);
 }
 
 async function loadModuleAsync(filename: string): Promise<TestSuite> {
@@ -46,7 +46,6 @@ async function loadModuleAsync(filename: string): Promise<TestSuite> {
 	try {
 		const { default: suite } = await import(filename);
 		if (suite instanceof TestSuite) {
-			suite._setFilename(filename);
 			return suite;
 		}
 		else {

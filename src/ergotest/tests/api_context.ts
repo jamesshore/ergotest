@@ -10,11 +10,11 @@ import { Test } from "./test.js";
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
-	async createSuiteAsync(
+	async loadSuiteAsync(
 		setupModulePaths: string[],
 		testModulePaths: string[],
 		loadSetupFnAsync: (setupModulePath: string) => Promise<void>,
-		loadTestsFnAsync: (testModulePath: string) => Promise<TestSuite[]>
+		loadTestFnAsync: (testModulePath: string) => Promise<TestSuite>
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
@@ -29,7 +29,12 @@ export class ApiContext {
 			this._context.pop();
 		}
 
-		builder.setTests(await loadTestsFnAsync(testModulePaths));
+		await Promise.all(testModulePaths.map(async (path) => {
+			const suite = await loadTestFnAsync(path);
+			builder.addSuite(suite);
+			builder.setFilename(path);
+		}));
+
 		return builder.toTestSuite();
 	}
 
@@ -163,12 +168,6 @@ class TestSuiteBuilder {
 
 	addSuite(suite: TestSuite) {
 		this._tests.push(suite);
-	}
-
-	setTests(suites: TestSuite[]) {
-		ensure.that(this._tests.length === 0, "Attempted to set tests in TestSuiteBuilder, but some already exist");
-
-		this._tests = suites;
 	}
 
 	setFilename(filename: string) {
