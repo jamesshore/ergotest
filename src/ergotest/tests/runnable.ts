@@ -8,6 +8,7 @@ export class Runnable {
 	private readonly _name: string[];
 	private readonly _options: ItOptions;
 	private readonly _fnAsync?: ItFn;
+	private _filename?: string;
 
 	static create(name: string[], options: ItOptions, fnAsync?: ItFn) {
 		return new Runnable(name, options, fnAsync);
@@ -17,6 +18,11 @@ export class Runnable {
 		this._name = name;
 		this._options = options;
 		this._fnAsync = fnAsync;
+	}
+
+	/** @private */
+	_setFilename(filename: string) {
+		if (this._filename === undefined) this._filename = filename;
 	}
 
 	get name(): string[] {
@@ -39,7 +45,7 @@ export class Runnable {
 		if (runData.skipAll || fnAsync === undefined) {
 			return RunResult.skip({
 				name: this._name,
-				filename: runData.filename
+				filename: this._filename
 			});
 		}
 
@@ -49,13 +55,13 @@ export class Runnable {
 				await fnAsync({ getConfig });
 				return RunResult.pass({
 					name: this._name,
-					filename: runData.filename
+					filename: this._filename
 				});
 			}
 			catch (error) {
 				return RunResult.fail({
 					name: this._name,
-					filename: runData.filename,
+					filename: this._filename,
 					error,
 					renderError: runOptions.renderError
 				});
@@ -63,7 +69,7 @@ export class Runnable {
 		}, async () => {
 			return await RunResult.timeout({
 				name: this._name,
-				filename: runData.filename,
+				filename: this._filename,
 				timeout: runData.timeout
 			});
 		});

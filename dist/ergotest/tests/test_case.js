@@ -6,6 +6,7 @@ export class TestCase {
     _mark;
     _fnAsync;
     _runnable;
+    _filename;
     static create({ name, mark = TestMark.none, options = {}, fnAsync = undefined }) {
         return new TestCase(name, options, fnAsync, mark);
     }
@@ -15,6 +16,10 @@ export class TestCase {
         this._runnable = Runnable.create(name, options, fnAsync);
         this._mark = mark;
         if (fnAsync === undefined && mark === TestMark.none) this._mark = TestMark.skip;
+    }
+    /** @private */ _setFilename(filename) {
+        if (this._filename === undefined) this._filename = filename;
+        this._runnable._setFilename(filename);
     }
     /** @private */ _isDotOnly() {
         return this._mark === TestMark.only;
@@ -41,7 +46,7 @@ export class TestCase {
         if (this._fnAsync === undefined && this._mark === TestMark.only) {
             return RunResult.fail({
                 name: this._name,
-                filename: runData.filename,
+                filename: this._filename,
                 error: "Test is marked '.only', but it has no body",
                 renderError: runOptions.renderError
             });
@@ -59,7 +64,6 @@ export class TestCase {
     }
     #consolidateRunData(parentData) {
         return {
-            filename: parentData.filename,
             mark: this._mark === TestMark.none ? parentData.mark : this._mark,
             timeout: parentData.timeout,
             skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
@@ -72,17 +76,17 @@ function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
 export class FailureTestCase extends TestCase {
-    _filename;
+    _failureFilename;
     _error;
     constructor(name, error, filename){
         super(name, {}, undefined, TestMark.none);
-        this._filename = filename;
+        this._failureFilename = filename;
         this._error = error;
     }
     async _runAsyncInternal(runOptions, parentData) {
         const it = RunResult.fail({
             name: this._name,
-            filename: this._filename,
+            filename: this._failureFilename,
             error: this._error,
             renderError: runOptions.renderError
         });

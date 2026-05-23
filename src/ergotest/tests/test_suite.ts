@@ -29,7 +29,6 @@ export interface RunOptions {
 }
 
 export interface RunData {
-	filename?: string;
 	mark: TestMarkValue;
 	timeout: Milliseconds;
 	skipAll: boolean;
@@ -144,7 +143,14 @@ export class TestSuite implements Test {
 	}
 
 	/** @private */
-	_setFilename(filename: string) { this._filename = filename; }
+	_setFilename(filename: string) {
+		if (this._filename === undefined) this._filename = filename;
+		const allDirectChildren = [
+			...this._beforeAll, ...this._afterAll, ...this._beforeEach, ...this._afterEach, ...this._tests,
+		];
+
+		allDirectChildren.forEach(test => test._setFilename(filename));
+	}
 
 	/** @private */
 	_isDotOnly(): boolean {
@@ -167,7 +173,7 @@ export class TestSuite implements Test {
 
 		return TestSuiteResult.create({
 			name: this._name,
-			filename: runData.filename,
+			filename: this._filename,
 			mark: this._mark,
 			tests: testResults,
 			beforeAll: beforeAllResults,
@@ -208,7 +214,6 @@ export class TestSuite implements Test {
 		if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
 
 		return {
-			filename: this._filename ?? parentData.filename,
 			mark: inheritedMark,
 			timeout: this._timeout ?? parentData.timeout,
 			skipAll: parentData.skipAll || this._isSkipped(parentData.mark),

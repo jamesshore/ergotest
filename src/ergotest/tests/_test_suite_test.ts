@@ -22,6 +22,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
 import { fromModulesAsync } from "../runner/loader.js";
+import { FailureTestCase, TestCase } from "./test_case.js";
 // dependency: ./_module_throws.js
 // dependency: ../_renderer_custom.js
 // dependency: ../_renderer_no_export.js
@@ -125,12 +126,15 @@ export default describe(() => {
 			});
 
 			const result = await suite.runAsync();
-			assert.dotEquals(result,
-				createSuite({ tests: [
-					createPass({ name: "test 1" }),
-					createPass({ name: "test 2" }),
-					createPass({ name: "test 3" }),
-				]}),
+			assert.dotEquals(
+				result,
+				createSuite({
+					tests: [
+						createPass({ name: "test 1" }),
+						createPass({ name: "test 2" }),
+						createPass({ name: "test 3" }),
+					]
+				}),
 			);
 		});
 
@@ -158,14 +162,21 @@ export default describe(() => {
 			});
 
 			const result = await top.runAsync();
-			assert.dotEquals(result,
-				createSuite({ name: "top", tests: [
-					createSuite({ name: [ "top", "middle" ], tests: [
-						createSuite({ name: [ "top", "middle", "bottom" ], tests: [
-							createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
-						]}),
-					]}),
-				]}),
+			assert.dotEquals(
+				result,
+				createSuite({
+					name: "top", tests: [
+						createSuite({
+							name: [ "top", "middle" ], tests: [
+								createSuite({
+									name: [ "top", "middle", "bottom" ], tests: [
+										createPass({ name: [ "top", "middle", "bottom", "my test" ] }),
+									]
+								}),
+							]
+						}),
+					]
+				}),
 			);
 		});
 
@@ -182,18 +193,25 @@ export default describe(() => {
 				it_sut("top.2", () => {});
 			});
 
-			assert.equal(await top.runAsync(),
-				createSuite({ name: "top", tests: [
-					createPass({ name: [ "top", "top.1" ] }),
-					createSuite({ name: [ "top", "middle" ], tests: [
-						createPass({ name: [ "top", "middle", "middle.1" ] }),
-						createSuite({ name: [ "top", "middle", "bottom" ], tests: [
-							createPass({ name: [ "top", "middle", "bottom", "bottom.1" ] }),
-						]}),
-						createPass({ name: [ "top", "middle", "middle.2" ] }),
-					]}),
-					createPass({ name: [ "top", "top.2" ] }),
-				]}),
+			assert.equal(
+				await top.runAsync(),
+				createSuite({
+					name: "top", tests: [
+						createPass({ name: [ "top", "top.1" ] }),
+						createSuite({
+							name: [ "top", "middle" ], tests: [
+								createPass({ name: [ "top", "middle", "middle.1" ] }),
+								createSuite({
+									name: [ "top", "middle", "bottom" ], tests: [
+										createPass({ name: [ "top", "middle", "bottom", "bottom.1" ] }),
+									]
+								}),
+								createPass({ name: [ "top", "middle", "middle.2" ] }),
+							]
+						}),
+						createPass({ name: [ "top", "top.2" ] }),
+					]
+				}),
 			);
 		});
 
@@ -211,11 +229,14 @@ export default describe(() => {
 				it_sut("parent.2", () => {});
 			});
 
-			assert.equal(await parent.runAsync(),
-				createSuite({ name: "parent", tests: [
-					createPass({ name: [ "parent", "parent.1" ] }),
-					createPass({ name: [ "parent", "parent.2" ] }),
-				]}),
+			assert.equal(
+				await parent.runAsync(),
+				createSuite({
+					name: "parent", tests: [
+						createPass({ name: [ "parent", "parent.1" ] }),
+						createPass({ name: [ "parent", "parent.2" ] }),
+					]
+				}),
 			);
 		});
 
@@ -235,58 +256,6 @@ export default describe(() => {
 			}
 
 			describe_sut();
-		});
-
-		it("propagates filename into children's test results", async () => {
-			const clock = await Clock.createNullAsync();
-			const filename = "my_filename";
-
-			const suite = describe_sut(() => {
-				it_sut("pass", () => {});
-				it_sut.skip("skip", () => {});
-				it_sut("fail", () => { throw Error("fail"); });
-				it_sut("timeout", async () => { await clock.waitAsync(DEFAULT_TIMEOUT + 1); });
-				it_sut("test without body");
-				describe_sut("suite without body");
-			});
-			suite._setFilename(filename);
-
-			const actualPromise = suite.runAsync({ clock });
-			clock.tickUntilTimersExpireAsync();
-
-			assert.dotEquals(await actualPromise, createSuite({ filename, tests: [
-				createPass({ name: "pass", filename }),
-				createSkip({ name: "skip", mark: TestMark.skip, filename }),
-				createFail({ name: "fail", error: new Error("fail"), filename }),
-				createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, filename }),
-				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
-				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
-			]}));
-		});
-
-		it("propagates filename into before/after results", async () => {
-			const filename = "my_filename";
-
-			const suite = describe_sut(() => {
-				beforeAll_sut(PASS_FN);
-				afterAll_sut(FAIL_FN);
-				beforeEach_sut(PASS_FN);
-				afterEach_sut(FAIL_FN);
-				it_sut("test", PASS_FN);
-			});
-			suite._setFilename(filename);
-
-			assert.equal(await suite.runAsync(), createSuite({
-				filename,
-				beforeAll: [ createPass({ name: "beforeAll()", filename }) ],
-				afterAll: [ createFail({ name: "afterAll()", error: ERROR, filename }) ],
-				tests: [ createPass({
-					name: "test",
-					filename,
-					beforeEach: [ createPass({ name: "beforeEach()", filename }) ],
-					afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
-				}) ],
-			}));
 		});
 
 	});
@@ -390,6 +359,130 @@ export default describe(() => {
 				() => it_sut.only(IRRELEVANT_NAME),
 				"it() must be run inside describe()",
 			);
+		});
+
+	});
+
+
+	describe("filenames", () => {
+
+		it("propagates suite's filename into children's test results", async () => {
+			const clock = await Clock.createNullAsync();
+			const filename = "my_filename";
+
+			const suite = describe_sut(() => {
+				it_sut("pass", () => {});
+				it_sut.skip("skip", () => {});
+				it_sut("fail", () => { throw Error("fail"); });
+				it_sut("timeout", async () => { await clock.waitAsync(DEFAULT_TIMEOUT + 1); });
+				it_sut("test without body");
+				describe_sut("suite without body");
+			});
+			suite._setFilename(filename);
+
+			const actualPromise = suite.runAsync({ clock });
+			clock.tickUntilTimersExpireAsync();
+
+			assert.dotEquals(await actualPromise, createSuite({ filename, tests: [
+				createPass({ name: "pass", filename }),
+				createSkip({ name: "skip", mark: TestMark.skip, filename }),
+				createFail({ name: "fail", error: new Error("fail"), filename }),
+				createTimeout({ name: "timeout", timeout: DEFAULT_TIMEOUT, filename }),
+				createSkip({ name: "test without body", mark: TestMark.skip, filename }),
+				createSuite({ name: "suite without body", mark: TestMark.skip, filename }),
+			]}));
+		});
+
+		it("propagates suite's filename into before/after results", async () => {
+			const filename = "my_filename";
+
+			const suite = describe_sut(() => {
+				beforeAll_sut(PASS_FN);
+				afterAll_sut(FAIL_FN);
+				beforeEach_sut(PASS_FN);
+				afterEach_sut(FAIL_FN);
+				it_sut("test", PASS_FN);
+				describe_sut("child suite", () => {
+					beforeAll_sut(PASS_FN);
+					beforeEach_sut(PASS_FN);
+					it_sut("child test", PASS_FN);
+				});
+			});
+			suite._setFilename(filename);
+
+			assert.equal(await suite.runAsync(), createSuite({
+				filename,
+				beforeAll: [ createPass({ name: "beforeAll()", filename }) ],
+				afterAll: [ createFail({ name: "afterAll()", error: ERROR, filename }) ],
+				tests: [
+					createPass({
+						name: "test",
+						filename,
+						beforeEach: [ createPass({ name: "beforeEach()", filename }) ],
+						afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
+					}), createSuite({
+						filename,
+						name: "child suite",
+						beforeAll: [ createPass({ name: [ "child suite", "beforeAll()" ], filename }) ],
+						tests: [
+							createPass({
+								name: [ "child suite", "child test" ],
+								filename,
+								beforeEach: [
+									createPass({ name: "beforeEach()", filename }),
+									createPass({ name: [ "child suite", "beforeEach()" ], filename }),
+								],
+								afterEach: [ createFail({ name: "afterEach()", error: ERROR, filename }) ],
+							}),
+						],
+					}),
+				],
+			}));
+		});
+
+		it("doesn't override filenames of child suites", async () => {
+			const parentFilename = "parent filename";
+			const childFilename = "child filename";
+
+			const childSuite = describe_sut("child suite", () => {
+				beforeAll_sut(PASS_FN);
+				beforeEach_sut(PASS_FN);
+				it_sut("child test", PASS_FN);
+			});
+			childSuite._setFilename(childFilename);
+
+			const parentSuite = TestSuite.create({
+				name: [ "parent suite" ],
+				tests: [
+					TestCase.create({ name: [ "parent suite", "parent test" ], fnAsync: () => {} }),
+					childSuite,
+				],
+			});
+			parentSuite._setFilename(parentFilename);
+
+			assert.equal(await parentSuite.runAsync(), createSuite({
+				name: "parent suite",
+				filename: parentFilename,
+				tests: [
+					createPass({ name: [ "parent suite", "parent test" ], filename: parentFilename }),
+					createSuite({
+						name: [ "child suite" ],
+						filename: childFilename,
+						beforeAll: [
+							createPass({ name: [ "child suite", "beforeAll()" ], filename: childFilename })
+						],
+						tests: [
+							createPass({
+								name: [ "child suite", "child test" ],
+								filename: childFilename,
+								beforeEach: [
+									createPass({ name: [ "child suite", "beforeEach()" ], filename: childFilename })
+								],
+							}),
+						],
+					}),
+				],
+			}));
 		});
 
 	});
