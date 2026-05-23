@@ -10,6 +10,8 @@ export declare class BeforeAfter {
         fnAsync: ItFn;
     }): BeforeAfter;
     constructor(runnable: Runnable);
+    /** @private */
+    _setFilename(filename: string): void;
     runBeforeAfterAllAsync(runOptions: RunOptions, runData: RunData): Promise<TestCaseResult>;
     runBeforeAfterEachAsync(runOptions: RunOptions, runData: RunData): Promise<import("../results/test_result.js").RunResult>;
 }

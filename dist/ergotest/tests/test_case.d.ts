@@ -8,6 +8,7 @@ export declare class TestCase implements Test {
     private readonly _mark;
     private readonly _fnAsync?;
     private readonly _runnable;
+    private _filename?;
     static create({ name, mark, options, fnAsync, }: {
         name: string[];
         mark?: TestMarkValue;
@@ -16,6 +17,8 @@ export declare class TestCase implements Test {
     }): TestCase;
     constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined, mark: TestMarkValue);
     /** @private */
+    _setFilename(filename: string): void;
+    /** @private */
     _isDotOnly(): boolean;
     /** @private */
     _isSkipped(parentMark: TestMarkValue): boolean;
@@ -23,7 +26,7 @@ export declare class TestCase implements Test {
     _runAsyncInternal(runOptions: RunOptions, parentData: RunData): Promise<TestCaseResult>;
 }
 export declare class FailureTestCase extends TestCase {
-    private _filename?;
+    private _failureFilename?;
     private _error;
     constructor(name: string[], error: unknown, filename?: string);
     _runAsyncInternal(runOptions: RunOptions, parentData: RunData): Promise<TestCaseResult>;

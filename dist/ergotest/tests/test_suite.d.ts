@@ -13,7 +13,6 @@ export interface RunOptions {
     renderError?: RenderErrorFn;
 }
 export interface RunData {
-    filename?: string;
     mark: TestMarkValue;
     timeout: Milliseconds;
     skipAll: boolean;

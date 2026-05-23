@@ -24,6 +24,9 @@ export class BeforeAfter {
 		this._runnable = runnable;
 	}
 
+	/** @private */
+	_setFilename(filename: string) { this._runnable._setFilename(filename); }
+
 	async runBeforeAfterAllAsync(runOptions: RunOptions, runData: RunData) {
 		const result = TestCaseResult.create({
 			it: await this._runnable.runAsync(runOptions, runData),

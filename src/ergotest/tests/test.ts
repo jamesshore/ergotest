@@ -7,6 +7,7 @@ export interface Test {
 		options: RunOptions,
 		parentData: RunData,
 	) => Promise<TestResult> | TestResult;
+	_setFilename: (filename: string) => void,
 	_isDotOnly: () => boolean,
 	_isSkipped: (mark: TestMarkValue) => boolean,
 }
