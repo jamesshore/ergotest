@@ -10,6 +10,15 @@ import { Test } from "./test.js";
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
+	async createSuiteAsync(
+		setupFnAsync: () => Promise<void>,
+		testsFnAsync: () => Promise<TestSuite[]>
+	) {
+		const builder = new TestSuiteBuilder([], TestMark.none);
+		builder.setTests(await testsFnAsync());
+		return builder.toTestSuite();
+	}
+
 	describe(
 		optionalName: string | DescribeOptions | DescribeFn | undefined,
 		optionalOptions: DescribeOptions | DescribeFn | undefined,
@@ -122,7 +131,7 @@ class TestSuiteBuilder {
 	private readonly _name: string[];
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;
-	private readonly _tests: Test[] = [];
+	private _tests: Test[] = [];
 	private readonly _beforeAll: BeforeAfter[] = [];
 	private readonly _afterAll: BeforeAfter[] = [];
 	private readonly _beforeEach: BeforeAfter[] = [];
@@ -140,6 +149,12 @@ class TestSuiteBuilder {
 
 	addSuite(suite: TestSuite) {
 		this._tests.push(suite);
+	}
+
+	setTests(suites: TestSuite[]) {
+		ensure.that(this._tests.length === 0, "Attempted to set tests in TestSuiteBuilder, but some already exist");
+
+		this._tests = suites;
 	}
 
 	it(name: string[], mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {

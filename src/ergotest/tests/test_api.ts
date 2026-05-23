@@ -1,8 +1,9 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { TestCaseResult, TestMark } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
-import { TestConfig } from "./test_suite.js";
+import { TestConfig, TestSuite } from "./test_suite.js";
 import { ApiContext } from "./api_context.js";
+import * as test from "node:test";
 
 const context = new ApiContext();
 
@@ -32,6 +33,14 @@ export type ItFn = (testUtilities: {
 	getConfig: <T>(key: string) => T,
 }) => Promise<void> | void;
 
+
+/** @private */
+export async function _createSuiteAsync(
+	setupFnAsync: () => Promise<void>,
+	testsFnAsync: () => Promise<TestSuite[]>
+) {
+	return await context.createSuiteAsync(setupFnAsync, testsFnAsync);
+}
 
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.

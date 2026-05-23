@@ -25,12 +25,14 @@ const CUSTOM_RENDERER_PATH = path.resolve(import.meta.dirname, "../_renderer_cus
 export default describe(() => {
 
 	let testModulePath: string;
+	let setupModulePath: string;
 	let nonce = 1;
 
 	beforeEach(async ({ getConfig }) => {
 		const testDir = getConfig<string>("scratchDir");
 
 		testModulePath = `${testDir}/_test_runner_module_${nonce++}.js`;
+		setupModulePath = `${testDir}/_test_setup_module_${nonce++}.js`;
 		await deleteTempFilesAsync(testDir);
 	});
 
@@ -120,6 +122,31 @@ export default describe(() => {
 
 			assert.equal(result?.filename, "/no_such_module.js");
 		});
+
+	});
+
+
+	describe("test setup", () => {
+
+		it.skip("defines global before/after functions", async () => {
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`);
+			await writeTestModuleAsync("");
+			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
+
+			const testCaseResult = createPass({ name: "test", filename: testModulePath });
+			assert.dotEquals(await suite.runAsync(),
+				createSuite({
+					beforeAll: [ createPass({ name: "beforeAll()", filename: setupModulePath }) ],
+					tests: [
+						createSuite({ tests: [ testCaseResult ], filename: testModulePath }),
+					]
+				}),
+			);
+		});
+
+		it("supports multiple setup files");
 
 	});
 
@@ -402,6 +429,14 @@ export default describe(() => {
 					${testSourceCode}
 				});
 			});
+		`);
+	}
+
+	async function writeSetupModuleAsync(sourceCode: string) {
+		await fs.writeFile(testModulePath, `
+			import { beforeAll, afterAll, beforeEach, afterEach, describe, it } from ` + `"${INDEX_PATH}";
+			
+			${sourceCode}
 		`);
 	}
 
