@@ -23,7 +23,7 @@ Although I’ve been using Ergotest for many years, I’m planning to make a few
 * ✅ **TypeScript stack highlighting.** Ergotest highlights the test in failure stack traces for JavaScript. I’d like that to work for TypeScript too.
 * **Improve watchdog reporting.** When the TestRunner.runInChildProcessAsync() watchdog detects a failure, it causes the tests to fail, but it doesn't give any indication of where the failure might have occurred, and it ignores all previous test results. Improve the watchdog to report the test that was running at the time of the failure, and also include previous results.
 * **Add a 'no body' mark.** Right now, suites and tests without bodies are considered to be the same as `.skip`. I'd like them to be identified separately, so builds can render them differently.
-* **Add timers and performance analysis.** The test runner doesn't currently keep track of performance. I'd like to track how module loading, before/after blocks, tests, spawning child processes, and anything else that takes time. I'd also like to add APIs to get actions that take longer than N milliseconds, and optionally display them as part of the convenience renderings.  
+* **Add timers and performance analysis.** The test runner doesn't currently keep track of performance. I'd like to track module loading, before/after blocks, tests, spawning child processes, and anything else that takes time. I'd also like to add APIs to get actions that take longer than N milliseconds, and optionally display them as part of the convenience renderings.  
 
 
 ## Road to “fully baked”
