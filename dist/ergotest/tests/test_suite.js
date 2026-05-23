@@ -87,7 +87,15 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         });
     }
     /** @private */ _setFilename(filename) {
-        this._filename = filename;
+        if (this._filename === undefined) this._filename = filename;
+        const allDirectChildren = [
+            ...this._beforeAll,
+            ...this._afterAll,
+            ...this._beforeEach,
+            ...this._afterEach,
+            ...this._tests
+        ];
+        allDirectChildren.forEach((test)=>test._setFilename(filename));
     }
     /** @private */ _isDotOnly() {
         return this._mark === TestMark.only || this._hasDotOnlyChildren;
@@ -103,7 +111,7 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         const afterAllResults = await this.#runBeforeAfterAllAsync(this._afterAll, false, runOptions, runData);
         return TestSuiteResult.create({
             name: this._name,
-            filename: runData.filename,
+            filename: this._filename,
             mark: this._mark,
             tests: testResults,
             beforeAll: beforeAllResults,
@@ -139,7 +147,6 @@ const DEFAULT_TIMEOUT_IN_MS = 2000;
         if (inheritedMark === TestMark.none) inheritedMark = parentData.mark;
         if (inheritedMark === TestMark.only && this._hasDotOnlyChildren) inheritedMark = TestMark.skip;
         return {
-            filename: this._filename ?? parentData.filename,
             mark: inheritedMark,
             timeout: this._timeout ?? parentData.timeout,
             skipAll: parentData.skipAll || this._isSkipped(parentData.mark),
