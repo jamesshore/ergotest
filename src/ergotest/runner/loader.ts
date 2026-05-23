@@ -20,18 +20,17 @@ export async function fromModulesAsync(
 ): Promise<TestSuite> {
 	ensure.signature(arguments, [ Array, [ Array, undefined ] ]);
 
-	const result = await _createSuiteAsync(
-		() => loadSetupAsync(setupModuleFilenames),
-		() => loadTestsAsync(testModuleFilenames)
-	);
-	result._setFilename(setupModuleFilenames[0]);
+	const result = await _createSuiteAsync(setupModuleFilenames, testModuleFilenames, loadSetupAsync, loadTestsAsync);
 	return result;
 }
 
-async function loadSetupAsync(setupModuleFilenames: string[]) {
-	if (setupModuleFilenames.length === 0) return;
-
-	await import(setupModuleFilenames[0]);
+async function loadSetupAsync(setupModulePath: string) {
+	// try {
+		await import(setupModulePath);
+	// }
+	// catch(err) {
+	// 	return createFailure("TBD", err, setupModulePath);
+	// }
 }
 
 async function loadTestsAsync(testModuleFilenames: string[]) {

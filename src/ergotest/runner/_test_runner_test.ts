@@ -40,7 +40,7 @@ export default describe(() => {
 	describe("module loader", () => {
 
 		it("creates test suite from a module (and sets filename on result)", async () => {
-			await writeTestModuleAsync("");
+			await writeTestModuleAsync();
 			const suite = await fromModulesAsync([ testModulePath, testModulePath ]);
 
 			const testCaseResult = createPass({ name: "test", filename: testModulePath });
@@ -134,13 +134,13 @@ export default describe(() => {
 				afterAll(() => {});
 				beforeEach(() => {});
 				afterEach(() => {});
-			`);
-			await writeTestModuleAsync("");
+			`, setupModulePath);
+			await writeTestModuleAsync();
+
 			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
 
 			assert.dotEquals(await suite.runAsync(),
 				createSuite({
-					filename: setupModulePath,
 					beforeAll: [ createPass({ name: "beforeAll()", filename: setupModulePath }) ],
 					afterAll: [ createPass({ name: "afterAll()", filename: setupModulePath }) ],
 					tests: [
@@ -160,7 +160,42 @@ export default describe(() => {
 			);
 		});
 
-		it("supports multiple setup files");
+		it("can have multiple setup files", async () => {
+			const setupPath1 = `${setupModulePath}-1.js`;
+			const setupPath2 = `${setupModulePath}-2.js`;
+
+			await writeTestModuleAsync();
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+				beforeEach(() => {});
+			`, setupPath1);
+			await writeSetupModuleAsync(`
+				afterAll(() => {});
+				afterEach(() => {});
+			`, setupPath2);
+
+			const suite = await fromModulesAsync([ testModulePath ], [ setupPath1, setupPath2 ]);
+
+			assert.dotEquals(await suite.runAsync(),
+				createSuite({
+					beforeAll: [ createPass({ name: "beforeAll()", filename: setupPath1 }) ],
+					afterAll: [ createPass({ name: "afterAll()", filename: setupPath2 }) ],
+					tests: [
+						createSuite({
+							filename: testModulePath,
+							tests: [
+								createPass({
+									name: "test",
+									filename: testModulePath,
+									beforeEach: [ createPass({ name: "beforeEach()", filename: setupPath1 }) ],
+									afterEach: [ createPass({ name: "afterEach()", filename: setupPath2 }) ],
+								}),
+							],
+						}),
+					]
+				}),
+			);
+		});
 
 	});
 
@@ -432,7 +467,7 @@ export default describe(() => {
 		assert.equal(getTestResult(results).errorMessage, expectedFailure);
 	}
 
-	async function writeTestModuleAsync(testSourceCode: string, variableDefinition = "") {
+	async function writeTestModuleAsync(testSourceCode: string = "", variableDefinition = "") {
 		await fs.writeFile(testModulePath, `
 			import { assert, describe, it } from ` + `"${INDEX_PATH}";
 			
@@ -446,7 +481,7 @@ export default describe(() => {
 		`);
 	}
 
-	async function writeSetupModuleAsync(sourceCode: string) {
+	async function writeSetupModuleAsync(sourceCode: string, setupModulePath: string) {
 		await fs.writeFile(setupModulePath, `
 			import { beforeAll, afterAll, beforeEach, afterEach, describe, it } from ` + `"${INDEX_PATH}";
 			

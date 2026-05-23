@@ -11,20 +11,25 @@ export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
 	async createSuiteAsync(
-		setupFnAsync: () => Promise<void>,
-		testsFnAsync: () => Promise<TestSuite[]>
+		setupModulePaths: string[],
+		testModulePaths: string[],
+		loadSetupFnAsync: (setupModulePath: string) => Promise<void>,
+		loadTestsFnAsync: (testModulePath: string) => Promise<TestSuite[]>
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
 		this._context.push(builder);
 		try {
-			await setupFnAsync();
+			await Promise.all(setupModulePaths.map(async (path) => {
+				await loadSetupFnAsync(path);
+				builder.setFilename(path);
+			}));
 		}
 		finally {
 			this._context.pop();
 		}
 
-		builder.setTests(await testsFnAsync());
+		builder.setTests(await loadTestsFnAsync(testModulePaths));
 		return builder.toTestSuite();
 	}
 
@@ -164,6 +169,13 @@ class TestSuiteBuilder {
 		ensure.that(this._tests.length === 0, "Attempted to set tests in TestSuiteBuilder, but some already exist");
 
 		this._tests = suites;
+	}
+
+	setFilename(filename: string) {
+		const allChildren = [
+			...this._tests, ...this._beforeAll, ...this._afterAll, ...this._beforeEach, ...this._afterEach
+		];
+		allChildren.forEach(child => child._setFilename(filename));
 	}
 
 	it(name: string[], mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {
