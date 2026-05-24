@@ -228,7 +228,11 @@ export const TestMark = {
             ...allMarks
         ]);
     }
-    allMatchingMarks(...marks) {
+    /**
+	 * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+	 */ allMatchingMarks(...marks) {
         ensureValidMarks(marks);
         const results = new Set();
         if (marks.includes(this.mark)) results.add(this);
@@ -244,14 +248,24 @@ export const TestMark = {
         ];
     }
     /**
+	 * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+	 *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+	 */ allRuns() {
+        return [
+            ...this._beforeAll.map((testCase)=>testCase.it),
+            ...this._afterAll.map((testCase)=>testCase.it),
+            ...this._tests.flatMap((test)=>test.allRuns())
+        ];
+    }
+    /**
 	 * @returns {string[]} All the test files with 100% passing tests--nothing that was skipped, failed, or timed out.
 	 */ allPassingFiles() {
         ensure.signature(arguments, []);
         const allFiles = new Set();
         const notPassFiles = new Set();
-        this.allTests().filter((test)=>test.filename !== undefined).forEach((test)=>{
-            allFiles.add(test.filename);
-            if (!test.isPass()) notPassFiles.add(test.filename);
+        this.allRuns().filter((run)=>run.filename !== undefined).forEach((run)=>{
+            allFiles.add(run.filename);
+            if (run.status !== TestStatus.pass) notPassFiles.add(run.filename);
         });
         return [
             ...differencePolyfill(allFiles, notPassFiles)
@@ -528,12 +542,26 @@ export const TestMark = {
             this
         ];
     }
-    allMatchingMarks(...marks) {
+    /**
+	 * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+	 */ allMatchingMarks(...marks) {
         ensureValidMarks(marks);
         if (marks.includes(this._mark)) return [
             this
         ];
         else return [];
+    }
+    /**
+	 * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+	 *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+	 */ allRuns() {
+        return [
+            this.it,
+            ...this._beforeEach,
+            ...this._afterEach
+        ];
     }
     /**
 	 * Convert this result into a bare object for later deserialization.
