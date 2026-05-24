@@ -246,10 +246,10 @@ export default describe(() => {
 			const setupPath2 = `${setupModuleFilename}-2.js`;
 
 			await writeSetupModuleAsync(`
-				throw new Error("fail to load");
+				throw new Error("error 1");
 			`, setupPath1);
 			await writeSetupModuleAsync(`
-				beforeAll(() => {});
+				throw new Error("error 2");
 			`, setupPath2);
 			await writeTestModuleAsync();
 
@@ -260,10 +260,9 @@ export default describe(() => {
 					createFail({
 						name: `error when importing setup module ${path.basename(setupPath1)}`,
 						filename: setupPath1,
-						error: "fail to load",
+						error: "error 1",
 					}),
-					createSkip({ name: "beforeAll() #2", filename: setupPath2 }),
-					createSkip({ name: "loaded setup module", filename: setupPath2 }),
+					createSkip({ name: "load setup module", filename: setupPath2 }),
 				],
 				tests: [
 					createSuite({

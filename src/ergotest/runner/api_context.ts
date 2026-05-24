@@ -21,11 +21,7 @@ export class ApiContext {
 		this._context.push(builder);
 		this._inSetupModule = true;
 		try {
-			await Promise.all(setupModuleFilenames.map(async (filename) => {
-				const beforeAll = await loadSetupModuleAsync(filename);
-				builder.addBeforeAll(beforeAll);
-				builder.setFilename(filename);
-			}));
+			await loadSetupModulesAsync(setupModuleFilenames, builder);
 		}
 		finally {
 			this._inSetupModule = false;
@@ -345,20 +341,37 @@ function decipherItParameters(
 }
 
 
-async function loadSetupModuleAsync(filename: string): Promise<BeforeAfter> {
-	const { suite, err } = await loadModuleAsync(filename, "Setup module");
+async function loadSetupModulesAsync(setupModuleFilenames: string[], builder: TestSuiteBuilder) {
+	let skipRemaining = false;
+	for await (const filename of setupModuleFilenames) {
+		let beforeAll;
 
-	if (err !== undefined) {
-		return BeforeAfter.create({
-			name: [ `error when importing setup module ${path.basename(filename)}` ],
-			fnAsync() { throw err; },
-		});
-	}
-	else {
-		return BeforeAfter.create({
-			name: [ "loaded setup module" ],
-			fnAsync() {}
-		});
+		if (skipRemaining) {
+			beforeAll = BeforeAfter.create({
+				name: [ "load setup module" ],
+				fnAsync() {},
+			});
+		}
+		else {
+			const { suite, err } = await loadModuleAsync(filename, "Setup module");
+
+			if (err !== undefined) {
+				skipRemaining = true;
+				beforeAll = BeforeAfter.create({
+					name: [ `error when importing setup module ${path.basename(filename)}` ],
+					fnAsync() { throw err; },
+				});
+			}
+			else {
+				beforeAll = BeforeAfter.create({
+					name: [ "loaded setup module" ],
+					fnAsync() {}
+				});
+			}
+		}
+
+		builder.addBeforeAll(beforeAll);
+		builder.setFilename(filename);
 	}
 }
 
@@ -373,7 +386,7 @@ async function loadTestModuleAsync(filename: string): Promise<Test> {
 			fnAsync() { throw err; },
 		});
 	}
-	else if (suite instanceof TestSuite || suite instanceof TestCase) {
+	else if (suite instanceof TestSuite || suite! instanceof TestCase) {
 		return suite;
 	}
 	else {
