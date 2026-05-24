@@ -79,16 +79,13 @@ export default describe(() => {
 					createFail({
 						filename: "/no_such_module.js",
 						name: "import test module",
-						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
-							import.meta.dirname,
-							apiContextFilename,
-						)}`,
+						error: "Cannot find module '/no_such_module.js'",
 					}),
 				],
 			}));
 		});
 
-		it("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
+		it("fails gracefully if module exists but transitive import doesn't", async () => {
 			await fs.writeFile(testModuleFilename, "impo" + "rt irrelevant from '/no_such_module.js'");
 
 			const suite = await loadTestsAsync([ testModuleFilename ]);
@@ -479,7 +476,7 @@ export default describe(() => {
 					createFail({
 						filename: "/no_such_module.js",
 						name: "import setup module",
-						error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
+						error: "Cannot find module '/no_such_module.js'",
 					}),
 				],
 				tests: [
@@ -496,7 +493,7 @@ export default describe(() => {
 			}));
 		});
 
-		it("it doesn't think an import failure means the module doesn't exist", async () => {
+		it("fails gracefully if module exists but transitive import doesn't", async () => {
 			await writeTestModuleAsync();
 			await writeSetupModuleAsync("impo" + "rt irrelevant from '/no_such_module.js'");
 
@@ -563,7 +560,7 @@ export default describe(() => {
 			assert.dotEquals(result[0], createFail({
 				filename: "/no_such_module.js",
 				name: `import setup module`,
-				error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
+				error: "Cannot find module '/no_such_module.js'",
 			}));
 		});
 
