@@ -919,8 +919,6 @@ export default describe(() => {
 			assert.equal(suite.allPassingFiles(), [ "file1", "file0", "file2" ]);
 		});
 
-		it("does not include beforeEach/afterEach filenames more than once, either");
-
 		it("does not include filenames of failing tests", () => {
 			const suite = createSuite({ tests: [
 				createPass({ filename: "my_file1" }),
