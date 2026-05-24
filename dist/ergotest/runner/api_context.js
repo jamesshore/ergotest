@@ -402,6 +402,13 @@ async function importModuleAsync(filename) {
             suite
         };
     } catch (err) {
+        const code = err?.code;
+        const message = err?.message;
+        if (code === "ERR_MODULE_NOT_FOUND" && message.includes(import.meta.filename)) {
+            return {
+                err: `Cannot find module '${filename}'`
+            };
+        }
         return {
             err
         };
