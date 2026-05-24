@@ -79,7 +79,7 @@ There are five classes in Ergotest, but only the three bolded below are importan
 * ***TestSuiteResult*** has the results of your test run, and includes a convenient method for reporting the results. It's provided by the test runner after the tests finish running.
 * ***TestCaseResult*** has the details of a single test, and it also has convenient reporting methods. It's provided to a callback by the test runner while the tests are running.  
 * _RunResult_ has the details of running a single function, such as _it()_ or _beforeEach()_.
-* *TestRenderer* allows you to customize your test reports. See the [Reporting API](reporting_api.md) for details.
+* _TestRenderer_ allows you to customize your test reports. See the [Reporting API](reporting_api.md) for details.
 
 **To run your tests,** call [**TestRunner.create()**](#testrunnercreate) to create a test runner, then call [**testRunner.runInChildProcessAsync()**](#testrunnerruninchildprocessasync) to run your tests. It takes an array of test module paths, runs them in a child process, and returns a [TestSuiteResult](#testsuiteresult).
 
@@ -176,6 +176,8 @@ The test runner will give you a [TestSuiteResult](#testsuiteresult) when the tes
 * [afterAll()](test_api.md#afterall) results are found in [TestSuiteResult.afterAll](#testsuiteresultbeforeall)
 * [describe()](test_api.md#describe) and [it()](test_api.md#it) results are found in [TestSuiteResult.tests](#testsuiteresulttests)
 
+Global beforeAll/afterAll results are found in the top-level _TestSuiteResult_.
+
 > **Note:** You don't need to loop through the properties of _TestSuiteResult_. The easiest way to collect all the tests in your test run is to call one of its convenience methods, such as [TestSuiteResult.allTests()](#testsuiteresultalltests) or [TestSuiteResult.allMatchingTests()](#testsuiteresultallmatchingtests).
 
 **TestCaseResult** has properties corresponding to the functions related to running a test:
@@ -212,34 +214,34 @@ Instantiate _TestRunner_.
 
 ## testRunner.runInChildProcessAsync()
 
-* testRunner.runInChildProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
+* testRunner.runInChildProcessAsync(testModulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
 
-Spawn an isolated child process, import the modules in _modulePaths_ inside that process, and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _modulePaths_ must be absolute paths.
+Spawn an isolated child process, import the modules in _testModulePaths_ inside that process, and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _testModulePaths_ must be absolute paths.
 
-> **Note:** Although the child process is isolated from your test automation script, and each test run gets a fresh child process, all the tests run in the same process. They run sequentially, not in parallel, and are not isolated from each other.
+> **Note:** Although the child process is isolated from your test automation script, and each test run gets a fresh child process, all the tests run in the same process. They run sequentially, not in parallel, and are not isolated from each other. The test modules are imported in parallel, so they’re not guaranteed to run in the same order every time.
 
 The test modules will be loaded fresh every time this method is called, allowing you to run your tests as part of a watch script.
 
 If the tests enter an infinite loop, throw an uncaught exception, or exit early (such as by calling *process.exit()*), a test watchdog will kill the test run and generate a failed [TestCaseResult](#testcaseresult).
 
-If any of the _modulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
+If any of the _testModulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
-> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
+Use [options](#testoptions) to provide configuration data to` the tests and otherwise customize your test run, including providing setup modules with global before/after functions.
 
-Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run.
-
-> **Warning:** Because the tests run in a child process, any configuration information you provide will be serialized. Only bare objects, arrays, and primitive data can be provided; class instances will not work.
+> **Warning:** Because the tests run in a child process, any configuration data you provide will be serialized. Only bare objects, arrays, and primitive data can be provided; class instances will not work.
 
 [Back to top](#automation-api)
 
 
 ## testRunner.runInCurrentProcessAsync()
 
-* testRunner.runInCurrentProcessAsync(modulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
+* testRunner.runInCurrentProcessAsync(testModulePaths: string[], options?: [TestOptions](#testoptions)): Promise\<[TestSuiteResult](#testsuiteresult)\>
 
 > **Warning:** It's typically better to call [testRunner.runInChildProcessAsync()](#testrunnerruninchildprocessasync).
 
-Import the modules in _modulePaths_ in the current process and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _modulePaths_ must be absolute paths.
+Import the modules in _testModulePaths_ in the current process and run them as a single test suite. Requires each module to `export default describe(...)`. (See the [test API](test_api.md) for details.) The _testModulePaths_ must be absolute paths.
+
+> **Note:** The test modules are imported in parallel, so they’re not guaranteed to run in the same order every time.
 
 The modules will *not* be reloaded if they have been loaded before, even if they have changed. As a result, this method is only suitable for automation that exits back to the command line after running the tests.
 
@@ -247,9 +249,7 @@ Does *not* detect infinite loops, uncaught exceptions, or early exits.
 
 If any of the _modulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
-> **Warning:** Your test modules and test runner must use the same installation of `ergotest`, or you’ll get an error saying the test modules don’t export a test suite.
-
-Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run.
+Use [options](#testoptions) to provide configuration data to` the tests and otherwise customize your test run, including providing setup modules with global before/after functions.
 
 [Back to top](#automation-api)
 
@@ -259,6 +259,12 @@ Use [options](#testoptions) to provide configuration data to the tests and other
 * import { TestOptions } from "ergotest/test_api.js"
 
 You can configure test runs with this interface. Provide an object with these optional parameters:
+
+* **setupModulePaths?: string[]**
+  * Setup modules to load and run prior to the tests. Must be absolute paths.
+  * Can be used to define _beforeXxx_ and _afterXxx_ functions that apply to all tests globally. (E.g., _beforeAll()_ runs once before all tests, _beforeEach()_ runs repeatedly before each individual test, and so forth.)
+  * Cannot be used to define suites or tests with _describe()_ or _it()_.
+  * Guaranteed to be imported and run in the order provided. If any import fails, the rest of the setup modules will not be imported. The test modules will still be imported, but the tests will all be skipped.
 
 * **config?: Record<string, unknown>**
   * Configuration information accessible to your tests at run time. Retrieve the values by calling [getConfig()](test_api.md#getconfig) in your tests.

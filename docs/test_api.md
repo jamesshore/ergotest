@@ -35,19 +35,19 @@ import { assert, describe, it, beforeAll, afterAll } from "./tests.js";
 export default describe(() => {
   
   beforeAll(() => {
-    // runs one time before any tests run
+    // runs one time before any tests in this describe block run
   });
   
   afterAll(() => {
-    // runs one time after all tests run
+    // runs one time after all tests in this describe block run
   });
   
   beforeEach(() => {
-    // runs before each test runs
+    // runs before each test in this describe block runs
   });
   
   afterEach(() => {
-    // runs after each test runs
+    // runs after each test in this describe block runs
   });
   
   describe("scenario 1", () => {
@@ -268,6 +268,8 @@ If there are multiple _beforeAll()_ functions in a suite, they will run in the o
 If there are no tests in this suite or its sub-suites, or they’re all skipped, _fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, the remainder of this suite will be skipped. No more _beforeAll(), afterAll(), beforeEach(), afterEach(),_ or _it()_ functions will run in this suite or any sub-suites, and they'll be marked as "skipped" in the test results.
+
+> **Note:** _beforeAll()_ must be contained within a _describe()_ block. To 
 
 [Back to top](#test-api)
 
