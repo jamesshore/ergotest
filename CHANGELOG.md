@@ -11,6 +11,11 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
+## v0.14.0: WIP
+
+Add TestSuiteResult.allRuns()
+
+
 ## v0.13.1: Bugfix: beforeAll() and afterAll() no longer run when they shouldn't
 
 * **0.13.2, 2 Aug 2025:** Fix broken links in changelog and readme
