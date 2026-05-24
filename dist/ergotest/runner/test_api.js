@@ -41,8 +41,8 @@ it.only = function it(name, optionalOptions, fnAsync) {
     context.it(name, optionalOptions, fnAsync, TestMark.only);
 };
 /**
- * Adds a function to run before all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
+ * Adds a function to run before all the tests in the current test suite. Must be run inside of a
+ * {@link describe} function or in a setup module.
  * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
  *   instead.
  * @param {function} fnAsync The function to run. May be synchronous or asynchronous.
@@ -50,8 +50,8 @@ it.only = function it(name, optionalOptions, fnAsync) {
     context.beforeAll(optionalOptions, fnAsync);
 }
 /**
- * Adds a function to run after all the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
+ * Adds a function to run after all the tests in the current test suite. Must be run inside of a
+ * {@link describe} function or a setup module.
  * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
  *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
@@ -59,8 +59,8 @@ it.only = function it(name, optionalOptions, fnAsync) {
     context.afterAll(optionalOptions, fnAsync);
 }
 /**
- * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
+ * Adds a function to run bfeore each of the tests in the current test suite. Must be run inside of a
+ * {@link describe} function or a setup module.
  * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
  *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
@@ -68,8 +68,8 @@ it.only = function it(name, optionalOptions, fnAsync) {
     context.beforeEach(optionalOptions, fnAsync);
 }
 /**
- * Adds a function to run after each of the tests in the current test suite. Must be run inside of a {@link test} or
- * {@link describe} function.
+ * Adds a function to run after each of the tests in the current test suite. Must be run inside of a
+ * {@link describe} function or a setup module.
  * @param {ItOptions} [optionalOptions] The before/after options. You can skip this parameter and pass @{link fnAsync}
  *   instead.
  * @param {function} [fnAsync] The function to run. May be synchronous or asynchronous.
