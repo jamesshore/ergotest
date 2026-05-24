@@ -1,6 +1,6 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
-import { TestMark, TestMarkValue } from "../results/test_result.js";
+import { TestCaseResult, TestMark, TestMarkValue } from "../results/test_result.js";
 import { TestSuite } from "../tests/test_suite.js";
 import { FailureTestCase, TestCase } from "../tests/test_case.js";
 import { BeforeAfter } from "../tests/before_after.js";
@@ -22,8 +22,8 @@ export class ApiContext {
 		this._inSetupModule = true;
 		try {
 			await Promise.all(setupModuleFilenames.map(async (filename) => {
-				const errorSuite = await loadSetupModuleAsync(filename);
-				if (errorSuite !== undefined) builder.addTest(errorSuite);
+				const beforeAll = await loadSetupModuleAsync(filename);
+				builder.addBeforeAll(beforeAll);
 				builder.setFilename(filename);
 			}));
 		}
@@ -180,6 +180,10 @@ class TestSuiteBuilder {
 
 	public get name() {
 		return this._name;
+	}
+
+	addBeforeAll(beforeAll: BeforeAfter) {
+		this._beforeAll.push(beforeAll);
 	}
 
 	addTest(test: Test) {
@@ -341,16 +345,36 @@ function decipherItParameters(
 }
 
 
-async function loadSetupModuleAsync(setupModulePath: string): Promise<void | Test> {
-	return await loadModuleAsync(setupModulePath, "Setup module");
+async function loadSetupModuleAsync(filename: string): Promise<BeforeAfter> {
+	const { suite, err } = await loadModuleAsync(filename, "Setup module");
+
+	if (err !== undefined) {
+		return BeforeAfter.create({
+			name: [ `error when importing setup module ${path.basename(filename)}` ],
+			fnAsync() { throw err; },
+		});
+	}
+	else {
+		return BeforeAfter.create({
+			name: [ "loaded setup module" ],
+			fnAsync() {}
+		});
+	}
 }
 
 async function loadTestModuleAsync(filename: string): Promise<Test> {
 	const description = "Test module";
 
-	const test = await loadModuleAsync(filename, description);
-	if (test instanceof TestSuite || test instanceof TestCase) {
-		return test;
+	const { suite, err } = await loadModuleAsync(filename, description);
+
+	if (err !== undefined) {
+		return TestCase.create({
+			name: [ `error when importing test module ${path.basename(filename)}` ],
+			fnAsync() { throw err; },
+		});
+	}
+	else if (suite instanceof TestSuite || suite instanceof TestCase) {
+		return suite;
 	}
 	else {
 		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
@@ -358,20 +382,16 @@ async function loadTestModuleAsync(filename: string): Promise<Test> {
 
 }
 
-async function loadModuleAsync(filename: string, description: string): Promise<Test> {
+async function loadModuleAsync(filename: string, description: string): Promise<{ suite: TestSuite, err: undefined } | { err: unknown, suite: undefined }> {
 	if (!path.isAbsolute(filename)) {
-		return createModuleLoadFailure(
-			`${description} filenames must use absolute paths: ${filename}`,
-			filename,
-			description,
-		);
+		return { err: `${description} filenames must use absolute paths: ${filename}` };
 	}
 	try {
 		const { default: suite } = await import(filename);
-		return suite;
+		return { suite };
 	}
 	catch(err) {
-		return createModuleLoadFailure(err, filename, description);
+		return { err };
 	}
 }
 

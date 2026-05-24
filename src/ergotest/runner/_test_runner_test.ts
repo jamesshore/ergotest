@@ -3,7 +3,7 @@ import {
 	assert,
 	beforeEach,
 	createFail,
-	createPass,
+	createPass, createSkip,
 	createSuite,
 	describe,
 	it,
@@ -161,7 +161,10 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				beforeAll: [ createPass({ name: "beforeAll()", filename: setupModuleFilename }) ],
+				beforeAll: [
+					createPass({ name: "beforeAll()", filename: setupModuleFilename }),
+					createPass({ name: "loaded setup module", filename: setupModuleFilename })
+				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupModuleFilename }) ],
 				tests: [
 					createSuite({
@@ -196,7 +199,11 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupPath1, setupPath2 ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				beforeAll: [ createPass({ name: "beforeAll()", filename: setupPath1 }) ],
+				beforeAll: [
+					createPass({ name: "beforeAll()", filename: setupPath1 }),
+					createPass({ name: "loaded setup module", filename: setupPath1 }),
+					createPass({ name: "loaded setup module", filename: setupPath2 }),
+				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupPath2 }) ],
 				tests: [
 					createSuite({
@@ -214,6 +221,65 @@ export default describe(() => {
 			}));
 		});
 
+		it("inserts a do-nothing beforeAll() so it's included in TestSuiteResult.allPassingFiles()", async () => {
+			await writeTestModuleAsync();
+			await writeSetupModuleAsync("");
+
+			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				beforeAll: [ createPass({ name: "loaded setup module", filename: setupModuleFilename }) ],
+				tests: [
+					createSuite({
+						filename: testModuleFilename,
+						tests: [ createPass({
+							name: "test",
+							filename: testModuleFilename,
+						})],
+					}),
+				],
+			}));
+		});
+
+		it("causes all subsequent runs to be skipped when a setup module fails to load", async () => {
+			const setupPath1 = `${setupModuleFilename}-1.js`;
+			const setupPath2 = `${setupModuleFilename}-2.js`;
+
+			await writeSetupModuleAsync(`
+				throw new Error("fail to load");
+			`, setupPath1);
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath2);
+			await writeTestModuleAsync();
+
+			const suite = await loadTestsAsync([ testModuleFilename ], [ setupPath1, setupPath2 ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				beforeAll: [
+					createFail({
+						name: `error when importing setup module ${path.basename(setupPath1)}`,
+						filename: setupPath1,
+						error: "fail to load",
+					}),
+					createSkip({ name: "beforeAll() #2", filename: setupPath2 }),
+					createSkip({ name: "loaded setup module", filename: setupPath2 }),
+				],
+				tests: [
+					createSuite({
+						filename: testModuleFilename,
+						tests: [
+							createSkip({
+								name: "test",
+								filename: testModuleFilename,
+							}),
+						],
+					}),
+				]
+			}));
+
+		});
+
 		it("fails gracefully if describe() used in setup module", async () => {
 			await writeSetupModuleAsync(`
 				describe();
@@ -223,16 +289,18 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
 						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
 						error: "describe() is not permitted in setup modules",
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -251,16 +319,18 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
 						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
 						error: "it() is not permitted in setup modules",
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -275,16 +345,18 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ "./arbitrary_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: "./arbitrary_module.js",
 						name: "error when importing setup module arbitrary_module.js",
 						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -299,16 +371,18 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ "/no_such_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: "/no_such_module.js",
 						name: "error when importing setup module no_such_module.js",
 						error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -324,16 +398,18 @@ export default describe(() => {
 
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
 						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
 						error: `Cannot find module '/no_such_module.js' imported from ${setupModuleFilename}`,
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -349,16 +425,18 @@ export default describe(() => {
 
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
+				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
 						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
 						error: "my import error",
 					}),
+				],
+				tests: [
 					createSuite({
 						filename: testModuleFilename,
 						tests: [
-							createPass({
+							createSkip({
 								filename: testModuleFilename,
 								name: "test",
 							}),
@@ -423,6 +501,10 @@ export default describe(() => {
 				});
 
 			assert.dotEquals(results, createSuite({
+				beforeAll: [ createPass({
+					filename: setupModuleFilename,
+					name: "loaded setup module",
+				})],
 				afterAll: [ createFail({
 					filename: setupModuleFilename,
 					name: "afterAll()",
@@ -475,6 +557,10 @@ export default describe(() => {
 					});
 
 				assert.dotEquals(results, createSuite({
+					beforeAll: [ createPass({
+						filename: setupModuleFilename,
+						name: "loaded setup module",
+					})],
 					afterAll: [ createFail({
 						filename: setupModuleFilename,
 						name: "afterAll()",
