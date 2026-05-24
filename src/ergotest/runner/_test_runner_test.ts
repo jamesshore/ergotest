@@ -258,7 +258,7 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
 					createFail({
-						name: `error when importing setup module ${path.basename(setupPath1)}`,
+						name: "import setup module",
 						filename: setupPath1,
 						error: "error 1",
 					}),
@@ -291,7 +291,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "describe() is not permitted in setup modules",
 					}),
 				],
@@ -321,7 +321,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "it() is not permitted in setup modules",
 					}),
 				],
@@ -347,7 +347,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing setup module arbitrary_module.js",
+						name: "import setup module",
 						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
 				],
@@ -373,7 +373,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: "/no_such_module.js",
-						name: "error when importing setup module no_such_module.js",
+						name: "import setup module",
 						error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 					}),
 				],
@@ -400,7 +400,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: `Cannot find module '/no_such_module.js' imported from ${setupModuleFilename}`,
 					}),
 				],
@@ -427,7 +427,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "my import error",
 					}),
 				],
@@ -457,7 +457,7 @@ export default describe(() => {
 
 			assert.dotEquals(result[0], createFail({
 				filename: "/no_such_module.js",
-				name: `error when importing setup module no_such_module.js`,
+				name: `import setup module`,
 				error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 			}));
 		});

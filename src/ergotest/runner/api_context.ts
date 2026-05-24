@@ -341,31 +341,24 @@ function decipherItParameters(
 
 
 async function loadSetupModulesAsync(setupModuleFilenames: string[], builder: TestSuiteBuilder) {
+	const name = [ "import setup module" ];
+
 	let skipRemaining = false;
 	for await (const filename of setupModuleFilenames) {
 		let beforeAll;
 
 		if (skipRemaining) {
-			beforeAll = BeforeAfter.create({
-				name: [ "import setup module" ],
-				fnAsync() {},
-			});
+			beforeAll = BeforeAfter.create({ name, fnAsync() {} });
 		}
 		else {
-			const { suite, err } = await loadModuleAsync(filename, "Setup module");
+			const { err } = await loadModuleAsync(filename, "Setup module");
 
 			if (err !== undefined) {
 				skipRemaining = true;
-				beforeAll = BeforeAfter.create({
-					name: [ `error when importing setup module ${path.basename(filename)}` ],
-					fnAsync() { throw err; },
-				});
+				beforeAll = BeforeAfter.create({ name, fnAsync() { throw err; } });
 			}
 			else {
-				beforeAll = BeforeAfter.create({
-					name: [ "import setup module" ],
-					fnAsync() {}
-				});
+				beforeAll = BeforeAfter.create({ name, fnAsync() {} });
 			}
 		}
 
