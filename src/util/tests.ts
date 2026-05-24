@@ -1,6 +1,3 @@
-// We note a dependency to the test setup so that the tests re-run when we change the setup file.
-// dependency: ../_test_setup.js
-
 import { RunResult, TestCaseResult, TestMarkValue, TestResult, TestSuiteResult } from "../ergotest/results/test_result.js";
 
 export * from "ergotest";
