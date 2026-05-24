@@ -16,6 +16,7 @@ import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_res
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { _loadTestsAsync } from "./test_api.js";
+import { isDefined } from "../assert.js";
 
 // dependency: ../_renderer_custom.js
 
@@ -127,6 +128,32 @@ export default describe(() => {
 						filename: testModuleFilename,
 						name: "import test module",
 						error: `Test module doesn't export a test suite: ${testModuleFilename}`,
+					}),
+				],
+			}));
+		});
+
+		it("provides helpful error message if there appear to be two installations of ergotest", async () => {
+			// First, confirm that we're expecting test modules to export an object with a specific method
+			await writeTestModuleAsync();
+			const assumptionCheckerSuite = await loadTestsAsync([ testModuleFilename ]);
+			assert.isDefined(assumptionCheckerSuite.runAsync);
+
+			// Then check what happens if we manually export that object rather than using describe()
+			const filename = `${testModuleFilename}-a.js`;
+			await fs.writeFile(filename, `
+				export default {
+					runAsync() {}
+				}
+			`);
+
+			const suite = await loadTestsAsync([ filename ]);
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createFail({
+						filename,
+						name: "import test module",
+						error: `Test module '${filename}' appears to export a test suite, but it's not instantiating the correct class. Do you have two copies of ergotest installed?`,
 					}),
 				],
 			}));

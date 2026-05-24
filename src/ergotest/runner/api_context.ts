@@ -379,6 +379,11 @@ async function loadTestModulesAsync(testModuleFilenames: string[], builder: Test
 		else if (suite instanceof TestSuite || suite! instanceof TestCase) {
 			test = suite;
 		}
+		else if ((suite! as TestSuite)?.runAsync !== undefined) {
+			test = new FailureTestCase(name,
+				`Test module '${filename}' appears to export a test suite, but it's not instantiating the correct class. Do you have two copies of ergotest installed?`
+			);
+		}
 		else {
 			test = new FailureTestCase(name, `Test module doesn't export a test suite: ${filename}`);
 		}
