@@ -24,9 +24,9 @@ function main() {
         }
     });
 }
-async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config, renderer }) {
+async function runWorkerAsync(cancelKeepAliveFn, { testModulePaths, options }) {
     try {
-        const renderError = await importRendererAsync(renderer);
+        const renderError = await importRendererAsync(options.renderer);
         process.on("uncaughtException", (error)=>{
             const testCaseResult = TestCaseResult.create({
                 it: RunResult.fail({
@@ -45,11 +45,9 @@ async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config,
             sendProgress(testCaseResult);
             sendFinalResult(testSuiteResult, cancelKeepAliveFn);
         });
-        const suite = await _loadTestsAsync([], modulePaths);
+        const suite = await _loadTestsAsync(options.setupModulePaths ?? [], testModulePaths);
         const result = await suite.runAsync({
-            timeout,
-            config,
-            renderer,
+            ...options,
             onTestCaseResult: sendProgress
         });
         // wait a tick so unhandled promises can be detected

@@ -47,19 +47,6 @@ export declare class TestSuite implements Test {
     }): TestSuite;
     /** Internal use only. (Use {@link describe} or {@link TestSuite.fromModulesAsync} instead.) */
     constructor(name: string[], mark: TestMarkValue, timeout: Milliseconds | undefined, beforeAll: BeforeAfter[], afterAll: BeforeAfter[], beforeEach: BeforeAfter[], afterEach: BeforeAfter[], tests: Test[]);
-    /**
-     * Run the tests in this suite.
-     * @param {number} [timeout] Default timeout in milliseconds.
-     * @param {object} [config={}] Configuration data to provide to tests.
-     * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
-     *   parameter describes the result of the test—whether it passed, failed, etc.
-     * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
-     *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
-     *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
-     *   return value will be placed into the test result as {@link TestResult.errorRender}.
-     * @param {Clock} [clock] Internal use only.
-     * @returns {Promise<TestSuiteResult>} The results of the test suite.
-     */
     runAsync({ timeout, config, onTestCaseResult, renderer, clock, }?: TestOptions): Promise<TestSuiteResult>;
     /** @private */
     _setFilename(filename: string): void;

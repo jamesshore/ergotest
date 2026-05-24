@@ -4,6 +4,7 @@ import { DescribeFn, DescribeOptions, ItFn, ItOptions } from "./test_api.js";
 export declare class ApiContext {
     #private;
     private readonly _context;
+    private _inSetupModule;
     loadSuiteAsync(setupModuleFilenames: string[], testModuleFilenames: string[]): Promise<TestSuite>;
     describe(optionalName: string | DescribeOptions | DescribeFn | undefined, optionalOptions: DescribeOptions | DescribeFn | undefined, optionalFn: DescribeFn | undefined, mark: TestMarkValue): TestSuite;
     it(name: string, optionalOptions: ItOptions | ItFn | undefined, possibleFnAsync: ItFn | undefined, mark: TestMarkValue): void;

@@ -2,6 +2,7 @@ import { TestCaseResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { TestConfig, TestSuite } from "../tests/test_suite.js";
 export interface TestOptions {
+    setupModulePaths?: string[];
     timeout?: Milliseconds;
     config?: TestConfig;
     onTestCaseResult?: (testCaseResult: TestCaseResult) => void;
