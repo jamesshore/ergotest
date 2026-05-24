@@ -155,7 +155,7 @@ export default describe(() => {
 				afterAll(() => {});
 				beforeEach(() => {});
 				afterEach(() => {});
-			`, setupModulePath);
+			`);
 			await writeTestModuleAsync();
 
 			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
@@ -211,6 +211,62 @@ export default describe(() => {
 						],
 					}),
 				]
+			}));
+		});
+
+		it("fails gracefully if describe() used in setup module", async () => {
+			await writeSetupModuleAsync(`
+				describe();
+			`);
+			await writeTestModuleAsync();
+
+			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createFail({
+						filename: setupModulePath,
+						name: `error when importing setup module ${path.basename(setupModulePath)}`,
+						error: "describe() is not permitted in setup modules",
+					}),
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createPass({
+								filename: testModulePath,
+								name: "test",
+							}),
+						],
+					}),
+				],
+			}));
+		});
+
+		it("fails gracefully if it() is used in setup module", async () => {
+			await writeSetupModuleAsync(`
+				it("irrelevant name");
+			`);
+			await writeTestModuleAsync();
+
+			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createFail({
+						filename: setupModulePath,
+						name: `error when importing setup module ${path.basename(setupModulePath)}`,
+						error: "it() is not permitted in setup modules",
+					}),
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createPass({
+								filename: testModulePath,
+								name: "test",
+							}),
+						],
+					}),
+				],
 			}));
 		});
 

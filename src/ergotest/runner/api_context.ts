@@ -10,6 +10,7 @@ import path from "node:path";
 
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
+	private _inSetupModule = false;
 
 	async loadSuiteAsync(
 		setupModuleFilenames: string[],
@@ -18,6 +19,7 @@ export class ApiContext {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
 		this._context.push(builder);
+		this._inSetupModule = true;
 		try {
 			await Promise.all(setupModuleFilenames.map(async (filename) => {
 				const errorSuite = await loadSetupModuleAsync(filename);
@@ -26,6 +28,7 @@ export class ApiContext {
 			}));
 		}
 		finally {
+			this._inSetupModule = false;
 			this._context.pop();
 		}
 
@@ -44,6 +47,8 @@ export class ApiContext {
 		optionalFn: DescribeFn | undefined,
 		mark: TestMarkValue,
 	) {
+		this.#ensureCorrectContext("describe");
+
 		const DescribeOptionsType = { timeout: Number };
 		ensure.signature(arguments, [
 			[ undefined, DescribeOptionsType, String, Function ],
@@ -96,7 +101,7 @@ export class ApiContext {
 		possibleFnAsync: ItFn | undefined,
 		mark: TestMarkValue
 	) {
-		this.#ensureInsideDescribe("it");
+		this.#ensureCorrectContext("it");
 		const { options, fnAsync } = decipherItParameters(name, optionalOptions, possibleFnAsync);
 		if (name === "") name = "(unnamed)";
 
@@ -104,35 +109,46 @@ export class ApiContext {
 	}
 
 	beforeAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("beforeAll");
+		this.#ensureCorrectContext("beforeAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.beforeAll(this.#fullName(), options, fnAsync);
 	}
 
 	afterAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("afterAll");
+		this.#ensureCorrectContext("afterAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.afterAll(this.#fullName(), options, fnAsync);
 	}
 
 	beforeEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("beforeEach");
+		this.#ensureCorrectContext("beforeEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.beforeEach(this.#fullName(), options, fnAsync);
 	}
 
 	afterEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("afterEach");
+		this.#ensureCorrectContext("afterEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.afterEach(this.#fullName(), options, fnAsync);
 	}
 
-	#ensureInsideDescribe(functionName: string) {
-		ensure.that(this._context.length > 0, `${functionName}() must be run inside describe()`);
+	#ensureCorrectContext(functionName: string) {
+		if (this._inSetupModule) {
+			ensure.that(
+				functionName !== "describe" && functionName !== "it",
+				`${functionName}() is not permitted in setup modules`
+			);
+		}
+		else {
+			ensure.that(
+				functionName === "describe" || this._context.length > 0,
+				`${functionName}() must be run inside describe()`
+			);
+		}
 	}
 
 	get #top() {
