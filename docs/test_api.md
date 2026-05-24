@@ -252,7 +252,7 @@ Use the _timeout_ option to change the timeout for this test. The default value 
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing. 
 
-To define a global function that runs before any test, call _beforeAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+To define a global function that runs before any test, call _beforeAll()_ inside a setup module. Setup modules are configured in the [test options](automation_api.md#testoptions) provided to your [test runner](automation_api.md#testrunner).   
 
 After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult) corresponding to the function's _describe()_, or the top-level _TestSuiteResult_ if it is global.
 
@@ -281,7 +281,7 @@ If _fn()_ throws an exception or times out, the remainder of this suite will be 
 
 Define a function to run immediately after running all the tests in this suite and its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-To define a global function that runs after all tests, call _afterAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+To define a global function that runs after all tests, call _afterAll()_ inside a setup module. Setup modules are configured in the [test options](automation_api.md#testoptions) provided to your [test runner](automation_api.md#testrunner).   
 
 After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_, or the top-level _TestSuiteResult_ if it is global. 
 
@@ -312,7 +312,7 @@ If _fn()_ throws an exception or times out, any remaining _afterAll()_ functions
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-To define a global function that runs before every test, call _beforeEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+To define a global function that runs before every test, call _beforeEach()_ inside a setup module. Setup modules are configured in the [test options](automation_api.md#testoptions) provided to your [test runner](automation_api.md#testrunner).   
 
 Each time _beforeEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *beforeEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
 
@@ -341,7 +341,7 @@ If _fn()_ throws an exception or times out, no more _beforeEach()_, _afterEach()
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-To define a global function that runs after every test, call _afterEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+To define a global function that runs after every test, call _afterEach()_ inside a setup module. Setup modules are configured in the [test options](automation_api.md#testoptions) provided to your [test runner](automation_api.md#testrunner).   
 
 Each time _afterEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *afterEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
 
