@@ -261,19 +261,24 @@ export default describe(() => {
 			}));
 		});
 
-		it.skip("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
-			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from '/no_such_module.js'");
+		it("it doesn't think an import failure means the module doesn't exist", async () => {
+			await writeTestModuleAsync();
+			await writeSetupModuleAsync("impo" + "rt irrelevant from '/no_such_module.js'");
 
-			const suite = await fromModulesAsync([ testModulePath ]);
+			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
+					createFail({
+						filename: setupModulePath,
+						name: `error when importing setup module ${path.basename(setupModulePath)}`,
+						error: `Cannot find module '/no_such_module.js' imported from ${setupModulePath}`,
+					}),
 					createSuite({
 						filename: testModulePath,
 						tests: [
-							createFail({
+							createPass({
 								filename: testModulePath,
-								name: `error when importing setup module ${path.basename(testModulePath)}`,
-								error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
+								name: "test",
 							}),
 						],
 					}),
@@ -281,19 +286,24 @@ export default describe(() => {
 			}));
 		});
 
-		it.skip("fails gracefully if module throws an exception while being loaded", async () => {
-			await fs.writeFile(testModulePath, "throw new Error('my import error')");
+		it("fails gracefully if module throws an exception while being loaded", async () => {
+			await writeTestModuleAsync();
+			await fs.writeFile(setupModulePath, "throw new Error('my import error')");
 
-			const suite = await fromModulesAsync([ testModulePath ]);
+			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
+					createFail({
+						filename: setupModulePath,
+						name: `error when importing setup module ${path.basename(setupModulePath)}`,
+						error: "my import error",
+					}),
 					createSuite({
 						filename: testModulePath,
 						tests: [
-							createFail({
+							createPass({
 								filename: testModulePath,
-								name: `error when importing setup module ${path.basename(testModulePath)}`,
-								error: "my import error",
+								name: "test",
 							}),
 						],
 					}),
@@ -301,36 +311,24 @@ export default describe(() => {
 			}));
 		});
 
-		it.skip("fails gracefully if module doesn't export a test suite", async () => {
-			await fs.writeFile(testModulePath, "");
-
-			const suite = await fromModulesAsync([ testModulePath ]);
-			assert.dotEquals(await suite.runAsync(), createSuite({
-				tests: [
-					createSuite({
-						filename: testModulePath,
-						tests: [
-							createFail({
-								filename: testModulePath,
-								name: `error when importing setup module ${path.basename(testModulePath)}`,
-								error: `Test module doesn't export a test suite: ${testModulePath}`,
-							}),
-						],
-					}),
-				],
-			}));
-		});
-
-		it.skip("triggers onTestCaseResult when module load fails", async () => {
-			let result: TestCaseResult | undefined;
+		it("triggers onTestCaseResult when module load fails", async () => {
+			let result: TestCaseResult[] = [];
 			function onTestCaseResult(_result: TestCaseResult) {
-				result = _result;
+				result.push(_result);
 			}
 
-			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+			await writeTestModuleAsync();
+			const suite = await fromModulesAsync([ testModulePath ], [ "/no_such_module.js" ]);
 			await suite.runAsync({ onTestCaseResult });
 
-			assert.equal(result?.filename, "/no_such_module.js");
+			assert.dotEquals(result[0], createFail({
+				filename: "/no_such_module.js",
+				name: `error when importing setup module no_such_module.js`,
+				error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
+					import.meta.dirname,
+					"./loader.js",
+				)}`,
+			}));
 		});
 
 	});
@@ -617,8 +615,8 @@ export default describe(() => {
 		`);
 	}
 
-	async function writeSetupModuleAsync(sourceCode: string, setupModulePath: string) {
-		await fs.writeFile(setupModulePath, `
+	async function writeSetupModuleAsync(sourceCode: string, filename: string = setupModulePath) {
+		await fs.writeFile(filename, `
 			import { beforeAll, afterAll, beforeEach, afterEach, describe, it } from ` + `"${INDEX_PATH}";
 			
 			${sourceCode}
