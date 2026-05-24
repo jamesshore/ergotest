@@ -364,7 +364,7 @@ async function loadSetupModulesAsync(setupModuleFilenames: string[], builder: Te
 			}
 			else {
 				beforeAll = BeforeAfter.create({
-					name: [ "loaded setup module" ],
+					name: [ "load setup module" ],
 					fnAsync() {}
 				});
 			}

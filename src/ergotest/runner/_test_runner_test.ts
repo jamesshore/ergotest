@@ -163,7 +163,7 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
 					createPass({ name: "beforeAll()", filename: setupModuleFilename }),
-					createPass({ name: "loaded setup module", filename: setupModuleFilename })
+					createPass({ name: "load setup module", filename: setupModuleFilename })
 				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupModuleFilename }) ],
 				tests: [
@@ -201,8 +201,8 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
 					createPass({ name: "beforeAll()", filename: setupPath1 }),
-					createPass({ name: "loaded setup module", filename: setupPath1 }),
-					createPass({ name: "loaded setup module", filename: setupPath2 }),
+					createPass({ name: "load setup module", filename: setupPath1 }),
+					createPass({ name: "load setup module", filename: setupPath2 }),
 				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupPath2 }) ],
 				tests: [
@@ -228,7 +228,7 @@ export default describe(() => {
 			const suite = await loadTestsAsync([ testModuleFilename ], [ setupModuleFilename ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
-				beforeAll: [ createPass({ name: "loaded setup module", filename: setupModuleFilename }) ],
+				beforeAll: [ createPass({ name: "load setup module", filename: setupModuleFilename }) ],
 				tests: [
 					createSuite({
 						filename: testModuleFilename,
@@ -502,7 +502,7 @@ export default describe(() => {
 			assert.dotEquals(results, createSuite({
 				beforeAll: [ createPass({
 					filename: setupModuleFilename,
-					name: "loaded setup module",
+					name: "load setup module",
 				})],
 				afterAll: [ createFail({
 					filename: setupModuleFilename,
@@ -558,7 +558,7 @@ export default describe(() => {
 				assert.dotEquals(results, createSuite({
 					beforeAll: [ createPass({
 						filename: setupModuleFilename,
-						name: "loaded setup module",
+						name: "load setup module",
 					})],
 					afterAll: [ createFail({
 						filename: setupModuleFilename,
