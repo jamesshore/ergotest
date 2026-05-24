@@ -127,7 +127,7 @@ export default describe(() => {
 					createFail({
 						filename: testModuleFilename,
 						name: "import test module",
-						error: `Test module doesn't export a test suite: ${testModuleFilename}`,
+						error: `Test module '${testModuleFilename}' doesn't export a test suite. Did you forget to "export default" your describe()?`,
 					}),
 				],
 			}));

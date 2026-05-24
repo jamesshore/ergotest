@@ -385,7 +385,7 @@ async function loadTestModulesAsync(testModuleFilenames: string[], builder: Test
 			);
 		}
 		else {
-			test = new FailureTestCase(name, `Test module doesn't export a test suite: ${filename}`);
+			test = new FailureTestCase(name, `Test module '${filename}' doesn't export a test suite. Did you forget to "export default" your describe()?`);
 		}
 
 		builder.addTest(test);
