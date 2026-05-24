@@ -12,7 +12,7 @@ import {
 } from "../results/test_result.js";
 import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
-import { Milliseconds, TestOptions } from "./test_api.js";
+import { Milliseconds, TestOptions } from "../runner/test_api.js";
 import util from "node:util";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;
@@ -100,19 +100,6 @@ export class TestSuite implements Test {
 		this._hasDotOnlyChildren = this._tests.some(test => test._isDotOnly());
 	}
 
-	/**
-	 * Run the tests in this suite.
-	 * @param {number} [timeout] Default timeout in milliseconds.
-	 * @param {object} [config={}] Configuration data to provide to tests.
-	 * @param {(result: TestResult) => ()} [onTestCaseResult] A function to call each time a test completes. The `result`
-	 *   parameter describes the result of the test—whether it passed, failed, etc.
-	 * @param {string} [renderer] Path to a module that exports a `renderError()` function with the signature `(name:
-	 *   string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an absolute path
-	 *   or a module that exists in `node_modules`. The `renderError()` function will be called when a test fails and the
-	 *   return value will be placed into the test result as {@link TestResult.errorRender}.
-	 * @param {Clock} [clock] Internal use only.
-	 * @returns {Promise<TestSuiteResult>} The results of the test suite.
-	 */
 	async runAsync({
 		timeout = DEFAULT_TIMEOUT_IN_MS,
 		config = {},
@@ -120,14 +107,6 @@ export class TestSuite implements Test {
 		renderer = undefined,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
-		ensure.signature(arguments, [[ undefined, {
-			timeout: [ undefined, Number ],
-			config: [ undefined, Object ],
-			onTestCaseResult: [ undefined, Function ],
-			renderer: [ undefined, String ],
-			clock: [ undefined, Clock ],
-		}]]);
-
 		return await this._runAsyncInternal({
 			clock,
 			config,

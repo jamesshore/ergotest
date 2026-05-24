@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { RunResult } from "../results/test_result.js";
 import { RunData, RunOptions } from "./test_suite.js";
-import { ItFn, ItOptions } from "./test_api.js";
+import { ItFn, ItOptions } from "../runner/test_api.js";
 
 export class Runnable {
 

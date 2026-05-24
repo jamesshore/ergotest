@@ -4,12 +4,16 @@ import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_resu
 import child_process from "node:child_process";
 import path from "node:path";
 import { Clock } from "../../infrastructure/clock.js";
-import { fromModulesAsync } from "./loader.js";
 import { importRendererAsync, TestSuite } from "../tests/test_suite.js";
+import { _loadTestsAsync } from "./test_api.js";
 // dependency: ./test_runner_worker_process.js
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 const TEST_OPTIONS_TYPE = {
+    setupModulePaths: [
+        undefined,
+        Array
+    ],
     timeout: [
         undefined,
         Number
@@ -45,12 +49,18 @@ const TEST_OPTIONS_TYPE = {
 	 * that you can't make changes to your tests. Future test runs won't see your changes because the previous modules
 	 * will have been cached.
 	 *
-	 * @param {string[]} modulePaths The test files to load and run.
-	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
-	 *   parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string[]} testModulePaths The test files to load and run.
+	 * @param {string[]} [options.setupModulePaths] The setup files to load and run prior to the tests.
+	 * @param {number} [options.timeout] Default timeout in milliseconds.
+	 * @param {object} [options.config={}] Configuration data to provide to tests.
+	 * @param {(result: TestResult) => ()} [options.onTestCaseResult] A function to call each time a test completes. The
+	 *   `result` parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [options.renderer] Path to a module that exports a `renderError()` function with the signature
+	 *   `(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an
+	 *   absolute path or a module that exists in `node_modules`. The `renderError()` function will be called when a test
+	 *   fails and the return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInCurrentProcessAsync(modulePaths, options) {
+	 */ async runInCurrentProcessAsync(testModulePaths, options = {}) {
         ensure.signature(arguments, [
             Array,
             [
@@ -58,18 +68,24 @@ const TEST_OPTIONS_TYPE = {
                 TEST_OPTIONS_TYPE
             ]
         ]);
-        const suite = await fromModulesAsync(modulePaths);
+        const suite = await _loadTestsAsync(options.setupModulePaths ?? [], testModulePaths);
         return await suite.runAsync(options);
     }
     /**
 	 * Load and run a set of test modules in an isolated child process.
 	 *
-	 * @param {string[]} modulePaths The test files to load and run.
-	 * @param {object} [options.config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestCaseResult) => ()} [options.onTestCaseResult] A function to call each time a test completes.
-	 *   The `result` parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string[]} testModulePaths The test files to load and run.
+	 * @param {string[]} [options.setupModulePaths] The setup files to load and run prior to the tests.
+	 * @param {number} [options.timeout] Default timeout in milliseconds.
+	 * @param {object} [options.config={}] Configuration data to provide to tests.
+	 * @param {(result: TestResult) => ()} [options.onTestCaseResult] A function to call each time a test completes. The
+	 *   `result` parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [options.renderer] Path to a module that exports a `renderError()` function with the signature
+	 *   `(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an
+	 *   absolute path or a module that exists in `node_modules`. The `renderError()` function will be called when a test
+	 *   fails and the return value will be placed into the test result as {@link TestResult.errorRender}.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInChildProcessAsync(modulePaths, options = {}) {
+	 */ async runInChildProcessAsync(testModulePaths, options = {}) {
         ensure.signature(arguments, [
             Array,
             [
@@ -78,7 +94,7 @@ const TEST_OPTIONS_TYPE = {
             ]
         ]);
         const worker = new WorkerProcess(this._clock);
-        return await worker.runAsync(modulePaths, options);
+        return await worker.runAsync(testModulePaths, options);
     }
 }
 class WorkerProcess {
@@ -87,20 +103,23 @@ class WorkerProcess {
     constructor(clock){
         this._clock = clock;
     }
-    async runAsync(modulePaths, { timeout, config, onTestCaseResult = ()=>{}, renderer }) {
+    async runAsync(testModulePaths, options) {
         this._worker = child_process.fork(WORKER_FILENAME, {
             serialization: "advanced",
             detached: false
         });
         try {
-            const renderErrorFn = await importRendererAsync(renderer);
+            const onTestCaseResult = options.onTestCaseResult ?? function() {};
+            const optionsCopy = {
+                ...options
+            };
+            delete optionsCopy.onTestCaseResult;
+            const renderErrorFn = await importRendererAsync(options.renderer);
             this._worker.send({
-                modulePaths,
-                timeout,
-                config,
-                renderer
+                testModulePaths,
+                options: optionsCopy
             });
-            return await this.#handleWorkerEvents(renderErrorFn, onTestCaseResult);
+            return await this.#handleWorkerEvents(renderErrorFn, options.onTestCaseResult ?? function() {});
         } finally{
             await this.#killWorkerProcess();
         }

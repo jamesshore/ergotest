@@ -11,17 +11,17 @@ import {
 } from "../../util/tests.js";
 import { importRendererAsync, TestSuite } from "./test_suite.js";
 import {
+	_loadTestsAsync,
 	afterAll as afterAll_sut,
 	afterEach as afterEach_sut,
 	beforeAll as beforeAll_sut,
 	beforeEach as beforeEach_sut,
 	describe as describe_sut,
 	it as it_sut,
-} from "./test_api.js";
+} from "../runner/test_api.js";
 import { Clock } from "../../infrastructure/clock.js";
 import { TestCaseResult, TestMark, TestResult, TestStatus } from "../results/test_result.js";
 import path from "node:path";
-import { fromModulesAsync } from "../runner/loader.js";
 import { FailureTestCase, TestCase } from "./test_case.js";
 // dependency: ./_module_throws.js
 // dependency: ../_renderer_custom.js
@@ -56,7 +56,7 @@ export default describe(() => {
 				renderer: CUSTOM_RENDERER_PATH,
 			};
 
-			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await loadTestsAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync(options)).allTests()[0];
 
 			await assert.equal(result.errorRender, "custom rendering");
@@ -67,7 +67,7 @@ export default describe(() => {
 				renderer: NODE_MODULES_RENDERER_NAME,
 			};
 
-			const suite = await fromModulesAsync([ THROWS_MODULE_PATH ]);
+			const suite = await loadTestsAsync([ THROWS_MODULE_PATH ]);
 			const result = (await suite.runAsync(options)).allTests()[0];
 
 			await assert.equal(result.errorRender, "node_modules rendering");
@@ -1905,7 +1905,7 @@ export default describe(() => {
 		});
 
 		it("runs notify function if module fails to require()", async () => {
-			const suite = await fromModulesAsync([ "./_module_throws.js" ]);
+			const suite = await loadTestsAsync([ "./_module_throws.js" ]);
 
 			let testResult: TestCaseResult;
 			function onTestCaseResult(result: TestCaseResult) {
@@ -1917,7 +1917,7 @@ export default describe(() => {
 		});
 
 		it("runs notify function if module doesn't export a test suite", async () => {
-			const suite = await fromModulesAsync([ "./_module_no_export.js" ]);
+			const suite = await loadTestsAsync([ "./_module_no_export.js" ]);
 
 			let testResult: TestCaseResult;
 
@@ -1940,4 +1940,11 @@ async function runTestAsync(testName: string, testFn: () => void) {
 	});
 	const result = await suite.runAsync();
 	return result.tests[0];
+}
+
+async function loadTestsAsync(
+	testModuleFilenames: string[],
+	setupModuleFilenames: string[] = [],
+): Promise<TestSuite> {
+	return await _loadTestsAsync(setupModuleFilenames, testModuleFilenames);
 }

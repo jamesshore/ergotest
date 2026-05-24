@@ -1,31 +1,36 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
 import { TestMark } from "../results/test_result.js";
-import { TestSuite } from "./test_suite.js";
-import { FailureTestCase, TestCase } from "./test_case.js";
-import { BeforeAfter } from "./before_after.js";
+import { TestSuite } from "../tests/test_suite.js";
+import { FailureTestCase, TestCase } from "../tests/test_case.js";
+import { BeforeAfter } from "../tests/before_after.js";
+import path from "node:path";
 export class ApiContext {
     _context = [];
-    async loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync) {
+    _inSetupModule = false;
+    async loadSuiteAsync(setupModuleFilenames, testModuleFilenames) {
         const builder = new TestSuiteBuilder([], TestMark.none);
         this._context.push(builder);
+        this._inSetupModule = true;
         try {
-            await Promise.all(setupModulePaths.map(async (path)=>{
-                const errorSuite = await loadSetupFnAsync(path);
+            await Promise.all(setupModuleFilenames.map(async (filename)=>{
+                const errorSuite = await loadSetupModuleAsync(filename);
                 if (errorSuite !== undefined) builder.addTest(errorSuite);
-                builder.setFilename(path);
+                builder.setFilename(filename);
             }));
         } finally{
+            this._inSetupModule = false;
             this._context.pop();
         }
-        await Promise.all(testModulePaths.map(async (path)=>{
-            const suite = await loadTestFnAsync(path);
+        await Promise.all(testModuleFilenames.map(async (filename)=>{
+            const suite = await loadTestModuleAsync(filename);
             builder.addTest(suite);
-            builder.setFilename(path);
+            builder.setFilename(filename);
         }));
         return builder.toTestSuite();
     }
     describe(optionalName, optionalOptions, optionalFn, mark) {
+        this.#ensureCorrectContext("describe");
         const DescribeOptionsType = {
             timeout: Number
         };
@@ -80,33 +85,37 @@ export class ApiContext {
         }
     }
     it(name, optionalOptions, possibleFnAsync, mark) {
-        this.#ensureInsideDescribe("it");
+        this.#ensureCorrectContext("it");
         const { options, fnAsync } = decipherItParameters(name, optionalOptions, possibleFnAsync);
         if (name === "") name = "(unnamed)";
         this.#top.it(this.#fullName(name), mark, options, fnAsync);
     }
     beforeAll(optionalOptions, possibleFnAsync) {
-        this.#ensureInsideDescribe("beforeAll");
+        this.#ensureCorrectContext("beforeAll");
         const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
         this.#top.beforeAll(this.#fullName(), options, fnAsync);
     }
     afterAll(optionalOptions, possibleFnAsync) {
-        this.#ensureInsideDescribe("afterAll");
+        this.#ensureCorrectContext("afterAll");
         const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
         this.#top.afterAll(this.#fullName(), options, fnAsync);
     }
     beforeEach(optionalOptions, possibleFnAsync) {
-        this.#ensureInsideDescribe("beforeEach");
+        this.#ensureCorrectContext("beforeEach");
         const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
         this.#top.beforeEach(this.#fullName(), options, fnAsync);
     }
     afterEach(optionalOptions, possibleFnAsync) {
-        this.#ensureInsideDescribe("afterEach");
+        this.#ensureCorrectContext("afterEach");
         const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
         this.#top.afterEach(this.#fullName(), options, fnAsync);
     }
-    #ensureInsideDescribe(functionName) {
-        ensure.that(this._context.length > 0, `${functionName}() must be run inside describe()`);
+    #ensureCorrectContext(functionName) {
+        if (this._inSetupModule) {
+            ensure.that(functionName !== "describe" && functionName !== "it", `${functionName}() is not permitted in setup modules`);
+        } else {
+            ensure.that(functionName === "describe" || this._context.length > 0, `${functionName}() must be run inside describe()`);
+        }
     }
     get #top() {
         return this._context[this._context.length - 1];
@@ -322,6 +331,34 @@ function decipherItParameters(name, optionsOrTestFn, possibleTestFn) {
         fnAsync
     };
 }
-const testContext = new ApiContext();
+async function loadSetupModuleAsync(setupModulePath) {
+    return await loadModuleAsync(setupModulePath, "Setup module");
+}
+async function loadTestModuleAsync(filename) {
+    const description = "Test module";
+    const test = await loadModuleAsync(filename, description);
+    if (test instanceof TestSuite || test instanceof TestCase) {
+        return test;
+    } else {
+        return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
+    }
+}
+async function loadModuleAsync(filename, description) {
+    if (!path.isAbsolute(filename)) {
+        return createModuleLoadFailure(`${description} filenames must use absolute paths: ${filename}`, filename, description);
+    }
+    try {
+        const { default: suite } = await import(filename);
+        return suite;
+    } catch (err) {
+        return createModuleLoadFailure(err, filename, description);
+    }
+}
+function createModuleLoadFailure(error, filename, description) {
+    const name = `error when importing ${description.toLowerCase()} ${path.basename(filename)}`;
+    return new FailureTestCase([
+        name
+    ], error);
+}
 
 //# sourceMappingURL=api_context.js.map

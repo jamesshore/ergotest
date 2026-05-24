@@ -1,39 +1,41 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
 import { TestMark, TestMarkValue } from "../results/test_result.js";
-import { TestSuite } from "./test_suite.js";
-import { FailureTestCase, TestCase } from "./test_case.js";
-import { BeforeAfter } from "./before_after.js";
+import { TestSuite } from "../tests/test_suite.js";
+import { FailureTestCase, TestCase } from "../tests/test_case.js";
+import { BeforeAfter } from "../tests/before_after.js";
 import { DescribeFn, DescribeOptions, ItFn, ItOptions, Milliseconds } from "./test_api.js";
-import { Test } from "./test.js";
+import { Test } from "../tests/test.js";
+import path from "node:path";
 
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
+	private _inSetupModule = false;
 
 	async loadSuiteAsync(
-		setupModulePaths: string[],
-		testModulePaths: string[],
-		loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
-		loadTestFnAsync: (testModulePath: string) => Promise<Test>
+		setupModuleFilenames: string[],
+		testModuleFilenames: string[],
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
 		this._context.push(builder);
+		this._inSetupModule = true;
 		try {
-			await Promise.all(setupModulePaths.map(async (path) => {
-				const errorSuite = await loadSetupFnAsync(path);
+			await Promise.all(setupModuleFilenames.map(async (filename) => {
+				const errorSuite = await loadSetupModuleAsync(filename);
 				if (errorSuite !== undefined) builder.addTest(errorSuite);
-				builder.setFilename(path);
+				builder.setFilename(filename);
 			}));
 		}
 		finally {
+			this._inSetupModule = false;
 			this._context.pop();
 		}
 
-		await Promise.all(testModulePaths.map(async (path) => {
-			const suite = await loadTestFnAsync(path);
+		await Promise.all(testModuleFilenames.map(async (filename) => {
+			const suite = await loadTestModuleAsync(filename);
 			builder.addTest(suite);
-			builder.setFilename(path);
+			builder.setFilename(filename);
 		}));
 
 		return builder.toTestSuite();
@@ -45,6 +47,8 @@ export class ApiContext {
 		optionalFn: DescribeFn | undefined,
 		mark: TestMarkValue,
 	) {
+		this.#ensureCorrectContext("describe");
+
 		const DescribeOptionsType = { timeout: Number };
 		ensure.signature(arguments, [
 			[ undefined, DescribeOptionsType, String, Function ],
@@ -97,7 +101,7 @@ export class ApiContext {
 		possibleFnAsync: ItFn | undefined,
 		mark: TestMarkValue
 	) {
-		this.#ensureInsideDescribe("it");
+		this.#ensureCorrectContext("it");
 		const { options, fnAsync } = decipherItParameters(name, optionalOptions, possibleFnAsync);
 		if (name === "") name = "(unnamed)";
 
@@ -105,35 +109,46 @@ export class ApiContext {
 	}
 
 	beforeAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("beforeAll");
+		this.#ensureCorrectContext("beforeAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.beforeAll(this.#fullName(), options, fnAsync);
 	}
 
 	afterAll(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("afterAll");
+		this.#ensureCorrectContext("afterAll");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.afterAll(this.#fullName(), options, fnAsync);
 	}
 
 	beforeEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("beforeEach");
+		this.#ensureCorrectContext("beforeEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.beforeEach(this.#fullName(), options, fnAsync);
 	}
 
 	afterEach(optionalOptions: ItOptions | ItFn, possibleFnAsync?: ItFn) {
-		this.#ensureInsideDescribe("afterEach");
+		this.#ensureCorrectContext("afterEach");
 		const { options, fnAsync } = decipherBeforeAfterParameters(optionalOptions, possibleFnAsync);
 
 		this.#top.afterEach(this.#fullName(), options, fnAsync);
 	}
 
-	#ensureInsideDescribe(functionName: string) {
-		ensure.that(this._context.length > 0, `${functionName}() must be run inside describe()`);
+	#ensureCorrectContext(functionName: string) {
+		if (this._inSetupModule) {
+			ensure.that(
+				functionName !== "describe" && functionName !== "it",
+				`${functionName}() is not permitted in setup modules`
+			);
+		}
+		else {
+			ensure.that(
+				functionName === "describe" || this._context.length > 0,
+				`${functionName}() must be run inside describe()`
+			);
+		}
 	}
 
 	get #top() {
@@ -325,4 +340,42 @@ function decipherItParameters(
 	return { options, fnAsync };
 }
 
-const testContext = new ApiContext();
+
+async function loadSetupModuleAsync(setupModulePath: string): Promise<void | Test> {
+	return await loadModuleAsync(setupModulePath, "Setup module");
+}
+
+async function loadTestModuleAsync(filename: string): Promise<Test> {
+	const description = "Test module";
+
+	const test = await loadModuleAsync(filename, description);
+	if (test instanceof TestSuite || test instanceof TestCase) {
+		return test;
+	}
+	else {
+		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
+	}
+
+}
+
+async function loadModuleAsync(filename: string, description: string): Promise<Test> {
+	if (!path.isAbsolute(filename)) {
+		return createModuleLoadFailure(
+			`${description} filenames must use absolute paths: ${filename}`,
+			filename,
+			description,
+		);
+	}
+	try {
+		const { default: suite } = await import(filename);
+		return suite;
+	}
+	catch(err) {
+		return createModuleLoadFailure(err, filename, description);
+	}
+}
+
+function createModuleLoadFailure(error: unknown, filename: string, description: string): FailureTestCase {
+	const name = `error when importing ${description.toLowerCase()} ${path.basename(filename)}`;
+	return new FailureTestCase([ name ], error);
+}
