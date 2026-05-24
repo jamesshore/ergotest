@@ -6,6 +6,25 @@ import { FailureTestCase, TestCase } from "./test_case.js";
 import { BeforeAfter } from "./before_after.js";
 export class ApiContext {
     _context = [];
+    async loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync) {
+        const builder = new TestSuiteBuilder([], TestMark.none);
+        this._context.push(builder);
+        try {
+            await Promise.all(setupModulePaths.map(async (path)=>{
+                const errorSuite = await loadSetupFnAsync(path);
+                if (errorSuite !== undefined) builder.addTest(errorSuite);
+                builder.setFilename(path);
+            }));
+        } finally{
+            this._context.pop();
+        }
+        await Promise.all(testModulePaths.map(async (path)=>{
+            const suite = await loadTestFnAsync(path);
+            builder.addTest(suite);
+            builder.setFilename(path);
+        }));
+        return builder.toTestSuite();
+    }
     describe(optionalName, optionalOptions, optionalFn, mark) {
         const DescribeOptionsType = {
             timeout: Number
@@ -31,7 +50,7 @@ export class ApiContext {
         const { name, options, fn } = decipherDescribeParameters(optionalName, optionalOptions, optionalFn);
         const fullName = this.#fullName(name);
         const suite = fn === undefined ? createSkippedSuite(fullName, mark) : runDescribeBlock(this._context, fullName, mark, fn);
-        if (this._context.length !== 0) this.#top.addSuite(suite);
+        if (this._context.length !== 0) this.#top.addTest(suite);
         return suite;
         function runDescribeBlock(context, fullName, mark, fn) {
             const builder = new TestSuiteBuilder(fullName, mark, options.timeout);
@@ -117,8 +136,18 @@ class TestSuiteBuilder {
     get name() {
         return this._name;
     }
-    addSuite(suite) {
-        this._tests.push(suite);
+    addTest(test) {
+        this._tests.push(test);
+    }
+    setFilename(filename) {
+        const allChildren = [
+            ...this._tests,
+            ...this._beforeAll,
+            ...this._afterAll,
+            ...this._beforeEach,
+            ...this._afterEach
+        ];
+        allChildren.forEach((child)=>child._setFilename(filename));
     }
     it(name, mark, options, fnAsync) {
         this._tests.push(TestCase.create({

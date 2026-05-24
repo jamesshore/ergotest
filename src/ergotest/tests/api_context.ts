@@ -10,6 +10,35 @@ import { Test } from "./test.js";
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
+	async loadSuiteAsync(
+		setupModulePaths: string[],
+		testModulePaths: string[],
+		loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
+		loadTestFnAsync: (testModulePath: string) => Promise<Test>
+	) {
+		const builder = new TestSuiteBuilder([], TestMark.none);
+
+		this._context.push(builder);
+		try {
+			await Promise.all(setupModulePaths.map(async (path) => {
+				const errorSuite = await loadSetupFnAsync(path);
+				if (errorSuite !== undefined) builder.addTest(errorSuite);
+				builder.setFilename(path);
+			}));
+		}
+		finally {
+			this._context.pop();
+		}
+
+		await Promise.all(testModulePaths.map(async (path) => {
+			const suite = await loadTestFnAsync(path);
+			builder.addTest(suite);
+			builder.setFilename(path);
+		}));
+
+		return builder.toTestSuite();
+	}
+
 	describe(
 		optionalName: string | DescribeOptions | DescribeFn | undefined,
 		optionalOptions: DescribeOptions | DescribeFn | undefined,
@@ -30,7 +59,7 @@ export class ApiContext {
 			? createSkippedSuite(fullName, mark)
 			: runDescribeBlock(this._context, fullName, mark, fn);
 
-		if (this._context.length !== 0) this.#top.addSuite(suite);
+		if (this._context.length !== 0) this.#top.addTest(suite);
 		return suite;
 
 		function runDescribeBlock(context: TestSuiteBuilder[], fullName: string[], mark: TestMarkValue, fn: DescribeFn) {
@@ -122,7 +151,7 @@ class TestSuiteBuilder {
 	private readonly _name: string[];
 	private readonly _mark: TestMarkValue;
 	private readonly _timeout?: Milliseconds;
-	private readonly _tests: Test[] = [];
+	private _tests: Test[] = [];
 	private readonly _beforeAll: BeforeAfter[] = [];
 	private readonly _afterAll: BeforeAfter[] = [];
 	private readonly _beforeEach: BeforeAfter[] = [];
@@ -138,8 +167,15 @@ class TestSuiteBuilder {
 		return this._name;
 	}
 
-	addSuite(suite: TestSuite) {
-		this._tests.push(suite);
+	addTest(test: Test) {
+		this._tests.push(test);
+	}
+
+	setFilename(filename: string) {
+		const allChildren = [
+			...this._tests, ...this._beforeAll, ...this._afterAll, ...this._beforeEach, ...this._afterEach
+		];
+		allChildren.forEach(child => child._setFilename(filename));
 	}
 
 	it(name: string[], mark: TestMarkValue, options: ItOptions, fnAsync?: ItFn) {
