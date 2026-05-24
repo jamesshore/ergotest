@@ -12,7 +12,7 @@ import {
 } from "../results/test_result.js";
 import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
-import { Milliseconds, TestOptions } from "./test_api.js";
+import { Milliseconds, TestOptions } from "../runner/test_api.js";
 import util from "node:util";
 
 const DEFAULT_TIMEOUT_IN_MS = 2000;

@@ -5,7 +5,7 @@ import { RunData, RunOptions } from "./test_suite.js";
 import { Runnable } from "./runnable.js";
 import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
-import { ItFn, ItOptions } from "./test_api.js";
+import { ItFn, ItOptions } from "../runner/test_api.js";
 
 export class TestCase implements Test {
 

@@ -15,7 +15,7 @@ import { TestSuite } from "../tests/test_suite.js";
 import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
-import { _loadTestsAsync } from "../tests/test_api.js";
+import { _loadTestsAsync } from "./test_api.js";
 
 // dependency: ../_renderer_custom.js
 
@@ -26,13 +26,17 @@ export default describe(() => {
 
 	let testModulePath: string;
 	let setupModulePath: string;
+	let apiContextFilename: string;
 	let nonce = 1;
 
 	beforeEach(async ({ getConfig }) => {
 		const testDir = getConfig<string>("scratchDir");
 
-		testModulePath = `${testDir}/_test_runner_module_${nonce++}.js`;
-		setupModulePath = `${testDir}/_test_setup_module_${nonce++}.js`;
+		testModulePath = `${testDir}/_test_runner_module_${nonce}.js`;
+		setupModulePath = `${testDir}/_test_setup_module_${nonce}.js`;
+		nonce++;
+		apiContextFilename = path.resolve(import.meta.dirname, "./api_context.js");
+
 		await deleteTempFilesAsync(testDir);
 	});
 
@@ -76,7 +80,7 @@ export default describe(() => {
 						name: "error when importing test module no_such_module.js",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
-							"../tests/api_context.js",
+							apiContextFilename,
 						)}`,
 					}),
 				],
@@ -243,10 +247,7 @@ export default describe(() => {
 					createFail({
 						filename: "/no_such_module.js",
 						name: "error when importing setup module no_such_module.js",
-						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
-							import.meta.dirname,
-							"../tests/api_context.js",
-						)}`,
+						error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 					}),
 					createSuite({
 						filename: testModulePath,
@@ -324,10 +325,7 @@ export default describe(() => {
 			assert.dotEquals(result[0], createFail({
 				filename: "/no_such_module.js",
 				name: `error when importing setup module no_such_module.js`,
-				error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
-					import.meta.dirname,
-					"../tests/api_context.js",
-				)}`,
+				error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 			}));
 		});
 

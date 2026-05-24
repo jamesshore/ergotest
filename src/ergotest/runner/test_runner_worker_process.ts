@@ -4,7 +4,7 @@ import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_resu
 import { Clock } from "../../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
-import { _loadTestsAsync } from "../tests/test_api.js";
+import { _loadTestsAsync } from "./test_api.js";
 
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 

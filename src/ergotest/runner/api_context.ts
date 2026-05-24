@@ -1,11 +1,11 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
 import { TestMark, TestMarkValue } from "../results/test_result.js";
-import { TestSuite } from "./test_suite.js";
-import { FailureTestCase, TestCase } from "./test_case.js";
-import { BeforeAfter } from "./before_after.js";
+import { TestSuite } from "../tests/test_suite.js";
+import { FailureTestCase, TestCase } from "../tests/test_case.js";
+import { BeforeAfter } from "../tests/before_after.js";
 import { DescribeFn, DescribeOptions, ItFn, ItOptions, Milliseconds } from "./test_api.js";
-import { Test } from "./test.js";
+import { Test } from "../tests/test.js";
 import path from "node:path";
 
 export class ApiContext {

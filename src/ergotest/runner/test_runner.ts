@@ -12,7 +12,7 @@ import child_process, { ChildProcess } from "node:child_process";
 import path from "node:path";
 import { Clock } from "../../infrastructure/clock.js";
 import { importRendererAsync, TestSuite } from "../tests/test_suite.js";
-import { _loadTestsAsync, TestOptions } from "../tests/test_api.js";
+import { _loadTestsAsync, TestOptions } from "./test_api.js";
 // dependency: ./test_runner_worker_process.js
 
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");

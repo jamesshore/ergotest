@@ -1,10 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { TestCaseResult, TestMark } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
-import { TestConfig, TestSuite } from "./test_suite.js";
+import { TestConfig, TestSuite } from "../tests/test_suite.js";
 import { ApiContext } from "./api_context.js";
 import * as test from "node:test";
-import { Test } from "./test.js";
+import { Test } from "../tests/test.js";
 
 const context = new ApiContext();
 
