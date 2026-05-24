@@ -19,6 +19,7 @@ const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
 
 const TEST_OPTIONS_TYPE = {
+	setupModulePaths: [ undefined, Array ],
 	timeout: [ undefined, Number ],
 	config: [ undefined, Object ],
 	onTestCaseResult: [ undefined, Function ],
@@ -73,16 +74,24 @@ export class TestRunner {
 	 * that you can't make changes to your tests. Future test runs won't see your changes because the previous modules
 	 * will have been cached.
 	 *
-	 * @param {string[]} modulePaths The test files to load and run.
-	 * @param {object} [config] Configuration data to provide to the tests as they run.
-	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
+	 * @param {string[]} testModulePaths The test files to load and run.
+	 * @param {string[]} [options.setupModulePaths] The setup files to load and run prior to the tests.
+	 * @param {number} [options.timeout] Default timeout in milliseconds.
+	 * @param {object} [options.config={}] Configuration data to provide to tests.
+	 * @param {(result: TestResult) => ()} [options.onTestCaseResult] A function to call each time a test completes. The
+	 *   `result` parameter describes the result of the test—whether it passed, failed, etc.
+	 * @param {string} [options.renderer] Path to a module that exports a `renderError()` function with the signature
+	 *   `(name: string, error: unknown, mark: TestMarkValue, filename?: string) => unknown`. The path must be an
+	 *   absolute path or a module that exists in `node_modules`. The `renderError()` function will be called when a test
+	 *   fails and the return value will be placed into the test result as {@link TestResult.errorRender}.
+	 * @param {(result: TestResult) => ()} [options.notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
 	 */
-	async runInCurrentProcessAsync(modulePaths: string[], options: TestOptions = {}): Promise<TestSuiteResult> {
+	async runInCurrentProcessAsync(testModulePaths: string[], options: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE]]);
 
-		const suite = await _loadTestsAsync([], modulePaths);
+		const suite = await _loadTestsAsync(options.setupModulePaths ?? [], testModulePaths);
 		return await suite.runAsync(options);
 	}
 

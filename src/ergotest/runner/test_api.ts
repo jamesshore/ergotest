@@ -10,6 +10,7 @@ const context = new ApiContext();
 
 
 export interface TestOptions {
+	setupModulePaths?: string[],
 	timeout?: Milliseconds,
 	config?: TestConfig,
 	onTestCaseResult?: (testCaseResult: TestCaseResult) => void,

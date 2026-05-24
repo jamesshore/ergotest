@@ -120,14 +120,6 @@ export class TestSuite implements Test {
 		renderer = undefined,
 		clock = Clock.create(),
 	}: TestOptions = {}): Promise<TestSuiteResult> {
-		ensure.signature(arguments, [[ undefined, {
-			timeout: [ undefined, Number ],
-			config: [ undefined, Object ],
-			onTestCaseResult: [ undefined, Function ],
-			renderer: [ undefined, String ],
-			clock: [ undefined, Clock ],
-		}]]);
-
 		return await this._runAsyncInternal({
 			clock,
 			config,
