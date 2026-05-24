@@ -15,6 +15,7 @@ import lintTypescriptConfig from "./config/eslint.typescript.conf.js";
 import swcConfig from "./config/swc.conf.js";
 import nodeVersion from "./config/node_version.conf.js";
 import TaskError from "tasks/task_error.js";
+import { types } from "node:util";
 
 export default class Build {
 
@@ -140,6 +141,11 @@ export default class Build {
 				description: "TypeScript tests",
 				files: typescript.mapTsToJs({
 					files: paths.srcTestFiles(),
+					sourceDir: Paths.typescriptSrcDir,
+					outputDir: Paths.typescriptTargetDir,
+				}),
+				setupFiles: typescript.mapTsToJs({
+					files: paths.srcTestSetupFiles(),
 					sourceDir: Paths.typescriptSrcDir,
 					outputDir: Paths.typescriptTargetDir,
 				}),

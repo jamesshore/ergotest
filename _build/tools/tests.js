@@ -22,10 +22,11 @@ export default class Tests {
 		this._testRunner = TestRunner.create();
 	}
 
-	async runAsync({ description, files, config, failOnSkip, reporter }) {
+	async runAsync({ description, files, setupFiles, config, failOnSkip, reporter }) {
 		ensure.signature(arguments, [{
 			description: String,
 			files: Array,
+			setupFiles: [ undefined, Array ],
 			config: Object,
 			failOnSkip: Boolean,
 			reporter: Reporter,
@@ -34,7 +35,7 @@ export default class Tests {
 		const filesToRun = await this.#findTestFilesAsync(reporter, description, files);
 		if (filesToRun.length === 0) return;
 
-		await this.#runTestsAsync(reporter, description, filesToRun, failOnSkip, config);
+		await this.#runTestsAsync(reporter, description, filesToRun, setupFiles, failOnSkip, config);
 	}
 
 	async #findTestFilesAsync(reporter, description, files) {
@@ -83,9 +84,10 @@ export default class Tests {
 		}
 	}
 
-	async #runTestsAsync(reporter, description, filesToRun, failOnSkip, config) {
+	async #runTestsAsync(reporter, description, filesToRun, setupFiles, failOnSkip, config) {
 		await reporter.startAsync(`Running ${description}`, async (report) => {
 			const testResult = await this._testRunner.runInChildProcessAsync(filesToRun, {
+				setupModulePaths: setupFiles,
 				timeout: 10000,
 				config,
 				onTestCaseResult: testResult => {
