@@ -354,7 +354,7 @@ async function loadSetupModulesAsync(setupModuleFilenames: string[], builder: Te
 				importBeforeAll = BeforeAfter.create({ name, fnAsync() { throw err; } });
 			}
 			else {
-				importBeforeAll = BeforeAfter.create({ name, fnAsync() {} });
+				importBeforeAll = BeforeAfter.createPassingImport({ name });
 			}
 		}
 

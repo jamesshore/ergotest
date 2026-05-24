@@ -123,11 +123,9 @@ function isSuccess(result: TestCaseResult | RunResult) {
 }
 
 
-
-
 export class FailureTestCase extends TestCase {
 
-	private _failureFilename?: string;
+	private _subclassFilename?: string;
 	private _error: unknown;
 
 	constructor(name: string[], error: unknown) {
@@ -136,7 +134,7 @@ export class FailureTestCase extends TestCase {
 	}
 
 	override _setFilename(filename: string) {
-		if (this._failureFilename === undefined) this._failureFilename = filename;
+		if (this._subclassFilename === undefined) this._subclassFilename = filename;
 	}
 
 	override async _runAsyncInternal(
@@ -145,7 +143,7 @@ export class FailureTestCase extends TestCase {
 	): Promise<TestCaseResult> {
 		const it = RunResult.fail({
 			name: this._name,
-			filename: this._failureFilename,
+			filename: this._subclassFilename,
 			error: this._error,
 			renderError: runOptions.renderError,
 		});

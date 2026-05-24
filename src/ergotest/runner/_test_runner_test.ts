@@ -307,10 +307,31 @@ export default describe(() => {
 					}),
 				]
 			}));
-
 		});
 
-		it("doesn't mark import results as skipped when no tests run, even though they're 'before' results");
+		it("doesn't mark import results as skipped when no tests run, even though they're 'before' results", async () => {
+			const setupPath1 = `${setupModuleFilename}-1.js`;
+			const setupPath2 = `${setupModuleFilename}-2.js`;
+
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath1);
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath2);
+
+			const suite = await loadTestsAsync([], [ setupPath1, setupPath2 ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				beforeAll: [
+					createPass({ name: "import setup module", filename: setupPath1 }),
+					createPass({ name: "import setup module", filename: setupPath2 }),
+					createSkip({ name: "beforeAll()", filename: setupPath1 }),
+					createSkip({ name: "beforeAll()", filename: setupPath2 }),
+				],
+				tests: [],
+			}));
+		});
 
 		it("causes all subsequent runs to be skipped when a setup module fails to load", async () => {
 			const setupPath1 = `${setupModuleFilename}-1.js`;

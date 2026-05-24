@@ -1,7 +1,8 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
-import { RunResult } from "../results/test_result.js";
+import { RunResult, TestCaseResult } from "../results/test_result.js";
 import { RunData, RunOptions } from "./test_suite.js";
 import { ItFn, ItOptions } from "../runner/test_api.js";
+import { BeforeAfter } from "./before_after.js";
 
 export class Runnable {
 
@@ -14,7 +15,7 @@ export class Runnable {
 		return new Runnable(name, options, fnAsync);
 	}
 
-	constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined) {
+	constructor(name: string[], options: ItOptions, fnAsync?: ItFn) {
 		this._name = name;
 		this._options = options;
 		this._fnAsync = fnAsync;
@@ -82,3 +83,28 @@ export class Runnable {
 
 }
 
+
+// Use this class to make sure a runnable always passes even if it would normally be skipped
+export class AlwaysPassRunnable extends Runnable {
+
+	private _subclassFilename?: string;
+
+	constructor(name: string[]) {
+		super(name, {});
+	}
+
+	override _setFilename(filename: string) {
+		if (this._subclassFilename === undefined) this._subclassFilename = filename;
+	}
+
+	override async runAsync(
+		runOptions: RunOptions,
+		runData: RunData,
+	): Promise<RunResult> {
+		return await RunResult.pass({
+			name: this.name,
+			filename: this._subclassFilename,
+		});
+	}
+
+}

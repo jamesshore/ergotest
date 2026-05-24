@@ -1,7 +1,7 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { RunData, RunOptions } from "./test_suite.js";
 import { TestCaseResult } from "../results/test_result.js";
-import { Runnable } from "./runnable.js";
+import { AlwaysPassRunnable, Runnable } from "./runnable.js";
 import { ItFn, ItOptions } from "../runner/test_api.js";
 
 export class BeforeAfter {
@@ -18,6 +18,10 @@ export class BeforeAfter {
 		fnAsync: ItFn,
 	}) {
 		return new BeforeAfter(Runnable.create(name, options, fnAsync));
+	}
+
+	static createPassingImport({ name }: { name: string[] }) {
+		return new BeforeAfter(new AlwaysPassRunnable(name));
 	}
 
 	constructor(runnable: Runnable) {
@@ -40,3 +44,4 @@ export class BeforeAfter {
 		return await this._runnable.runAsync(runOptions, runData);
 	}
 }
+
