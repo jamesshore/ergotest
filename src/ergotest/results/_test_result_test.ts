@@ -755,6 +755,31 @@ export default describe(() => {
 			], "allMatchingTests()");
 		});
 
+		it("flattens all run results into a single list", () => {
+			const suite = createSuite({
+				beforeAll: [ createSkip() ],
+				afterAll: [ createTimeout({ timeout: 100 }) ],
+				tests: [
+					createPass({
+						name: "pass 1",
+						beforeEach: [ createPass({ name: "pass 2" })],
+						afterEach: [ createFail({ name: "fail 1", error: "error 1" }), createPass({ name: "pass 3" })],
+					}),
+					createFail({ name: "fail 2", error: "error 2" }),
+				],
+			});
+
+			assert.equal(suite.allRuns(), [
+				RunResult.skip({ name: [] }),
+				RunResult.timeout({ name: [], timeout: 100 }),
+				RunResult.pass({ name: [ "pass 1" ] }),
+				RunResult.pass({ name: [ "pass 2" ]}),
+				RunResult.fail({ name: [ "fail 1" ], error: "error 1" }),
+				RunResult.pass({ name: [ "pass 3" ]}),
+				RunResult.fail({ name: [ "fail 2" ], error: "error 2" }),
+			]);
+		});
+
 		it("flattens all marked results into a single list", () => {
 			const suite = createSuite({ tests: [
 				createPass({ name: "test 0.1", mark: TestMark.none }),
@@ -790,7 +815,7 @@ export default describe(() => {
 			]);
 		});
 
-		it("includes parent suite", () => {
+		it("includes parent suite with marked results", () => {
 			const suite = createSuite({ mark: TestMark.skip });
 
 			assert.equal(suite.allMarkedResults(), [ createSuite({ mark: TestMark.skip }) ]);
@@ -851,12 +876,47 @@ export default describe(() => {
 			assert.equal(suite.allPassingFiles(), [ "file2" ]);
 		});
 
-		it("does not include filenames more than once", () => {
+		it("includes beforeEach/afterEach defined in a setup module", () => {
 			const suite = createSuite({ tests: [
-				createPass({ filename: "my_file" }),
-				createPass({ filename: "my_file" }),
+				createPass({
+					filename: "file0",
+					beforeEach: [ createPass({ filename: "file1" }) ],
+					afterEach: [ createPass({ filename: "file2" })],
+				}),
 			]});
-			assert.equal(suite.allPassingFiles(), [ "my_file" ]);
+			assert.equal(suite.allPassingFiles(), [ "file0", "file1", "file2" ]);
+		});
+
+		it("does not include setup modules that had failures", () => {
+			const suite = createSuite({
+				tests: [
+					createPass({
+						filename: "file0",
+						beforeEach: [ createPass({ filename: "file1" }) ],
+						afterEach: [ createPass({ filename: "file2" })],
+					}),
+				],
+				afterAll: [
+					createFail({ filename: "file1" }),
+				],
+			});
+			assert.equal(suite.allPassingFiles(), [ "file0", "file2" ]);
+		});
+
+		it("does not include filenames more than once", () => {
+			const suite = createSuite({
+				tests: [
+					createPass({
+						filename: "file0",
+						beforeEach: [ createPass({ filename: "file1" }) ],
+						afterEach: [ createPass({ filename: "file2" })],
+					}),
+				],
+				afterAll: [
+					createPass({ filename: "file1" }),
+				],
+			});
+			assert.equal(suite.allPassingFiles(), [ "file1", "file0", "file2" ]);
 		});
 
 		it("does not include filenames of failing tests", () => {

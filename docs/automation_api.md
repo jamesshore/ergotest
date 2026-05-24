@@ -35,6 +35,7 @@ In this document **(the bold entries are all you need)**:
   * [testSuiteResult.allMarkedResults()](#testsuiteresultallmarkedresults)
   * [testSuiteResult.allMatchingMarks()](#testsuiteresultallmatchingmarks)
   * [testSuiteResult.allPassingFiles()](#testsuiteresultallpassingfiles)
+  * [testSuiteResult.allRuns()](#testsuiteresultallruns)
   * [testSuiteResult.equals()](#testsuiteresultequals)
   * [TestSuiteResult.create()](#testsuiteresultcreate)
 * [TestCaseResult](#testcaseresult)
@@ -439,6 +440,19 @@ Find all the files, in this suite and its sub-suites, that only had passing test
 This is useful for incremental builds. You can avoid re-running passing files until they change. 
 
 > **Note:** The results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) are also considered.
+
+[Back to top](#automation-api)
+
+
+## testSuiteResult.allRuns()
+
+* testSuiteResult.allRuns(): RunResult[]
+
+Find all the [RunResult](#runresult)s in this suite and its sub-suites and flatten them into a single array.
+
+This has limited utility. You're probably better off with [testSuiteResult.allTests()](#testsuiteresultallmatchingtests) instead.
+
+> **Note:** The results of [beforeAll()](test_api.md#beforeall) and [afterAll()](test_api.md#afterall) are included.
 
 [Back to top](#automation-api)
 

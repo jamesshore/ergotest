@@ -106,11 +106,17 @@ export abstract class TestResult {
 	abstract allTests(): TestCaseResult[];
 
 	/**
-	 * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
 	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
 	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
 	 */
 	abstract allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
+
+	/**
+	 * @returns {RungResult[]} All the run results, flattened into a single list. This isn't usually useful because
+	 *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+	 */
+	abstract allRuns(): RunResult[];
 
 	/**
 	 * Convert this result into a bare object later deserialization.
@@ -329,6 +335,11 @@ export class TestSuiteResult extends TestResult {
 		return this.allMatchingMarks.apply(this, [ ...allMarks ]);
 	}
 
+	/**
+	 * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+	 */
 	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
 		ensureValidMarks(marks);
 
@@ -348,6 +359,18 @@ export class TestSuiteResult extends TestResult {
 	}
 
 	/**
+	 * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+	 *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+	 */
+	allRuns(): RunResult[] {
+		return [
+			...this._beforeAll.map(testCase => testCase.it),
+			...this._afterAll.map(testCase => testCase.it),
+			...this._tests.flatMap(test => test.allRuns()),
+		];
+	}
+
+	/**
 	 * @returns {string[]} All the test files with 100% passing tests--nothing that was skipped, failed, or timed out.
 	 */
 	allPassingFiles(): string[] {
@@ -355,11 +378,11 @@ export class TestSuiteResult extends TestResult {
 
 		const allFiles = new Set<string>();
 		const notPassFiles = new Set<string>();
-		this.allTests()
-			.filter(test => test.filename !== undefined)
-			.forEach(test => {
-				allFiles.add(test.filename!);
-				if (!test.isPass()) notPassFiles.add(test.filename!);
+		this.allRuns()
+			.filter(run => run.filename !== undefined)
+			.forEach(run => {
+				allFiles.add(run.filename!);
+				if (run.status !== TestStatus.pass) notPassFiles.add(run.filename!);
 			});
 
 		return [ ...differencePolyfill(allFiles, notPassFiles) ];
@@ -697,11 +720,28 @@ export class TestCaseResult extends TestResult {
 		return [ this ];
 	}
 
+	/**
+	 * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+	 *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+	 *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+	 */
 	allMatchingMarks(...marks: TestMarkValue[]): TestResult[] {
 		ensureValidMarks(marks);
 
 		if (marks.includes(this._mark)) return [ this ];
 		else return [];
+	}
+
+	/**
+	 * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+	 *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+	 */
+	allRuns(): RunResult[] {
+		return [
+			this.it,
+			...this._beforeEach,
+			...this._afterEach,
+		];
 	}
 
 	/**

@@ -75,11 +75,16 @@ export declare abstract class TestResult {
      */
     abstract allTests(): TestCaseResult[];
     /**
-     * @returns {TestCaseResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+     * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
      *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
      *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
      */
     abstract allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
+    /**
+     * @returns {RungResult[]} All the run results, flattened into a single list. This isn't usually useful because
+     *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+     */
+    abstract allRuns(): RunResult[];
     /**
      * Convert this result into a bare object later deserialization.
      * @returns {SerializedTestSuiteResult} The serialized object.
@@ -186,7 +191,17 @@ export declare class TestSuiteResult extends TestResult {
      *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
      */
     allMarkedResults(): TestResult[];
+    /**
+     * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+     *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+     *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+     */
     allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
+    /**
+     * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+     *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+     */
+    allRuns(): RunResult[];
     /**
      * @returns {string[]} All the test files with 100% passing tests--nothing that was skipped, failed, or timed out.
      */
@@ -327,7 +342,17 @@ export declare class TestCaseResult extends TestResult {
      * @returns {TestCaseResult[]} This test converted into a list of one.
      */
     allTests(): TestCaseResult[];
+    /**
+     * @returns {TestResult[]} All test results, with a mark (.only, etc.) that matches the requested marks,
+     *   flattened into a single list, including test suites. However, if you access the properties of the test suites,
+     *   such as {@link TestSuiteResult.tests}, those properties won’t be filtered.
+     */
     allMatchingMarks(...marks: TestMarkValue[]): TestResult[];
+    /**
+     * @returns {RunResult[]} All the run results, flattened into a single list. This isn't usually useful because
+     *   it disconnects beforeEach/afterEach results from their parent test case. We use it to collect passing filenames.
+     */
+    allRuns(): RunResult[];
     /**
      * Convert this result into a bare object for later deserialization.
      * @returns {object} The serialized object.
