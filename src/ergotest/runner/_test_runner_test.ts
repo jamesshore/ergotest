@@ -189,8 +189,8 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
+					createPass({ name: "import setup module", filename: setupModuleFilename }),
 					createPass({ name: "beforeAll()", filename: setupModuleFilename }),
-					createPass({ name: "import setup module", filename: setupModuleFilename })
 				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupModuleFilename }) ],
 				tests: [
@@ -227,9 +227,9 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
-					createPass({ name: "beforeAll()", filename: setupPath1 }),
 					createPass({ name: "import setup module", filename: setupPath1 }),
 					createPass({ name: "import setup module", filename: setupPath2 }),
+					createPass({ name: "beforeAll()", filename: setupPath1 }),
 				],
 				afterAll: [ createPass({ name: "afterAll()", filename: setupPath2 }) ],
 				tests: [
@@ -267,6 +267,50 @@ export default describe(() => {
 				],
 			}));
 		});
+
+		it("puts import results in front of before/after results", async () => {
+			const setupPath1 = `${setupModuleFilename}-1.js`;
+			const setupPath2 = `${setupModuleFilename}-2.js`;
+			const setupPath3 = `${setupModuleFilename}-3.js`;
+
+			await writeTestModuleAsync();
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath1);
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath2);
+			await writeSetupModuleAsync(`
+				beforeAll(() => {});
+			`, setupPath3);
+
+			const suite = await loadTestsAsync([ testModuleFilename ], [ setupPath1, setupPath2, setupPath3 ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				beforeAll: [
+					createPass({ name: "import setup module", filename: setupPath1 }),
+					createPass({ name: "import setup module", filename: setupPath2 }),
+					createPass({ name: "import setup module", filename: setupPath3 }),
+					createPass({ name: "beforeAll()", filename: setupPath1 }),
+					createPass({ name: "beforeAll()", filename: setupPath2 }),
+					createPass({ name: "beforeAll()", filename: setupPath3 }),
+				],
+				tests: [
+					createSuite({
+						filename: testModuleFilename,
+						tests: [
+							createPass({
+								name: "test",
+								filename: testModuleFilename,
+							}),
+						],
+					}),
+				]
+			}));
+
+		});
+
+		it("doesn't mark import results as skipped when no tests run, even though they're 'before' results");
 
 		it("causes all subsequent runs to be skipped when a setup module fails to load", async () => {
 			const setupPath1 = `${setupModuleFilename}-1.js`;
