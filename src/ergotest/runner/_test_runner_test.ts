@@ -59,7 +59,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing arbitrary_module.js",
+						name: "error when importing test module arbitrary_module.js",
 						error: "Test module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
 				],
@@ -73,7 +73,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "/no_such_module.js",
-						name: "error when importing no_such_module.js",
+						name: "error when importing test module no_such_module.js",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
 							"./loader.js",
@@ -91,7 +91,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModulePath,
-						name: `error when importing ${path.basename(testModulePath)}`,
+						name: `error when importing test module ${path.basename(testModulePath)}`,
 						error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
 					}),
 				],
@@ -106,7 +106,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModulePath,
-						name: `error when importing ${path.basename(testModulePath)}`,
+						name: `error when importing test module ${path.basename(testModulePath)}`,
 						error: "my import error",
 					}),
 				],
@@ -121,7 +121,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModulePath,
-						name: `error when importing ${path.basename(testModulePath)}`,
+						name: `error when importing test module ${path.basename(testModulePath)}`,
 						error: `Test module doesn't export a test suite: ${testModulePath}`,
 					}),
 				],
@@ -218,7 +218,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing arbitrary_module.js",
+						name: "error when importing setup module arbitrary_module.js",
 						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
 					createSuite({
@@ -234,21 +234,26 @@ export default describe(() => {
 			}));
 		});
 
-		it.skip("fails gracefully if module doesn't exist", async () => {
-			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+		it("fails gracefully if module doesn't exist", async () => {
+			await writeTestModuleAsync();
+			const suite = await fromModulesAsync([ testModulePath ], [ "/no_such_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: "/no_such_module.js",
+						name: "error when importing setup module no_such_module.js",
+						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
+							import.meta.dirname,
+							"./loader.js",
+						)}`,
+					}),
+					createSuite({
+						filename: testModulePath,
 						tests: [
-							createFail({
-								filename: "/no_such_module.js",
-								name: "error when importing no_such_module.js",
-								error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
-									import.meta.dirname,
-									"./loader.js",
-								)}`,
+							createPass({
+								filename: testModulePath,
+								name: "test",
 							}),
 						],
 					}),
@@ -267,7 +272,7 @@ export default describe(() => {
 						tests: [
 							createFail({
 								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
+								name: `error when importing setup module ${path.basename(testModulePath)}`,
 								error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
 							}),
 						],
@@ -287,7 +292,7 @@ export default describe(() => {
 						tests: [
 							createFail({
 								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
+								name: `error when importing setup module ${path.basename(testModulePath)}`,
 								error: "my import error",
 							}),
 						],
@@ -307,7 +312,7 @@ export default describe(() => {
 						tests: [
 							createFail({
 								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
+								name: `error when importing setup module ${path.basename(testModulePath)}`,
 								error: `Test module doesn't export a test suite: ${testModulePath}`,
 							}),
 						],

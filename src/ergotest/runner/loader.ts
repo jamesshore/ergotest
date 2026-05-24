@@ -24,34 +24,40 @@ export async function fromModulesAsync(
 }
 
 async function loadSetupAsync(setupModulePath: string): Promise<void | Test> {
-	return await loadModuleAsync(setupModulePath, "Setup");
+	return await loadModuleAsync(setupModulePath, "Setup module");
 }
 
 async function loadTestAsync(filename: string): Promise<Test> {
-	const test = await loadModuleAsync(filename, "Test");
+	const description = "Test module";
+
+	const test = await loadModuleAsync(filename, description);
 	if (test instanceof TestSuite || test instanceof TestCase) {
 		return test;
 	}
 	else {
-		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename);
+		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
 	}
 
 }
 
 async function loadModuleAsync(filename: string, description: string): Promise<Test> {
 	if (!path.isAbsolute(filename)) {
-		return createModuleLoadFailure(`${description} module filenames must use absolute paths: ${filename}`, filename);
+		return createModuleLoadFailure(
+			`${description} filenames must use absolute paths: ${filename}`,
+			filename,
+			description,
+		);
 	}
 	try {
 		const { default: suite } = await import(filename);
 		return suite;
 	}
 	catch(err) {
-		return createModuleLoadFailure(err, filename);
+		return createModuleLoadFailure(err, filename, description);
 	}
 }
 
-function createModuleLoadFailure(error: unknown, filename: string): FailureTestCase {
-	const name = `error when importing ${path.basename(filename)}`;
+function createModuleLoadFailure(error: unknown, filename: string, description: string): FailureTestCase {
+	const name = `error when importing ${description.toLowerCase()} ${path.basename(filename)}`;
 	return new FailureTestCase([ name ], error);
 }
