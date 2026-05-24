@@ -683,11 +683,11 @@ export default describe(() => {
 					name: "parent",
 					beforeAll: [
 						createPass({ name: [ "parent", "beforeAll()" ]}),
-						createPass({ name: [ "parent", "beforeAll() #2" ]}),
+						createPass({ name: [ "parent", "beforeAll()" ]}),
 					],
 					afterAll: [
 						createPass({ name: [ "parent", "afterAll()" ]}),
-						createPass({ name: [ "parent", "afterAll() #2" ]}),
+						createPass({ name: [ "parent", "afterAll()" ]}),
 					],
 					tests: [
 						createPass({ name: [ "parent", "test 1" ] }),
@@ -723,11 +723,11 @@ export default describe(() => {
 							name: [ "parent", "pass" ],
 							beforeEach: [
 								createPass({ name: [ "parent", "beforeEach()" ]}),
-								createPass({ name: [ "parent", "beforeEach() #2" ]}),
+								createPass({ name: [ "parent", "beforeEach()" ]}),
 							],
 							afterEach: [
 								createPass({ name: [ "parent", "afterEach()" ]}),
-								createPass({ name: [ "parent", "afterEach() #2" ]}),
+								createPass({ name: [ "parent", "afterEach()" ]}),
 							],
 						}),
 						createSuite({
@@ -737,13 +737,13 @@ export default describe(() => {
 									name: [ "parent", "child", "nested" ],
 									beforeEach: [
 										createPass({ name: [ "parent", "beforeEach()" ]}),
-										createPass({ name: [ "parent", "beforeEach() #2" ]}),
+										createPass({ name: [ "parent", "beforeEach()" ]}),
 										createPass({ name: [ "parent", "child", "beforeEach()" ]}),
 									],
 									afterEach: [
 										createPass({ name: [ "parent", "child", "afterEach()" ]}),
 										createPass({ name: [ "parent", "afterEach()" ]}),
-										createPass({ name: [ "parent", "afterEach() #2" ]}),
+										createPass({ name: [ "parent", "afterEach()" ]}),
 									],
 								}),
 							],
@@ -833,11 +833,11 @@ export default describe(() => {
 				assert.equal(await suite.runAsync(), createSuite({
 					beforeAll: [
 						createSkip({ name: "beforeAll()" }),
-						createSkip({ name: "beforeAll() #2" }),
+						createSkip({ name: "beforeAll()" }),
 					],
 					afterAll: [
 						createSkip({ name: "afterAll()" }),
-						createSkip({ name: "afterAll() #2" }),
+						createSkip({ name: "afterAll()" }),
 					],
 					tests: [
 						createSkip({ name: "test 1", mark: "skip" }),
@@ -957,9 +957,9 @@ export default describe(() => {
 				assert.equal(await suite.runAsync(), createSuite({
 					beforeAll: [
 						createPass({ name: "beforeAll()" }),
-						createPass({ name: "beforeAll() #2" }),
-						createFail({ name: "beforeAll() #3", error: ERROR }),
-						createSkip({ name: "beforeAll() #4" }),
+						createPass({ name: "beforeAll()" }),
+						createFail({ name: "beforeAll()", error: ERROR }),
+						createSkip({ name: "beforeAll()" }),
 					],
 					tests: [ createSkip({ name: "test" }) ],
 				}));
@@ -977,7 +977,7 @@ export default describe(() => {
 					beforeAll: [ createFail({ name: "beforeAll()", error: ERROR }) ],
 					afterAll: [
 						createSkip({ name: "afterAll()" }),
-						createSkip({ name: "afterAll() #2" }),
+						createSkip({ name: "afterAll()" }),
 					],
 					tests: [ createSkip({ name: "test" }) ],
 				}));
@@ -995,9 +995,9 @@ export default describe(() => {
 				assert.equal(await suite.runAsync(), createSuite({
 					afterAll: [
 						createPass({ name: "afterAll()" }),
-						createPass({ name: "afterAll() #2" }),
-						createFail({ name: "afterAll() #3", error: ERROR }),
-						createPass({ name: "afterAll() #4" }),
+						createPass({ name: "afterAll()" }),
+						createFail({ name: "afterAll()", error: ERROR }),
+						createPass({ name: "afterAll()" }),
 					],
 					tests: [ createPass({ name: "test" }) ],
 				}));
@@ -1127,9 +1127,9 @@ export default describe(() => {
 						name: "test",
 						beforeEach: [
 							createPass({ name: "beforeEach()" }),
-							createPass({ name: "beforeEach() #2" }),
-							createFail({ name: "beforeEach() #3", error: ERROR }),
-							createSkip({ name: "beforeEach() #4" }),
+							createPass({ name: "beforeEach()" }),
+							createFail({ name: "beforeEach()", error: ERROR }),
+							createSkip({ name: "beforeEach()" }),
 						],
 					}) ],
 				}));
@@ -1184,9 +1184,9 @@ export default describe(() => {
 							name: "test",
 							afterEach: [
 								createPass({ name: "afterEach()" }),
-								createPass({ name: "afterEach() #2" }),
-								createFail({ name: "afterEach() #3", error: ERROR }),
-								createPass({ name: "afterEach() #4" }),
+								createPass({ name: "afterEach()" }),
+								createFail({ name: "afterEach()", error: ERROR }),
+								createPass({ name: "afterEach()" }),
 							],
 						}),
 					],

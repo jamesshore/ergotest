@@ -231,8 +231,7 @@ class TestSuiteBuilder {
 	}
 
 	#beforeAfterName(parentName: string[], beforeAfterArray: BeforeAfter[], baseName: string) {
-		const number = beforeAfterArray.length === 0 ? "" : ` #${beforeAfterArray.length + 1}`;
-		return [ ...parentName, baseName + number];
+		return [ ...parentName, baseName];
 	}
 }
 
