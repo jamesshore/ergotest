@@ -4,8 +4,8 @@ import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_resu
 import child_process from "node:child_process";
 import path from "node:path";
 import { Clock } from "../../infrastructure/clock.js";
-import { fromModulesAsync } from "./loader.js";
 import { importRendererAsync, TestSuite } from "../tests/test_suite.js";
+import { _loadTestsAsync } from "./test_api.js";
 // dependency: ./test_runner_worker_process.js
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");
 const KEEPALIVE_TIMEOUT_IN_MS = TestSuite.DEFAULT_TIMEOUT_IN_MS;
@@ -50,7 +50,7 @@ const TEST_OPTIONS_TYPE = {
 	 * @param {(result: TestResult) => ()} [notifyFn] A function to call each time a test completes. The `result`
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
-	 */ async runInCurrentProcessAsync(modulePaths, options) {
+	 */ async runInCurrentProcessAsync(modulePaths, options = {}) {
         ensure.signature(arguments, [
             Array,
             [
@@ -58,7 +58,7 @@ const TEST_OPTIONS_TYPE = {
                 TEST_OPTIONS_TYPE
             ]
         ]);
-        const suite = await fromModulesAsync(modulePaths);
+        const suite = await _loadTestsAsync([], modulePaths);
         return await suite.runAsync(options);
     }
     /**

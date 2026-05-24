@@ -2,8 +2,8 @@
 import { TestMark } from "../results/test_result.js";
 import { ApiContext } from "./api_context.js";
 const context = new ApiContext();
-/** @private */ export async function _loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync) {
-    return await context.loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync);
+/** @private */ export async function _loadTestsAsync(setupModuleFilenames, testModuleFilenames) {
+    return await context.loadSuiteAsync(setupModuleFilenames, testModuleFilenames);
 }
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.

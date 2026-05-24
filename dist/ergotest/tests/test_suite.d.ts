@@ -2,7 +2,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { RenderErrorFn, TestCaseResult, TestMarkValue, TestSuiteResult } from "../results/test_result.js";
 import { BeforeAfter } from "./before_after.js";
 import { Test } from "./test.js";
-import { Milliseconds, TestOptions } from "./test_api.js";
+import { Milliseconds, TestOptions } from "../runner/test_api.js";
 export interface TestConfig {
     [name: string]: unknown;
 }

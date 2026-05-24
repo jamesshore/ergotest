@@ -1,7 +1,7 @@
 import { TestCaseResult, TestMarkValue } from "../results/test_result.js";
 import { RunData, RunOptions } from "./test_suite.js";
 import { Test } from "./test.js";
-import { ItFn, ItOptions } from "./test_api.js";
+import { ItFn, ItOptions } from "../runner/test_api.js";
 export declare class TestCase implements Test {
     #private;
     protected readonly _name: string[];

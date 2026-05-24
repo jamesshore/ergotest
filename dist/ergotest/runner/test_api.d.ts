@@ -1,7 +1,6 @@
 import { TestCaseResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
-import { TestConfig, TestSuite } from "./test_suite.js";
-import { Test } from "./test.js";
+import { TestConfig, TestSuite } from "../tests/test_suite.js";
 export interface TestOptions {
     timeout?: Milliseconds;
     config?: TestConfig;
@@ -21,7 +20,7 @@ export type ItFn = (testUtilities: {
     getConfig: <T>(key: string) => T;
 }) => Promise<void> | void;
 /** @private */
-export declare function _loadSuiteAsync(setupModulePaths: string[], testModulePaths: string[], loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>, loadTestFnAsync: (testModulePath: string) => Promise<Test>): Promise<TestSuite>;
+export declare function _loadTestsAsync(setupModuleFilenames: string[], testModuleFilenames: string[]): Promise<TestSuite>;
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass

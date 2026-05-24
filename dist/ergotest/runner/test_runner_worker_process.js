@@ -3,7 +3,7 @@ import { importRendererAsync } from "../tests/test_suite.js";
 import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
 import process from "node:process";
-import { fromModulesAsync } from "./loader.js";
+import { _loadTestsAsync } from "./test_api.js";
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 main();
 function main() {
@@ -45,7 +45,7 @@ async function runWorkerAsync(cancelKeepAliveFn, { modulePaths, timeout, config,
             sendProgress(testCaseResult);
             sendFinalResult(testSuiteResult, cancelKeepAliveFn);
         });
-        const suite = await fromModulesAsync(modulePaths);
+        const suite = await _loadTestsAsync([], modulePaths);
         const result = await suite.runAsync({
             timeout,
             config,
