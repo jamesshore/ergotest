@@ -142,7 +142,7 @@ export class ApiContext {
 		else {
 			ensure.that(
 				functionName === "describe" || this._context.length > 0,
-				`${functionName}() must be run inside describe()`
+				`${functionName}() must be run inside describe() or a setup module`
 			);
 		}
 	}

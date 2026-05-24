@@ -349,15 +349,15 @@ export default describe(() => {
 		it("fails when run outside of describe()", () => {
 			assert.error(
 				() => it_sut(IRRELEVANT_NAME),
-				"it() must be run inside describe()",
+				"it() must be run inside describe() or a setup module",
 			);
 			assert.error(
 				() => it_sut.skip(IRRELEVANT_NAME),
-				"it() must be run inside describe()",
+				"it() must be run inside describe() or a setup module",
 			);
 			assert.error(
 				() => it_sut.only(IRRELEVANT_NAME),
-				"it() must be run inside describe()",
+				"it() must be run inside describe() or a setup module",
 			);
 		});
 
@@ -801,19 +801,19 @@ export default describe(() => {
 		it("fails when run outside of describe()", () => {
 			assert.error(
 				() => beforeAll_sut(() => {}),
-				"beforeAll() must be run inside describe()",
+				"beforeAll() must be run inside describe() or a setup module",
 			);
 			assert.error(
 				() => beforeEach_sut(() => {}),
-				"beforeEach() must be run inside describe()",
+				"beforeEach() must be run inside describe() or a setup module",
 			);
 			assert.error(
 				() => afterAll_sut(() => {}),
-				"afterAll() must be run inside describe()",
+				"afterAll() must be run inside describe() or a setup module",
 			);
 			assert.error(
 				() => afterEach_sut(() => {}),
-				"afterEach() must be run inside describe()",
+				"afterEach() must be run inside describe() or a setup module",
 			);
 		});
 
