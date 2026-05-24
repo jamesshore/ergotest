@@ -63,8 +63,8 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing test module arbitrary_module.js",
-						error: "Test module filenames must use absolute paths: ./arbitrary_module.js",
+						name: "import test module",
+						error: "Module filenames must use absolute paths, but was: ./arbitrary_module.js",
 					}),
 				],
 			}));
@@ -77,7 +77,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "/no_such_module.js",
-						name: "error when importing test module no_such_module.js",
+						name: "import test module",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
 							apiContextFilename,
@@ -95,7 +95,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
+						name: "import test module",
 						error: `Cannot find module '/no_such_module.js' imported from ${testModuleFilename}`,
 					}),
 				],
@@ -110,7 +110,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
+						name: "import test module",
 						error: "my import error",
 					}),
 				],
@@ -125,7 +125,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
+						name: "import test module",
 						error: `Test module doesn't export a test suite: ${testModuleFilename}`,
 					}),
 				],
@@ -348,7 +348,7 @@ export default describe(() => {
 					createFail({
 						filename: "./arbitrary_module.js",
 						name: "import setup module",
-						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
+						error: "Module filenames must use absolute paths, but was: ./arbitrary_module.js",
 					}),
 				],
 				tests: [

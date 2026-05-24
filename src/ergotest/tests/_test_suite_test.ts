@@ -1913,7 +1913,7 @@ export default describe(() => {
 			}
 
 			await suite.runAsync({ onTestCaseResult });
-			assert.equal(testResult!.name, [ "error when importing test module _module_throws.js" ]);
+			assert.equal(testResult!.name, [ "import test module" ]);
 		});
 
 		it("runs notify function if module doesn't export a test suite", async () => {
@@ -1926,7 +1926,7 @@ export default describe(() => {
 			}
 
 			await suite.runAsync({ onTestCaseResult });
-			assert.equal(testResult!.name, [ "error when importing test module _module_no_export.js" ]);
+			assert.equal(testResult!.name, [ "import test module" ]);
 		});
 
 	});
