@@ -18,11 +18,7 @@ export class ApiContext {
             this._inSetupModule = false;
             this._context.pop();
         }
-        await Promise.all(testModuleFilenames.map(async (filename)=>{
-            const suite = await loadTestModuleAsync(filename);
-            builder.addTest(suite);
-            builder.setFilename(filename);
-        }));
+        await loadTestModulesAsync(testModuleFilenames, builder);
         return builder.toTestSuite();
     }
     describe(optionalName, optionalOptions, optionalFn, mark) {
@@ -330,33 +326,30 @@ function decipherItParameters(name, optionsOrTestFn, possibleTestFn) {
     };
 }
 async function loadSetupModulesAsync(setupModuleFilenames, builder) {
+    const name = [
+        "import setup module"
+    ];
     let skipRemaining = false;
     for await (const filename of setupModuleFilenames){
         let beforeAll;
         if (skipRemaining) {
             beforeAll = BeforeAfter.create({
-                name: [
-                    "import setup module"
-                ],
+                name,
                 fnAsync () {}
             });
         } else {
-            const { suite, err } = await loadModuleAsync(filename, "Setup module");
+            const { err } = await importModuleAsync(filename);
             if (err !== undefined) {
                 skipRemaining = true;
                 beforeAll = BeforeAfter.create({
-                    name: [
-                        `error when importing setup module ${path.basename(filename)}`
-                    ],
+                    name,
                     fnAsync () {
                         throw err;
                     }
                 });
             } else {
                 beforeAll = BeforeAfter.create({
-                    name: [
-                        "import setup module"
-                    ],
+                    name,
                     fnAsync () {}
                 });
             }
@@ -365,28 +358,35 @@ async function loadSetupModulesAsync(setupModuleFilenames, builder) {
         builder.setFilename(filename);
     }
 }
-async function loadTestModuleAsync(filename) {
-    const description = "Test module";
-    const { suite, err } = await loadModuleAsync(filename, description);
-    if (err !== undefined) {
-        return TestCase.create({
-            name: [
-                `error when importing test module ${path.basename(filename)}`
-            ],
-            fnAsync () {
-                throw err;
-            }
-        });
-    } else if (suite instanceof TestSuite || suite instanceof TestCase) {
-        return suite;
-    } else {
-        return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
-    }
+async function loadTestModulesAsync(testModuleFilenames, builder) {
+    const name = [
+        "import test module"
+    ];
+    await Promise.all(testModuleFilenames.map(async (filename)=>{
+        let test;
+        const { suite, err } = await importModuleAsync(filename);
+        if (err !== undefined) {
+            test = TestCase.create({
+                name: name,
+                fnAsync () {
+                    throw err;
+                }
+            });
+        } else if (suite instanceof TestSuite || suite instanceof TestCase) {
+            test = suite;
+        } else if (suite?.runAsync !== undefined) {
+            test = new FailureTestCase(name, `Test module '${filename}' appears to export a test suite, but it's not instantiating the correct class. Do you have two copies of ergotest installed?`);
+        } else {
+            test = new FailureTestCase(name, `Test module '${filename}' doesn't export a test suite. Did you forget to "export default" your describe()?`);
+        }
+        builder.addTest(test);
+        builder.setFilename(filename);
+    }));
 }
-async function loadModuleAsync(filename, description) {
+async function importModuleAsync(filename) {
     if (!path.isAbsolute(filename)) {
         return {
-            err: `${description} filenames must use absolute paths: ${filename}`
+            err: `Module filenames must use absolute paths, but was: ${filename}`
         };
     }
     try {
@@ -399,12 +399,6 @@ async function loadModuleAsync(filename, description) {
             err
         };
     }
-}
-function createModuleLoadFailure(error, filename, description) {
-    const name = `error when importing ${description.toLowerCase()} ${path.basename(filename)}`;
-    return new FailureTestCase([
-        name
-    ], error);
 }
 
 //# sourceMappingURL=api_context.js.map
