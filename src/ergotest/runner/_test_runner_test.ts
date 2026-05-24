@@ -417,8 +417,7 @@ export default describe(() => {
 			await writeSetupModuleAsync(`afterAll(() => { throw new Error("my afterAll"); });`);
 			await writeTestModuleAsync();
 
-			const results = await runner.runInCurrentProcessAsync(
-				[ testModuleFilename ], {
+			const results = await runner.runInCurrentProcessAsync([ testModuleFilename ], {
 					setupModulePaths: [ setupModuleFilename ],
 					config: myConfig
 				});
@@ -450,7 +449,7 @@ export default describe(() => {
 
 			it("runs test modules", async () => {
 				const { runner } = await createAsync();
-				await writeTestModuleAsync(`// passes`);
+				await writeTestModuleAsync();
 
 				const results = await runner.runInChildProcessAsync([ testModuleFilename ]);
 
@@ -461,6 +460,34 @@ export default describe(() => {
 				]});
 
 				assert.equal(results, expectedResult);
+			});
+
+			it("runs setup modules", async () => {
+				const myConfig = { myConfig: "my_config" };
+				const { runner } = await createAsync();
+
+				await writeSetupModuleAsync(`afterAll(() => { throw new Error("my afterAll"); });`);
+				await writeTestModuleAsync();
+
+				const results = await runner.runInChildProcessAsync([ testModuleFilename ], {
+						setupModulePaths: [ setupModuleFilename ],
+						config: myConfig
+					});
+
+				assert.dotEquals(results, createSuite({
+					afterAll: [ createFail({
+						filename: setupModuleFilename,
+						name: "afterAll()",
+						error: "my afterAll",
+					})],
+					tests: [ createSuite({
+						filename: testModuleFilename,
+						tests: [ createPass({
+							filename: testModuleFilename,
+							name: "test",
+						})],
+					})],
+				}));
 			});
 
 			it("passes through config", async () => {
