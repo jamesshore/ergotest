@@ -265,6 +265,7 @@ You can configure test runs with this interface. Provide an object with these op
   * Can be used to define global _beforeXxx_ and _afterXxx_ functions.
   * Cannot be used to define suites or tests with _describe()_ or _it()_.
   * Guaranteed to be imported in the order provided. If any import fails, the rest of the setup modules will not be imported. The test modules will still be imported, but the tests will all be skipped.
+  * Each import generates a "setup module import" test result in the top-level [testSuiteResult.beforeAll](#testsuiteresultbeforeall). It will be marked as "pass", "fail", or "skip" depending on whether the import succeeded. Note that this refers to the import itself, not the result of any before/after functions defined in the setup module.
 
 * **config?: Record<string, unknown>**
   * Configuration information accessible to your tests at run time. Retrieve the values by calling [getConfig()](test_api.md#getconfig) in your tests.

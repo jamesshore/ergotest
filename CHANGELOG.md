@@ -11,13 +11,43 @@ Links to other documentation:
 * [Roadmap](./ROADMAP.md)
 
 
-## v0.14.0: WIP
+## v0.14.0: Setup modules and global before/after
 
-Add TestSuiteResult.allRuns()
+* **0.14.0, 24 May 2026:** [TestOptions](docs/automation_api.md#testoptions) now supports "setup modules" that are imported before the test modules. Setup modules may be used to define global before/after functions that apply to all tests. They're guaranteed to be imported in the specified order, and import failures will cause the rest of the test run to be skipped.
 
-QoL import improvements
-* standardized import names
-* added detect for two copies of ergotest
+I've also taken this opportunity to add some quality-of-life improvements to module import reporting. Module imports now generate a unified "setup module import" or "test module import" test result and have improved failure messages, including better detection of when two copies of ergotest are installed.
+
+Setup module import results are found in the top-level [testSuiteResult.beforeAll](docs/automation_api.md#testsuiteresultbeforeall), and are generated for all setup module results (pass, fail, and skip). Test module imports continue to be found in the top-level [testSuiteResult.tests](docs/automation_api.md#testsuiteresulttests), and are only generated for import failures.
+
+I've also made a minor non-breaking API addition. It's not likely to be useful for you:
+* [testSuiteResult.allRuns()](docs/automation_api.md#testsuiteresultallruns)
+
+Example of a setup module:
+
+```typescript
+// Setup module: _test_setup.js
+beforeAll(() => {
+  installSimulatedDom();
+});
+
+afterEach(() => {
+	resetSimulatedDom();
+});
+
+//...
+```
+
+```typescript
+// Test runner
+
+// ...
+
+const result = await testRunner.runInChildProcessAsync(files, { 
+	setupModulePaths: [ path.resolve(process.cwd(), "./_test_setup.js") ], 
+});
+
+// ...
+```
 
 
 ## v0.13.1: Bugfix: beforeAll() and afterAll() no longer run when they shouldn't
