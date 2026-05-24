@@ -26,7 +26,7 @@ export declare class TestCase implements Test {
     _runAsyncInternal(runOptions: RunOptions, parentData: RunData): Promise<TestCaseResult>;
 }
 export declare class FailureTestCase extends TestCase {
-    private _failureFilename?;
+    private _subclassFilename?;
     private _error;
     constructor(name: string[], error: unknown);
     _setFilename(filename: string): void;

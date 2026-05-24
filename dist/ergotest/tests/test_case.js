@@ -76,19 +76,19 @@ function isSuccess(result) {
     return result.status === TestStatus.pass || result.status === TestStatus.skip;
 }
 export class FailureTestCase extends TestCase {
-    _failureFilename;
+    _subclassFilename;
     _error;
     constructor(name, error){
         super(name, {}, undefined, TestMark.none);
         this._error = error;
     }
     _setFilename(filename) {
-        if (this._failureFilename === undefined) this._failureFilename = filename;
+        if (this._subclassFilename === undefined) this._subclassFilename = filename;
     }
     async _runAsyncInternal(runOptions, parentData) {
         const it = RunResult.fail({
             name: this._name,
-            filename: this._failureFilename,
+            filename: this._subclassFilename,
             error: this._error,
             renderError: runOptions.renderError
         });

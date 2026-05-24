@@ -7,11 +7,17 @@ export declare class Runnable {
     private readonly _fnAsync?;
     private _filename?;
     static create(name: string[], options: ItOptions, fnAsync?: ItFn): Runnable;
-    constructor(name: string[], options: ItOptions, fnAsync: ItFn | undefined);
+    constructor(name: string[], options: ItOptions, fnAsync?: ItFn);
     /** @private */
     _setFilename(filename: string): void;
     get name(): string[];
     get options(): ItOptions;
     get fnAsync(): ItFn | undefined;
+    runAsync(runOptions: RunOptions, runData: RunData): Promise<RunResult>;
+}
+export declare class AlwaysPassRunnable extends Runnable {
+    private _subclassFilename?;
+    constructor(name: string[]);
+    _setFilename(filename: string): void;
     runAsync(runOptions: RunOptions, runData: RunData): Promise<RunResult>;
 }

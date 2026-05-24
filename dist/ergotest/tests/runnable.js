@@ -64,5 +64,21 @@ export class Runnable {
         }
     }
 }
+// Use this class to make sure a runnable always passes even if it would normally be skipped
+export class AlwaysPassRunnable extends Runnable {
+    _subclassFilename;
+    constructor(name){
+        super(name, {});
+    }
+    _setFilename(filename) {
+        if (this._subclassFilename === undefined) this._subclassFilename = filename;
+    }
+    async runAsync(runOptions, runData) {
+        return await RunResult.pass({
+            name: this.name,
+            filename: this._subclassFilename
+        });
+    }
+}
 
 //# sourceMappingURL=runnable.js.map
