@@ -409,6 +409,13 @@ async function importModuleAsync(filename: string): Promise<{ suite: TestSuite, 
 		return { suite };
 	}
 	catch(err) {
+		const code = (err as { code: string })?.code;
+		const message = (err as Error)?.message;
+
+		if (code === "ERR_MODULE_NOT_FOUND" && message.includes(import.meta.filename)) {
+			return { err: `Cannot find module '${filename}'` };
+		}
+
 		return { err };
 	}
 }
