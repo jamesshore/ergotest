@@ -9,4 +9,7 @@ import {
 	TestStatus,
 } from "./util/tests.js";
 
-// This space intentionally left blank. (It's only used for manual testing.)
+// This file is only used for manual testing
+
+// We need to do something or the dependency analysis won't realize this file has run.
+afterAll(() => {});
