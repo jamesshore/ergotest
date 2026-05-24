@@ -252,7 +252,9 @@ Use the _timeout_ option to change the timeout for this test. The default value 
 
 Define a function to run immediately before running any of the tests in this suite or its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing. 
 
-After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult) corresponding to the function's _describe()_.
+To define a global function that runs before any test, call _beforeAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+
+After _beforeAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult) corresponding to the function's _describe()_, or the top-level _TestSuiteResult_ if it is global.
 
 The result will have one of the following statuses:
 
@@ -269,8 +271,6 @@ If there are no tests in this suite or its sub-suites, or they’re all skipped,
 
 If _fn()_ throws an exception or times out, the remainder of this suite will be skipped. No more _beforeAll(), afterAll(), beforeEach(), afterEach(),_ or _it()_ functions will run in this suite or any sub-suites, and they'll be marked as "skipped" in the test results.
 
-To define a global _beforeAll()_ that runs before any test, call _beforeAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
-
 [Back to top](#test-api)
 
 
@@ -281,7 +281,9 @@ To define a global _beforeAll()_ that runs before any test, call _beforeAll()_ i
 
 Define a function to run immediately after running all the tests in this suite and its sub-suites. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
 
-After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_. 
+To define a global function that runs after all tests, call _afterAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
+
+After _afterAll()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *it* property of a [TestCaseResult](automation_api.md#testcaseresult). It will be reported to [onTestCaseResult()](automation_api.md#testoptions) and will be accessible from the [TestSuiteResult](automation_api.md#testsuiteresult)s corresponding to the function's _describe()_, or the top-level _TestSuiteResult_ if it is global. 
 
 The result will have one of the following statuses:
 
@@ -300,8 +302,6 @@ If no tests in this suite or its sub-suites ran—either because there weren’t
 
 If _fn()_ throws an exception or times out, any remaining _afterAll()_ functions will still be run.
 
-To define a global _afterAll()_ that runs after all tests, call _afterAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
-
 [Back to top](#test-api)
 
 
@@ -311,6 +311,8 @@ To define a global _afterAll()_ that runs after all tests, call _afterAll()_ ins
 * beforeEach(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately before running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
+
+To define a global function that runs before every test, call _beforeEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 Each time _beforeEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *beforeEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
 
@@ -329,8 +331,6 @@ If no tests in this suite or its sub-suites will be run—either because there w
 
 If _fn()_ throws an exception or times out, no more _beforeEach()_, _afterEach()_, or _it()_ functions related to the corresponding test will be run. They will marked as "skipped" in the test results. However, _beforeEach(), afterEach()_ and _it()_ functions will be still run again for any remaining tests.
 
-To define a global _beforeEach()_ that runs before every test, call _beforeEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
-
 [Back to top](#test-api)
 
 
@@ -340,6 +340,8 @@ To define a global _beforeEach()_ that runs before every test, call _beforeEach(
 * afterEach(fn: [ItFunction](#itfunction))
 
 Define a function to run immediately after running each test in this suite and its sub-suites. It will run once for each test. If _fn()_ returns a promise, the test runner will `await` that promise before continuing.
+
+To define a global function that runs after every test, call _afterEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 Each time _afterEach()_ runs, the result will be stored in a [RunResult](automation_api.md#runresult) inside the *afterEach* property of the [TestCaseResult](automation_api.md#testcaseresult) for the corresponding test.
 
@@ -359,8 +361,6 @@ If a test throws an exception or times out, _fn()_ will still be run.
 If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, _fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, any remaining _afterEach()_ functions will still be run.
-
-To define a global _afterEach()_ that runs after every test, call _afterEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 [Back to top](#test-api)
 
