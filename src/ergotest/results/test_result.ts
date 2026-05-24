@@ -378,11 +378,11 @@ export class TestSuiteResult extends TestResult {
 
 		const allFiles = new Set<string>();
 		const notPassFiles = new Set<string>();
-		this.allTests()
-			.filter(test => test.filename !== undefined)
-			.forEach(test => {
-				allFiles.add(test.filename!);
-				if (!test.isPass()) notPassFiles.add(test.filename!);
+		this.allRuns()
+			.filter(run => run.filename !== undefined)
+			.forEach(run => {
+				allFiles.add(run.filename!);
+				if (run.status !== TestStatus.pass) notPassFiles.add(run.filename!);
 			});
 
 		return [ ...differencePolyfill(allFiles, notPassFiles) ];

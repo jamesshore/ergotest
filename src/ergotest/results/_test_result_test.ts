@@ -876,7 +876,7 @@ export default describe(() => {
 			assert.equal(suite.allPassingFiles(), [ "file2" ]);
 		});
 
-		it.skip("includes beforeEach/afterEach defined in a setup module", () => {
+		it("includes beforeEach/afterEach defined in a setup module", () => {
 			const suite = createSuite({ tests: [
 				createPass({
 					filename: "file0",
@@ -887,14 +887,36 @@ export default describe(() => {
 			assert.equal(suite.allPassingFiles(), [ "file0", "file1", "file2" ]);
 		});
 
-		it("does not include setup modules that had failures");
+		it("does not include setup modules that had failures", () => {
+			const suite = createSuite({
+				tests: [
+					createPass({
+						filename: "file0",
+						beforeEach: [ createPass({ filename: "file1" }) ],
+						afterEach: [ createPass({ filename: "file2" })],
+					}),
+				],
+				afterAll: [
+					createFail({ filename: "file1" }),
+				],
+			});
+			assert.equal(suite.allPassingFiles(), [ "file0", "file2" ]);
+		});
 
 		it("does not include filenames more than once", () => {
-			const suite = createSuite({ tests: [
-				createPass({ filename: "my_file" }),
-				createPass({ filename: "my_file" }),
-			]});
-			assert.equal(suite.allPassingFiles(), [ "my_file" ]);
+			const suite = createSuite({
+				tests: [
+					createPass({
+						filename: "file0",
+						beforeEach: [ createPass({ filename: "file1" }) ],
+						afterEach: [ createPass({ filename: "file2" })],
+					}),
+				],
+				afterAll: [
+					createPass({ filename: "file1" }),
+				],
+			});
+			assert.equal(suite.allPassingFiles(), [ "file1", "file0", "file2" ]);
 		});
 
 		it("does not include beforeEach/afterEach filenames more than once, either");
