@@ -57,15 +57,10 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: "./arbitrary_module.js",
-						tests: [
-							createFail({
-								filename: "./arbitrary_module.js",
-								name: "error when importing arbitrary_module.js",
-								error: "Test module filenames must use absolute paths: ./arbitrary_module.js",
-							}),
-						],
+						name: "error when importing arbitrary_module.js",
+						error: "Test module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
 				],
 			}));
@@ -76,18 +71,13 @@ export default describe(() => {
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: "/no_such_module.js",
-						tests: [
-							createFail({
-								filename: "/no_such_module.js",
-								name: "error when importing no_such_module.js",
-								error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
-									import.meta.dirname,
-									"./loader.js",
-								)}`,
-							}),
-						],
+						name: "error when importing no_such_module.js",
+						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
+							import.meta.dirname,
+							"./loader.js",
+						)}`,
 					}),
 				],
 			}));
@@ -99,15 +89,10 @@ export default describe(() => {
 			const suite = await fromModulesAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: testModulePath,
-						tests: [
-							createFail({
-								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
-								error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
-							}),
-						],
+						name: `error when importing ${path.basename(testModulePath)}`,
+						error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
 					}),
 				],
 			}));
@@ -119,15 +104,10 @@ export default describe(() => {
 			const suite = await fromModulesAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: testModulePath,
-						tests: [
-							createFail({
-								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
-								error: "my import error",
-							}),
-						],
+						name: `error when importing ${path.basename(testModulePath)}`,
+						error: "my import error",
 					}),
 				],
 			}));
@@ -139,15 +119,10 @@ export default describe(() => {
 			const suite = await fromModulesAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
-					createSuite({
+					createFail({
 						filename: testModulePath,
-						tests: [
-							createFail({
-								filename: testModulePath,
-								name: `error when importing ${path.basename(testModulePath)}`,
-								error: `Test module doesn't export a test suite: ${testModulePath}`,
-							}),
-						],
+						name: `error when importing ${path.basename(testModulePath)}`,
+						error: `Test module doesn't export a test suite: ${testModulePath}`,
 					}),
 				],
 			}));
@@ -235,74 +210,110 @@ export default describe(() => {
 			}));
 		});
 
-		it.skip("fails gracefully if module isn't an absolute path", async () => {
-			const suite = await fromModulesAsync([ "./arbitrary_module.js" ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing arbitrary_module.js" ]);
-			assert.isUndefined(result.filename);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "Test module filenames must use absolute paths: ./arbitrary_module.js");
-		});
-
-		it.skip("fails gracefully if module doesn't exist", async () => {
+		it("fails gracefully if module isn't an absolute path", async () => {
 			await writeTestModuleAsync();
-
-			const suite = await fromModulesAsync([ testModulePath ], [ "/no_such_module.js" ]);
+			const suite = await fromModulesAsync([ testModulePath ], [ "./arbitrary_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
-						name: "error when importing setup module no_such_module.js"
+						filename: "./arbitrary_module.js",
+						name: "error when importing arbitrary_module.js",
+						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
 					}),
-				]
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createPass({
+								filename: testModulePath,
+								name: "test",
+							}),
+						],
+					}),
+				],
 			}));
-
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ "error when importing no_such_module.js" ]);
-			assert.equal(result.filename, "/no_such_module.js");
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(
-				result.errorMessage,
-				`Cannot find module '/no_such_module.js' imported from ${path.resolve(import.meta.dirname, "./loader.js")}`
-			);
 		});
 
-		it.skip("doesn't think an import failure means the module doesn't exist", async () => {
+		it.skip("fails gracefully if module doesn't exist", async () => {
+			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createSuite({
+						filename: "/no_such_module.js",
+						tests: [
+							createFail({
+								filename: "/no_such_module.js",
+								name: "error when importing no_such_module.js",
+								error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
+									import.meta.dirname,
+									"./loader.js",
+								)}`,
+							}),
+						],
+					}),
+				],
+			}));
+		});
+
+		it.skip("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
 			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from '/no_such_module.js'");
 
 			const suite = await fromModulesAsync([ testModulePath ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
-			assert.equal(result.filename, testModulePath);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Cannot find module '/no_such_module.js' imported from ${testModulePath}`);
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createFail({
+								filename: testModulePath,
+								name: `error when importing ${path.basename(testModulePath)}`,
+								error: `Cannot find module '/no_such_module.js' imported from ${testModulePath}`,
+							}),
+						],
+					}),
+				],
+			}));
 		});
 
 		it.skip("fails gracefully if module throws an exception while being loaded", async () => {
 			await fs.writeFile(testModulePath, "throw new Error('my import error')");
 
 			const suite = await fromModulesAsync([ testModulePath ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
-			assert.equal(result.filename, testModulePath);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, "my import error");
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createFail({
+								filename: testModulePath,
+								name: `error when importing ${path.basename(testModulePath)}`,
+								error: "my import error",
+							}),
+						],
+					}),
+				],
+			}));
 		});
 
 		it.skip("fails gracefully if module doesn't export a test suite", async () => {
 			await fs.writeFile(testModulePath, "");
 
 			const suite = await fromModulesAsync([ testModulePath ]);
-			const result = (await suite.runAsync()).allTests()[0];
-
-			assert.equal(result.name, [ `error when importing ${path.basename(testModulePath)}` ]);
-			assert.equal(result.filename, testModulePath);
-			assert.equal(result.status, TestStatus.fail);
-			assert.equal(result.errorMessage, `Test module doesn't export a test suite: ${testModulePath}`);
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createSuite({
+						filename: testModulePath,
+						tests: [
+							createFail({
+								filename: testModulePath,
+								name: `error when importing ${path.basename(testModulePath)}`,
+								error: `Test module doesn't export a test suite: ${testModulePath}`,
+							}),
+						],
+					}),
+				],
+			}));
 		});
 
 		it.skip("triggers onTestCaseResult when module load fails", async () => {

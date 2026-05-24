@@ -4,6 +4,7 @@ import { Clock } from "../../infrastructure/clock.js";
 import { TestConfig, TestSuite } from "./test_suite.js";
 import { ApiContext } from "./api_context.js";
 import * as test from "node:test";
+import { Test } from "./test.js";
 
 const context = new ApiContext();
 
@@ -38,8 +39,8 @@ export type ItFn = (testUtilities: {
 export async function _loadSuiteAsync(
 	setupModulePaths: string[],
 	testModulePaths: string[],
-	loadSetupFnAsync: (setupModulePath: string) => Promise<void>,
-	loadTestFnAsync: (testModulePath: string) => Promise<TestSuite>
+	loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
+	loadTestFnAsync: (testModulePath: string) => Promise<Test>
 ) {
 	return await context.loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync);
 }

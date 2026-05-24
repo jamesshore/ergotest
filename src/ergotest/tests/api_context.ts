@@ -13,15 +13,16 @@ export class ApiContext {
 	async loadSuiteAsync(
 		setupModulePaths: string[],
 		testModulePaths: string[],
-		loadSetupFnAsync: (setupModulePath: string) => Promise<void>,
-		loadTestFnAsync: (testModulePath: string) => Promise<TestSuite>
+		loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
+		loadTestFnAsync: (testModulePath: string) => Promise<Test>
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
 		this._context.push(builder);
 		try {
 			await Promise.all(setupModulePaths.map(async (path) => {
-				await loadSetupFnAsync(path);
+				const errorSuite = await loadSetupFnAsync(path);
+				if (errorSuite !== undefined) builder.addTest(errorSuite);
 				builder.setFilename(path);
 			}));
 		}
@@ -31,7 +32,7 @@ export class ApiContext {
 
 		await Promise.all(testModulePaths.map(async (path) => {
 			const suite = await loadTestFnAsync(path);
-			builder.addSuite(suite);
+			builder.addTest(suite);
 			builder.setFilename(path);
 		}));
 
@@ -58,7 +59,7 @@ export class ApiContext {
 			? createSkippedSuite(fullName, mark)
 			: runDescribeBlock(this._context, fullName, mark, fn);
 
-		if (this._context.length !== 0) this.#top.addSuite(suite);
+		if (this._context.length !== 0) this.#top.addTest(suite);
 		return suite;
 
 		function runDescribeBlock(context: TestSuiteBuilder[], fullName: string[], mark: TestMarkValue, fn: DescribeFn) {
@@ -166,8 +167,8 @@ class TestSuiteBuilder {
 		return this._name;
 	}
 
-	addSuite(suite: TestSuite) {
-		this._tests.push(suite);
+	addTest(test: Test) {
+		this._tests.push(test);
 	}
 
 	setFilename(filename: string) {

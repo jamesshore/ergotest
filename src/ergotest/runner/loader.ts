@@ -1,10 +1,10 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import * as ensure from "../../util/ensure.js";
-import { TestMark } from "../results/test_result.js";
 import path from "node:path";
-import { FailureTestCase } from "../tests/test_case.js";
+import { FailureTestCase, TestCase } from "../tests/test_case.js";
 import { TestSuite } from "../tests/test_suite.js";
 import { _loadSuiteAsync } from "../tests/test_api.js";
+import { Test } from "../tests/test.js";
 
 /**
  * Convert a list of test modules into a test suite. Each module needs to export a test suite by using
@@ -20,43 +20,38 @@ export async function fromModulesAsync(
 ): Promise<TestSuite> {
 	ensure.signature(arguments, [ Array, [ Array, undefined ] ]);
 
-	const result = await _loadSuiteAsync(setupModuleFilenames, testModuleFilenames, loadSetupAsync, loadTestAsync);
-	return result;
+	return await _loadSuiteAsync(setupModuleFilenames, testModuleFilenames, loadSetupAsync, loadTestAsync);
 }
 
-async function loadSetupAsync(setupModulePath: string) {
-	// try {
-		await import(setupModulePath);
-	// }
-	// catch(err) {
-	// 	return createFailure("TBD", err, setupModulePath);
-	// }
+async function loadSetupAsync(setupModulePath: string): Promise<void | Test> {
+	return await loadModuleAsync(setupModulePath, "Setup");
 }
 
-async function loadTestAsync(testModuleFilename: string): Promise<TestSuite> {
-	return await loadModuleAsync(testModuleFilename);
+async function loadTestAsync(filename: string): Promise<Test> {
+	const test = await loadModuleAsync(filename, "Test");
+	if (test instanceof TestSuite || test instanceof TestCase) {
+		return test;
+	}
+	else {
+		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename);
+	}
+
 }
 
-async function loadModuleAsync(filename: string): Promise<TestSuite> {
-	const errorName = `error when importing ${path.basename(filename)}`;
-
+async function loadModuleAsync(filename: string, description: string): Promise<Test> {
 	if (!path.isAbsolute(filename)) {
-		return createFailure(errorName, `Test module filenames must use absolute paths: ${filename}`);
+		return createModuleLoadFailure(`${description} module filenames must use absolute paths: ${filename}`, filename);
 	}
 	try {
 		const { default: suite } = await import(filename);
-		if (suite instanceof TestSuite) {
-			return suite;
-		}
-		else {
-			return createFailure(errorName, `Test module doesn't export a test suite: ${filename}`, filename);
-		}
+		return suite;
 	}
 	catch(err) {
-		return createFailure(errorName, err, filename);
+		return createModuleLoadFailure(err, filename);
 	}
 }
 
-function createFailure(name: string, error: unknown, filename?: string) {
-	return TestSuite.create({ tests: [ new FailureTestCase([ name ], error) ] });
+function createModuleLoadFailure(error: unknown, filename: string): FailureTestCase {
+	const name = `error when importing ${path.basename(filename)}`;
+	return new FailureTestCase([ name ], error);
 }
