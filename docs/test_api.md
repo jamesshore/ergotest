@@ -269,7 +269,7 @@ If there are no tests in this suite or its sub-suites, or they’re all skipped,
 
 If _fn()_ throws an exception or times out, the remainder of this suite will be skipped. No more _beforeAll(), afterAll(), beforeEach(), afterEach(),_ or _it()_ functions will run in this suite or any sub-suites, and they'll be marked as "skipped" in the test results.
 
-> **Note:** _beforeAll()_ must be contained within a _describe()_ block. To 
+To define a global _beforeAll()_ that runs before any test, call _beforeAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 [Back to top](#test-api)
 
@@ -292,7 +292,6 @@ The result will have one of the following statuses:
 
 > **Note:** Due to JavaScript limitations, _afterAll()_ will continue running after the timeout occurs. The test runner will continue with its next action as soon as possible after the timeout. This could lead to multiple before/after functions or tests running at the same time.
 
-
 If there are multiple _afterAll()_ functions in a suite, _fn()_ will run in the order _afterAll()_ was called. If there are multiple nested suites, they will run from the inside out.
 
 If any tests throw an exception or time out, _fn()_ will still be run.
@@ -300,6 +299,8 @@ If any tests throw an exception or time out, _fn()_ will still be run.
 If no tests in this suite or its sub-suites ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeAll) threw an exception—_fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, any remaining _afterAll()_ functions will still be run.
+
+To define a global _afterAll()_ that runs after all tests, call _afterAll()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 [Back to top](#test-api)
 
@@ -327,6 +328,8 @@ If there are multiple _beforeEach()_ functions in a suite, _fn()_ will be run in
 If no tests in this suite or its sub-suites will be run—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) threw an exception—_fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, no more _beforeEach()_, _afterEach()_, or _it()_ functions related to the corresponding test will be run. They will marked as "skipped" in the test results. However, _beforeEach(), afterEach()_ and _it()_ functions will be still run again for any remaining tests.
+
+To define a global _beforeEach()_ that runs before every test, call _beforeEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 [Back to top](#test-api)
 
@@ -356,6 +359,8 @@ If a test throws an exception or times out, _fn()_ will still be run.
 If no tests in this suite or its sub-suites were ran—either because there weren’t any, they were skipped, or [beforeAll()](#beforeall) and/or [beforeEach()](#beforeEach) threw exceptions, _fn()_ will not be run.
 
 If _fn()_ throws an exception or times out, any remaining _afterEach()_ functions will still be run.
+
+To define a global _afterEach()_ that runs after every test, call _afterEach()_ inside a setup module. Setup modules are configured in the [test options](#testoptions) provided to your [test runner](#testrunner).   
 
 [Back to top](#test-api)
 
