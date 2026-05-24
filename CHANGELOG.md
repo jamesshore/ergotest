@@ -15,6 +15,10 @@ Links to other documentation:
 
 Add TestSuiteResult.allRuns()
 
+QoL import improvements
+* standardized import names
+* added detect for two copies of ergotest
+
 
 ## v0.13.1: Bugfix: beforeAll() and afterAll() no longer run when they shouldn't
 
