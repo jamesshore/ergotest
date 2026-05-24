@@ -1,10 +1,13 @@
 // Copyright Titanium I.T. LLC. License granted under terms of "The MIT License."
 import { TestCaseResult } from "../results/test_result.js";
-import { Runnable } from "./runnable.js";
+import { AlwaysPassRunnable, Runnable } from "./runnable.js";
 export class BeforeAfter {
     _runnable;
     static create({ name, options = {}, fnAsync }) {
         return new BeforeAfter(Runnable.create(name, options, fnAsync));
+    }
+    static createPassingImport({ name }) {
+        return new BeforeAfter(new AlwaysPassRunnable(name));
     }
     constructor(runnable){
         this._runnable = runnable;

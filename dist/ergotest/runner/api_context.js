@@ -137,8 +137,8 @@ class TestSuiteBuilder {
     get name() {
         return this._name;
     }
-    addBeforeAll(beforeAll) {
-        this._beforeAll.push(beforeAll);
+    prependImportBeforeAll(beforeAll) {
+        this._beforeAll.unshift(beforeAll);
     }
     addTest(test) {
         this._tests.push(test);
@@ -329,11 +329,12 @@ async function loadSetupModulesAsync(setupModuleFilenames, builder) {
     const name = [
         "import setup module"
     ];
+    const importResults = [];
     let skipRemaining = false;
     for await (const filename of setupModuleFilenames){
-        let beforeAll;
+        let importBeforeAll;
         if (skipRemaining) {
-            beforeAll = BeforeAfter.create({
+            importBeforeAll = BeforeAfter.create({
                 name,
                 fnAsync () {}
             });
@@ -341,22 +342,28 @@ async function loadSetupModulesAsync(setupModuleFilenames, builder) {
             const { err } = await importModuleAsync(filename);
             if (err !== undefined) {
                 skipRemaining = true;
-                beforeAll = BeforeAfter.create({
+                importBeforeAll = BeforeAfter.create({
                     name,
                     fnAsync () {
                         throw err;
                     }
                 });
             } else {
-                beforeAll = BeforeAfter.create({
-                    name,
-                    fnAsync () {}
+                importBeforeAll = BeforeAfter.createPassingImport({
+                    name
                 });
             }
         }
-        builder.addBeforeAll(beforeAll);
+        importResults.unshift({
+            importBeforeAll,
+            filename
+        });
         builder.setFilename(filename);
     }
+    importResults.forEach(({ importBeforeAll, filename })=>{
+        builder.prependImportBeforeAll(importBeforeAll);
+        builder.setFilename(filename);
+    });
 }
 async function loadTestModulesAsync(testModuleFilenames, builder) {
     const name = [

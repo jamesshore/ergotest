@@ -9,6 +9,9 @@ export declare class BeforeAfter {
         options?: ItOptions;
         fnAsync: ItFn;
     }): BeforeAfter;
+    static createPassingImport({ name }: {
+        name: string[];
+    }): BeforeAfter;
     constructor(runnable: Runnable);
     /** @private */
     _setFilename(filename: string): void;

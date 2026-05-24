@@ -32,20 +32,27 @@ export default class Tests {
 			reporter: Reporter,
 		}]);
 
-		const setupFilesChanged = await this.#findTestFilesAsync(reporter, description, setupFiles);
-		const filesToRun = setupFilesChanged.length > 0
-			? files
-			: await this.#findTestFilesAsync(reporter, description, files);
+		const filesToRun = await this.#findTestFilesAsync(reporter, description, setupFiles, files);
 
 		if (filesToRun.length !== 0) {
 			await this.#runTestsAsync(reporter, description, filesToRun, setupFiles, failOnSkip, config);
 		}
 	}
 
-	async #findTestFilesAsync(reporter, description, files) {
+	async #findTestFilesAsync(reporter, description, setupFiles, testFiles) {
+		const dependencyTree = this._dependencyTree;
+		const fileSystem = this._fileSystem;
+
 		return await reporter.quietStartAsync(`Finding ${description}`, async (report) => {
-			const { changed, errors } = await this._dependencyTree.findChangedFilesAsync(
-				files,
+			const setupFilesChanged = await findChangedFilesAsync(setupFiles, report);
+
+			if (setupFilesChanged.length > 0) return testFiles;
+			else return await findChangedFilesAsync(testFiles, report);
+		});
+
+		async function findChangedFilesAsync(filesToCheck, report) {
+			const { changed, errors } = await dependencyTree.findChangedFilesAsync(
+				filesToCheck,
 				"test",
 				(filename) => {
 					report.debug(`\n  Analyze ${filename}`);
@@ -53,11 +60,11 @@ export default class Tests {
 				},
 			);
 
-			reportErrors(this._fileSystem, report, errors);
+			reportErrors(fileSystem, report, errors);
 			if (errors.length !== 0) throw new TaskError("Dependency analysis failed");
 
 			return changed;
-		});
+		}
 
 		function reportErrors(fileSystem, report, errors) {
 			const errorsByFile = {};
