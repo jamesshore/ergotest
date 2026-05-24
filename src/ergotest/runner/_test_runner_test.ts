@@ -16,6 +16,7 @@ import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_res
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
 import { _loadTestsAsync } from "./test_api.js";
+import { isDefined } from "../assert.js";
 
 // dependency: ../_renderer_custom.js
 
@@ -63,8 +64,8 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing test module arbitrary_module.js",
-						error: "Test module filenames must use absolute paths: ./arbitrary_module.js",
+						name: "import test module",
+						error: "Module filenames must use absolute paths, but was: ./arbitrary_module.js",
 					}),
 				],
 			}));
@@ -77,7 +78,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: "/no_such_module.js",
-						name: "error when importing test module no_such_module.js",
+						name: "import test module",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
 							apiContextFilename,
@@ -95,7 +96,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
+						name: "import test module",
 						error: `Cannot find module '/no_such_module.js' imported from ${testModuleFilename}`,
 					}),
 				],
@@ -110,7 +111,7 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
+						name: "import test module",
 						error: "my import error",
 					}),
 				],
@@ -125,8 +126,34 @@ export default describe(() => {
 				tests: [
 					createFail({
 						filename: testModuleFilename,
-						name: `error when importing test module ${path.basename(testModuleFilename)}`,
-						error: `Test module doesn't export a test suite: ${testModuleFilename}`,
+						name: "import test module",
+						error: `Test module '${testModuleFilename}' doesn't export a test suite. Did you forget to "export default" your describe()?`,
+					}),
+				],
+			}));
+		});
+
+		it("provides helpful error message if there appear to be two installations of ergotest", async () => {
+			// First, confirm that we're expecting test modules to export an object with a specific method
+			await writeTestModuleAsync();
+			const assumptionCheckerSuite = await loadTestsAsync([ testModuleFilename ]);
+			assert.isDefined(assumptionCheckerSuite.runAsync);
+
+			// Then check what happens if we manually export that object rather than using describe()
+			const filename = `${testModuleFilename}-a.js`;
+			await fs.writeFile(filename, `
+				export default {
+					runAsync() {}
+				}
+			`);
+
+			const suite = await loadTestsAsync([ filename ]);
+			assert.dotEquals(await suite.runAsync(), createSuite({
+				tests: [
+					createFail({
+						filename,
+						name: "import test module",
+						error: `Test module '${filename}' appears to export a test suite, but it's not instantiating the correct class. Do you have two copies of ergotest installed?`,
 					}),
 				],
 			}));
@@ -258,7 +285,7 @@ export default describe(() => {
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [
 					createFail({
-						name: `error when importing setup module ${path.basename(setupPath1)}`,
+						name: "import setup module",
 						filename: setupPath1,
 						error: "error 1",
 					}),
@@ -291,7 +318,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "describe() is not permitted in setup modules",
 					}),
 				],
@@ -321,7 +348,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "it() is not permitted in setup modules",
 					}),
 				],
@@ -347,8 +374,8 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: "./arbitrary_module.js",
-						name: "error when importing setup module arbitrary_module.js",
-						error: "Setup module filenames must use absolute paths: ./arbitrary_module.js",
+						name: "import setup module",
+						error: "Module filenames must use absolute paths, but was: ./arbitrary_module.js",
 					}),
 				],
 				tests: [
@@ -373,7 +400,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: "/no_such_module.js",
-						name: "error when importing setup module no_such_module.js",
+						name: "import setup module",
 						error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 					}),
 				],
@@ -400,7 +427,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: `Cannot find module '/no_such_module.js' imported from ${setupModuleFilename}`,
 					}),
 				],
@@ -427,7 +454,7 @@ export default describe(() => {
 				beforeAll: [
 					createFail({
 						filename: setupModuleFilename,
-						name: `error when importing setup module ${path.basename(setupModuleFilename)}`,
+						name: "import setup module",
 						error: "my import error",
 					}),
 				],
@@ -457,7 +484,7 @@ export default describe(() => {
 
 			assert.dotEquals(result[0], createFail({
 				filename: "/no_such_module.js",
-				name: `error when importing setup module no_such_module.js`,
+				name: `import setup module`,
 				error: `Cannot find module '/no_such_module.js' imported from ${apiContextFilename}`,
 			}));
 		});
