@@ -395,7 +395,7 @@ async function loadTestModuleAsync(filename: string): Promise<Test> {
 
 }
 
-async function loadModuleAsync(filename: string, description: string): Promise<{ suite: TestSuite, err: undefined } | { err: unknown, suite: undefined }> {
+async function loadModuleAsync(filename: string, description: string): Promise<{ suite: TestSuite, err?: undefined } | { err: unknown, suite?: undefined }> {
 	if (!path.isAbsolute(filename)) {
 		return { err: `${description} filenames must use absolute paths: ${filename}` };
 	}
