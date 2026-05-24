@@ -333,6 +333,19 @@ export default describe(() => {
 			}));
 		});
 
+		it("runs notify function for setup module import during test run", async () => {
+			let result!: TestCaseResult;
+			function onTestCaseResult(_result: TestCaseResult) {
+				result = _result;
+			}
+
+			await writeSetupModuleAsync();
+			const suite = await loadTestsAsync([], [ setupModuleFilename ]);
+
+			await suite.runAsync({ onTestCaseResult });
+			assert.dotEquals(result, createPass({ name: "import setup module", filename: setupModuleFilename }));
+		});
+
 		it("causes all subsequent runs to be skipped when a setup module fails to load", async () => {
 			const setupPath1 = `${setupModuleFilename}-1.js`;
 			const setupPath2 = `${setupModuleFilename}-2.js`;
@@ -912,7 +925,7 @@ export default describe(() => {
 		`);
 	}
 
-	async function writeSetupModuleAsync(sourceCode: string, filename: string = setupModuleFilename) {
+	async function writeSetupModuleAsync(sourceCode: string = "", filename: string = setupModuleFilename) {
 		await fs.writeFile(filename, `
 			import { beforeAll, afterAll, beforeEach, afterEach, describe, it } from ` + `"${INDEX_PATH}";
 			
