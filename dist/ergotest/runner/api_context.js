@@ -13,11 +13,7 @@ export class ApiContext {
         this._context.push(builder);
         this._inSetupModule = true;
         try {
-            await Promise.all(setupModuleFilenames.map(async (filename)=>{
-                const errorSuite = await loadSetupModuleAsync(filename);
-                if (errorSuite !== undefined) builder.addTest(errorSuite);
-                builder.setFilename(filename);
-            }));
+            await loadSetupModulesAsync(setupModuleFilenames, builder);
         } finally{
             this._inSetupModule = false;
             this._context.pop();
@@ -114,7 +110,7 @@ export class ApiContext {
         if (this._inSetupModule) {
             ensure.that(functionName !== "describe" && functionName !== "it", `${functionName}() is not permitted in setup modules`);
         } else {
-            ensure.that(functionName === "describe" || this._context.length > 0, `${functionName}() must be run inside describe()`);
+            ensure.that(functionName === "describe" || this._context.length > 0, `${functionName}() must be run inside describe() or a setup module`);
         }
     }
     get #top() {
@@ -144,6 +140,9 @@ class TestSuiteBuilder {
     }
     get name() {
         return this._name;
+    }
+    addBeforeAll(beforeAll) {
+        this._beforeAll.push(beforeAll);
     }
     addTest(test) {
         this._tests.push(test);
@@ -211,10 +210,9 @@ class TestSuiteBuilder {
         });
     }
     #beforeAfterName(parentName, beforeAfterArray, baseName) {
-        const number = beforeAfterArray.length === 0 ? "" : ` #${beforeAfterArray.length + 1}`;
         return [
             ...parentName,
-            baseName + number
+            baseName
         ];
     }
 }
@@ -331,27 +329,75 @@ function decipherItParameters(name, optionsOrTestFn, possibleTestFn) {
         fnAsync
     };
 }
-async function loadSetupModuleAsync(setupModulePath) {
-    return await loadModuleAsync(setupModulePath, "Setup module");
+async function loadSetupModulesAsync(setupModuleFilenames, builder) {
+    let skipRemaining = false;
+    for await (const filename of setupModuleFilenames){
+        let beforeAll;
+        if (skipRemaining) {
+            beforeAll = BeforeAfter.create({
+                name: [
+                    "import setup module"
+                ],
+                fnAsync () {}
+            });
+        } else {
+            const { suite, err } = await loadModuleAsync(filename, "Setup module");
+            if (err !== undefined) {
+                skipRemaining = true;
+                beforeAll = BeforeAfter.create({
+                    name: [
+                        `error when importing setup module ${path.basename(filename)}`
+                    ],
+                    fnAsync () {
+                        throw err;
+                    }
+                });
+            } else {
+                beforeAll = BeforeAfter.create({
+                    name: [
+                        "import setup module"
+                    ],
+                    fnAsync () {}
+                });
+            }
+        }
+        builder.addBeforeAll(beforeAll);
+        builder.setFilename(filename);
+    }
 }
 async function loadTestModuleAsync(filename) {
     const description = "Test module";
-    const test = await loadModuleAsync(filename, description);
-    if (test instanceof TestSuite || test instanceof TestCase) {
-        return test;
+    const { suite, err } = await loadModuleAsync(filename, description);
+    if (err !== undefined) {
+        return TestCase.create({
+            name: [
+                `error when importing test module ${path.basename(filename)}`
+            ],
+            fnAsync () {
+                throw err;
+            }
+        });
+    } else if (suite instanceof TestSuite || suite instanceof TestCase) {
+        return suite;
     } else {
         return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
     }
 }
 async function loadModuleAsync(filename, description) {
     if (!path.isAbsolute(filename)) {
-        return createModuleLoadFailure(`${description} filenames must use absolute paths: ${filename}`, filename, description);
+        return {
+            err: `${description} filenames must use absolute paths: ${filename}`
+        };
     }
     try {
         const { default: suite } = await import(filename);
-        return suite;
+        return {
+            suite
+        };
     } catch (err) {
-        return createModuleLoadFailure(err, filename, description);
+        return {
+            err
+        };
     }
 }
 function createModuleLoadFailure(error, filename, description) {
