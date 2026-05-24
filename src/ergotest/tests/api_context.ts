@@ -6,34 +6,33 @@ import { FailureTestCase, TestCase } from "./test_case.js";
 import { BeforeAfter } from "./before_after.js";
 import { DescribeFn, DescribeOptions, ItFn, ItOptions, Milliseconds } from "./test_api.js";
 import { Test } from "./test.js";
+import path from "node:path";
 
 export class ApiContext {
 	private readonly _context: TestSuiteBuilder[] = [];
 
 	async loadSuiteAsync(
-		setupModulePaths: string[],
-		testModulePaths: string[],
-		loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
-		loadTestFnAsync: (testModulePath: string) => Promise<Test>
+		setupModuleFilenames: string[],
+		testModuleFilenames: string[],
 	) {
 		const builder = new TestSuiteBuilder([], TestMark.none);
 
 		this._context.push(builder);
 		try {
-			await Promise.all(setupModulePaths.map(async (path) => {
-				const errorSuite = await loadSetupFnAsync(path);
+			await Promise.all(setupModuleFilenames.map(async (filename) => {
+				const errorSuite = await loadSetupModuleAsync(filename);
 				if (errorSuite !== undefined) builder.addTest(errorSuite);
-				builder.setFilename(path);
+				builder.setFilename(filename);
 			}));
 		}
 		finally {
 			this._context.pop();
 		}
 
-		await Promise.all(testModulePaths.map(async (path) => {
-			const suite = await loadTestFnAsync(path);
+		await Promise.all(testModuleFilenames.map(async (filename) => {
+			const suite = await loadTestModuleAsync(filename);
 			builder.addTest(suite);
-			builder.setFilename(path);
+			builder.setFilename(filename);
 		}));
 
 		return builder.toTestSuite();
@@ -325,4 +324,42 @@ function decipherItParameters(
 	return { options, fnAsync };
 }
 
-const testContext = new ApiContext();
+
+async function loadSetupModuleAsync(setupModulePath: string): Promise<void | Test> {
+	return await loadModuleAsync(setupModulePath, "Setup module");
+}
+
+async function loadTestModuleAsync(filename: string): Promise<Test> {
+	const description = "Test module";
+
+	const test = await loadModuleAsync(filename, description);
+	if (test instanceof TestSuite || test instanceof TestCase) {
+		return test;
+	}
+	else {
+		return createModuleLoadFailure(`Test module doesn't export a test suite: ${filename}`, filename, description);
+	}
+
+}
+
+async function loadModuleAsync(filename: string, description: string): Promise<Test> {
+	if (!path.isAbsolute(filename)) {
+		return createModuleLoadFailure(
+			`${description} filenames must use absolute paths: ${filename}`,
+			filename,
+			description,
+		);
+	}
+	try {
+		const { default: suite } = await import(filename);
+		return suite;
+	}
+	catch(err) {
+		return createModuleLoadFailure(err, filename, description);
+	}
+}
+
+function createModuleLoadFailure(error: unknown, filename: string, description: string): FailureTestCase {
+	const name = `error when importing ${description.toLowerCase()} ${path.basename(filename)}`;
+	return new FailureTestCase([ name ], error);
+}

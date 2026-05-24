@@ -15,7 +15,7 @@ import { TestSuite } from "../tests/test_suite.js";
 import { TestCaseResult, TestResult, TestSuiteResult } from "../results/test_result.js";
 import fs from "node:fs/promises";
 import { Clock } from "../../infrastructure/clock.js";
-import { fromModulesAsync } from "./loader.js";
+import { _loadTestsAsync } from "../tests/test_api.js";
 
 // dependency: ../_renderer_custom.js
 
@@ -41,7 +41,7 @@ export default describe(() => {
 
 		it("creates test suite from a module (and sets filename on result)", async () => {
 			await writeTestModuleAsync();
-			const suite = await fromModulesAsync([ testModulePath, testModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath, testModulePath ]);
 
 			const testCaseResult = createPass({ name: "test", filename: testModulePath });
 			assert.dotEquals(await suite.runAsync(),
@@ -53,7 +53,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module isn't an absolute path", async () => {
-			const suite = await fromModulesAsync([ "./arbitrary_module.js" ]);
+			const suite = await loadTestsAsync([ "./arbitrary_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
@@ -67,7 +67,7 @@ export default describe(() => {
 		});
 
 		it("fails gracefully if module doesn't exist", async () => {
-			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+			const suite = await loadTestsAsync([ "/no_such_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
@@ -76,7 +76,7 @@ export default describe(() => {
 						name: "error when importing test module no_such_module.js",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
-							"./loader.js",
+							"../tests/api_context.js",
 						)}`,
 					}),
 				],
@@ -86,7 +86,7 @@ export default describe(() => {
 		it("BUG: it doesn't think an import failure means the module doesn't exist", async () => {
 			await fs.writeFile(testModulePath, "impo" + "rt irrelevant from '/no_such_module.js'");
 
-			const suite = await fromModulesAsync([ testModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
@@ -101,7 +101,7 @@ export default describe(() => {
 		it("fails gracefully if module throws an exception while being loaded", async () => {
 			await fs.writeFile(testModulePath, "throw new Error('my import error')");
 
-			const suite = await fromModulesAsync([ testModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
@@ -116,7 +116,7 @@ export default describe(() => {
 		it("fails gracefully if module doesn't export a test suite", async () => {
 			await fs.writeFile(testModulePath, "");
 
-			const suite = await fromModulesAsync([ testModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
@@ -134,7 +134,7 @@ export default describe(() => {
 				result = _result;
 			}
 
-			const suite = await fromModulesAsync([ "/no_such_module.js" ]);
+			const suite = await loadTestsAsync([ "/no_such_module.js" ]);
 			await suite.runAsync({ onTestCaseResult });
 
 			assert.equal(result?.filename, "/no_such_module.js");
@@ -154,7 +154,7 @@ export default describe(() => {
 			`, setupModulePath);
 			await writeTestModuleAsync();
 
-			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [ createPass({ name: "beforeAll()", filename: setupModulePath }) ],
@@ -189,7 +189,7 @@ export default describe(() => {
 				afterEach(() => {});
 			`, setupPath2);
 
-			const suite = await fromModulesAsync([ testModulePath ], [ setupPath1, setupPath2 ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ setupPath1, setupPath2 ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				beforeAll: [ createPass({ name: "beforeAll()", filename: setupPath1 }) ],
@@ -212,7 +212,7 @@ export default describe(() => {
 
 		it("fails gracefully if module isn't an absolute path", async () => {
 			await writeTestModuleAsync();
-			const suite = await fromModulesAsync([ testModulePath ], [ "./arbitrary_module.js" ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ "./arbitrary_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
@@ -236,7 +236,7 @@ export default describe(() => {
 
 		it("fails gracefully if module doesn't exist", async () => {
 			await writeTestModuleAsync();
-			const suite = await fromModulesAsync([ testModulePath ], [ "/no_such_module.js" ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ "/no_such_module.js" ]);
 
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
@@ -245,7 +245,7 @@ export default describe(() => {
 						name: "error when importing setup module no_such_module.js",
 						error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 							import.meta.dirname,
-							"./loader.js",
+							"../tests/api_context.js",
 						)}`,
 					}),
 					createSuite({
@@ -265,7 +265,7 @@ export default describe(() => {
 			await writeTestModuleAsync();
 			await writeSetupModuleAsync("impo" + "rt irrelevant from '/no_such_module.js'");
 
-			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
@@ -290,7 +290,7 @@ export default describe(() => {
 			await writeTestModuleAsync();
 			await fs.writeFile(setupModulePath, "throw new Error('my import error')");
 
-			const suite = await fromModulesAsync([ testModulePath ], [ setupModulePath ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ setupModulePath ]);
 			assert.dotEquals(await suite.runAsync(), createSuite({
 				tests: [
 					createFail({
@@ -318,7 +318,7 @@ export default describe(() => {
 			}
 
 			await writeTestModuleAsync();
-			const suite = await fromModulesAsync([ testModulePath ], [ "/no_such_module.js" ]);
+			const suite = await loadTestsAsync([ testModulePath ], [ "/no_such_module.js" ]);
 			await suite.runAsync({ onTestCaseResult });
 
 			assert.dotEquals(result[0], createFail({
@@ -326,7 +326,7 @@ export default describe(() => {
 				name: `error when importing setup module no_such_module.js`,
 				error: `Cannot find module '/no_such_module.js' imported from ${path.resolve(
 					import.meta.dirname,
-					"./loader.js",
+					"../tests/api_context.js",
 				)}`,
 			}));
 		});
@@ -638,4 +638,11 @@ async function createAsync({
 	const runner = new TestRunner(clock);
 
 	return { runner, clock };
+}
+
+async function loadTestsAsync(
+	testModuleFilenames: string[],
+	setupModuleFilenames: string[] = [],
+): Promise<TestSuite> {
+	return await _loadTestsAsync(setupModuleFilenames, testModuleFilenames);
 }

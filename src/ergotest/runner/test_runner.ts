@@ -11,9 +11,8 @@ import {
 import child_process, { ChildProcess } from "node:child_process";
 import path from "node:path";
 import { Clock } from "../../infrastructure/clock.js";
-import { fromModulesAsync } from "./loader.js";
 import { importRendererAsync, TestSuite } from "../tests/test_suite.js";
-import { TestOptions } from "../tests/test_api.js";
+import { _loadTestsAsync, TestOptions } from "../tests/test_api.js";
 // dependency: ./test_runner_worker_process.js
 
 const WORKER_FILENAME = path.resolve(import.meta.dirname, "./test_runner_worker_process.js");
@@ -80,10 +79,10 @@ export class TestRunner {
 	 *   parameter describes the result of the test—whether it passed, failed, etc.
 	 * @returns {Promise<TestSuiteResult>}
 	 */
-	async runInCurrentProcessAsync(modulePaths: string[], options?: TestOptions): Promise<TestSuiteResult> {
+	async runInCurrentProcessAsync(modulePaths: string[], options: TestOptions = {}): Promise<TestSuiteResult> {
 		ensure.signature(arguments, [ Array, [ undefined, TEST_OPTIONS_TYPE]]);
 
-		const suite = await fromModulesAsync(modulePaths);
+		const suite = await _loadTestsAsync([], modulePaths);
 		return await suite.runAsync(options);
 	}
 

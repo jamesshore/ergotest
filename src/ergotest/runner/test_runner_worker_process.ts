@@ -4,7 +4,7 @@ import { RunResult, TestCaseResult, TestSuiteResult } from "../results/test_resu
 import { Clock } from "../../infrastructure/clock.js";
 import process from "node:process";
 import { WorkerInput } from "./test_runner.js";
-import { fromModulesAsync } from "./loader.js";
+import { _loadTestsAsync } from "../tests/test_api.js";
 
 const KEEPALIVE_INTERVAL_IN_MS = 100;
 
@@ -50,7 +50,7 @@ async function runWorkerAsync(
 			sendFinalResult(testSuiteResult, cancelKeepAliveFn);
 		});
 
-		const suite = await fromModulesAsync(modulePaths);
+		const suite = await _loadTestsAsync([], modulePaths);
 		const result = await suite.runAsync({ timeout, config, renderer, onTestCaseResult: sendProgress });
 
 		// wait a tick so unhandled promises can be detected

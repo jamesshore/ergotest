@@ -36,13 +36,11 @@ export type ItFn = (testUtilities: {
 
 
 /** @private */
-export async function _loadSuiteAsync(
-	setupModulePaths: string[],
-	testModulePaths: string[],
-	loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>,
-	loadTestFnAsync: (testModulePath: string) => Promise<Test>
+export async function _loadTestsAsync(
+	setupModuleFilenames: string[],
+	testModuleFilenames: string[],
 ) {
-	return await context.loadSuiteAsync(setupModulePaths, testModulePaths, loadSetupFnAsync, loadTestFnAsync);
+	return await context.loadSuiteAsync(setupModuleFilenames, testModuleFilenames);
 }
 
 /**
