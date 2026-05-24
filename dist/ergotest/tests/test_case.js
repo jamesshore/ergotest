@@ -78,10 +78,12 @@ function isSuccess(result) {
 export class FailureTestCase extends TestCase {
     _failureFilename;
     _error;
-    constructor(name, error, filename){
+    constructor(name, error){
         super(name, {}, undefined, TestMark.none);
-        this._failureFilename = filename;
         this._error = error;
+    }
+    _setFilename(filename) {
+        if (this._failureFilename === undefined) this._failureFilename = filename;
     }
     async _runAsyncInternal(runOptions, parentData) {
         const it = RunResult.fail({

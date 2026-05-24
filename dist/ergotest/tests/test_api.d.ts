@@ -1,6 +1,7 @@
 import { TestCaseResult } from "../results/test_result.js";
 import { Clock } from "../../infrastructure/clock.js";
-import { TestConfig } from "./test_suite.js";
+import { TestConfig, TestSuite } from "./test_suite.js";
+import { Test } from "./test.js";
 export interface TestOptions {
     timeout?: Milliseconds;
     config?: TestConfig;
@@ -19,6 +20,8 @@ export type DescribeFn = () => void;
 export type ItFn = (testUtilities: {
     getConfig: <T>(key: string) => T;
 }) => Promise<void> | void;
+/** @private */
+export declare function _loadSuiteAsync(setupModulePaths: string[], testModulePaths: string[], loadSetupFnAsync: (setupModulePath: string) => Promise<void | Test>, loadTestFnAsync: (testModulePath: string) => Promise<Test>): Promise<TestSuite>;
 /**
  * Defines a test suite. Add `.skip` to skip this test suite and `.only` to only run this test suite.
  * @param {string} [optionalName] The name of the test suite. You can skip this parameter and pass
@@ -30,10 +33,10 @@ export type ItFn = (testUtilities: {
  *   undefined, this test suite will be skipped.
  * @returns {TestSuite} The test suite. You’ll typically ignore the return value.
  */
-export declare function describe(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): import("./test_suite.js").TestSuite;
+export declare function describe(optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn): TestSuite;
 export declare namespace describe {
-    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => import("./test_suite.js").TestSuite;
-    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => import("./test_suite.js").TestSuite;
+    var skip: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
+    var only: (optionalName?: string | DescribeOptions | DescribeFn, optionalOptions?: DescribeOptions | DescribeFn, fn?: DescribeFn) => TestSuite;
 }
 /**
  * Adds a test to the current test suite. Must be run inside of a {@link test} or {@link describe} function. Add
