@@ -17,7 +17,7 @@ Links to other documentation:
 
 I've also taken this opportunity to add some quality-of-life improvements to module import reporting. Module imports now generate a unified "setup module import" or "test module import" test result and have improved failure messages, including better detection of when two copies of ergotest are installed.
 
-Setup module import results are found in the top-level [testSuiteResult.beforeAll](docs/automation_api.md#testsuiteresultbeforeall), and are generated for all setup module results (pass, fail, and skip). Test module imports continue to be found in the top-level [testSuiteResult.tests](docs/automation_api.md#testsuiteresulttests), and are only generated for import failures.
+Setup module import results are found in the top-level [testSuiteResult.beforeAll](docs/automation_api.md#testsuiteresultbeforeall), and are generated for all import results (pass, fail, and skip). Test module imports continue to be found in the top-level [testSuiteResult.tests](docs/automation_api.md#testsuiteresulttests), and are only generated for import failures.
 
 I've also made a minor non-breaking API addition. It's not likely to be useful for you:
 * [testSuiteResult.allRuns()](docs/automation_api.md#testsuiteresultallruns)
@@ -31,7 +31,7 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-	resetSimulatedDom();
+  resetSimulatedDom();
 });
 
 //...
@@ -43,7 +43,7 @@ afterEach(() => {
 // ...
 
 const result = await testRunner.runInChildProcessAsync(files, { 
-	setupModulePaths: [ path.resolve(process.cwd(), "./_test_setup.js") ], 
+  setupModulePaths: [ path.resolve(process.cwd(), "./_test_setup.js") ], 
 });
 
 // ...
