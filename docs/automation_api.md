@@ -226,7 +226,7 @@ If the tests enter an infinite loop, throw an uncaught exception, or exit early 
 
 If any of the _testModulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
-Use [options](#testoptions) to provide configuration data to` the tests and otherwise customize your test run, including providing setup modules with global before/after functions.
+Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run, including providing setup modules for global before/after functions.
 
 > **Warning:** Because the tests run in a child process, any configuration data you provide will be serialized. Only bare objects, arrays, and primitive data can be provided; class instances will not work.
 
@@ -249,7 +249,7 @@ Does *not* detect infinite loops, uncaught exceptions, or early exits.
 
 If any of the _modulePaths_ fail to load, the remaining modules will still run. Each failed module will generate a failed [TestCaseResult](#testcaseresult).
 
-Use [options](#testoptions) to provide configuration data to` the tests and otherwise customize your test run, including providing setup modules with global before/after functions.
+Use [options](#testoptions) to provide configuration data to the tests and otherwise customize your test run, including providing setup modules for global before/after functions.
 
 [Back to top](#automation-api)
 
@@ -261,8 +261,8 @@ Use [options](#testoptions) to provide configuration data to` the tests and othe
 You can configure test runs with this interface. Provide an object with these optional parameters:
 
 * **setupModulePaths?: string[]**
-  * Setup modules to load and run prior to the tests. Must be absolute paths.
-  * Can be used to define _beforeXxx_ and _afterXxx_ functions that apply to all tests globally. (E.g., _beforeAll()_ runs once before all tests, _beforeEach()_ runs repeatedly before each individual test, and so forth.)
+  * The absolute paths of setup modules to import prior to the test modules.
+  * Can be used to define global _beforeXxx_ and _afterXxx_ functions.
   * Cannot be used to define suites or tests with _describe()_ or _it()_.
   * Guaranteed to be imported and run in the order provided. If any import fails, the rest of the setup modules will not be imported. The test modules will still be imported, but the tests will all be skipped.
 
